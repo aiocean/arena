@@ -1,0 +1,73 @@
+# The checks every change passes. The rules run on Linux x86_64 and macOS arm64: their goldens
+# (crates/pixfx-duel/tests/goldens) pin every event of seeded fights, so a green run on both is the proof that a fight
+# replays bit for bit on either, which tournament replays rely on.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rules:
+    name: rules (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace --all-targets
+
+  trainer:
+    name: trainer (python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/pixfx-duel-py
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: train/uv.lock
+      - name: Build the env module and run the trainer's tests
+        working-directory: train
+        run: |
+          uv sync
+          uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml
+          uv run pytest
+      - name: Clippy on the binding
+        run: PYO3_PYTHON=$PWD/train/.venv/bin/python cargo clippy --manifest-path crates/pixfx-duel-py/Cargo.toml -- -D warnings
+
+  site:
+    name: site (wasm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@0.15.0
+      - uses: oven-sh/setup-bun@v2
+      - name: Build the site (the engine at the pinned rev, the arena's wasm, the docs pages)
+        run: site/build.sh
+      - name: The page's tests against the wasm
+        run: cd site && bun test tests
