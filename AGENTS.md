@@ -1,9 +1,10 @@
-# games/arena
+# arena
 
-The arena: the duel game on the pixfx engine, and the bot tournament built on it. Read `README.md` for what is here
-and `docs/` for the game, the bot interface, training and the tournament. The root `AGENTS.md` ("The boundary",
-"Layers and where code goes") still holds: the arena's crates are the **Game** layer, above the engine, and the
-engine never depends on them.
+The arena: the duel game on the pixfx engine, and the bot tournament built on it (arena.aiocean.io). Read `README.md`
+for what is here and `docs/` for the game, the bot interface, training and the tournament. The engine is the pixfx
+checkout at `../../tools/pixfx-rs` (its `AGENTS.md`: "The boundary", "Layers and where code goes"): the arena's crates
+reach its crates by path and are the **Game** layer above it. The engine never depends on the arena; the pixfx site
+embeds the arena's duel through `site/embed.sh`.
 
 ## Where code goes
 
@@ -13,9 +14,9 @@ engine never depends on them.
 | is the training env, its reward, an opponent, the ladder | `crates/pixfx-duel` (`train`, `seat`, `scripted`, `ladder`) |
 | hands the env to Python | `crates/pixfx-duel-py` (translation only) |
 | trains, exports or loads weights in Python | `train/` |
-| is how any trained policy sees, acts or runs its network | the engine's `crates/pixfx-mind` (`policy`): it serves every game |
-| is the duel for JS | the engine's `crates/pixfx-wasm` (feature `duel`) |
-| draws or plays the duel on the page | `site/assets/duel.js`, `site/assets/duel-hero.js` (a shell: it decides nothing), shared by the pixfx landing and the arena site |
+| is how any trained policy sees, acts or runs its network | the engine's `pixfx-mind` (`policy`, in `../../tools/pixfx-rs`): it serves every game |
+| is the duel for JS | `crates/arena-wasm` (translation only; the page loads it beside the engine's wasm) |
+| draws or plays the duel on the page | `site/assets/duel*.js` (a shell: it decides nothing); `site/embed.sh` lists what the pixfx site embeds |
 | is a page of the arena site (arena.aiocean.io): home, watch, the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
 | explains the game to a player | `docs/` |
 
@@ -38,6 +39,7 @@ engine never depends on them.
 ```
 cargo test -p pixfx-duel --all-targets
 cargo clippy -p pixfx-duel --all-targets -- -D warnings
-(cd games/arena/train && uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml && uv run pytest)
-bun test ./site/tests          # after a change the page sees, with the wasm rebuilt
+(cd train && uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml && uv run pytest)
+site/embed.sh /tmp/kit && bun test ./site/tests   # after a change the page sees: rebuilds the arena wasm first
+cargo test -p arena-wasm && cargo clippy --workspace --all-targets -- -D warnings
 ```

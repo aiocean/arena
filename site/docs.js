@@ -1,6 +1,6 @@
-// Run by build.sh: turns the player docs (games/arena/docs/*.md, the source of truth) into the site's docs pages, each
+// Run by build.sh: turns the player docs (docs/*.md, the source of truth) into the site's docs pages, each
 // with the menu, an "on this page" list and previous/next links written in, so a docs page needs no script to read.
-// Usage: bun games/arena/site/docs.js <docs dir> <out dir>
+// Usage: bun site/docs.js <docs dir> <out dir>
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 

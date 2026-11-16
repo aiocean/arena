@@ -1,7 +1,8 @@
 # Training a bot
 
-Everything here runs from a clone of pixfx-rs. The trainer is `games/arena/train/` (Python, PyTorch, `uv`); the rules
-it trains on are the same Rust rules the page plays, through `games/arena/crates/pixfx-duel-py`. What a bot sees and
+Everything here runs from a checkout of game-factory: the arena at `projects/arena`, which builds on the pixfx
+engine beside it at `tools/pixfx-rs`. Commands run from `projects/arena`. The trainer is `train/` (Python, PyTorch, `uv`); the rules
+it trains on are the same Rust rules the page plays, through `crates/pixfx-duel-py`. What a bot sees and
 does is `docs/bot.md`.
 
 ## What you need
@@ -15,7 +16,7 @@ does is `docs/bot.md`.
 ## Setup
 
 ```sh
-cd games/arena/train
+cd train
 uv sync
 uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # again after any change to the Rust rules
 uv run pytest                                                            # 12 tests
@@ -111,7 +112,7 @@ The network's shape and its inputs are fixed for a season (`docs/bot.md`).
 uv run python export.py runs/<run>/last.pt
 ```
 
-It writes the weights file to `games/arena/crates/pixfx-duel/weights/policy.bin` (in your clone, the AI the page and
+It writes the weights file to `crates/pixfx-duel/weights/policy.bin` (in your clone, the AI the page and
 the ladder use) and `tests/fixtures/policy_check.json`: 32 observations from real fights and PyTorch's logits for
 them. Then check that Rust computes the same:
 
@@ -145,6 +146,7 @@ final blows.
 
 ## Watch it
 
-Copy your file into `games/arena/crates/pixfx-duel/weights/` under a new name, name it in `POLICY_FILES`
-(`site/assets/landing.js`: `[left, right]`), build the site (`site/build.sh`, which copies every `weights/*.bin`)
-and serve `site/dist`; the landing duel seats it.
+Build the site and open the watch page (`site/build.sh --serve`, then http://127.0.0.1:8771/watch.html): choose your
+file for one corner, the shipped bot or another file for the other, and a seed. The same two files and seed play the
+same fight anywhere. To make it the bot the home page plays, put it in `crates/pixfx-duel/weights/` and name it in
+`HOUSE` (`site/assets/arena.js`).

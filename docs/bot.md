@@ -2,7 +2,7 @@
 
 What a bot sees, what it can do, when it decides, and the file a player submits. The code is the source of truth:
 `crates/pixfx-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`, `net.rs`) and
-`games/arena/crates/pixfx-duel/src/seat.rs`.
+`crates/pixfx-duel/src/seat.rs`.
 
 ## What it sees: 354 numbers
 
