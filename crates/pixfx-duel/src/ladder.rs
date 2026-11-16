@@ -10,7 +10,7 @@ use crate::fighter::State;
 use crate::first_mind::FirstMind;
 use crate::out::{Note, Out, Stop};
 use crate::scripted::Scripted;
-use crate::seat::{Brain, MakeSeat, PolicySeat, Seat};
+use crate::seat::{Brain, Fault, MakeSeat, PolicySeat, Seat};
 use crate::style::Style;
 use pixfx_mind::policy::Net;
 use pixfx_mind::{Choice, Outcome, Posture};
@@ -39,6 +39,8 @@ pub struct Record {
     pub lengths: Vec<f64>,
     /// Fights cut because a round passed the limit.
     pub timeouts: u32,
+    /// Fights each side lost to a fault: the first seat (0), the second (1).
+    pub faults: [u32; 2],
     /// The first seat's choices, by kind (a cast by its spell).
     pub choices: BTreeMap<String, u32>,
     pub decisions: u32,
@@ -205,6 +207,9 @@ impl Seat for Counted {
     fn hold(&mut self, seconds: f64) {
         self.inner.hold(seconds);
     }
+    fn fault(&self) -> Option<&Fault> {
+        self.inner.fault()
+    }
 }
 
 /// A seat that writes its school's casts, what they cost, and the moves it was told were punished.
@@ -247,6 +252,9 @@ impl Seat for Watched {
     }
     fn posture(&self) -> Option<Posture> {
         self.inner.posture()
+    }
+    fn fault(&self) -> Option<&Fault> {
+        self.inner.fault()
     }
 }
 
@@ -396,12 +404,30 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             let mut started = duel.state.time;
             let mut round = duel.state.round;
             let mut ended = false;
+            // rounds awarded to the first seat and to the second by the other's fault
+            let mut forfeit = [0, 0];
             while duel.state.wins[0] + duel.state.wins[1] < m.rounds {
                 let fighting = duel.state.winner.is_none();
                 let before = duel.state.fighters.each_ref().map(|f| f.hp);
                 let out = duel.step(TICK);
                 if fighting {
                     account(&mut logs.borrow_mut(), before, &out, &duel.state);
+                }
+                // a seat that faulted loses the rounds of this fight not yet played, and the fight ends
+                let faulted = [corner, 1 - corner].map(|side| duel.seat(side).fault().is_some());
+                if faulted != [false, false] {
+                    let left = m
+                        .rounds
+                        .saturating_sub(duel.state.wins[0] + duel.state.wins[1]);
+                    for (side, lost) in faulted.into_iter().enumerate() {
+                        r.faults[side] += u32::from(lost);
+                    }
+                    forfeit = match faulted {
+                        [true, false] => [0, left],
+                        [false, true] => [left, 0],
+                        _ => [0, 0],
+                    };
+                    break;
                 }
                 let s = &duel.state;
                 if s.round != round {
@@ -424,8 +450,8 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                     break;
                 }
             }
-            r.won[corner] += duel.state.wins[corner];
-            r.lost[corner] += duel.state.wins[1 - corner];
+            r.won[corner] += duel.state.wins[corner] + forfeit[0];
+            r.lost[corner] += duel.state.wins[1 - corner] + forfeit[1];
         }
     }
     let t = tally.borrow();

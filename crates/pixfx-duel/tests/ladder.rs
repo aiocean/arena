@@ -4,7 +4,9 @@ mod common;
 
 use common::{all_effects, idle};
 use pixfx_duel::ladder::{Match, match_up};
-use pixfx_duel::seat::Brain;
+use pixfx_duel::seat::{BotSeat, Brain, Decider, Fault};
+use pixfx_mind::policy::{ACTIONS, OBS};
+use std::rc::Rc;
 
 #[test]
 fn every_seed_is_fought_both_ways_and_counted() {
@@ -64,4 +66,34 @@ fn telemetry_accounts_for_every_blow_and_every_round() {
         assert!(me.skills.values().map(|s| s.casts).sum::<u32>() > 0);
         assert!(me.skills.values().map(|s| s.landed).sum::<u32>() > 0);
     }
+}
+
+/// A decider that faults as the bot starts.
+struct Faulting;
+
+impl Decider for Faulting {
+    fn start(&mut self, _seed: u32) -> Result<(), Fault> {
+        Err(Fault::OutOfFuel)
+    }
+    fn round(&mut self) -> Result<(), Fault> {
+        Ok(())
+    }
+    fn decide(&mut self, _: &[f32; OBS], _: &[bool; ACTIONS], _: f32) -> Result<i32, Fault> {
+        Ok(0)
+    }
+}
+
+#[test]
+fn a_fault_loses_the_fight() {
+    let m = Match {
+        seeds: 1..4,
+        rounds: 3,
+        limit: 300.0,
+        effects: all_effects(),
+    };
+    let faulting = || BotSeat::make(Rc::new(|| Box::new(Faulting) as Box<dyn Decider>), None);
+    let r = match_up(&faulting, &Brain::make, &m);
+    assert_eq!(r.won, [0, 0], "{r:?}");
+    assert_eq!(r.lost, [9, 9], "{r:?}");
+    assert_eq!(r.faults, [6, 0], "{r:?}");
 }
