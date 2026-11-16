@@ -16,6 +16,14 @@ crate-type = ["cdylib"]
 # `sample` are the arena's, so a net trained by train/ plays here as it plays natively.
 pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
 
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
