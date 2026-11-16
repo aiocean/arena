@@ -21,3 +21,23 @@ cargo run --release -p pixfx-duel --example ladder -- --seeds 150
   `cargo test -p pixfx-duel --test policy_export` checks against Rust's own forward pass.
 
 `runs/` stays out of git; the shipped weights go in.
+
+## Training on kiot
+
+A full run trains on macmini-kiot, not the MacBook Air: kiot runs about 42K env steps/s (the Air 6K-12K), so
+3000 updates take about 45 minutes, and a crash or sleep on the Air cannot stop it.
+
+- Reach it as `ssh firegroup@100.117.192.75` (the name `macmini-kiot` fails host-key checks).
+- The code is already there: Mutagen session `game-factory` keeps `~/projects/game-factory` the same on both
+  machines (`mutagen sync flush game-factory` on the Air before starting). A worktree under `.claude/worktrees/`
+  syncs too; `.venv` does not, so `long-run.sh` builds it there.
+- Start a run detached, so it outlives the ssh session and kiot does not sleep:
+  ```
+  ssh firegroup@100.117.192.75 'cd ~/projects/game-factory/tools/pixfx-rs/train &&
+    nohup caffeinate -is ./long-run.sh frames > ~/train-frames.log 2>&1 < /dev/null &'
+  ```
+  `long-run.sh` builds the rules, runs pytest, trains, and resumes from `runs/<run>/last.pt` (saved every 25
+  updates) if the trainer dies. Its log ends in `TRAIN-DONE` or `FAIL`.
+- Progress is `runs/<run>/log.jsonl`, which syncs back to the Air with the rest of `runs/`; export and the ladder run
+  on the Air.
+- One run at a time: check `pgrep -fl "ppo.py"` on kiot before starting, since another session may be training.
