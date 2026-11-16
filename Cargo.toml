@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-# pixfx-duel-py needs pyo3 and is built only by maturin for the trainer: its own workspace
-exclude = ["crates/pixfx-duel-py"]
+# pixfx-duel-py needs pyo3 and is built only by maturin for the trainer, and bots/ are built for wasm32: each its own workspace
+exclude = ["crates/pixfx-duel-py", "bots"]
 
 [workspace.package]
 version = "0.1.0"

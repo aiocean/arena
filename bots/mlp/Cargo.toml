@@ -1,0 +1,23 @@
+[package]
+name = "mlp"
+description = "A bot template: a multilayer perceptron over the observation, sampled as the arena's own policy samples. The house bot is this crate around the shipped weights"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+# Its own workspace: it builds for wasm32-unknown-unknown (build.sh), not with the arena's crates.
+[workspace]
+
+[dependencies]
+# The arena's engine at the rev its workspace pins (../../Cargo.toml): the net, its order of float operations and
+# `sample` are the arena's, so a net trained by train/ plays here as it plays natively.
+pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+panic = "abort"
