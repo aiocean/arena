@@ -3,6 +3,7 @@
 mod bot;
 mod check;
 mod engine;
+pub mod run;
 
 pub use bot::WasmBot;
 pub use check::{Refusal, check, hash};
