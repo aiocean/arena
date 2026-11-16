@@ -1,0 +1,20 @@
+[package]
+name = "arena-bot"
+description = "Checks a bot's WebAssembly module and runs it as a Decider in the season's wasmtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+pixfx-duel = { path = "../pixfx-duel" }
+pixfx-mind.workspace = true
+sha2 = "0.11"
+# A season's float results are this wasmtime's: pinned exactly, bumped only with a new season. Only the compiler and
+# the runtime (no wat parser: a module is binary), with the GC heap compiled in for exceptions.
+wasmtime = { version = "=50.0.1", default-features = false, features = ["cranelift", "runtime", "std", "gc", "gc-drc"] }
+
+[dev-dependencies]
+wat = "1.263"
+
+[lints]
+workspace = true
