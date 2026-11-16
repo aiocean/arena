@@ -1,0 +1,30 @@
+# One WebAssembly module with every relaxed SIMD instruction and NaN case must give the same bits and fuel on x86_64
+# and arm64: tests/goldens/cross_cpu.json was written on arm64, and both runners check against it. The season's
+# determinism rests on this.
+name: cross-cpu
+
+on:
+  push:
+    branches: [main, wasm-bots]
+  pull_request:
+    paths:
+      - "crates/arena-bot/**"
+      - ".github/workflows/cross-cpu.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cross-cpu:
+    name: cross-cpu (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p arena-bot --test cross_cpu

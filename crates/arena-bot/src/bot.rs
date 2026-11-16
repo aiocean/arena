@@ -99,6 +99,11 @@ impl WasmBot {
         })
     }
 
+    /// Fuel the last call left; 0 if the store cannot say.
+    pub fn fuel_left(&self) -> u64 {
+        self.store.get_fuel().unwrap_or(0)
+    }
+
     /// What `arena_abi` answers.
     pub(crate) fn abi(&mut self) -> Result<i32, Fault> {
         self.store.set_fuel(LIMITS.fuel_setup).map_err(fault)?;
