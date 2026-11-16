@@ -7,7 +7,8 @@ does is `docs/bot.md`.
 
 ## What you need
 
-- Rust (the toolchain in `rust-toolchain.toml`), `uv`, Python 3.12.
+- Rust (the toolchain in `rust-toolchain.toml`), `uv`, Python 3.12 or 3.13 (`train/.python-version` picks 3.13; torch 2.8 has
+  no wheels for 3.14).
 - A fast machine for long runs. The env is the cost, and the trainer runs on CPU (CPU beats MPS for this network).
   Measured: about 42K env steps a second on the Mac mini the shipped AI trained on (30K each with two runs side by
   side), 6K-12K on a MacBook Air. A fine-tune of 600 updates is about 20M steps, roughly 8 minutes at 42K; a run from
