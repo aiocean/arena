@@ -13,10 +13,10 @@ license = "MIT"
 # The pixfx engine, pinned to one commit: a season's rules are this repo's tag plus this rev. Bump all of them
 # together, and the same rev in crates/pixfx-duel-py/Cargo.toml (its own workspace); site/pixfx.sh checks the
 # engine out at this rev for the site. To work on the engine beside the arena, see CONTRIBUTING.md.
-pixfx-draw = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
-pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
-pixfx-fighter = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
-pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
+pixfx-draw = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
+pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
+pixfx-fighter = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
+pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
 # The same pins as the pixfx engine's Cargo.toml: the arena's wasm and the engine's are built with the same
 # wasm-bindgen, and serde shapes match on both sides.
 js-sys = "=0.3.107"

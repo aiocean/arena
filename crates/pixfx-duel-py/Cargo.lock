@@ -103,7 +103,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "pixfx-core"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85#bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=e6f64856377e90683530cf76548c860980bc2ce2#e6f64856377e90683530cf76548c860980bc2ce2"
 dependencies = [
  "libm",
  "pixfx-draw",
@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "pixfx-draw"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85#bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=e6f64856377e90683530cf76548c860980bc2ce2#e6f64856377e90683530cf76548c860980bc2ce2"
 dependencies = [
  "libm",
 ]
@@ -141,7 +141,7 @@ dependencies = [
 [[package]]
 name = "pixfx-effects"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85#bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=e6f64856377e90683530cf76548c860980bc2ce2#e6f64856377e90683530cf76548c860980bc2ce2"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -151,7 +151,7 @@ dependencies = [
 [[package]]
 name = "pixfx-fighter"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85#bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=e6f64856377e90683530cf76548c860980bc2ce2#e6f64856377e90683530cf76548c860980bc2ce2"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -161,7 +161,7 @@ dependencies = [
 [[package]]
 name = "pixfx-mind"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85#bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=e6f64856377e90683530cf76548c860980bc2ce2#e6f64856377e90683530cf76548c860980bc2ce2"
 dependencies = [
  "libm",
 ]
