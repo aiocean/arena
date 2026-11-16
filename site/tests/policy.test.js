@@ -1,13 +1,13 @@
-// The trained policy on the page: wasm plays the same fights as the native rules (games/arena/crates/pixfx-duel's
+// The trained policy on the page: wasm plays the same fights as the native rules (crates/pixfx-duel's
 // goldens/policy_fight.json), and a decision costs well under a frame.
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { createDuel, freeDuel, step } from "../assets/duel.js";
-import { effects, pkg, policyBytes } from "./engine.js";
+import { effects, policyBytes, rules } from "./engine.js";
 
 const all = new Set(effects());
-const golden = JSON.parse(readFileSync(new URL("../../games/arena/crates/pixfx-duel/tests/goldens/policy_fight.json", import.meta.url), "utf8"));
-const make = (seed, seats) => createDuel({ seed, left: 0, right: 220, ground: 150, sky: 96, has: (id) => all.has(id), seats });
+const golden = JSON.parse(readFileSync(new URL("../../crates/pixfx-duel/tests/goldens/policy_fight.json", import.meta.url), "utf8"));
+const make = (seed, seats) => createDuel({ seed, left: 0, right: 220, ground: 150, sky: 96, effects: [...all], seats });
 
 describe("the trained policy", () => {
   test("the wasm policy fight equals the native one", () => {
@@ -48,8 +48,8 @@ describe("the trained policy", () => {
 
   test("the wasm carries no policy: a duel without one seats the brain, and a policy seat asks for it", () => {
     const config = { seed: 1, left: 0, right: 220, ground: 150, sky: 96, effects: [...all] };
-    const brain = new pkg.Duel(config, undefined);
-    const brains = new pkg.Duel(config, ["brain", "brain"]);
+    const brain = new rules.Duel(config, undefined);
+    const brains = new rules.Duel(config, ["brain", "brain"]);
     for (let i = 0; i < 20 * 60; i++) {
       brain.step(1 / 60);
       brains.step(1 / 60);
@@ -57,8 +57,8 @@ describe("the trained policy", () => {
     expect(brain.view()).toEqual(brains.view());
     brain.free();
     brains.free();
-    expect(() => new pkg.Duel(config, ["policy", "brain"])).toThrow(/needs a trained policy for its corner/);
-    expect(() => new pkg.Policy(new Uint8Array(16))).toThrow();
+    expect(() => new rules.Duel(config, ["policy", "brain"])).toThrow(/needs a trained policy for its corner/);
+    expect(() => new rules.Policy(new Uint8Array(16))).toThrow();
   });
 
   test("each corner plays its own policy", () => {
@@ -67,10 +67,10 @@ describe("the trained policy", () => {
     const tail = new DataView(other.buffer, other.byteLength - 64);
     for (let i = 0; i < 16; i++) tail.setFloat32(i * 4, i % 2 ? 3 : -3, true);
     const config = { seed: 5, left: 0, right: 220, ground: 150, sky: 96, effects: [...all] };
-    const p = new pkg.Policy(policyBytes);
-    const q = new pkg.Policy(other);
+    const p = new rules.Policy(policyBytes);
+    const q = new rules.Policy(other);
     const fight = (left, right) => {
-      const duel = pkg.Duel.withPolicies(config, undefined, left, right);
+      const duel = rules.Duel.withPolicies(config, undefined, left, right);
       for (let i = 0; i < 20 * 60; i++) duel.step(1 / 60);
       const view = duel.view().fighters.map((f) => [f.hp, f.qi, f.x]);
       duel.free();
@@ -82,7 +82,7 @@ describe("the trained policy", () => {
     expect(fight(q, q)).not.toEqual(fight(p, q)); // and so does the left
     // a corner the brain sits in ignores its policy
     const brainRight = (right) => {
-      const duel = pkg.Duel.withPolicies(config, ["policy", "brain"], p, right);
+      const duel = rules.Duel.withPolicies(config, ["policy", "brain"], p, right);
       for (let i = 0; i < 20 * 60; i++) duel.step(1 / 60);
       const view = duel.view().fighters.map((f) => [f.hp, f.qi, f.x]);
       duel.free();

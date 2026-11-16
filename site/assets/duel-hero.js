@@ -19,13 +19,13 @@ const WRAP = { ring: "feedback/outline", surge: "feedback/power-up" };
 const RING_MID = 24;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Fetch each named weights file in `pkg/` (beside the wasm) as bytes, `[left, right]`; a file named twice is fetched
- *  once. */
+/** Fetch each named weights file in `weights/` beside this module (`site/embed.sh` puts every
+ *  `crates/pixfx-duel/weights/*.bin` there) as bytes, `[left, right]`; a file named twice is fetched once. */
 export async function loadPolicies(files) {
   const names = [...new Set(files)];
   const buffers = await Promise.all(
     names.map((name) =>
-      fetch(new URL(`../pkg/${name}`, import.meta.url)).then((r) =>
+      fetch(new URL(`weights/${name}`, import.meta.url)).then((r) =>
         r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${name}: HTTP ${r.status}`)),
       ),
     ),
@@ -91,7 +91,7 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     const sky = ground - (barTop + BARS_TALL + 13) - 46;
     if (view.duel) freeDuel(view.duel);
     playing = seed;
-    view.duel = createDuel({ seed: replay ? seed : seed++, left: arena.left + lampInset, right: arena.right - lampInset, ground, has: (id) => have.has(id), sky });
+    view.duel = createDuel({ seed: replay ? seed : seed++, left: arena.left + lampInset, right: arena.right - lampInset, ground, effects: [...have], sky });
     // each fighter's sprite as it was last painted, which the effects wrapped on it read
     view.wrapped = view.duel.fighters.map((f) => {
       return { body: null, rage: f.rage, surge: null, ring: null };

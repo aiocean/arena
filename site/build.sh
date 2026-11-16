@@ -1,27 +1,28 @@
 #!/usr/bin/env bash
-# Build the arena site into games/arena/site/dist: its pages, the player docs rendered from games/arena/docs/*.md,
-# the duel's page code from the pixfx site (site/assets: duel*.js, skill-icons.js, the icon atlases, site.css), and the
-# engine in dist/pkg: the pixfx-canvas2d bundle, its painting worker, the pixfx-web wasm and the trained policies.
-# Usage: games/arena/site/build.sh            (from anywhere in the repo)
-#        games/arena/site/build.sh --serve    (build, then serve dist on http://127.0.0.1:8771/)
+# Build the arena site into site/dist: its pages, the player docs rendered from docs/*.md, the duel's page kit
+# (site/embed.sh: page modules, the arena's wasm, the trained policies) and the pixfx engine in dist/pkg (the
+# pixfx-canvas2d bundle, its painting worker and the pixfx-web wasm), built from the pixfx checkout at
+# ../../tools/pixfx-rs, whose site.css and preload.js the site uses too.
+# Usage: site/build.sh            (from anywhere)
+#        site/build.sh --serve    (build, then serve dist on http://127.0.0.1:8771/)
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-root="$(cd "$here/../../.." && pwd)"
+root="$(cd "$here/.." && pwd)"
+pixfx="$(cd "$root/../../tools/pixfx-rs" && pwd)"
 out="$here/dist"
 
-(cd "$root/packages/pixfx-web" && bun install && bun run build:wasm)
-(cd "$root/packages/pixfx-canvas2d" && bun install && bun run build)
+(cd "$pixfx/packages/pixfx-web" && bun install && bun run build:wasm)
+(cd "$pixfx/packages/pixfx-canvas2d" && bun install && bun run build)
 
 rm -rf "$out"
 mkdir -p "$out/assets"
 cp "$here"/*.html "$out/"
-cp "$here"/assets/* "$out/assets/"
-cp "$root"/site/assets/duel*.js "$root"/site/assets/skill-icons.js "$root"/site/assets/skills-*.png "$root"/site/assets/site.css "$out/assets/"
-cp -R "$root/packages/pixfx-canvas2d/dist" "$out/pkg"
-cp "$root"/games/arena/crates/pixfx-duel/weights/*.bin "$out/pkg/"
-bun "$here/docs.js" "$root/games/arena/docs" "$out/docs"
-bun "$root/site/preload.js" "$out"
+cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$pixfx/site/assets/site.css" "$out/assets/"
+"$here/embed.sh" "$out/assets"
+cp -R "$pixfx/packages/pixfx-canvas2d/dist" "$out/pkg"
+bun "$here/docs.js" "$root/docs" "$out/docs"
+bun "$pixfx/site/preload.js" "$out"
 echo "arena site: $out"
 
 if [[ "${1:-}" == "--serve" ]]; then

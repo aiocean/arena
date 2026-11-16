@@ -1,17 +1,18 @@
-// The landing duel, whose rules are games/arena/crates/pixfx-duel, run through the engine's wasm (`Duel`). This file only hands
-// the page what the rules decided: a duel whose `fighters`, `time`, `round`, `wins`, `winner`, `left`, `right` and
-// `ground` are refreshed from the rules' view after each `step`, and the rules' tables, read from the engine once it
-// has loaded (`useEngine`). It decides nothing.
+// The arena duel, whose rules are crates/pixfx-duel, run through the arena's wasm (crates/arena-wasm, built into
+// site/wasm). This file only hands the page what the rules decided: a duel whose `fighters`, `time`, `round`, `wins`,
+// `winner`, `left`, `right` and `ground` are refreshed from the rules' view after each `step`, and the rules' tables,
+// read from the arena's wasm once it has loaded (`useRules`). It decides nothing. The pixfx engine's wasm (effects,
+// bodies, light) is a separate module the page loads itself.
 
-/** The engine's duel bindings, set by `useEngine`. */
+/** The arena wasm's bindings, set by `useRules`. */
 let engine = null;
 /** Each corner's trained policy, `[left, right]`, set by `usePolicies` once their files have arrived; until then duels
  *  seat the brain. */
 let policies = null;
 
-/** The engine, or a clear error when the page forgot `useEngine`. */
+/** The arena's wasm, or a clear error when the page forgot `useRules`. */
 function loaded() {
-  if (!engine) throw new Error("duel.js: call useEngine(pkg) after loadPixfx() first");
+  if (!engine) throw new Error("duel.js: call useRules(arena) once the arena wasm has loaded");
   return engine;
 }
 
@@ -27,10 +28,11 @@ export let DECOR = {};
 export let TIERS = [];
 
 /**
- * Read the rules' tables from the engine, once it has loaded (`await loadPixfx()`): `pkg` holds `Duel`, `effects`,
- * `duelSpells`, `duelStats`, `duelTraits`, `duelConstants`, `damageOf` and `orbOffset`.
+ * Read the rules' tables from the arena's wasm once it has loaded (`site/wasm/arena_wasm.js`, its default export
+ * awaited): `pkg` holds `Duel`, `Policy`, `duelSpells`, `duelStats`, `duelTraits`, `duelConstants`, `damageOf` and
+ * `orbOffset`.
  */
-export function useEngine(pkg) {
+export function useRules(pkg) {
   engine = pkg;
   SPELLS = pkg.duelSpells();
   STATS = pkg.duelStats();
@@ -40,7 +42,7 @@ export function useEngine(pkg) {
 
 /**
  * Seat a trained policy in each corner of every duel created from now on: `[left, right]` are the bytes of weights files
- * (`games/arena/crates/pixfx-duel/weights/*.bin`), which the page fetches beside the wasm. The same bytes in both corners are read
+ * (`crates/pixfx-duel/weights/*.bin`), which the page fetches beside the wasm. The same bytes in both corners are read
  * once. Throws when they are not a policy of this duel's shape.
  */
 export function usePolicies([left, right]) {
@@ -62,12 +64,12 @@ export function usePolicies([left, right]) {
 
 /**
  * A new duel in the arena from `left` to `right` (game pixels), standing on `ground`, flying no higher than `sky`.
- * `has(id)` says whether an effect is in the registry. `seats`, for tests, seats another mind in a corner:
+ * `effects` are the effect ids the page can play (the engine's `effects()`): some rules play only when their effect is
+ * there. `seats`, for tests, seats another mind in a corner:
  * `["policy" | "brain" | "first", ...]` (each corner's trained policy when `usePolicies` has run, else the brain, when left out).
  */
-export function createDuel({ seed = 1, left, right, ground, has, sky, seats }) {
+export function createDuel({ seed = 1, left, right, ground, effects, sky, seats }) {
   const pkg = loaded();
-  const effects = pkg.effects().filter((id) => has(id));
   const config = { seed, left, right, ground, sky, effects };
   const rs = policies ? pkg.Duel.withPolicies(config, seats, ...policies) : new pkg.Duel(config, seats);
   return { rs, seed, ...rs.view() };

@@ -1,9 +1,9 @@
 // The arena's duel pages load this script (docs pages load only `menu.js`). It mounts the page's own part, picked by
 // the body's data-page: the duel full-screen on the home page, two bots chosen from files on the watch page. The duel itself
-// is the pixfx landing's (`duel-hero.js`, copied beside this file by `build.sh`); this file decides nothing about it.
+// is `duel-hero.js`, which the pixfx site embeds too; this file decides nothing about it.
 import { loadPixfx } from "../pkg/pixfx-canvas2d.js";
-import * as pixfx from "../pkg/pixfx-canvas2d.js";
-import { useEngine, usePolicies } from "./duel.js";
+import loadRules, * as rules from "./wasm/arena_wasm.js";
+import { usePolicies, useRules } from "./duel.js";
 import { createHero, loadIcons, loadPolicies } from "./duel-hero.js";
 
 /** The bot both corners play when the page is not told otherwise: the trained policy shipped with the rules. */
@@ -12,10 +12,10 @@ const HOUSE = "policy.bin";
 const PAGES = { home: mountHome, watch: mountWatch };
 await PAGES[document.body.dataset.page]?.();
 
-/** The engine and the skill icons, then the house bot in both corners. */
+/** The engine, the rules and the skill icons, then the house bot. */
 async function start() {
-  const [engine, icons] = await Promise.all([loadPixfx(), loadIcons([32, 24])]);
-  useEngine(pixfx);
+  const [engine, icons] = await Promise.all([loadPixfx(), loadIcons([32, 24]), loadRules()]);
+  useRules(rules);
   const [house] = await loadPolicies([HOUSE]);
   return { engine, icons, house };
 }

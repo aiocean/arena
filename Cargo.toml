@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+# pixfx-duel-py needs pyo3 and is built only by maturin for the trainer: its own workspace
+exclude = ["crates/pixfx-duel-py"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+# The same pins as the pixfx engine (../../tools/pixfx-rs/Cargo.toml): the arena's wasm and the engine's are built
+# with the same wasm-bindgen, and serde shapes match on both sides.
+[workspace.dependencies]
+js-sys = "=0.3.107"
+libm = "0.2"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde-wasm-bindgen = "=0.6.5"
+serde_json = "=1.0.154"
+serde_path_to_error = "=0.1.20"
+tsify = { version = "=0.5.8", default-features = false, features = ["js"] }
+wasm-bindgen = "=0.2.130"
+
+# Frame time first, as in the engine: opt-level 3, fat LTO in one codegen unit.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+disallowed_methods = "deny"

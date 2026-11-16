@@ -5,7 +5,7 @@ import { BUFF_INFO, SPELL_INFO, TRAIT_INFO, buffInfo, skillInfo } from "../asset
 import { effects } from "./engine.js";
 
 const all = new Set(effects());
-const fresh = () => createDuel({ seed: 2, left: 0, right: 220, ground: 150, sky: 96, has: (id) => all.has(id) });
+const fresh = () => createDuel({ seed: 2, left: 0, right: 220, ground: 150, sky: 96, effects: [...all] });
 /** A bar slot as the rules' view shows it. */
 const slot = (spell, rarity, traits, evolved, power) => ({ spell, empty: false, ultimate: false, ready: true, left: 0, full: 0, charge: 1, power, evolved, rarity, traits, stale: 0 });
 

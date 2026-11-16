@@ -1,0 +1,28 @@
+[package]
+name = "arena-wasm"
+description = "The arena's duel for JavaScript: `Duel`, the trained `Policy` a corner seats, and the rules' tables the page reads"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+js-sys.workspace = true
+pixfx-duel = { path = "../pixfx-duel", features = ["serde"] }
+pixfx-mind = { path = "../../../../tools/pixfx-rs/crates/pixfx-mind", features = ["ts"] }
+serde.workspace = true
+serde-wasm-bindgen.workspace = true
+serde_json.workspace = true
+serde_path_to_error.workspace = true
+wasm-bindgen.workspace = true
+
+[dev-dependencies]
+pixfx-fighter = { path = "../../../../tools/pixfx-rs/crates/pixfx-fighter", features = ["serde"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O3"]
+
+[lints]
+workspace = true
