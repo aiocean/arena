@@ -1,4 +1,4 @@
-//! One module, the same bits on every CPU: a bot that runs every relaxed SIMD instruction and every NaN case, hashes
+//! One module, the same bits on every CPU: a bot that runs every relaxed SIMD instruction in the Wasm 3.0 spec and every NaN case, hashes
 //! each result, and answers hash % 30. The golden pins its acts, the fuel left after each call and the final hash;
 //! CI runs it on x86_64 and arm64 against the one file. A change meant to alter it rewrites it: delete the file and
 //! run the test once.
@@ -41,6 +41,18 @@ const BOT: &str = r#"(module
     local.get $a local.get $a v128.const f32x4 -1.0004883 -1.0004883 -1.0004883 -1.0004883 f32x4.relaxed_madd call $foldv
     local.get $a local.get $a v128.const f32x4 1.0004883 1.0004883 1.0004883 1.0004883 f32x4.relaxed_nmadd call $foldv
     local.get $a f64x2.promote_low_f32x4 local.get $a f64x2.promote_low_f32x4 v128.const f64x2 -1.0004883 -1.0004883 f64x2.relaxed_madd call $foldv
+
+    local.get $a f64x2.promote_low_f32x4 local.get $a f64x2.promote_low_f32x4 v128.const f64x2 1.0004883 1.0004883 f64x2.relaxed_nmadd call $foldv
+
+    ;; swizzle with indices 0..15, 16..127, 128..255 and a mixed set
+    v128.const i8x16 0x10 0x21 0x32 0x43 0x54 0x65 0x76 0x87 0x98 0xa9 0xba 0xcb 0xdc 0xed 0xfe 0x0f
+    v128.const i8x16 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 i8x16.relaxed_swizzle call $foldv
+    v128.const i8x16 0x10 0x21 0x32 0x43 0x54 0x65 0x76 0x87 0x98 0xa9 0xba 0xcb 0xdc 0xed 0xfe 0x0f
+    v128.const i8x16 16 17 31 32 47 48 63 64 79 80 95 96 111 112 126 127 i8x16.relaxed_swizzle call $foldv
+    v128.const i8x16 0x10 0x21 0x32 0x43 0x54 0x65 0x76 0x87 0x98 0xa9 0xba 0xcb 0xdc 0xed 0xfe 0x0f
+    v128.const i8x16 128 129 143 144 159 160 191 192 223 224 240 250 253 254 255 128 i8x16.relaxed_swizzle call $foldv
+    v128.const i8x16 0x10 0x21 0x32 0x43 0x54 0x65 0x76 0x87 0x98 0xa9 0xba 0xcb 0xdc 0xed 0xfe 0x0f
+    v128.const i8x16 0 15 16 127 128 255 7 31 200 3 64 129 15 144 1 100 i8x16.relaxed_swizzle call $foldv
 
     ;; min and max on the two zeros and on NaN
     v128.const f32x4 0 -0 nan 1 v128.const f32x4 -0 0 1 nan f32x4.relaxed_min call $foldv

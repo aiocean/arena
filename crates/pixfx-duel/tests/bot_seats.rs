@@ -64,10 +64,7 @@ fn stream(outs: &[Out]) -> String {
 }
 
 fn play(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> String {
-    stream(&run(
-        &mut Duel::new(config(seed, all_effects()), seats),
-        seconds,
-    ))
+    stream(&run(&mut Duel::new(config(seed, all_effects()), seats), seconds))
 }
 
 #[test]
@@ -76,11 +73,7 @@ fn bot_seat_plays_the_policys_fight() -> Result<(), String> {
     for seed in 1..=5 {
         let policy = play([PolicySeat::make(net.clone()), brain()], seed, 60.0);
         let n = net.clone();
-        let botted = play(
-            [bot(move || Box::new(NetDecider(n.clone()))), brain()],
-            seed,
-            60.0,
-        );
+        let botted = play([bot(move || Box::new(NetDecider(n.clone()))), brain()], seed, 60.0);
         assert_eq!(botted, policy, "seed {seed}");
     }
     Ok(())
@@ -96,7 +89,10 @@ fn a_log_replays_its_fight() -> Result<(), String> {
     };
     let played = play([corner(&net), corner(&net)], 7, 120.0);
     let log = Rc::new(log.borrow().clone());
-    assert!(log.acts.iter().all(|a| !a.is_empty()), "both corners acted");
+    assert!(
+        log.acts.iter().all(|a| !a.is_empty()),
+        "both corners acted"
+    );
     assert_eq!(play(replay(log), 7, 120.0), played);
     Ok(())
 }
