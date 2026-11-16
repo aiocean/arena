@@ -4,7 +4,7 @@ Two cultivators fight in a pixel arena, Thunder against Frost, and a trained AI 
 the pixfx landing page is this game. Players train AIs of their own, submit them as weights files, and the arena runs
 a tournament between them to find the strongest.
 
-The game runs on the pixfx engine (`../../tools/pixfx-rs`): the engine draws, moves the bodies and plays the effects; the arena
+The game runs on the [pixfx engine](https://github.com/aiocean/pixfx-rs), pinned to one commit (`CONTRIBUTING.md`): the engine draws, moves the bodies and plays the effects; the arena
 holds the rules, the training environment and the trainer.
 
 ## What is here
@@ -20,7 +20,7 @@ holds the rules, the training environment and the trainer.
 | `site/` | The arena's site, arena.aiocean.io: the duel full-screen, a page to watch two bots from their weights files and a seed, and the docs below as pages. `site/build.sh` builds it into `site/dist`. |
 
 The duel is drawn by `site/assets/duel*.js`, which loads two wasm modules side by side: the pixfx engine's (effects,
-bodies, light; built in the pixfx checkout at `../../tools/pixfx-rs`) and the arena's own (`crates/arena-wasm`: the
+bodies, light; built from the pinned engine at `.pixfx/`) and the arena's own (`crates/arena-wasm`: the
 rules and the trained policies). The pixfx site (pixfx.aiocean.io) embeds the same duel through `site/embed.sh`.
 
 ## Docs

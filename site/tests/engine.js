@@ -1,10 +1,9 @@
-// The two wasm modules the duel's page loads, for the tests: the pixfx engine's (pixfx-web's, built in the pixfx
-// checkout: `cd ../../tools/pixfx-rs/packages/pixfx-web && bun run build:wasm`) and the arena's rules
-// (`site/embed.sh` builds it into site/assets/wasm).
+// The two wasm modules the duel's page loads, for the tests: the pixfx engine's (pixfx-web's, at the pinned rev in
+// .pixfx/) and the arena's rules (site/assets/wasm). `site/build.sh` builds both.
 import { readFileSync } from "node:fs";
 import { usePolicies, useRules } from "../assets/duel.js";
 
-const engineDir = new URL("../../../../tools/pixfx-rs/packages/pixfx-web/wasm/", import.meta.url);
+const engineDir = new URL("../../.pixfx/packages/pixfx-web/wasm/", import.meta.url);
 const pkg = await import(new URL("pixfx_wasm.js", engineDir).href);
 pkg.initSync({ module: readFileSync(new URL("pixfx_wasm_bg.wasm", engineDir)) });
 

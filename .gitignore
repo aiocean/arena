@@ -2,3 +2,5 @@ target/
 site/dist/
 site/assets/wasm/
 .wrangler/
+.pixfx
+.cargo/config.toml

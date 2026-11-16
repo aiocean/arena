@@ -1,10 +1,11 @@
 # arena
 
 The arena: the duel game on the pixfx engine, and the bot tournament built on it (arena.aiocean.io). Read `README.md`
-for what is here and `docs/` for the game, the bot interface, training and the tournament. The engine is the pixfx
-checkout at `../../tools/pixfx-rs` (its `AGENTS.md`: "The boundary", "Layers and where code goes"): the arena's crates
-reach its crates by path and are the **Game** layer above it. The engine never depends on the arena; the pixfx site
-embeds the arena's duel through `site/embed.sh`.
+for what is here and `docs/` for the game, the bot interface, training and the tournament. The engine is pixfx
+(aiocean/pixfx-rs; its `AGENTS.md`: "The boundary", "Layers and where code goes"), pinned to one commit: the crates
+take it from git at the rev in `Cargo.toml`, the site from `.pixfx/` at the same rev (`CONTRIBUTING.md`, also for
+working on the engine beside the arena). The arena's crates are the **Game** layer above it. The engine never depends
+on the arena; the pixfx site embeds the arena's duel through `site/embed.sh`.
 
 ## Where code goes
 
@@ -14,7 +15,7 @@ embeds the arena's duel through `site/embed.sh`.
 | is the training env, its reward, an opponent, the ladder | `crates/pixfx-duel` (`train`, `seat`, `scripted`, `ladder`) |
 | hands the env to Python | `crates/pixfx-duel-py` (translation only) |
 | trains, exports or loads weights in Python | `train/` |
-| is how any trained policy sees, acts or runs its network | the engine's `pixfx-mind` (`policy`, in `../../tools/pixfx-rs`): it serves every game |
+| is how any trained policy sees, acts or runs its network | the engine's `pixfx-mind` (`policy`, in pixfx-rs): it serves every game |
 | is the duel for JS | `crates/arena-wasm` (translation only; the page loads it beside the engine's wasm) |
 | draws or plays the duel on the page | `site/assets/duel*.js` (a shell: it decides nothing); `site/embed.sh` lists what the pixfx site embeds |
 | is a page of the arena site (arena.aiocean.io): home, watch, the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
@@ -40,6 +41,6 @@ embeds the arena's duel through `site/embed.sh`.
 cargo test -p pixfx-duel --all-targets
 cargo clippy -p pixfx-duel --all-targets -- -D warnings
 (cd train && uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml && uv run pytest)
-site/embed.sh /tmp/kit && bun test ./site/tests   # after a change the page sees: rebuilds the arena wasm first
+site/build.sh && bun test ./site/tests           # after a change the page sees: rebuilds both wasm modules first
 cargo test -p arena-wasm && cargo clippy --workspace --all-targets -- -D warnings
 ```

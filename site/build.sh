@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Build the arena site into site/dist: its pages, the player docs rendered from docs/*.md, the duel's page kit
 # (site/embed.sh: page modules, the arena's wasm, the trained policies) and the pixfx engine in dist/pkg (the
-# pixfx-canvas2d bundle, its painting worker and the pixfx-web wasm), built from the pixfx checkout at
-# ../../tools/pixfx-rs, whose site.css and preload.js the site uses too.
+# pixfx-canvas2d bundle, its painting worker and the pixfx-web wasm), built from the engine at the pinned rev
+# (site/pixfx.sh puts it at .pixfx/), whose site.css and preload.js the site uses too.
 # Usage: site/build.sh            (from anywhere)
 #        site/build.sh --serve    (build, then serve dist on http://127.0.0.1:8771/)
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
-pixfx="$(cd "$root/../../tools/pixfx-rs" && pwd)"
+pixfx="$("$here/pixfx.sh")"
 out="$here/dist"
 
 (cd "$pixfx/packages/pixfx-web" && bun install && bun run build:wasm)

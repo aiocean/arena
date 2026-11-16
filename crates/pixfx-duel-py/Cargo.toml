@@ -14,8 +14,9 @@ crate-type = ["cdylib"]
 numpy = "0.30"
 pixfx-duel = { path = "../pixfx-duel" }
 # the effect registry the page has: some duel rules play only when their effect is there
-pixfx-effects = { path = "../../../../tools/pixfx-rs/crates/pixfx-effects" }
-pixfx-mind = { path = "../../../../tools/pixfx-rs/crates/pixfx-mind" }
+# the same engine rev as the root Cargo.toml's [workspace.dependencies]
+pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
+pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "bd1cbbb54db9e6e7e63e0c2de7eba7d28f7cbf85" }
 pyo3 = { version = "0.30", features = ["extension-module"] }
 
 # pyo3 stays out of the main workspace (like pixfx-gpui): it is built only by `maturin` for the trainer

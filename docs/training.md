@@ -1,7 +1,7 @@
 # Training a bot
 
-Everything here runs from a checkout of game-factory: the arena at `projects/arena`, which builds on the pixfx
-engine beside it at `tools/pixfx-rs`. Commands run from `projects/arena`. The trainer is `train/` (Python, PyTorch, `uv`); the rules
+Everything here runs from a checkout of the arena; Cargo fetches the pixfx engine at the pinned rev
+(`CONTRIBUTING.md`). Commands run from the repo root. The trainer is `train/` (Python, PyTorch, `uv`); the rules
 it trains on are the same Rust rules the page plays, through `crates/pixfx-duel-py`. What a bot sees and
 does is `docs/bot.md`.
 

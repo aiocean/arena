@@ -2,7 +2,7 @@
 # Write the arena duel's page kit into <dir>: the duel's page modules (duel*.js, skill-icons.js), the skill icon
 # atlases, the arena's wasm (wasm/, built here from crates/arena-wasm) and the trained policies (weights/*.bin). A page
 # that shows the duel loads the pixfx engine itself (its pixfx-canvas2d bundle at ../pkg/ from <dir>), then the kit.
-# The arena site (site/build.sh) and the pixfx site (tools/pixfx-rs/site/build.sh) both build with this.
+# The arena site (site/build.sh) and the pixfx site (pixfx-rs site/build.sh) both build with this.
 # Usage: projects/arena/site/embed.sh <dir>
 set -euo pipefail
 
