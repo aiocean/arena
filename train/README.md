@@ -31,13 +31,16 @@ A full run trains on macmini-kiot, not the MacBook Air: kiot runs about 42K env 
 - The code is already there: Mutagen session `game-factory` keeps `~/projects/game-factory` the same on both
   machines (`mutagen sync flush game-factory` on the Air before starting). A worktree under `.claude/worktrees/`
   syncs too; `.venv` does not, so `long-run.sh` builds it there.
-- Start a run detached, so it outlives the ssh session and kiot does not sleep:
+- Start a run as a launchd job, so it belongs to no ssh login and kiot does not sleep (a `nohup ... &` started
+  over ssh died silently after 30 minutes):
   ```
   ssh firegroup@100.117.192.75 'cd ~/projects/game-factory/tools/pixfx-rs/train &&
-    nohup caffeinate -is ./long-run.sh frames > ~/train-frames.log 2>&1 < /dev/null &'
+    launchctl submit -l pixfx.train.frames -o $HOME/train-frames.log -e $HOME/train-frames.log \
+      -- /usr/bin/caffeinate -is $PWD/long-run.sh frames'
   ```
   `long-run.sh` builds the rules, runs pytest, trains, and resumes from `runs/<run>/last.pt` (saved every 25
-  updates) if the trainer dies. Its log ends in `TRAIN-DONE` or `FAIL`.
+  updates) if the trainer dies. Its log ends in `TRAIN-DONE` or `FAIL`. launchd starts a submitted job again
+  whenever it exits, so once the log says `TRAIN-DONE`, run `launchctl remove pixfx.train.frames`.
 - Progress is `runs/<run>/log.jsonl`, which syncs back to the Air with the rest of `runs/`; export and the ladder run
   on the Air.
 - One run at a time: check `pgrep -fl "ppo.py"` on kiot before starting, since another session may be training.
