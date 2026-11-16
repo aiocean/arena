@@ -8,19 +8,26 @@ What the player kit and the tournament still need, most important first. Each it
    changes it only by editing Rust. `step` should also hand back the facts of each decision (damage dealt and taken,
    blows landed, guarded and punished, statuses, the round's end), so a trainer computes any reward in Python; the
    Rust reward stays the default.
-2. **Install without Rust.** Today a player builds the module with `maturin develop`. Publish `pixfx-duel` as
-   prebuilt wheels (macOS arm64 and x86_64, Linux x86_64), so `pip install pixfx-duel` is enough.
-3. **Check a bot before submitting.** Today the ladder is a Rust example that measures one file. Add, callable from
-   Python: the ladder for any file against any opponent (`pixfx_duel.ladder(file, opponent, seeds)`), the entry bar
-   as a pass/fail, and the submission checks of `docs/tournament.md`. The Rust ladder takes one file today
-   (`--weights`), seated in every policy corner; it needs a second, so two files can fight natively.
-4. **A standard environment.** A Gymnasium / PettingZoo wrapper over `VecEnv`, so Stable-Baselines3, CleanRL and RLlib
+2. **Install from PyPI.** Today a season's release carries prebuilt wheels (`CONTRIBUTING.md`, "Releasing a season"),
+   installed with `--find-links`. Publishing them to PyPI makes `pip install pixfx-duel` enough.
+3. **Every submission check, before submitting.** Today `pixfx_duel.entry_bar` and `examples/match.rs --bar` measure
+   the bar. Add the other checks of `docs/tournament.md` (the file loads, every output is finite on the fixed
+   observations) as one `pixfx_duel.check(file)`.
+4. **Data to learn from.** A recorder that writes a fight's decisions (observation, legal acts, the act taken, the
+   outcome) from a seed and two files, and a published set of the shipped AI's fights, for imitation learning.
+5. **See why a bot acts.** On the watch page, pause on a frame and see each act's probability, which acts are legal and
+   what the bot saw.
+6. **A local league.** Many files of one's own play each other and are ranked the way a season ranks them, to choose
+   which to submit.
+7. **A standard environment.** A Gymnasium / PettingZoo wrapper over `VecEnv`, so Stable-Baselines3, CleanRL and RLlib
    work without reading our trainer.
-5. **Training without a strong machine.** A notebook that fine-tunes from the shipped AI on a hosted GPU or CPU.
+8. **Training without a strong machine.** A notebook that fine-tunes from the shipped AI on a hosted GPU or CPU.
 
 ## The tournament
 
-6. **Seasons.** The first season tag and a check that refuses a weights file built for another season's shapes.
-7. **The runner.** Plays every match of a season from the submitted files, both ways, on a pool of machines, and
-   writes results, ratings and replays. Deterministic, so a match can be split across machines and checked.
-8. **Submission and results pages.** Upload, the checks' verdict, the table, each match's replays.
+9. **Seasons.** The first season tag and a check that refuses a weights file built for another season's shapes.
+10. **Rules of entry.** Who may enter, one account each, how many files are active at once, the season's dates, what
+    happens to the files after the season (published, so replays can be checked), and what counts as cheating.
+11. **The runner.** Plays every match of a season from the submitted files, both ways, on a pool of machines, and
+    writes results, ratings and replays. Deterministic, so a match can be split across machines and checked.
+12. **Submission and results pages.** Upload, the checks' verdict, the table, each match's replays.

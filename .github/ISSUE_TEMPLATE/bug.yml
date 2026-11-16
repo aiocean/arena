@@ -1,0 +1,31 @@
+name: Bug
+description: Something in the rules, the trainer, the tools or the site does not do what its docs say.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: A bug a bot could exploit, or a fight that replays differently on another machine, goes to a private advisory instead (SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Season tag or commit
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to see it
+      description: The command, or the seed and the two bots (weights files or built-in names), and what you ran.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What happens, and what you expected
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: macOS arm64, Linux x86_64, browser ...

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: A bug a bot could exploit
+    url: https://github.com/aiocean/arena/security/advisories/new
+    about: Report it privately, so no bot is trained on it before it is fixed.
