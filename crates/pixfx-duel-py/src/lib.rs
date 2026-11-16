@@ -4,11 +4,13 @@
 //! `pixfx_duel::train`'s.
 
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
+use pixfx_duel::ladder::{Bot, Match, Record, entry_bar as measure_bar};
 use pixfx_duel::style::Style;
 use pixfx_duel::train::{Env, EnvConfig, Opponent};
 use pixfx_mind::policy::{ACTIONS, Net, OBS};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -270,10 +272,91 @@ impl Drop for VecEnv {
     }
 }
 
+/// A contestant as Python names it, in a form that may cross to another thread: a built-in name or weights bytes.
+enum Spec {
+    Named(String),
+    Weights(Vec<u8>),
+}
+
+impl Spec {
+    /// Read and check a contestant: a built-in name (`brain`, `first`, `aggressive`, `turtle`) or a weights file's bytes.
+    fn of(x: &Bound<'_, PyAny>) -> PyResult<Spec> {
+        if let Ok(name) = x.extract::<String>() {
+            return match Bot::named(&name) {
+                Some(_) => Ok(Spec::Named(name)),
+                None => Err(PyValueError::new_err(format!("no bot {name:?}: {} or a weights file's bytes", Bot::NAMES.join(", ")))),
+            };
+        }
+        let bytes: Vec<u8> = x.extract().map_err(|_| PyValueError::new_err("a bot is a name or a weights file's bytes"))?;
+        Net::load(&bytes).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(Spec::Weights(bytes))
+    }
+
+    fn bot(&self) -> Result<Bot, String> {
+        match self {
+            Spec::Named(name) => Bot::named(name).ok_or(format!("no bot {name:?}")),
+            Spec::Weights(bytes) => Net::load(bytes).map(|n| Bot::Policy(Rc::new(n))).map_err(|e| e.to_string()),
+        }
+    }
+}
+
+fn fight_match(seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Match> {
+    if seeds.0 >= seeds.1 {
+        return Err(PyValueError::new_err(format!("seeds {seeds:?}: (first, past the last), like range")));
+    }
+    Ok(Match { seeds: seeds.0..seeds.1, rounds, limit, effects: pixfx_effects::EFFECTS.iter().map(|e| e.meta().id.to_string()).collect() })
+}
+
+/// A record as a dict, from the first bot's side.
+fn record<'py>(py: Python<'py>, r: &Record) -> PyResult<Bound<'py, PyDict>> {
+    let d = PyDict::new(py);
+    d.set_item("win_rate", r.win_rate())?;
+    d.set_item("as_thunder", r.as_school(0))?;
+    d.set_item("as_frost", r.as_school(1))?;
+    d.set_item("won", r.won[0] + r.won[1])?;
+    d.set_item("lost", r.lost[0] + r.lost[1])?;
+    d.set_item("cut", r.timeouts)?;
+    d.set_item("mean_round", r.mean_length())?;
+    Ok(d)
+}
+
+/// Bot `a` against bot `b`: each seed in `seeds` (`(first, past the last)`, like `range`) fought both ways, `rounds`
+/// rounds a fight, a round cut after `limit` seconds. A bot is a built-in name or a weights file's bytes. Returns `a`'s
+/// record: `win_rate`, `as_thunder`, `as_frost`, `won`, `lost`, `cut`, `mean_round`.
+#[pyfunction]
+#[pyo3(signature = (a, b, seeds = (1, 151), rounds = 3, limit = 120.0))]
+fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Bound<'py, PyDict>> {
+    let (a, b, m) = (Spec::of(a)?, Spec::of(b)?, fight_match(seeds, rounds, limit)?);
+    let r = py.detach(move || -> Result<Record, String> { Ok(pixfx_duel::ladder::bout(&a.bot()?, &b.bot()?, &m)) });
+    record(py, &r.map_err(PyValueError::new_err)?)
+}
+
+/// Measure a weights file against the tournament's entry bar over `seeds` (the ladder's 1-150 by default): `passed`,
+/// and the records `vs_brain` and `vs_first`.
+#[pyfunction]
+#[pyo3(signature = (weights, seeds = (1, 151)))]
+fn entry_bar<'py>(py: Python<'py>, weights: Vec<u8>, seeds: (u32, u32)) -> PyResult<Bound<'py, PyDict>> {
+    Net::load(&weights).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let m = fight_match(seeds, 3, 120.0)?;
+    let bar = py.detach(move || -> Result<_, String> {
+        let net = Rc::new(Net::load(&weights).map_err(|e| e.to_string())?);
+        Ok(measure_bar(&net, &m))
+    });
+    let bar = bar.map_err(PyValueError::new_err)?;
+    let d = PyDict::new(py);
+    d.set_item("passed", bar.passed())?;
+    d.set_item("vs_brain", record(py, &bar.vs_brain)?)?;
+    d.set_item("vs_first", record(py, &bar.vs_first)?)?;
+    Ok(d)
+}
+
 #[pymodule]
 #[pyo3(name = "pixfx_duel")]
 fn duel_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<VecEnv>()?;
+    m.add_function(wrap_pyfunction!(bout, m)?)?;
+    m.add_function(wrap_pyfunction!(entry_bar, m)?)?;
+    m.add("BOTS", Bot::NAMES.to_vec())?;
     m.add("OBS", OBS)?;
     m.add("ACTIONS", ACTIONS)?;
     Ok(())

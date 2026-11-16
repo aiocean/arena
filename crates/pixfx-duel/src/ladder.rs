@@ -7,8 +7,12 @@ use crate::bar::cost_of;
 use crate::data::spell;
 use crate::duel::{Duel, DuelConfig, TICK};
 use crate::fighter::State;
+use crate::first_mind::FirstMind;
 use crate::out::{Note, Out, Stop};
-use crate::seat::{MakeSeat, Seat};
+use crate::scripted::Scripted;
+use crate::seat::{Brain, MakeSeat, PolicySeat, Seat};
+use crate::style::Style;
+use pixfx_mind::policy::Net;
 use pixfx_mind::{Choice, Outcome, Posture};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -435,4 +439,80 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
         distance / ticks as f64
     };
     r
+}
+
+/// A contestant: a seat the rules ship (the brain, the first mind, the two scripted fighters) or a trained network
+/// from a weights file.
+#[derive(Clone)]
+pub enum Bot {
+    Brain,
+    First,
+    Aggressive,
+    Turtle,
+    /// The network plays the style each fight draws for its fighter.
+    Policy(Rc<Net>),
+}
+
+impl Bot {
+    /// The names a built-in contestant goes by.
+    pub const NAMES: [&'static str; 4] = ["brain", "first", "aggressive", "turtle"];
+
+    /// The built-in contestant called `name` (one of `NAMES`).
+    pub fn named(name: &str) -> Option<Bot> {
+        match name {
+            "brain" => Some(Bot::Brain),
+            "first" => Some(Bot::First),
+            "aggressive" => Some(Bot::Aggressive),
+            "turtle" => Some(Bot::Turtle),
+            _ => None,
+        }
+    }
+
+    /// A fresh seat maker for one fight.
+    pub fn maker(&self) -> MakeSeat {
+        match self {
+            Bot::Brain => Brain::make(),
+            Bot::First => FirstMind::make(),
+            Bot::Aggressive => Scripted::aggressive(),
+            Bot::Turtle => Scripted::turtle(),
+            Bot::Policy(net) => PolicySeat::make(Rc::clone(net)),
+        }
+    }
+}
+
+/// Bot `a` against bot `b` over `m`, from `a`'s side: each seed fought with `a` as Thunder, then as Frost.
+pub fn bout(a: &Bot, b: &Bot, m: &Match) -> Record {
+    match_up(&|| a.maker(), &|| b.maker(), m)
+}
+
+/// The tournament's entry bar (`docs/tournament.md`, "Checks on submission"), measured as the ladder does: the
+/// network in the balanced style against the brain and against the first mind.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EntryBar {
+    pub vs_brain: Record,
+    pub vs_first: Record,
+}
+
+impl EntryBar {
+    /// The share of rounds it must win against the brain, overall and as each school, and against the first mind.
+    pub const BRAIN: f64 = 0.75;
+    pub const BRAIN_EACH_SCHOOL: f64 = 0.65;
+    pub const FIRST: f64 = 0.80;
+
+    /// Whether the network clears every part of the bar.
+    pub fn passed(&self) -> bool {
+        self.vs_brain.win_rate() >= Self::BRAIN
+            && self.vs_brain.as_school(0) >= Self::BRAIN_EACH_SCHOOL
+            && self.vs_brain.as_school(1) >= Self::BRAIN_EACH_SCHOOL
+            && self.vs_first.win_rate() >= Self::FIRST
+    }
+}
+
+/// Measure `net` against the entry bar over `m`.
+pub fn entry_bar(net: &Rc<Net>, m: &Match) -> EntryBar {
+    let me = || PolicySeat::with_style(Rc::clone(net), Style::Balanced);
+    EntryBar {
+        vs_brain: match_up(&me, &Brain::make, m),
+        vs_first: match_up(&me, &FirstMind::make, m),
+    }
 }
