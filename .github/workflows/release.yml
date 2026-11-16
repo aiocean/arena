@@ -1,0 +1,71 @@
+# A season's release: prebuilt wheels of the env module (`pip install pixfx-duel` without Rust), the shipped weights
+# and their checksums, attached to a GitHub release. Pushing a tag `arena-s<N>` releases season N; running the workflow
+# by hand only builds the wheels, as a check.
+name: release
+
+on:
+  push:
+    tags: ["arena-s*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wheels:
+    name: wheels (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-13
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.12
+            3.13
+      - name: The toolchain rust-toolchain.toml names
+        id: toolchain
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          rust-toolchain: ${{ steps.toolchain.outputs.channel }}
+          manylinux: auto
+          working-directory: crates/pixfx-duel-py
+          args: --release --out ../../dist -i python3.12 python3.13
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: dist/*.whl
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/arena-s')
+    needs: wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - name: The season's files and their checksums
+        run: |
+          cp crates/pixfx-duel/weights/policy.bin dist/
+          cd dist && sha256sum * > SHA256SUMS
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes "Season ${GITHUB_REF_NAME#arena-s}: the rules at this tag on the pixfx engine rev pinned in Cargo.toml. Install the env module with
+          \`pip install pixfx-duel --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}\`.
+          policy.bin is the shipped AI; SHA256SUMS lists every file's hash."
