@@ -12,6 +12,7 @@ pub mod duel;
 pub mod fighter;
 pub mod first_mind;
 pub mod ladder;
+pub mod log;
 pub mod out;
 pub mod scripted;
 pub mod seat;

@@ -5,8 +5,9 @@ use crate::data::{TEMPERAMENT, school};
 use crate::fighter::State;
 use crate::sense::{sense_of, skill_of};
 use crate::style::{Style, tag};
-use pixfx_mind::policy::{Net, NetError, PolicyMind};
+use pixfx_mind::policy::{ACTIONS, Net, NetError, OBS, PolicyMind};
 use pixfx_mind::{BodySize, Choice, Mind, Outcome, Posture, Profile, Thought};
+use std::fmt;
 use std::rc::Rc;
 
 /// A fighter's decider.
@@ -19,6 +20,10 @@ pub trait Seat {
     /// Think nothing for `seconds`.
     fn hold(&mut self, seconds: f64);
     fn posture(&self) -> Option<Posture> {
+        None
+    }
+    /// What stopped this seat for good, if anything did.
+    fn fault(&self) -> Option<&Fault> {
         None
     }
 }
@@ -123,8 +128,18 @@ pub fn policy_mind(state: &State, me: usize, style: Style) -> PolicyMind {
     let f = &state.fighters[me];
     let skills = f.spells.iter().map(|n| skill_of(n)).collect();
     let t = TEMPERAMENT;
-    let seed = state.seed.wrapping_mul(2).wrapping_add(me as u32) ^ 0x9e37_79b9;
-    PolicyMind::new(skills, tag(f.school, style), t.reaction, t.think, seed)
+    PolicyMind::new(
+        skills,
+        tag(f.school, style),
+        t.reaction,
+        t.think,
+        policy_seed(state, me),
+    )
+}
+
+/// Fighter `me`'s dice seed for a policy mind, and for a bot's `start`.
+fn policy_seed(state: &State, me: usize) -> u32 {
+    state.seed.wrapping_mul(2).wrapping_add(me as u32) ^ 0x9e37_79b9
 }
 
 /// The trained policy, in the fighter's style, seeing as late and thinking as often as the brain.
@@ -169,6 +184,103 @@ impl Seat for PolicySeat {
 
     fn hold(&mut self, seconds: f64) {
         self.mind.hold(seconds);
+    }
+}
+
+/// Why a bot stopped: it trapped or ran out of fuel.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Fault {
+    Trap(String),
+    OutOfFuel,
+}
+
+impl fmt::Display for Fault {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Fault::Trap(why) => write!(f, "trap: {why}"),
+            Fault::OutOfFuel => f.write_str("out of fuel"),
+        }
+    }
+}
+
+/// What decides a bot's acts: the network's place, run by whoever hosts the bot. `decide` answers one due decision
+/// with an act index (outside 0..ACTIONS is a wait).
+pub trait Decider {
+    /// Once, before the first round, with the bot's dice seed.
+    fn start(&mut self, seed: u32) -> Result<(), Fault>;
+    /// Each round after the first.
+    fn round(&mut self) -> Result<(), Fault>;
+    fn decide(&mut self, obs: &[f32; OBS], legal: &[bool; ACTIONS], u: f32) -> Result<i32, Fault>;
+}
+
+/// A bot: the policy mind's clock, view and dice, with a `Decider` for the network. A fault stops it for good.
+pub struct BotSeat {
+    mind: PolicyMind,
+    decider: Box<dyn Decider>,
+    seed: u32,
+    started: bool,
+    fault: Option<Fault>,
+}
+
+impl BotSeat {
+    /// A maker for `Duel::new`: a fresh decider from `new`, in `style` (`None`: the style the fight drew).
+    pub fn make(new: Rc<dyn Fn() -> Box<dyn Decider>>, style: Option<Style>) -> MakeSeat {
+        Box::new(move |state, me| {
+            let style = style.unwrap_or(state.fighters[me].style);
+            Box::new(BotSeat {
+                mind: policy_mind(state, me, style),
+                decider: new(),
+                seed: policy_seed(state, me),
+                started: false,
+                fault: None,
+            })
+        })
+    }
+}
+
+impl Seat for BotSeat {
+    fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
+        if self.fault.is_some() {
+            return None;
+        }
+        let sense = sense_of(state, me);
+        let now = self.mind.begin(&sense, dt);
+        if let Some(due) = self.mind.due(&sense) {
+            match self.decider.decide(&due.obs, &due.legal, due.u) {
+                Ok(act) => {
+                    let act = usize::try_from(act).ok().filter(|&a| a < ACTIONS);
+                    self.mind.queue(act.unwrap_or(0));
+                }
+                Err(fault) => self.fault = Some(fault),
+            }
+        }
+        now
+    }
+
+    fn tell(&mut self, _outcome: &Outcome) {}
+
+    fn reset(&mut self) {
+        self.mind.reset();
+        if self.fault.is_some() {
+            return;
+        }
+        let ran = if self.started {
+            self.decider.round()
+        } else {
+            self.started = true;
+            self.decider.start(self.seed)
+        };
+        if let Err(fault) = ran {
+            self.fault = Some(fault);
+        }
+    }
+
+    fn hold(&mut self, seconds: f64) {
+        self.mind.hold(seconds);
+    }
+
+    fn fault(&self) -> Option<&Fault> {
+        self.fault.as_ref()
     }
 }
 
