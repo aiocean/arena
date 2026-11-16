@@ -29,8 +29,8 @@ embeds the arena's duel through `site/embed.sh`.
   in the same change.
 - New weights: `train/export.py`, then `cargo test -p pixfx-duel --test policy_export`, and re-pin
   `goldens/policy_fight.json` (delete it, run the tests), which `site/tests/policy.test.js` checks the wasm against.
-- Long training runs go on macmini-kiot as launchd jobs, never on the MacBook Air (`train/README.md`, "Training on
-  kiot").
+- Long training runs go on a desktop as launchd jobs, never on a laptop (`train/README.md`, "Training on a
+  desktop").
 - Rule and balance changes are the owner's call; measure them with the ladder (`--seeds 150 --telemetry`) before and
   after.
 

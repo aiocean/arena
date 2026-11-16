@@ -4,13 +4,13 @@
 # site/assets/skills-32.png and skills-24.png, the same 5 x 5 grid. site/assets/skill-icons.js names each cell.
 # Each cell is trimmed of the gap round it and any frame inside that, squared on the slot's field colour, snapped to its own pixel grid by the pixel
 # snapper, then reduced to the icon size with a small palette and no dithering.
-# Usage: site/art/skill-icons.sh <sheet.png> [out dir, default site/assets]
+# Usage: site/art/skill-icons.sh <sheet.png> [out dir, default site/assets]; $SNAPPER is the pixel snapper if it is not on PATH
 set -euo pipefail
 
 sheet="$1"
 site="$(cd "$(dirname "$0")/.." && pwd)"
 out="${2:-$site/assets}"
-snapper=/Users/firegroup/.cargo/bin/spritefusion-pixel-snapper
+snapper="${SNAPPER:-spritefusion-pixel-snapper}"
 field="#1a1424"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
