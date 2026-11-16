@@ -67,6 +67,8 @@ pub const PAYOFF: &[(&str, Status, f64)] = &[
     ("burst", Status::Shock, 0.12),
     ("shatter", Status::Chill, 0.15),
     ("lotus", Status::Chill, 0.15),
+    ("gather", Status::Shock, 0.12),
+    ("yellowspring", Status::Chill, 0.15),
 ];
 
 /// The payoff of spell `name`, if it is one.
@@ -334,8 +336,35 @@ pub const STALE: f64 = 6.0;
 /// The pairs that evolve, per school.
 pub fn evolves(school: School) -> &'static [[&'static str; 2]] {
     match school {
-        School::Thunder => &[["bolt", "seal"], ["palm", "step"], ["quake", "burst"]],
-        School::Frost => &[["shard", "icicle"], ["shatter", "flurry"], ["lotus", "jet"]],
+        School::Thunder => &[
+            ["bolt", "seal"],
+            ["palm", "step"],
+            ["quake", "burst"],
+            ["fireball", "vermilion"],
+            ["jithunder", "finger"],
+            ["gravity", "earthsplit"],
+            ["gather", "heartbeat"],
+            ["slashluo", "onestep"],
+            ["mountain", "ancientgod"],
+            ["ancientthunder", "tigerflag"],
+            ["demonfinger", "kunjiwhip"],
+        ],
+        School::Frost => &[
+            ["shard", "icicle"],
+            ["shatter", "flurry"],
+            ["lotus", "jet"],
+            ["summonrain", "summonwind"],
+            ["yinmoon", "remnantnight"],
+            ["bodyfix", "lifedeath"],
+            ["soulsearch", "dreamdao"],
+            ["thirdeye", "sevencolor"],
+            ["restriction", "plumblossom"],
+            ["starfall", "heavenflip"],
+            ["yellowspring", "devour"],
+            ["timerestrict", "lifedeathrestrict"],
+            ["soulbanner", "servitude"],
+            ["voidnail", "seize"],
+        ],
     }
 }
 
@@ -488,7 +517,18 @@ pub const FRAMES: Frames = Frames {
     },
     blocked_recover: 0.15,
     // dive, dash and the close blasts; an ultimate falls as a zone, which no guard stops
-    unsafe_on_block: &["dive", "step", "palm", "burst", "lotus"],
+    unsafe_on_block: &[
+        "dive",
+        "step",
+        "palm",
+        "burst",
+        "lotus",
+        "ancientgod",
+        "slashluo",
+        "onestep",
+        "nineturn",
+        "sevencolor",
+    ],
     ultimate_invincible: 0.3,
 };
 
@@ -704,7 +744,7 @@ const BASE: Spell = Spell {
 use Blow::{Magic, Physical};
 
 /// Every spell, in the duel's order.
-static SPELLS: [Spell; 27] = [
+static SPELLS: [Spell; 77] = [
     Spell {
         name: "slash",
         kind: Kind::Melee,
@@ -1139,6 +1179,814 @@ static SPELLS: [Spell; 27] = [
         chill: true,
         ..BASE
     },
+    // Thunder: Fireball Technique: A ball of fire that flies at the foe and sets it burning.
+    Spell {
+        name: "fireball",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 14.0,
+        windup: 0.26,
+        recover: 0.24,
+        cooldown: 1.5,
+        damage: Some(12.0),
+        speed: Some(210.0),
+        burn: true,
+        ..BASE
+    },
+    // Thunder: Gravity Technique / Attractive Force: Pulls the foe in toward a point, then crushes it there.
+    Spell {
+        name: "gravity",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 22.0,
+        windup: 0.3,
+        recover: 0.3,
+        cooldown: 2.6,
+        damage: Some(20.0),
+        impact: Some(0.35),
+        radius: Some(14.0),
+        notice: Some(0.1),
+        pull: Some(50.0),
+        reach: Some(46.0),
+        pull_until: Some(0.3),
+        ..BASE
+    },
+    // Thunder: Earth Split / Lands Collapse: The ground under the foe splits and blows up, breaking its defence. Only hits on the ground.
+    Spell {
+        name: "earthsplit",
+        kind: Kind::Zone,
+        blow: Some(Physical),
+        fx: Some("explosions/small-explosion"),
+        cost: 28.0,
+        windup: 0.32,
+        recover: 0.3,
+        cooldown: 3.2,
+        damage: Some(26.0),
+        sigil: Some(0.35),
+        impact: Some(0.05),
+        radius: Some(18.0),
+        notice: Some(0.0),
+        def_down: Some(3.0),
+        grounded: true,
+        ..BASE
+    },
+    // Thunder: Finger of Annihilation: A thin, fast beam from one finger that hits hard.
+    Spell {
+        name: "finger",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 28.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 3.5,
+        damage: Some(21.0),
+        speed: Some(380.0),
+        ..BASE
+    },
+    // Thunder: Ji Thunder: A heavy bolt of the Ji Realm that shocks.
+    Spell {
+        name: "jithunder",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 24.0,
+        windup: 0.3,
+        recover: 0.25,
+        cooldown: 2.0,
+        damage: Some(15.0),
+        speed: Some(260.0),
+        shock: true,
+        ..BASE
+    },
+    // Thunder: Thunder Gathering Seal: Gathers thunder under the foe and releases it in one burst: shocks, and hits harder per shock stack on the foe.
+    Spell {
+        name: "gather",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 36.0,
+        windup: 0.4,
+        recover: 0.35,
+        cooldown: 4.2,
+        damage: Some(34.0),
+        sigil: Some(0.3),
+        impact: Some(0.08),
+        radius: Some(20.0),
+        notice: Some(0.0),
+        shock: true,
+        ..BASE
+    },
+    // Thunder: Ancient God Blood: The body swells into an Ancient God phantom for one heavy blow at close range.
+    Spell {
+        name: "ancientgod",
+        kind: Kind::Blast,
+        blow: Some(Physical),
+        fx: Some("explosions/swirl-blast"),
+        cost: 36.0,
+        windup: 0.5,
+        recover: 0.55,
+        cooldown: 5.0,
+        range: Some(40.0),
+        damage: Some(28.0),
+        ..BASE
+    },
+    // Thunder: Slash Luo Art (Zhanluo): A sword form that cuts through space: dashes through the foe along a long line.
+    Spell {
+        name: "slashluo",
+        kind: Kind::Dash,
+        blow: Some(Physical),
+        fx: Some("arcane/sword-slash"),
+        cost: 30.0,
+        windup: 0.3,
+        recover: 0.5,
+        cooldown: 3.8,
+        distance: Some(90.0),
+        damage: Some(22.0),
+        ..BASE
+    },
+    // Thunder: Magic Arsenal: A ring of flying swords turns over the foe and cuts whoever stands under it, then strikes.
+    Spell {
+        name: "arsenal",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("arcane/sword-formation"),
+        end_fx: Some("arcane/sword-strike"),
+        cost: 48.0,
+        windup: 0.6,
+        recover: 0.4,
+        cooldown: 9.0,
+        damage: Some(12.0),
+        life: Some(3.0),
+        height: Some(40.0),
+        pull: Some(0.0),
+        reach: Some(40.0),
+        under: Some(26.0),
+        tick: Some(9.0),
+        ..BASE
+    },
+    // Thunder: Shrinking the Earth into an Inch / Great Teleportation Restriction Art: A long blink: the ground folds and the caster steps out far away.
+    Spell {
+        name: "inchearth",
+        kind: Kind::Blink,
+        fx: Some("spawn/swirl-portal"),
+        cost: 26.0,
+        windup: 0.06,
+        recover: 0.12,
+        cooldown: 3.0,
+        distance: Some(92.0),
+        ..BASE
+    },
+    // Thunder: One Step Tread the Heaven: One stride that carries the caster through the foe, a long way, cutting it on the way.
+    Spell {
+        name: "onestep",
+        kind: Kind::Dash,
+        blow: Some(Physical),
+        fx: Some("spawn/poof"),
+        cost: 30.0,
+        windup: 0.2,
+        recover: 0.4,
+        cooldown: 4.0,
+        distance: Some(120.0),
+        damage: Some(14.0),
+        ..BASE
+    },
+    // Thunder: Mountain Collapse / Mountain Crumbles: A peak falls on the foe: a huge blow after a long mark. Only hits on the ground.
+    Spell {
+        name: "mountain",
+        kind: Kind::Zone,
+        blow: Some(Physical),
+        fx: Some("explosions/small-explosion"),
+        cost: 44.0,
+        windup: 0.6,
+        recover: 0.45,
+        cooldown: 5.5,
+        damage: Some(34.0),
+        sigil: Some(0.4),
+        impact: Some(0.05),
+        radius: Some(26.0),
+        notice: Some(0.0),
+        grounded: true,
+        ..BASE
+    },
+    // Thunder: Heartbeat Thunder Sound: A thunderclap at the heart, at close range: shocks.
+    Spell {
+        name: "heartbeat",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 20.0,
+        windup: 0.24,
+        recover: 0.35,
+        cooldown: 2.0,
+        range: Some(44.0),
+        damage: Some(12.0),
+        shock: true,
+        ..BASE
+    },
+    // Thunder: Light and Shadow Shield: A dome of gathered light that sends the next bolt or orb back at its caster.
+    Spell {
+        name: "lightshield",
+        kind: Kind::Barrier,
+        fx: Some("arcane/bagua-mirror"),
+        cost: 20.0,
+        windup: 0.06,
+        recover: 0.1,
+        cooldown: 7.0,
+        time: Some(2.2),
+        reflect: true,
+        ..BASE
+    },
+    // Thunder: Nine Revolutions Immortal Refining Art: Spirals power inside the body, then releases it in one huge blast at close range. Long to gather.
+    Spell {
+        name: "nineturn",
+        kind: Kind::Blast,
+        blow: Some(Physical),
+        fx: Some("arcane/vortex-ring"),
+        cost: 40.0,
+        windup: 0.85,
+        recover: 0.5,
+        cooldown: 6.5,
+        range: Some(46.0),
+        damage: Some(34.0),
+        ..BASE
+    },
+    // Thunder: Ancient Clan Indestructible Body: Recovery outpaces destruction: heals and washes off burn, silence, defence down, chill and shock.
+    Spell {
+        name: "indestructible",
+        kind: Kind::Heal,
+        fx: Some("feedback/power-up"),
+        cost: 40.0,
+        windup: 0.7,
+        recover: 0.4,
+        cooldown: 11.0,
+        amount: Some(26.0),
+        ..BASE
+    },
+    // Thunder: Ancient Protection / Ancestral Soul Protection: A golden bell of ancestral souls: 1 to 3 charges, each stops a whole blow. Cleanses.
+    Spell {
+        name: "ancientprotect",
+        kind: Kind::Ward,
+        fx: Some("holy/golden-bell"),
+        feet: true,
+        cost: 42.0,
+        windup: 0.5,
+        recover: 0.25,
+        cooldown: 9.0,
+        ..BASE
+    },
+    // Thunder: Vermilion Bird Nine Mysteries Transformation: A burning bird of fire sweeps out of the palm at close range and sets the foe burning.
+    Spell {
+        name: "vermilion",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 30.0,
+        windup: 0.35,
+        recover: 0.4,
+        cooldown: 3.0,
+        range: Some(52.0),
+        damage: Some(18.0),
+        burn: true,
+        ..BASE
+    },
+    // Frost: Summon Rain: Rain falls on the foe for two seconds, chilling whoever stands in it.
+    Spell {
+        name: "summonrain",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("water/splash"),
+        cost: 30.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 5.0,
+        damage: Some(6.0),
+        life: Some(2.0),
+        height: Some(0.0),
+        pull: Some(0.0),
+        reach: Some(30.0),
+        under: Some(30.0),
+        tick: Some(3.0),
+        chill: true,
+        ..BASE
+    },
+    // Frost: Summon Wind: A black wind-dragon exhales yin wind at the foe at middle reach: chills.
+    Spell {
+        name: "summonwind",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 26.0,
+        windup: 0.3,
+        recover: 0.4,
+        cooldown: 3.0,
+        range: Some(58.0),
+        damage: Some(12.0),
+        chill: true,
+        ..BASE
+    },
+    // Frost: Beans to Soldiers: Souls of the slain rise as soldiers round the foe, dragging it in and cutting it while it stands there.
+    Spell {
+        name: "beans",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("critters/wisp"),
+        cost: 36.0,
+        windup: 0.5,
+        recover: 0.3,
+        cooldown: 7.0,
+        damage: Some(8.0),
+        life: Some(3.2),
+        height: Some(0.0),
+        pull: Some(12.0),
+        reach: Some(44.0),
+        under: Some(24.0),
+        tick: Some(6.0),
+        ..BASE
+    },
+    // Frost: Yin Moon Has Clear Sky / Dark Moon: Marks the foe with a moon sign, then cracks break open: breaks its defence.
+    Spell {
+        name: "yinmoon",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/comma-seal"),
+        cost: 32.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 3.4,
+        damage: Some(20.0),
+        impact: Some(0.45),
+        radius: Some(18.0),
+        notice: Some(0.15),
+        def_down: Some(5.0),
+        ..BASE
+    },
+    // Frost: Soul Searching Technique: Pulls at the foe's soul at close range: silences it and steals a point of rage.
+    Spell {
+        name: "soulsearch",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("arcane/vortex-ring"),
+        cost: 28.0,
+        windup: 0.4,
+        recover: 0.4,
+        cooldown: 4.0,
+        range: Some(44.0),
+        damage: Some(8.0),
+        silence: Some(1.2),
+        steal_rage: Some(1.0),
+        ..BASE
+    },
+    // Frost: Spirit Transformation Technique: A dart that wipes the foe's memory of its spells: silences.
+    Spell {
+        name: "spiritchange",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 20.0,
+        windup: 0.28,
+        recover: 0.25,
+        cooldown: 3.0,
+        damage: Some(6.0),
+        speed: Some(260.0),
+        silence: Some(1.4),
+        ..BASE
+    },
+    // Frost: Body Fixation Art / Immobilization Technique / Stop Spell: A seal under the foe that holds its body in place: a long freeze, little damage.
+    Spell {
+        name: "bodyfix",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 36.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 5.5,
+        damage: Some(10.0),
+        sigil: Some(0.35),
+        impact: Some(0.08),
+        radius: Some(14.0),
+        notice: Some(0.0),
+        freeze: Some(0.8),
+        ..BASE
+    },
+    // Frost: Destruction Restriction: Rings of runes write themselves round the foe, locking blinking until they close, then crush. Only hits on the ground.
+    Spell {
+        name: "restriction",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/restriction"),
+        cost: 40.0,
+        windup: 0.5,
+        recover: 0.35,
+        cooldown: 5.0,
+        damage: Some(26.0),
+        impact: Some(0.9),
+        radius: Some(22.0),
+        notice: Some(0.1),
+        reach: Some(50.0),
+        grounded: true,
+        seals: true,
+        ..BASE
+    },
+    // Frost: Eighteen Plum Blossom Restrictions: A self-running restriction of rings round the foe that breaks its defence when it closes.
+    Spell {
+        name: "plumblossom",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/comet-rings"),
+        cost: 34.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 3.6,
+        damage: Some(24.0),
+        impact: Some(0.5),
+        radius: Some(20.0),
+        notice: Some(0.15),
+        def_down: Some(3.0),
+        ..BASE
+    },
+    // Frost: Life and Death Seal: Left hand life, right hand death: a seal that closes on the foe and freezes it briefly.
+    Spell {
+        name: "lifedeath",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/twin-shuriken"),
+        cost: 36.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 3.6,
+        damage: Some(28.0),
+        impact: Some(0.5),
+        radius: Some(16.0),
+        notice: Some(0.15),
+        freeze: Some(0.5),
+        ..BASE
+    },
+    // Frost: Cause and Effect Seal: A dome that answers the next close blow with a stunning counter.
+    Spell {
+        name: "karma",
+        kind: Kind::Barrier,
+        fx: Some("holy/lotus"),
+        cost: 22.0,
+        windup: 0.06,
+        recover: 0.1,
+        cooldown: 7.0,
+        time: Some(2.0),
+        counter: Some(Counter {
+            damage: 12.0,
+            stun: 0.8,
+        }),
+        ..BASE
+    },
+    // Frost: Dream Return to Ancient Times: Runes close round the caster: 1 to 3 charges, each stops a whole blow. Cleanses.
+    Spell {
+        name: "dreamback",
+        kind: Kind::Ward,
+        fx: Some("arcane/restriction"),
+        feet: true,
+        cost: 44.0,
+        windup: 0.5,
+        recover: 0.25,
+        cooldown: 8.5,
+        ..BASE
+    },
+    // Frost: Dream Dao: Drags the foe into a dream at middle reach: silences it.
+    Spell {
+        name: "dreamdao",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/puff-burst"),
+        cost: 26.0,
+        windup: 0.4,
+        recover: 0.4,
+        cooldown: 3.6,
+        range: Some(52.0),
+        damage: Some(10.0),
+        silence: Some(1.6),
+        ..BASE
+    },
+    // Frost: Flowing Moon: Turns time back on the caster: heals and washes off burn, silence, defence down, chill and shock.
+    Spell {
+        name: "flowingmoon",
+        kind: Kind::Heal,
+        fx: Some("holy/feather-burst"),
+        cost: 38.0,
+        windup: 0.8,
+        recover: 0.4,
+        cooldown: 10.0,
+        amount: Some(24.0),
+        ..BASE
+    },
+    // Frost: Remnant Night / Sundered Night: The night sky cracks over the foe and falls: a heavy blow that silences. Slow to land; only hits on the ground.
+    Spell {
+        name: "remnantnight",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("shadow/winter-ordeal"),
+        cost: 46.0,
+        windup: 0.5,
+        recover: 0.4,
+        cooldown: 6.0,
+        damage: Some(30.0),
+        impact: Some(1.78),
+        radius: Some(24.0),
+        notice: Some(0.12),
+        silence: Some(1.0),
+        grounded: true,
+        ..BASE
+    },
+    // Frost: Heaven Flipping Seal: A giant seal overturns heaven onto the foe: a huge blow that breaks its defence.
+    Spell {
+        name: "heavenflip",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/shuriken-seal"),
+        cost: 50.0,
+        windup: 0.6,
+        recover: 0.4,
+        cooldown: 7.5,
+        damage: Some(32.0),
+        impact: Some(0.5),
+        radius: Some(30.0),
+        notice: Some(0.15),
+        def_down: Some(4.0),
+        ..BASE
+    },
+    // Frost: Third Eye: A beam from the third eye that breaks the defence of whatever it hits.
+    Spell {
+        name: "thirdeye",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 20.0,
+        windup: 0.3,
+        recover: 0.25,
+        cooldown: 2.4,
+        damage: Some(12.0),
+        def_down: Some(3.0),
+        speed: Some(340.0),
+        ..BASE
+    },
+    // Frost: Seven-Colored Dao Spear: A spear of seven-coloured light that carries the caster through the foe.
+    Spell {
+        name: "sevencolor",
+        kind: Kind::Dash,
+        blow: Some(Magic),
+        fx: Some("arcane/sword-strike"),
+        cost: 30.0,
+        windup: 0.28,
+        recover: 0.45,
+        cooldown: 3.6,
+        distance: Some(84.0),
+        damage: Some(17.0),
+        ..BASE
+    },
+    // Frost: World-Burning Ancient Umbrella: An ancient umbrella sweeps fire over the foe: burns.
+    Spell {
+        name: "umbrella",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 34.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 3.8,
+        damage: Some(22.0),
+        sigil: Some(0.3),
+        impact: Some(0.45),
+        radius: Some(22.0),
+        notice: Some(0.0),
+        burn: true,
+        ..BASE
+    },
+    // Frost: Spirit-Devouring Body-Consuming Heaven-Severing Great Art / Devouring: Devours the foe at close range: steals a point of rage.
+    Spell {
+        name: "devour",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("impacts/star-converge"),
+        cost: 26.0,
+        windup: 0.35,
+        recover: 0.4,
+        cooldown: 3.2,
+        range: Some(40.0),
+        damage: Some(16.0),
+        steal_rage: Some(1.0),
+        ..BASE
+    },
+    // Frost: Falling Star: Two stars fall one after another where the foe will be.
+    Spell {
+        name: "starfall",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 40.0,
+        windup: 0.4,
+        recover: 0.35,
+        cooldown: 5.0,
+        damage: Some(15.0),
+        sigil: Some(0.3),
+        impact: Some(0.08),
+        radius: Some(12.0),
+        notice: Some(0.0),
+        strikes: Some(2.0),
+        every: Some(0.5),
+        aim_ahead: Some(0.3),
+        ..BASE
+    },
+    // Frost: Foundation Seizing Great Art: A dart that takes a point of the foe's rage.
+    Spell {
+        name: "seize",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 18.0,
+        windup: 0.25,
+        recover: 0.25,
+        cooldown: 3.2,
+        damage: Some(6.0),
+        speed: Some(280.0),
+        steal_rage: Some(1.0),
+        ..BASE
+    },
+    // Frost: Yellow Spring Finger / Underworld Finger: A finger of the underworld's cold at middle reach: chills, and hits harder per chill stack on the foe.
+    Spell {
+        name: "yellowspring",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("impacts/twin-converge"),
+        cost: 24.0,
+        windup: 0.3,
+        recover: 0.4,
+        cooldown: 2.4,
+        range: Some(50.0),
+        damage: Some(14.0),
+        chill: true,
+        ..BASE
+    },
+    // Thunder: Ancient Thunder Realm / Thunder Origin Technique: An ancient thunder dragon falls twice on the foe, one strike after another, and shocks it.
+    Spell {
+        name: "ancientthunder",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 38.0,
+        windup: 0.4,
+        recover: 0.35,
+        cooldown: 5.0,
+        damage: Some(16.0),
+        sigil: Some(0.3),
+        impact: Some(0.08),
+        radius: Some(14.0),
+        notice: Some(0.0),
+        strikes: Some(2.0),
+        every: Some(0.45),
+        aim_ahead: Some(0.25),
+        shock: true,
+        ..BASE
+    },
+    // Thunder: Demon Transformation Finger: A finger of demonic qi that silences what it hits.
+    Spell {
+        name: "demonfinger",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 22.0,
+        windup: 0.3,
+        recover: 0.25,
+        cooldown: 2.8,
+        damage: Some(12.0),
+        speed: Some(300.0),
+        silence: Some(1.0),
+        ..BASE
+    },
+    // Thunder: Kunji Whip / Cause and Effect Whip: A whip that strikes the soul directly at middle reach: silences, and shocks.
+    Spell {
+        name: "kunjiwhip",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 26.0,
+        windup: 0.32,
+        recover: 0.4,
+        cooldown: 3.0,
+        range: Some(56.0),
+        damage: Some(13.0),
+        silence: Some(0.8),
+        shock: true,
+        ..BASE
+    },
+    // Thunder: Heavenly Tiger Flag: A heavenly tiger leaps from the flag in a straight line and mauls what it meets.
+    Spell {
+        name: "tigerflag",
+        kind: Kind::Bolt,
+        blow: Some(Physical),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 26.0,
+        windup: 0.34,
+        recover: 0.3,
+        cooldown: 3.0,
+        damage: Some(17.0),
+        speed: Some(300.0),
+        ..BASE
+    },
+    // Frost: Time Restriction: A restriction of time round the foe: locks blinking while it runs, then closes and holds the foe. Only hits on the ground.
+    Spell {
+        name: "timerestrict",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/restriction"),
+        cost: 38.0,
+        windup: 0.45,
+        recover: 0.35,
+        cooldown: 5.5,
+        damage: Some(20.0),
+        impact: Some(1.2),
+        radius: Some(20.0),
+        notice: Some(0.1),
+        reach: Some(60.0),
+        freeze: Some(0.4),
+        grounded: true,
+        seals: true,
+        ..BASE
+    },
+    // Frost: Life and Death Restriction: Turns the vitality of whoever stands in it into death energy: a cloud that burns for three seconds.
+    Spell {
+        name: "lifedeathrestrict",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("nature/poison-cloud"),
+        cost: 40.0,
+        windup: 0.5,
+        recover: 0.3,
+        cooldown: 7.5,
+        damage: Some(7.0),
+        life: Some(3.0),
+        height: Some(0.0),
+        pull: Some(0.0),
+        reach: Some(34.0),
+        under: Some(34.0),
+        tick: Some(5.0),
+        burn: true,
+        ..BASE
+    },
+    // Frost: Billion Soul Banner / Soul Banner method: Spirits swirl in a vortex over the foe, dragging it in and cutting it while it stands there.
+    Spell {
+        name: "soulbanner",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("critters/wisp"),
+        cost: 44.0,
+        windup: 0.55,
+        recover: 0.3,
+        cooldown: 8.0,
+        damage: Some(8.0),
+        life: Some(3.0),
+        height: Some(0.0),
+        pull: Some(24.0),
+        reach: Some(80.0),
+        under: Some(22.0),
+        tick: Some(5.0),
+        ..BASE
+    },
+    // Frost: Spirit Servitude Seal: A seal under the foe that drags it in, then closes on it: silences.
+    Spell {
+        name: "servitude",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/comma-seal"),
+        cost: 34.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 4.5,
+        damage: Some(18.0),
+        impact: Some(0.7),
+        radius: Some(18.0),
+        notice: Some(0.1),
+        pull: Some(40.0),
+        reach: Some(60.0),
+        silence: Some(1.0),
+        pull_until: Some(0.6),
+        ..BASE
+    },
+    // Frost: Seven-Colored Divine Void Nail: A nail of void driven at the foe at great speed: breaks its defence.
+    Spell {
+        name: "voidnail",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 34.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 4.5,
+        damage: Some(20.0),
+        def_down: Some(4.0),
+        speed: Some(420.0),
+        ..BASE
+    },
 ];
 
 /// Every spell, in the duel's order.
@@ -1184,7 +2032,7 @@ const TINT: Tint = Tint {
 pub struct SchoolData {
     pub name: &'static str,
     pub basics: [&'static str; 3],
-    pub pool: [&'static str; 11],
+    pub pool: &'static [&'static str],
     pub ultimate: &'static str,
     pub signature: Kind,
     pub postures: [f64; 8],
@@ -1208,8 +2056,41 @@ const FROST_CIRCLE: [&str; 7] = [
 static THUNDER: SchoolData = SchoolData {
     name: "Thunder",
     basics: ["slash", "dive", "blink"],
-    pool: [
-        "bolt", "palm", "step", "seal", "orb", "bell", "heal", "spark", "burst", "quake", "hex",
+    pool: &[
+        "bolt",
+        "palm",
+        "step",
+        "seal",
+        "orb",
+        "bell",
+        "heal",
+        "spark",
+        "burst",
+        "quake",
+        "hex",
+        // Renegade Immortal (docs/specs/2026-11-16-xianni-spells-design.md)
+        "fireball",
+        "gravity",
+        "earthsplit",
+        "finger",
+        "jithunder",
+        "gather",
+        "ancientgod",
+        "slashluo",
+        "arsenal",
+        "inchearth",
+        "onestep",
+        "mountain",
+        "heartbeat",
+        "lightshield",
+        "nineturn",
+        "indestructible",
+        "ancientprotect",
+        "vermilion",
+        "ancientthunder",
+        "demonfinger",
+        "kunjiwhip",
+        "tigerflag",
     ],
     ultimate: "tribulation",
     signature: Kind::Blast,
@@ -1225,6 +2106,56 @@ static THUNDER: SchoolData = SchoolData {
     ],
     circle: THUNDER_CIRCLE,
     tint: &[
+        // the Renegade Immortal spells' effects take the school's colours
+        (
+            "arcane/sword-formation",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/sword-slash",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/sword-strike",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/vortex-ring",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "explosions/small-explosion",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "explosions/swirl-blast",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "spawn/swirl-portal",
+            Tint {
+                palette: Some(&THUNDER_CIRCLE),
+                ..TINT
+            },
+        ),
         (
             "explosions/plasma-explosion",
             Tint {
@@ -1285,7 +2216,7 @@ static THUNDER: SchoolData = SchoolData {
 static FROST: SchoolData = SchoolData {
     name: "Frost",
     basics: ["slash", "dive", "blink"],
-    pool: [
+    pool: &[
         "lotus",
         "shatter",
         "icicle",
@@ -1297,6 +2228,35 @@ static FROST: SchoolData = SchoolData {
         "shard",
         "jet",
         "flurry",
+        // Renegade Immortal (docs/specs/2026-11-16-xianni-spells-design.md)
+        "summonrain",
+        "summonwind",
+        "beans",
+        "yinmoon",
+        "soulsearch",
+        "spiritchange",
+        "bodyfix",
+        "restriction",
+        "plumblossom",
+        "lifedeath",
+        "karma",
+        "dreamback",
+        "dreamdao",
+        "flowingmoon",
+        "remnantnight",
+        "heavenflip",
+        "thirdeye",
+        "sevencolor",
+        "umbrella",
+        "devour",
+        "starfall",
+        "seize",
+        "yellowspring",
+        "timerestrict",
+        "lifedeathrestrict",
+        "soulbanner",
+        "servitude",
+        "voidnail",
     ],
     ultimate: "prison",
     signature: Kind::Zone,
@@ -1311,6 +2271,98 @@ static FROST: SchoolData = SchoolData {
     ],
     circle: FROST_CIRCLE,
     tint: &[
+        // the Renegade Immortal spells' effects take the school's colours
+        (
+            "arcane/comet-rings",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/comma-seal",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/restriction",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/shuriken-seal",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/sword-strike",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/twin-shuriken",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "arcane/vortex-ring",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "critters/wisp",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "explosions/puff-burst",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "explosions/swirl-blast",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "impacts/star-converge",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "impacts/twin-converge",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
+        (
+            "water/splash",
+            Tint {
+                palette: Some(&FROST_CIRCLE),
+                ..TINT
+            },
+        ),
         (
             "explosions/plasma-explosion",
             Tint {

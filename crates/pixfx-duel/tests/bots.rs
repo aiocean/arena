@@ -65,7 +65,8 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
 
 #[test]
 fn the_shipped_policy_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>> {
-    let bar = entry_bar(&shipped()?, &quick(2));
+    // 6 seeds: 2 are 12 rounds, too few to tell a 93% bot from the 80% bar (the full ladder is 150)
+    let bar = entry_bar(&shipped()?, &quick(6));
     assert!(
         bar.passed(),
         "vs brain {:.3} (thunder {:.3}, frost {:.3}), vs first {:.3}",

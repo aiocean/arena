@@ -2,62 +2,24 @@
   "1": [
     {
       "pool": [
-        "burst",
-        "quake",
-        "bell",
-        "step",
-        "seal",
+        "nineturn",
         "palm",
-        "hex",
-        "spark"
+        "jithunder",
+        "indestructible",
+        "earthsplit",
+        "quake",
+        "ancientprotect",
+        "gravity"
       ],
       "bar": [
         {
-          "spell": "burst",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
-        },
-        {
-          "spell": "seal",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
-        },
-        {
-          "spell": "hex",
-          "rarity": "rare",
-          "traits": [
-            "cheap"
-          ],
-          "power": 1.15
-        }
-      ]
-    },
-    {
-      "pool": [
-        "icicle",
-        "lotus",
-        "ward",
-        "jet",
-        "mirror",
-        "flurry",
-        "shard",
-        "collapse"
-      ],
-      "bar": [
-        {
-          "spell": "icicle",
+          "spell": "nineturn",
           "rarity": "common",
           "traits": [],
           "power": 1.0
         },
         {
-          "spell": "shard",
+          "spell": "gravity",
           "rarity": "rare",
           "traits": [
             "heavy"
@@ -65,12 +27,49 @@
           "power": 1.4949999999999999
         },
         {
-          "spell": "lotus",
-          "rarity": "rare",
+          "spell": "indestructible",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        }
+      ]
+    },
+    {
+      "pool": [
+        "servitude",
+        "yellowspring",
+        "summonrain",
+        "spiritchange",
+        "icicle",
+        "soulbanner",
+        "timerestrict",
+        "flowingmoon"
+      ],
+      "bar": [
+        {
+          "spell": "icicle",
+          "rarity": "common",
           "traits": [
-            "piercing"
+            "cheap"
           ],
-          "power": 1.15
+          "power": 1.0
+        },
+        {
+          "spell": "summonrain",
+          "rarity": "epic",
+          "traits": [
+            "heavy",
+            "swift"
+          ],
+          "power": 1.6900000000000002
+        },
+        {
+          "spell": "soulbanner",
+          "rarity": "common",
+          "traits": [
+            "swift"
+          ],
+          "power": 1.0
         }
       ]
     }
@@ -78,75 +77,71 @@
   "2": [
     {
       "pool": [
+        "vermilion",
         "palm",
-        "bell",
-        "bolt",
-        "spark",
-        "hex",
-        "quake",
+        "jithunder",
+        "ancientprotect",
+        "inchearth",
+        "onestep",
         "heal",
-        "orb"
+        "seal"
       ],
       "bar": [
         {
           "spell": "palm",
-          "rarity": "epic",
+          "rarity": "rare",
           "traits": [
-            "swift",
-            "heavy"
+            "lingering"
           ],
-          "power": 1.6900000000000002
+          "power": 1.15
         },
         {
-          "spell": "orb",
+          "spell": "onestep",
           "rarity": "common",
           "traits": [],
           "power": 1.0
         },
         {
-          "spell": "bell",
+          "spell": "jithunder",
           "rarity": "common",
-          "traits": [
-            "swift"
-          ],
+          "traits": [],
           "power": 1.0
         }
       ]
     },
     {
       "pool": [
+        "lifedeath",
         "shatter",
-        "ward",
-        "void",
-        "jet",
-        "flurry",
-        "lotus",
         "frostfire",
-        "mirror"
+        "timerestrict",
+        "summonwind",
+        "heavenflip",
+        "devour",
+        "dreamdao"
       ],
       "bar": [
         {
-          "spell": "shatter",
+          "spell": "lifedeath",
           "rarity": "rare",
           "traits": [
-            "swift"
+            "cheap"
           ],
           "power": 1.15
         },
         {
-          "spell": "frostfire",
-          "rarity": "epic",
-          "traits": [
-            "cheap",
-            "swift"
-          ],
-          "power": 1.3
-        },
-        {
-          "spell": "flurry",
+          "spell": "devour",
           "rarity": "rare",
           "traits": [
-            "lingering"
+            "heavy"
+          ],
+          "power": 1.4949999999999999
+        },
+        {
+          "spell": "dreamdao",
+          "rarity": "rare",
+          "traits": [
+            "swift"
           ],
           "power": 1.15
         }
@@ -156,33 +151,36 @@
   "3": [
     {
       "pool": [
+        "ancientgod",
         "burst",
-        "palm",
         "seal",
+        "onestep",
         "hex",
-        "heal",
-        "step",
-        "bell",
-        "quake"
+        "inchearth",
+        "gravity",
+        "ancientthunder"
       ],
       "bar": [
         {
-          "spell": "palm",
+          "spell": "ancientgod",
           "rarity": "common",
           "traits": [],
           "power": 1.0
         },
         {
-          "spell": "quake",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
+          "spell": "gravity",
+          "rarity": "epic",
+          "traits": [
+            "cheap",
+            "heavy"
+          ],
+          "power": 1.6900000000000002
         },
         {
-          "spell": "hex",
+          "spell": "burst",
           "rarity": "common",
           "traits": [
-            "swift"
+            "piercing"
           ],
           "power": 1.0
         }
@@ -190,35 +188,30 @@
     },
     {
       "pool": [
+        "timerestrict",
         "shatter",
-        "ward",
         "frostfire",
-        "jet",
-        "flurry",
-        "shard",
+        "voidnail",
         "void",
-        "collapse"
+        "collapse",
+        "flowingmoon",
+        "soulbanner"
       ],
       "bar": [
         {
           "spell": "collapse",
-          "rarity": "epic",
-          "traits": [
-            "swift",
-            "heavy"
-          ],
-          "power": 1.6900000000000002
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
         },
         {
-          "spell": "flurry",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
+          "spell": "soulbanner",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
         },
         {
-          "spell": "frostfire",
+          "spell": "flowingmoon",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -229,69 +222,68 @@
   "4": [
     {
       "pool": [
-        "burst",
+        "palm",
         "orb",
-        "step",
-        "heal",
-        "bell",
-        "spark",
         "quake",
-        "bolt"
+        "bolt",
+        "ancientprotect",
+        "onestep",
+        "slashluo",
+        "vermilion"
       ],
       "bar": [
         {
-          "spell": "burst",
+          "spell": "palm",
           "rarity": "common",
-          "traits": [
-            "cheap"
-          ],
+          "traits": [],
           "power": 1.0
         },
         {
           "spell": "quake",
           "rarity": "common",
-          "traits": [
-            "heavy"
-          ],
-          "power": 1.3
+          "traits": [],
+          "power": 1.0
         },
         {
-          "spell": "heal",
+          "spell": "vermilion",
           "rarity": "common",
-          "traits": [],
+          "traits": [
+            "cheap"
+          ],
           "power": 1.0
         }
       ]
     },
     {
       "pool": [
-        "shatter",
+        "starfall",
         "lotus",
-        "flurry",
-        "void",
-        "icicle",
-        "frostfire",
         "jet",
-        "ward"
+        "beans",
+        "mirror",
+        "icicle",
+        "lifedeath",
+        "bodyfix"
       ],
       "bar": [
         {
-          "spell": "shatter",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
-        },
-        {
           "spell": "icicle",
-          "rarity": "epic",
+          "rarity": "rare",
           "traits": [
-            "heavy",
             "swift"
           ],
-          "power": 1.6900000000000002
+          "power": 1.15
         },
         {
-          "spell": "lotus",
+          "spell": "starfall",
+          "rarity": "rare",
+          "traits": [
+            "swift"
+          ],
+          "power": 1.15
+        },
+        {
+          "spell": "bodyfix",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -302,36 +294,30 @@
   "5": [
     {
       "pool": [
-        "burst",
-        "quake",
-        "heal",
-        "step",
-        "bell",
-        "seal",
-        "bolt",
-        "orb"
+        "palm",
+        "spark",
+        "onestep",
+        "demonfinger",
+        "inchearth",
+        "kunjiwhip",
+        "gravity",
+        "finger"
       ],
       "bar": [
         {
-          "spell": "burst",
-          "rarity": "legendary",
-          "traits": [
-            "cheap",
-            "swift",
-            "heavy"
-          ],
-          "power": 1.9500000000000002
+          "spell": "palm",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
         },
         {
-          "spell": "orb",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
+          "spell": "inchearth",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
         },
         {
-          "spell": "heal",
+          "spell": "finger",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -340,32 +326,34 @@
     },
     {
       "pool": [
-        "icicle",
         "shatter",
         "jet",
-        "mirror",
-        "flurry",
-        "frostfire",
-        "collapse",
-        "lotus"
+        "spiritchange",
+        "shard",
+        "soulbanner",
+        "seize",
+        "summonrain",
+        "void"
       ],
       "bar": [
         {
-          "spell": "icicle",
+          "spell": "shatter",
+          "rarity": "rare",
+          "traits": [
+            "heavy"
+          ],
+          "power": 1.4949999999999999
+        },
+        {
+          "spell": "spiritchange",
           "rarity": "common",
           "traits": [
-            "cheap"
+            "swift"
           ],
           "power": 1.0
         },
         {
-          "spell": "lotus",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
-        },
-        {
-          "spell": "shatter",
+          "spell": "summonrain",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -376,90 +364,18 @@
   "6": [
     {
       "pool": [
-        "burst",
-        "spark",
-        "orb",
-        "step",
-        "heal",
-        "quake",
+        "nineturn",
+        "gather",
         "seal",
-        "palm"
-      ],
-      "bar": [
-        {
-          "spell": "palm",
-          "rarity": "rare",
-          "traits": [
-            "cheap"
-          ],
-          "power": 1.15
-        },
-        {
-          "spell": "heal",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
-        },
-        {
-          "spell": "spark",
-          "rarity": "common",
-          "traits": [
-            "heavy"
-          ],
-          "power": 1.3
-        }
-      ]
-    },
-    {
-      "pool": [
-        "icicle",
-        "shatter",
-        "ward",
-        "void",
-        "mirror",
-        "frostfire",
-        "jet",
-        "shard"
-      ],
-      "bar": [
-        {
-          "spell": "icicle",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
-        },
-        {
-          "spell": "mirror",
-          "rarity": "common",
-          "traits": [],
-          "power": 1.0
-        },
-        {
-          "spell": "frostfire",
-          "rarity": "common",
-          "traits": [
-            "cheap"
-          ],
-          "power": 1.0
-        }
-      ]
-    }
-  ],
-  "7": [
-    {
-      "pool": [
-        "palm",
-        "heal",
+        "arsenal",
+        "demonfinger",
+        "tigerflag",
         "orb",
-        "quake",
-        "spark",
-        "step",
-        "seal",
-        "bell"
+        "slashluo"
       ],
       "bar": [
         {
-          "spell": "palm",
+          "spell": "nineturn",
           "rarity": "common",
           "traits": [
             "swift"
@@ -467,13 +383,86 @@
           "power": 1.0
         },
         {
-          "spell": "orb",
+          "spell": "tigerflag",
           "rarity": "common",
           "traits": [],
           "power": 1.0
         },
         {
-          "spell": "bell",
+          "spell": "demonfinger",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        }
+      ]
+    },
+    {
+      "pool": [
+        "restriction",
+        "shatter",
+        "summonwind",
+        "voidnail",
+        "flowingmoon",
+        "karma",
+        "icicle",
+        "timerestrict"
+      ],
+      "bar": [
+        {
+          "spell": "restriction",
+          "rarity": "epic",
+          "traits": [
+            "cheap",
+            "heavy"
+          ],
+          "power": 1.6900000000000002
+        },
+        {
+          "spell": "voidnail",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        },
+        {
+          "spell": "icicle",
+          "rarity": "rare",
+          "traits": [
+            "swift"
+          ],
+          "power": 1.15
+        }
+      ]
+    }
+  ],
+  "7": [
+    {
+      "pool": [
+        "vermilion",
+        "burst",
+        "spark",
+        "mountain",
+        "heartbeat",
+        "tigerflag",
+        "finger",
+        "indestructible"
+      ],
+      "bar": [
+        {
+          "spell": "heartbeat",
+          "rarity": "rare",
+          "traits": [
+            "heavy"
+          ],
+          "power": 1.4949999999999999
+        },
+        {
+          "spell": "indestructible",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        },
+        {
+          "spell": "tigerflag",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -484,36 +473,34 @@
       "pool": [
         "collapse",
         "lotus",
-        "ward",
-        "void",
-        "shard",
         "flurry",
-        "jet",
-        "frostfire"
+        "lifedeathrestrict",
+        "yinmoon",
+        "flowingmoon",
+        "servitude",
+        "devour"
       ],
       "bar": [
         {
-          "spell": "collapse",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
-        },
-        {
-          "spell": "jet",
-          "rarity": "epic",
-          "traits": [
-            "swift",
-            "piercing"
-          ],
-          "power": 1.3
-        },
-        {
-          "spell": "flurry",
+          "spell": "servitude",
           "rarity": "common",
           "traits": [],
           "power": 1.0
+        },
+        {
+          "spell": "flowingmoon",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        },
+        {
+          "spell": "lotus",
+          "rarity": "epic",
+          "traits": [
+            "swift",
+            "cheap"
+          ],
+          "power": 1.3
         }
       ]
     }
@@ -521,26 +508,18 @@
   "8": [
     {
       "pool": [
+        "vermilion",
         "burst",
         "spark",
-        "seal",
+        "arsenal",
         "hex",
-        "bolt",
-        "quake",
-        "orb",
-        "bell"
+        "nineturn",
+        "finger",
+        "demonfinger"
       ],
       "bar": [
         {
-          "spell": "burst",
-          "rarity": "rare",
-          "traits": [
-            "heavy"
-          ],
-          "power": 1.4949999999999999
-        },
-        {
-          "spell": "hex",
+          "spell": "vermilion",
           "rarity": "common",
           "traits": [
             "cheap"
@@ -548,7 +527,13 @@
           "power": 1.0
         },
         {
-          "spell": "orb",
+          "spell": "spark",
+          "rarity": "common",
+          "traits": [],
+          "power": 1.0
+        },
+        {
+          "spell": "hex",
           "rarity": "common",
           "traits": [],
           "power": 1.0
@@ -557,38 +542,36 @@
     },
     {
       "pool": [
-        "icicle",
-        "shatter",
-        "mirror",
+        "umbrella",
+        "lotus",
         "frostfire",
-        "jet",
-        "collapse",
-        "shard",
-        "ward"
+        "lifedeath",
+        "sevencolor",
+        "timerestrict",
+        "heavenflip",
+        "yinmoon"
       ],
       "bar": [
         {
-          "spell": "collapse",
+          "spell": "lifedeath",
           "rarity": "rare",
           "traits": [
-            "swift"
+            "heavy"
           ],
-          "power": 1.15
+          "power": 1.4949999999999999
         },
         {
-          "spell": "shatter",
-          "rarity": "rare",
-          "traits": [
-            "swift"
-          ],
-          "power": 1.15
-        },
-        {
-          "spell": "jet",
+          "spell": "frostfire",
           "rarity": "common",
           "traits": [
-            "piercing"
+            "lingering"
           ],
+          "power": 1.0
+        },
+        {
+          "spell": "timerestrict",
+          "rarity": "common",
+          "traits": [],
           "power": 1.0
         }
       ]

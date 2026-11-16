@@ -33,6 +33,27 @@ pub fn fight_pool(
             kept.push(name);
         }
     }
+    // a payoff skill needs something in the pool that lays the status it spends
+    for status in kept
+        .iter()
+        .filter_map(|name| payoff(name).map(|(status, _)| status))
+        .collect::<Vec<_>>()
+    {
+        let lays = |name: &&'static str| {
+            spell(name).is_some_and(|s| match status {
+                Status::Shock => s.shock,
+                Status::Chill => s.chill,
+            })
+        };
+        if !kept.iter().any(|n| payoff(n).is_none() && lays(n))
+            && let Some(layer) = left
+                .iter()
+                .copied()
+                .find(|n| payoff(n).is_none() && lays(n))
+        {
+            kept.push(layer);
+        }
+    }
     for name in left {
         if kept.len() < POOL_SIZE && !kept.contains(&name) {
             kept.push(name);

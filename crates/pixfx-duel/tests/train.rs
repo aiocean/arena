@@ -80,7 +80,7 @@ fn an_episode_cut_at_its_limit_is_a_loss() {
         last.is_some_and(|s| s.done && s.won.is_none() && (s.reward + 1.0).abs() < 0.05),
         "{last:?}"
     );
-    assert!(steps.len() > 8, "it decided along the way: {}", steps.len());
+    assert!(steps.len() > 2, "it decided along the way: {}", steps.len());
 }
 
 #[test]

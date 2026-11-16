@@ -858,6 +858,256 @@
    true
   ],
   [
+   "swift",
+   "fireball",
+   true
+  ],
+  [
+   "swift",
+   "gravity",
+   true
+  ],
+  [
+   "swift",
+   "earthsplit",
+   true
+  ],
+  [
+   "swift",
+   "finger",
+   true
+  ],
+  [
+   "swift",
+   "jithunder",
+   true
+  ],
+  [
+   "swift",
+   "gather",
+   true
+  ],
+  [
+   "swift",
+   "ancientgod",
+   true
+  ],
+  [
+   "swift",
+   "slashluo",
+   true
+  ],
+  [
+   "swift",
+   "arsenal",
+   true
+  ],
+  [
+   "swift",
+   "inchearth",
+   true
+  ],
+  [
+   "swift",
+   "onestep",
+   true
+  ],
+  [
+   "swift",
+   "mountain",
+   true
+  ],
+  [
+   "swift",
+   "heartbeat",
+   true
+  ],
+  [
+   "swift",
+   "lightshield",
+   true
+  ],
+  [
+   "swift",
+   "nineturn",
+   true
+  ],
+  [
+   "swift",
+   "indestructible",
+   true
+  ],
+  [
+   "swift",
+   "ancientprotect",
+   true
+  ],
+  [
+   "swift",
+   "vermilion",
+   true
+  ],
+  [
+   "swift",
+   "summonrain",
+   true
+  ],
+  [
+   "swift",
+   "summonwind",
+   true
+  ],
+  [
+   "swift",
+   "beans",
+   true
+  ],
+  [
+   "swift",
+   "yinmoon",
+   true
+  ],
+  [
+   "swift",
+   "soulsearch",
+   true
+  ],
+  [
+   "swift",
+   "spiritchange",
+   true
+  ],
+  [
+   "swift",
+   "bodyfix",
+   true
+  ],
+  [
+   "swift",
+   "restriction",
+   true
+  ],
+  [
+   "swift",
+   "plumblossom",
+   true
+  ],
+  [
+   "swift",
+   "lifedeath",
+   true
+  ],
+  [
+   "swift",
+   "karma",
+   true
+  ],
+  [
+   "swift",
+   "dreamback",
+   true
+  ],
+  [
+   "swift",
+   "dreamdao",
+   true
+  ],
+  [
+   "swift",
+   "flowingmoon",
+   true
+  ],
+  [
+   "swift",
+   "remnantnight",
+   true
+  ],
+  [
+   "swift",
+   "heavenflip",
+   true
+  ],
+  [
+   "swift",
+   "thirdeye",
+   true
+  ],
+  [
+   "swift",
+   "sevencolor",
+   true
+  ],
+  [
+   "swift",
+   "umbrella",
+   true
+  ],
+  [
+   "swift",
+   "devour",
+   true
+  ],
+  [
+   "swift",
+   "starfall",
+   true
+  ],
+  [
+   "swift",
+   "seize",
+   true
+  ],
+  [
+   "swift",
+   "yellowspring",
+   true
+  ],
+  [
+   "swift",
+   "ancientthunder",
+   true
+  ],
+  [
+   "swift",
+   "demonfinger",
+   true
+  ],
+  [
+   "swift",
+   "kunjiwhip",
+   true
+  ],
+  [
+   "swift",
+   "tigerflag",
+   true
+  ],
+  [
+   "swift",
+   "timerestrict",
+   true
+  ],
+  [
+   "swift",
+   "lifedeathrestrict",
+   true
+  ],
+  [
+   "swift",
+   "soulbanner",
+   true
+  ],
+  [
+   "swift",
+   "servitude",
+   true
+  ],
+  [
+   "swift",
+   "voidnail",
+   true
+  ],
+  [
    "heavy",
    "slash",
    true
@@ -993,6 +1243,256 @@
    true
   ],
   [
+   "heavy",
+   "fireball",
+   true
+  ],
+  [
+   "heavy",
+   "gravity",
+   true
+  ],
+  [
+   "heavy",
+   "earthsplit",
+   true
+  ],
+  [
+   "heavy",
+   "finger",
+   true
+  ],
+  [
+   "heavy",
+   "jithunder",
+   true
+  ],
+  [
+   "heavy",
+   "gather",
+   true
+  ],
+  [
+   "heavy",
+   "ancientgod",
+   true
+  ],
+  [
+   "heavy",
+   "slashluo",
+   true
+  ],
+  [
+   "heavy",
+   "arsenal",
+   true
+  ],
+  [
+   "heavy",
+   "inchearth",
+   false
+  ],
+  [
+   "heavy",
+   "onestep",
+   true
+  ],
+  [
+   "heavy",
+   "mountain",
+   true
+  ],
+  [
+   "heavy",
+   "heartbeat",
+   true
+  ],
+  [
+   "heavy",
+   "lightshield",
+   false
+  ],
+  [
+   "heavy",
+   "nineturn",
+   true
+  ],
+  [
+   "heavy",
+   "indestructible",
+   false
+  ],
+  [
+   "heavy",
+   "ancientprotect",
+   false
+  ],
+  [
+   "heavy",
+   "vermilion",
+   true
+  ],
+  [
+   "heavy",
+   "summonrain",
+   true
+  ],
+  [
+   "heavy",
+   "summonwind",
+   true
+  ],
+  [
+   "heavy",
+   "beans",
+   true
+  ],
+  [
+   "heavy",
+   "yinmoon",
+   true
+  ],
+  [
+   "heavy",
+   "soulsearch",
+   true
+  ],
+  [
+   "heavy",
+   "spiritchange",
+   true
+  ],
+  [
+   "heavy",
+   "bodyfix",
+   true
+  ],
+  [
+   "heavy",
+   "restriction",
+   true
+  ],
+  [
+   "heavy",
+   "plumblossom",
+   true
+  ],
+  [
+   "heavy",
+   "lifedeath",
+   true
+  ],
+  [
+   "heavy",
+   "karma",
+   false
+  ],
+  [
+   "heavy",
+   "dreamback",
+   false
+  ],
+  [
+   "heavy",
+   "dreamdao",
+   true
+  ],
+  [
+   "heavy",
+   "flowingmoon",
+   false
+  ],
+  [
+   "heavy",
+   "remnantnight",
+   true
+  ],
+  [
+   "heavy",
+   "heavenflip",
+   true
+  ],
+  [
+   "heavy",
+   "thirdeye",
+   true
+  ],
+  [
+   "heavy",
+   "sevencolor",
+   true
+  ],
+  [
+   "heavy",
+   "umbrella",
+   true
+  ],
+  [
+   "heavy",
+   "devour",
+   true
+  ],
+  [
+   "heavy",
+   "starfall",
+   true
+  ],
+  [
+   "heavy",
+   "seize",
+   true
+  ],
+  [
+   "heavy",
+   "yellowspring",
+   true
+  ],
+  [
+   "heavy",
+   "ancientthunder",
+   true
+  ],
+  [
+   "heavy",
+   "demonfinger",
+   true
+  ],
+  [
+   "heavy",
+   "kunjiwhip",
+   true
+  ],
+  [
+   "heavy",
+   "tigerflag",
+   true
+  ],
+  [
+   "heavy",
+   "timerestrict",
+   true
+  ],
+  [
+   "heavy",
+   "lifedeathrestrict",
+   true
+  ],
+  [
+   "heavy",
+   "soulbanner",
+   true
+  ],
+  [
+   "heavy",
+   "servitude",
+   true
+  ],
+  [
+   "heavy",
+   "voidnail",
+   true
+  ],
+  [
    "piercing",
    "slash",
    true
@@ -1128,6 +1628,256 @@
    false
   ],
   [
+   "piercing",
+   "fireball",
+   true
+  ],
+  [
+   "piercing",
+   "gravity",
+   false
+  ],
+  [
+   "piercing",
+   "earthsplit",
+   false
+  ],
+  [
+   "piercing",
+   "finger",
+   true
+  ],
+  [
+   "piercing",
+   "jithunder",
+   true
+  ],
+  [
+   "piercing",
+   "gather",
+   false
+  ],
+  [
+   "piercing",
+   "ancientgod",
+   true
+  ],
+  [
+   "piercing",
+   "slashluo",
+   true
+  ],
+  [
+   "piercing",
+   "arsenal",
+   false
+  ],
+  [
+   "piercing",
+   "inchearth",
+   false
+  ],
+  [
+   "piercing",
+   "onestep",
+   true
+  ],
+  [
+   "piercing",
+   "mountain",
+   false
+  ],
+  [
+   "piercing",
+   "heartbeat",
+   true
+  ],
+  [
+   "piercing",
+   "lightshield",
+   false
+  ],
+  [
+   "piercing",
+   "nineturn",
+   true
+  ],
+  [
+   "piercing",
+   "indestructible",
+   false
+  ],
+  [
+   "piercing",
+   "ancientprotect",
+   false
+  ],
+  [
+   "piercing",
+   "vermilion",
+   true
+  ],
+  [
+   "piercing",
+   "summonrain",
+   false
+  ],
+  [
+   "piercing",
+   "summonwind",
+   true
+  ],
+  [
+   "piercing",
+   "beans",
+   false
+  ],
+  [
+   "piercing",
+   "yinmoon",
+   false
+  ],
+  [
+   "piercing",
+   "soulsearch",
+   true
+  ],
+  [
+   "piercing",
+   "spiritchange",
+   true
+  ],
+  [
+   "piercing",
+   "bodyfix",
+   false
+  ],
+  [
+   "piercing",
+   "restriction",
+   false
+  ],
+  [
+   "piercing",
+   "plumblossom",
+   false
+  ],
+  [
+   "piercing",
+   "lifedeath",
+   false
+  ],
+  [
+   "piercing",
+   "karma",
+   false
+  ],
+  [
+   "piercing",
+   "dreamback",
+   false
+  ],
+  [
+   "piercing",
+   "dreamdao",
+   true
+  ],
+  [
+   "piercing",
+   "flowingmoon",
+   false
+  ],
+  [
+   "piercing",
+   "remnantnight",
+   false
+  ],
+  [
+   "piercing",
+   "heavenflip",
+   false
+  ],
+  [
+   "piercing",
+   "thirdeye",
+   true
+  ],
+  [
+   "piercing",
+   "sevencolor",
+   true
+  ],
+  [
+   "piercing",
+   "umbrella",
+   false
+  ],
+  [
+   "piercing",
+   "devour",
+   true
+  ],
+  [
+   "piercing",
+   "starfall",
+   false
+  ],
+  [
+   "piercing",
+   "seize",
+   true
+  ],
+  [
+   "piercing",
+   "yellowspring",
+   true
+  ],
+  [
+   "piercing",
+   "ancientthunder",
+   false
+  ],
+  [
+   "piercing",
+   "demonfinger",
+   true
+  ],
+  [
+   "piercing",
+   "kunjiwhip",
+   true
+  ],
+  [
+   "piercing",
+   "tigerflag",
+   true
+  ],
+  [
+   "piercing",
+   "timerestrict",
+   false
+  ],
+  [
+   "piercing",
+   "lifedeathrestrict",
+   false
+  ],
+  [
+   "piercing",
+   "soulbanner",
+   false
+  ],
+  [
+   "piercing",
+   "servitude",
+   false
+  ],
+  [
+   "piercing",
+   "voidnail",
+   true
+  ],
+  [
    "lingering",
    "slash",
    false
@@ -1263,6 +2013,256 @@
    true
   ],
   [
+   "lingering",
+   "fireball",
+   false
+  ],
+  [
+   "lingering",
+   "gravity",
+   false
+  ],
+  [
+   "lingering",
+   "earthsplit",
+   false
+  ],
+  [
+   "lingering",
+   "finger",
+   false
+  ],
+  [
+   "lingering",
+   "jithunder",
+   true
+  ],
+  [
+   "lingering",
+   "gather",
+   true
+  ],
+  [
+   "lingering",
+   "ancientgod",
+   false
+  ],
+  [
+   "lingering",
+   "slashluo",
+   false
+  ],
+  [
+   "lingering",
+   "arsenal",
+   false
+  ],
+  [
+   "lingering",
+   "inchearth",
+   false
+  ],
+  [
+   "lingering",
+   "onestep",
+   false
+  ],
+  [
+   "lingering",
+   "mountain",
+   false
+  ],
+  [
+   "lingering",
+   "heartbeat",
+   true
+  ],
+  [
+   "lingering",
+   "lightshield",
+   false
+  ],
+  [
+   "lingering",
+   "nineturn",
+   false
+  ],
+  [
+   "lingering",
+   "indestructible",
+   false
+  ],
+  [
+   "lingering",
+   "ancientprotect",
+   false
+  ],
+  [
+   "lingering",
+   "vermilion",
+   false
+  ],
+  [
+   "lingering",
+   "summonrain",
+   true
+  ],
+  [
+   "lingering",
+   "summonwind",
+   true
+  ],
+  [
+   "lingering",
+   "beans",
+   false
+  ],
+  [
+   "lingering",
+   "yinmoon",
+   false
+  ],
+  [
+   "lingering",
+   "soulsearch",
+   false
+  ],
+  [
+   "lingering",
+   "spiritchange",
+   false
+  ],
+  [
+   "lingering",
+   "bodyfix",
+   false
+  ],
+  [
+   "lingering",
+   "restriction",
+   false
+  ],
+  [
+   "lingering",
+   "plumblossom",
+   false
+  ],
+  [
+   "lingering",
+   "lifedeath",
+   false
+  ],
+  [
+   "lingering",
+   "karma",
+   false
+  ],
+  [
+   "lingering",
+   "dreamback",
+   false
+  ],
+  [
+   "lingering",
+   "dreamdao",
+   false
+  ],
+  [
+   "lingering",
+   "flowingmoon",
+   false
+  ],
+  [
+   "lingering",
+   "remnantnight",
+   false
+  ],
+  [
+   "lingering",
+   "heavenflip",
+   false
+  ],
+  [
+   "lingering",
+   "thirdeye",
+   false
+  ],
+  [
+   "lingering",
+   "sevencolor",
+   false
+  ],
+  [
+   "lingering",
+   "umbrella",
+   false
+  ],
+  [
+   "lingering",
+   "devour",
+   false
+  ],
+  [
+   "lingering",
+   "starfall",
+   false
+  ],
+  [
+   "lingering",
+   "seize",
+   false
+  ],
+  [
+   "lingering",
+   "yellowspring",
+   true
+  ],
+  [
+   "lingering",
+   "ancientthunder",
+   true
+  ],
+  [
+   "lingering",
+   "demonfinger",
+   false
+  ],
+  [
+   "lingering",
+   "kunjiwhip",
+   true
+  ],
+  [
+   "lingering",
+   "tigerflag",
+   false
+  ],
+  [
+   "lingering",
+   "timerestrict",
+   false
+  ],
+  [
+   "lingering",
+   "lifedeathrestrict",
+   false
+  ],
+  [
+   "lingering",
+   "soulbanner",
+   false
+  ],
+  [
+   "lingering",
+   "servitude",
+   false
+  ],
+  [
+   "lingering",
+   "voidnail",
+   false
+  ],
+  [
    "cheap",
    "slash",
    true
@@ -1395,6 +2395,256 @@
   [
    "cheap",
    "flurry",
+   true
+  ],
+  [
+   "cheap",
+   "fireball",
+   true
+  ],
+  [
+   "cheap",
+   "gravity",
+   true
+  ],
+  [
+   "cheap",
+   "earthsplit",
+   true
+  ],
+  [
+   "cheap",
+   "finger",
+   true
+  ],
+  [
+   "cheap",
+   "jithunder",
+   true
+  ],
+  [
+   "cheap",
+   "gather",
+   true
+  ],
+  [
+   "cheap",
+   "ancientgod",
+   true
+  ],
+  [
+   "cheap",
+   "slashluo",
+   true
+  ],
+  [
+   "cheap",
+   "arsenal",
+   true
+  ],
+  [
+   "cheap",
+   "inchearth",
+   true
+  ],
+  [
+   "cheap",
+   "onestep",
+   true
+  ],
+  [
+   "cheap",
+   "mountain",
+   true
+  ],
+  [
+   "cheap",
+   "heartbeat",
+   true
+  ],
+  [
+   "cheap",
+   "lightshield",
+   true
+  ],
+  [
+   "cheap",
+   "nineturn",
+   true
+  ],
+  [
+   "cheap",
+   "indestructible",
+   true
+  ],
+  [
+   "cheap",
+   "ancientprotect",
+   true
+  ],
+  [
+   "cheap",
+   "vermilion",
+   true
+  ],
+  [
+   "cheap",
+   "summonrain",
+   true
+  ],
+  [
+   "cheap",
+   "summonwind",
+   true
+  ],
+  [
+   "cheap",
+   "beans",
+   true
+  ],
+  [
+   "cheap",
+   "yinmoon",
+   true
+  ],
+  [
+   "cheap",
+   "soulsearch",
+   true
+  ],
+  [
+   "cheap",
+   "spiritchange",
+   true
+  ],
+  [
+   "cheap",
+   "bodyfix",
+   true
+  ],
+  [
+   "cheap",
+   "restriction",
+   true
+  ],
+  [
+   "cheap",
+   "plumblossom",
+   true
+  ],
+  [
+   "cheap",
+   "lifedeath",
+   true
+  ],
+  [
+   "cheap",
+   "karma",
+   true
+  ],
+  [
+   "cheap",
+   "dreamback",
+   true
+  ],
+  [
+   "cheap",
+   "dreamdao",
+   true
+  ],
+  [
+   "cheap",
+   "flowingmoon",
+   true
+  ],
+  [
+   "cheap",
+   "remnantnight",
+   true
+  ],
+  [
+   "cheap",
+   "heavenflip",
+   true
+  ],
+  [
+   "cheap",
+   "thirdeye",
+   true
+  ],
+  [
+   "cheap",
+   "sevencolor",
+   true
+  ],
+  [
+   "cheap",
+   "umbrella",
+   true
+  ],
+  [
+   "cheap",
+   "devour",
+   true
+  ],
+  [
+   "cheap",
+   "starfall",
+   true
+  ],
+  [
+   "cheap",
+   "seize",
+   true
+  ],
+  [
+   "cheap",
+   "yellowspring",
+   true
+  ],
+  [
+   "cheap",
+   "ancientthunder",
+   true
+  ],
+  [
+   "cheap",
+   "demonfinger",
+   true
+  ],
+  [
+   "cheap",
+   "kunjiwhip",
+   true
+  ],
+  [
+   "cheap",
+   "tigerflag",
+   true
+  ],
+  [
+   "cheap",
+   "timerestrict",
+   true
+  ],
+  [
+   "cheap",
+   "lifedeathrestrict",
+   true
+  ],
+  [
+   "cheap",
+   "soulbanner",
+   true
+  ],
+  [
+   "cheap",
+   "servitude",
+   true
+  ],
+  [
+   "cheap",
+   "voidnail",
    true
   ]
  ],
@@ -1757,6 +3007,664 @@
    "tick": 3,
    "damage": 10,
    "chill": true
+  },
+  "fireball": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 14,
+   "windup": 0.26,
+   "recover": 0.24,
+   "cooldown": 1.5,
+   "damage": 12,
+   "speed": 210,
+   "burn": true
+  },
+  "gravity": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 22,
+   "windup": 0.3,
+   "recover": 0.3,
+   "cooldown": 2.6,
+   "damage": 20,
+   "impact": 0.35,
+   "radius": 14,
+   "notice": 0.1,
+   "pull": 50,
+   "reach": 46,
+   "pullUntil": 0.3
+  },
+  "earthsplit": {
+   "kind": "zone",
+   "type": "physical",
+   "fx": "explosions/small-explosion",
+   "cost": 28,
+   "windup": 0.32,
+   "recover": 0.3,
+   "cooldown": 3.2,
+   "damage": 26,
+   "sigil": 0.35,
+   "impact": 0.05,
+   "radius": 18,
+   "notice": 0,
+   "defDown": 3,
+   "grounded": true
+  },
+  "finger": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 28,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 3.5,
+   "damage": 21,
+   "speed": 380
+  },
+  "jithunder": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 24,
+   "windup": 0.3,
+   "recover": 0.25,
+   "cooldown": 2,
+   "damage": 15,
+   "speed": 260,
+   "shock": true
+  },
+  "gather": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 36,
+   "windup": 0.4,
+   "recover": 0.35,
+   "cooldown": 4.2,
+   "damage": 34,
+   "sigil": 0.3,
+   "impact": 0.08,
+   "radius": 20,
+   "notice": 0,
+   "shock": true
+  },
+  "ancientgod": {
+   "kind": "blast",
+   "type": "physical",
+   "fx": "explosions/swirl-blast",
+   "cost": 36,
+   "windup": 0.5,
+   "recover": 0.55,
+   "cooldown": 5,
+   "range": 40,
+   "damage": 28
+  },
+  "slashluo": {
+   "kind": "dash",
+   "type": "physical",
+   "fx": "arcane/sword-slash",
+   "cost": 30,
+   "windup": 0.3,
+   "recover": 0.5,
+   "cooldown": 3.8,
+   "distance": 90,
+   "damage": 22
+  },
+  "arsenal": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "arcane/sword-formation",
+   "endFx": "arcane/sword-strike",
+   "cost": 48,
+   "windup": 0.6,
+   "recover": 0.4,
+   "cooldown": 9,
+   "damage": 12,
+   "life": 3,
+   "height": 40,
+   "pull": 0,
+   "reach": 40,
+   "under": 26,
+   "tick": 9
+  },
+  "inchearth": {
+   "kind": "blink",
+   "fx": "spawn/swirl-portal",
+   "cost": 26,
+   "windup": 0.06,
+   "recover": 0.12,
+   "cooldown": 3,
+   "distance": 92
+  },
+  "onestep": {
+   "kind": "dash",
+   "type": "physical",
+   "fx": "spawn/poof",
+   "cost": 30,
+   "windup": 0.2,
+   "recover": 0.4,
+   "cooldown": 4,
+   "distance": 120,
+   "damage": 14
+  },
+  "mountain": {
+   "kind": "zone",
+   "type": "physical",
+   "fx": "explosions/small-explosion",
+   "cost": 44,
+   "windup": 0.6,
+   "recover": 0.45,
+   "cooldown": 5.5,
+   "damage": 34,
+   "sigil": 0.4,
+   "impact": 0.05,
+   "radius": 26,
+   "notice": 0,
+   "grounded": true
+  },
+  "heartbeat": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 20,
+   "windup": 0.24,
+   "recover": 0.35,
+   "cooldown": 2,
+   "range": 44,
+   "damage": 12,
+   "shock": true
+  },
+  "lightshield": {
+   "kind": "barrier",
+   "fx": "arcane/bagua-mirror",
+   "cost": 20,
+   "windup": 0.06,
+   "recover": 0.1,
+   "cooldown": 7,
+   "time": 2.2,
+   "reflect": true
+  },
+  "nineturn": {
+   "kind": "blast",
+   "type": "physical",
+   "fx": "arcane/vortex-ring",
+   "cost": 40,
+   "windup": 0.85,
+   "recover": 0.5,
+   "cooldown": 6.5,
+   "range": 46,
+   "damage": 34
+  },
+  "indestructible": {
+   "kind": "heal",
+   "fx": "feedback/power-up",
+   "cost": 40,
+   "windup": 0.7,
+   "recover": 0.4,
+   "cooldown": 11,
+   "amount": 26
+  },
+  "ancientprotect": {
+   "kind": "ward",
+   "fx": "holy/golden-bell",
+   "cost": 42,
+   "windup": 0.5,
+   "recover": 0.25,
+   "cooldown": 9,
+   "feet": true
+  },
+  "vermilion": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 30,
+   "windup": 0.35,
+   "recover": 0.4,
+   "cooldown": 3,
+   "range": 52,
+   "damage": 18,
+   "burn": true
+  },
+  "summonrain": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "water/splash",
+   "cost": 30,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 5,
+   "damage": 6,
+   "life": 2,
+   "height": 0,
+   "pull": 0,
+   "reach": 30,
+   "under": 30,
+   "tick": 3,
+   "chill": true
+  },
+  "summonwind": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 26,
+   "windup": 0.3,
+   "recover": 0.4,
+   "cooldown": 3,
+   "range": 58,
+   "damage": 12,
+   "chill": true
+  },
+  "beans": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "critters/wisp",
+   "cost": 36,
+   "windup": 0.5,
+   "recover": 0.3,
+   "cooldown": 7,
+   "damage": 8,
+   "life": 3.2,
+   "height": 0,
+   "pull": 12,
+   "reach": 44,
+   "under": 24,
+   "tick": 6
+  },
+  "yinmoon": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/comma-seal",
+   "cost": 32,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 3.4,
+   "damage": 20,
+   "impact": 0.45,
+   "radius": 18,
+   "notice": 0.15,
+   "defDown": 5
+  },
+  "soulsearch": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "arcane/vortex-ring",
+   "cost": 28,
+   "windup": 0.4,
+   "recover": 0.4,
+   "cooldown": 4,
+   "range": 44,
+   "damage": 8,
+   "silence": 1.2,
+   "stealRage": 1
+  },
+  "spiritchange": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 20,
+   "windup": 0.28,
+   "recover": 0.25,
+   "cooldown": 3,
+   "damage": 6,
+   "speed": 260,
+   "silence": 1.4
+  },
+  "bodyfix": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 36,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 5.5,
+   "damage": 10,
+   "sigil": 0.35,
+   "impact": 0.08,
+   "radius": 14,
+   "notice": 0,
+   "freeze": 0.8
+  },
+  "restriction": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/restriction",
+   "cost": 40,
+   "windup": 0.5,
+   "recover": 0.35,
+   "cooldown": 5,
+   "damage": 26,
+   "impact": 0.9,
+   "radius": 22,
+   "notice": 0.1,
+   "reach": 50,
+   "grounded": true,
+   "seals": true
+  },
+  "plumblossom": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/comet-rings",
+   "cost": 34,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 3.6,
+   "damage": 24,
+   "impact": 0.5,
+   "radius": 20,
+   "notice": 0.15,
+   "defDown": 3
+  },
+  "lifedeath": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/twin-shuriken",
+   "cost": 36,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 3.6,
+   "damage": 28,
+   "impact": 0.5,
+   "radius": 16,
+   "notice": 0.15,
+   "freeze": 0.5
+  },
+  "karma": {
+   "kind": "barrier",
+   "fx": "holy/lotus",
+   "cost": 22,
+   "windup": 0.06,
+   "recover": 0.1,
+   "cooldown": 7,
+   "time": 2,
+   "counter": {
+    "damage": 12,
+    "stun": 0.8
+   }
+  },
+  "dreamback": {
+   "kind": "ward",
+   "fx": "arcane/restriction",
+   "cost": 44,
+   "windup": 0.5,
+   "recover": 0.25,
+   "cooldown": 8.5,
+   "feet": true
+  },
+  "dreamdao": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/puff-burst",
+   "cost": 26,
+   "windup": 0.4,
+   "recover": 0.4,
+   "cooldown": 3.6,
+   "range": 52,
+   "damage": 10,
+   "silence": 1.6
+  },
+  "flowingmoon": {
+   "kind": "heal",
+   "fx": "holy/feather-burst",
+   "cost": 38,
+   "windup": 0.8,
+   "recover": 0.4,
+   "cooldown": 10,
+   "amount": 24
+  },
+  "remnantnight": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "shadow/winter-ordeal",
+   "cost": 46,
+   "windup": 0.5,
+   "recover": 0.4,
+   "cooldown": 6,
+   "damage": 30,
+   "impact": 1.78,
+   "radius": 24,
+   "notice": 0.12,
+   "silence": 1,
+   "grounded": true
+  },
+  "heavenflip": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/shuriken-seal",
+   "cost": 50,
+   "windup": 0.6,
+   "recover": 0.4,
+   "cooldown": 7.5,
+   "damage": 32,
+   "impact": 0.5,
+   "radius": 30,
+   "notice": 0.15,
+   "defDown": 4
+  },
+  "thirdeye": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 20,
+   "windup": 0.3,
+   "recover": 0.25,
+   "cooldown": 2.4,
+   "damage": 12,
+   "defDown": 3,
+   "speed": 340
+  },
+  "sevencolor": {
+   "kind": "dash",
+   "type": "magic",
+   "fx": "arcane/sword-strike",
+   "cost": 30,
+   "windup": 0.28,
+   "recover": 0.45,
+   "cooldown": 3.6,
+   "distance": 84,
+   "damage": 17
+  },
+  "umbrella": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 34,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 3.8,
+   "damage": 22,
+   "sigil": 0.3,
+   "impact": 0.45,
+   "radius": 22,
+   "notice": 0,
+   "burn": true
+  },
+  "devour": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "impacts/star-converge",
+   "cost": 26,
+   "windup": 0.35,
+   "recover": 0.4,
+   "cooldown": 3.2,
+   "range": 40,
+   "damage": 16,
+   "stealRage": 1
+  },
+  "starfall": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 40,
+   "windup": 0.4,
+   "recover": 0.35,
+   "cooldown": 5,
+   "damage": 15,
+   "sigil": 0.3,
+   "impact": 0.08,
+   "radius": 12,
+   "notice": 0,
+   "strikes": 2,
+   "every": 0.5,
+   "aimAhead": 0.3
+  },
+  "seize": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 18,
+   "windup": 0.25,
+   "recover": 0.25,
+   "cooldown": 3.2,
+   "damage": 6,
+   "speed": 280,
+   "stealRage": 1
+  },
+  "yellowspring": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "impacts/twin-converge",
+   "cost": 24,
+   "windup": 0.3,
+   "recover": 0.4,
+   "cooldown": 2.4,
+   "range": 50,
+   "damage": 14,
+   "chill": true
+  },
+  "ancientthunder": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 38,
+   "windup": 0.4,
+   "recover": 0.35,
+   "cooldown": 5,
+   "damage": 16,
+   "sigil": 0.3,
+   "impact": 0.08,
+   "radius": 14,
+   "notice": 0,
+   "strikes": 2,
+   "every": 0.45,
+   "aimAhead": 0.25,
+   "shock": true
+  },
+  "demonfinger": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 22,
+   "windup": 0.3,
+   "recover": 0.25,
+   "cooldown": 2.8,
+   "damage": 12,
+   "speed": 300,
+   "silence": 1
+  },
+  "kunjiwhip": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 26,
+   "windup": 0.32,
+   "recover": 0.4,
+   "cooldown": 3,
+   "range": 56,
+   "damage": 13,
+   "silence": 0.8,
+   "shock": true
+  },
+  "tigerflag": {
+   "kind": "bolt",
+   "type": "physical",
+   "fx": "projectiles/laser-bolt",
+   "cost": 26,
+   "windup": 0.34,
+   "recover": 0.3,
+   "cooldown": 3,
+   "damage": 17,
+   "speed": 300
+  },
+  "timerestrict": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/restriction",
+   "cost": 38,
+   "windup": 0.45,
+   "recover": 0.35,
+   "cooldown": 5.5,
+   "damage": 20,
+   "impact": 1.2,
+   "radius": 20,
+   "notice": 0.1,
+   "reach": 60,
+   "freeze": 0.4,
+   "grounded": true,
+   "seals": true
+  },
+  "lifedeathrestrict": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "nature/poison-cloud",
+   "cost": 40,
+   "windup": 0.5,
+   "recover": 0.3,
+   "cooldown": 7.5,
+   "damage": 7,
+   "life": 3,
+   "height": 0,
+   "pull": 0,
+   "reach": 34,
+   "under": 34,
+   "tick": 5,
+   "burn": true
+  },
+  "soulbanner": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "critters/wisp",
+   "cost": 44,
+   "windup": 0.55,
+   "recover": 0.3,
+   "cooldown": 8,
+   "damage": 8,
+   "life": 3,
+   "height": 0,
+   "pull": 24,
+   "reach": 80,
+   "under": 22,
+   "tick": 5
+  },
+  "servitude": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/comma-seal",
+   "cost": 34,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 4.5,
+   "damage": 18,
+   "impact": 0.7,
+   "radius": 18,
+   "notice": 0.1,
+   "pull": 40,
+   "reach": 60,
+   "silence": 1,
+   "pullUntil": 0.6
+  },
+  "voidnail": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 34,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 4.5,
+   "damage": 20,
+   "defDown": 4,
+   "speed": 420
   }
  },
  "schools": {
@@ -1778,7 +3686,29 @@
     "spark",
     "burst",
     "quake",
-    "hex"
+    "hex",
+    "fireball",
+    "gravity",
+    "earthsplit",
+    "finger",
+    "jithunder",
+    "gather",
+    "ancientgod",
+    "slashluo",
+    "arsenal",
+    "inchearth",
+    "onestep",
+    "mountain",
+    "heartbeat",
+    "lightshield",
+    "nineturn",
+    "indestructible",
+    "ancientprotect",
+    "vermilion",
+    "ancientthunder",
+    "demonfinger",
+    "kunjiwhip",
+    "tigerflag"
    ],
    "ultimate": "tribulation",
    "signature": "blast",
@@ -1891,6 +3821,83 @@
       "#fff6c4",
       "#ffffff"
      ]
+    },
+    "arcane/sword-formation": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "arcane/sword-slash": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "arcane/sword-strike": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "arcane/vortex-ring": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "explosions/small-explosion": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "explosions/swirl-blast": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
+    },
+    "spawn/swirl-portal": {
+     "palette": [
+      "#2a1a08",
+      "#6a4410",
+      "#b07a1a",
+      "#e8b030",
+      "#ffd84a",
+      "#fff6c4",
+      "#ffffff"
+     ]
     }
    }
   },
@@ -1912,7 +3919,35 @@
     "ward",
     "shard",
     "jet",
-    "flurry"
+    "flurry",
+    "summonrain",
+    "summonwind",
+    "beans",
+    "yinmoon",
+    "soulsearch",
+    "spiritchange",
+    "bodyfix",
+    "restriction",
+    "plumblossom",
+    "lifedeath",
+    "karma",
+    "dreamback",
+    "dreamdao",
+    "flowingmoon",
+    "remnantnight",
+    "heavenflip",
+    "thirdeye",
+    "sevencolor",
+    "umbrella",
+    "devour",
+    "starfall",
+    "seize",
+    "yellowspring",
+    "timerestrict",
+    "lifedeathrestrict",
+    "soulbanner",
+    "servitude",
+    "voidnail"
    ],
    "ultimate": "prison",
    "signature": "zone",
@@ -2041,6 +4076,149 @@
       "#dcfbff",
       "#ffffff"
      ]
+    },
+    "arcane/comet-rings": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/comma-seal": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/restriction": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/shuriken-seal": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/sword-strike": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/twin-shuriken": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "arcane/vortex-ring": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "critters/wisp": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "explosions/puff-burst": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "explosions/swirl-blast": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "impacts/star-converge": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "impacts/twin-converge": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
+    },
+    "water/splash": {
+     "palette": [
+      "#151a3d",
+      "#212f6b",
+      "#2c58aa",
+      "#3a8bd8",
+      "#62c8f4",
+      "#dcfbff",
+      "#ffffff"
+     ]
     }
    }
   }
@@ -2133,6 +4311,14 @@
   "lotus": {
    "status": "chill",
    "per": 0.15
+  },
+  "gather": {
+   "status": "shock",
+   "per": 0.12
+  },
+  "yellowspring": {
+   "status": "chill",
+   "per": 0.15
   }
  },
  "constants": {
@@ -2154,7 +4340,12 @@
     "step",
     "palm",
     "burst",
-    "lotus"
+    "lotus",
+    "ancientgod",
+    "slashluo",
+    "onestep",
+    "nineturn",
+    "sevencolor"
    ],
    "ultimateInvincible": 0.3
   },

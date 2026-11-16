@@ -379,25 +379,33 @@ fn the_screens_bar_shows_how_stale_each_skill_is() {
 }
 
 #[test]
-fn every_pool_spell_is_cast_in_some_fight() {
-    let mut cast = HashSet::new();
-    for seed in 1..=24 {
-        let mut duel = fight(seed);
-        for _ in 0..120 * 60 {
-            duel.step(1.0 / 60.0);
-            for f in &duel.state.fighters {
-                if let Some(a) = f.act.filter(|a| a.t == 0.0) {
-                    cast.insert(a.spell);
-                }
-            }
-        }
-    }
-    for s in [
+fn every_pool_spell_can_be_cast_from_the_bar_and_its_effects_are_in_the_registry() {
+    let effects = all_effects();
+    for (index, s) in [
         pixfx_duel::data::School::Thunder,
         pixfx_duel::data::School::Frost,
-    ] {
-        for name in school(s).pool {
-            assert!(cast.contains(name), "{name}");
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for &name in school(s).pool {
+            let mut duel = cast_once(
+                3,
+                index,
+                name,
+                held(name, Rarity::Common, Vec::new(), false),
+            );
+            let started = steps_until(&mut duel, 60 * 3, |d, _| {
+                d.state.fighters[index].act.is_some_and(|a| a.spell == name)
+            });
+            assert!(started, "{name} is never cast");
+            for fx in spell(name)
+                .into_iter()
+                .flat_map(|sp| [sp.fx, sp.end_fx, sp.hit_fx])
+                .flatten()
+            {
+                assert!(effects.iter().any(|e| e == fx), "{name}: no effect {fx}");
+            }
         }
     }
 }

@@ -51,6 +51,7 @@ wrapper over the wasm `Duel`) plays the effect commands and feels the events the
   `tests/policy_export.rs` (Rust's forward pass against PyTorch's, `tests/fixtures/policy_check.json`, written with it)
   and re-pins `goldens/policy_fight.json` (delete it and run the tests), which `site/tests/policy.test.js` checks
   the wasm build against.
+- A school's pool (`data::SchoolData::pool`) is larger than a fight's 8: `bar::fight_pool` draws 8 of it and guarantees a skill of the signature kind, a payoff skill, and a skill that lays the status that payoff spends. A new skill goes in four places: `data::SPELLS` and the school's `pool` (and `evolves`, `PAYOFF`, `FRAMES.unsafe_on_block` where it applies), its key in `tests/fixtures/js_numbers.json`, a tooltip in `site/assets/duel-info.js` and a cell in `site/assets/skill-icons.js`. An effect a spell plays once through `cast` must be a one-shot effect: the duel never stops a looping one.
 - Styles are drawn on dice of their own (`style::draw`), never the rules' `Rng`: drawing them must not move a fight.
 - One extra or missing roll of the dice changes every fight after it.
 - JS maths: `Math.sign(0)` is 0 (never `f64::signum`), `Math.round` rounds half up (`js_round`), `**` is `powi`.

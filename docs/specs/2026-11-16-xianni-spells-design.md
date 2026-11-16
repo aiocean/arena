@@ -1,0 +1,110 @@
+# Renegade Immortal skills
+
+## Intent
+
+The arena's duel is a cultivation duel. This adds the techniques of the novel *Renegade Immortal* (Xian Ni, Er Gen) as skills in the two schools' pools: 50 skills, 22 for Thunder and 28 for Frost, on top of the 27 spells the duel had.
+
+## How a technique becomes a skill
+
+- A skill is a spell of the duel's existing kinds (melee, dash, blast, bolt, orb, area, field, heal, ward, barrier, blink) and flags (shock, chill, burn, freeze, silence, defence down, pull, seal, rage steal, reflect, counter, strikes). No new rule was needed, so a bot still reads a skill by its kind and numbers (`docs/bot.md`): the 354 inputs and the 30 acts are unchanged.
+- The school follows the technique's nature: lightning, force, body, movement and swords are Thunder's; cold, restrictions, seals, souls, time and dreams are Frost's.
+- Numbers sit in the range of the skills of the same kind (`data.rs`): cost 10 to 50 qi, a heavy blow 28 to 34 power against the ultimates' 31, long gathers for big blows, and the heavy dashes and blasts are unsafe on block (`data::FRAMES`).
+- Evolving pairs (`data::evolves`) pair skills of one family. Each new skill is in exactly one pair.
+- The effect of each skill is an effect of the pixfx registry that matches the technique (a sword ring for the Magic Arsenal, rune rings for restrictions, the night-sky effect for Remnant Night). A skill played once with `cast` uses a one-shot effect: the duel never stops a looping one.
+- Each effect takes its school's colours through `data::tint`, except effects whose own colours are the point (the jade bagua mirror, the golden bell, the lotus, the night sky).
+
+## The pool
+
+A fight still draws 8 skills of its school (`POOL_SIZE`). With 33 Thunder and 39 Frost skills in the pools, `bar::fight_pool` now also guarantees that a payoff skill (palm, burst, gather; shatter, lotus, yellowspring) comes with a skill that lays the status it spends, because the draw no longer leaves out only 3 of 11.
+
+## Technique to skill
+
+| Technique | Skill | School | Kind |
+|---|---|---|---|
+| Fireball Technique | `fireball` | Thunder | bolt |
+| Gravity Technique / Attractive Force | `gravity` | Thunder | area |
+| Earth Split / Lands Collapse | `earthsplit` | Thunder | area |
+| Finger of Annihilation | `finger` | Thunder | bolt |
+| Ji Thunder | `jithunder` | Thunder | bolt |
+| Thunder Gathering Seal | `gather` | Thunder | area |
+| Ancient God Blood | `ancientgod` | Thunder | blast |
+| Slash Luo Art (Zhanluo) | `slashluo` | Thunder | dash |
+| Magic Arsenal | `arsenal` | Thunder | field |
+| Shrinking the Earth into an Inch / Great Teleportation Restriction Art | `inchearth` | Thunder | blink |
+| One Step Tread the Heaven | `onestep` | Thunder | dash |
+| Mountain Collapse / Mountain Crumbles | `mountain` | Thunder | area |
+| Heartbeat Thunder Sound | `heartbeat` | Thunder | blast |
+| Light and Shadow Shield | `lightshield` | Thunder | barrier |
+| Nine Revolutions Immortal Refining Art | `nineturn` | Thunder | blast |
+| Ancient Clan Indestructible Body | `indestructible` | Thunder | heal |
+| Ancient Protection / Ancestral Soul Protection | `ancientprotect` | Thunder | ward |
+| Vermilion Bird Nine Mysteries Transformation | `vermilion` | Thunder | blast |
+| Summon Rain | `summonrain` | Frost | field |
+| Summon Wind | `summonwind` | Frost | blast |
+| Beans to Soldiers | `beans` | Frost | field |
+| Yin Moon Has Clear Sky / Dark Moon | `yinmoon` | Frost | area |
+| Soul Searching Technique | `soulsearch` | Frost | blast |
+| Spirit Transformation Technique | `spiritchange` | Frost | bolt |
+| Body Fixation Art / Immobilization Technique / Stop Spell | `bodyfix` | Frost | area |
+| Destruction Restriction | `restriction` | Frost | area |
+| Eighteen Plum Blossom Restrictions | `plumblossom` | Frost | area |
+| Life and Death Seal | `lifedeath` | Frost | area |
+| Cause and Effect Seal | `karma` | Frost | barrier |
+| Dream Return to Ancient Times | `dreamback` | Frost | ward |
+| Dream Dao | `dreamdao` | Frost | blast |
+| Flowing Moon | `flowingmoon` | Frost | heal |
+| Remnant Night / Sundered Night | `remnantnight` | Frost | area |
+| Heaven Flipping Seal | `heavenflip` | Frost | area |
+| Third Eye | `thirdeye` | Frost | bolt |
+| Seven-Colored Dao Spear | `sevencolor` | Frost | dash |
+| World-Burning Ancient Umbrella | `umbrella` | Frost | area |
+| Spirit-Devouring Body-Consuming Heaven-Severing Great Art / Devouring | `devour` | Frost | blast |
+| Falling Star | `starfall` | Frost | area |
+| Foundation Seizing Great Art | `seize` | Frost | bolt |
+| Yellow Spring Finger / Underworld Finger | `yellowspring` | Frost | blast |
+| Ancient Thunder Realm / Thunder Origin Technique | `ancientthunder` | Thunder | area |
+| Demon Transformation Finger | `demonfinger` | Thunder | bolt |
+| Kunji Whip / Cause and Effect Whip | `kunjiwhip` | Thunder | blast |
+| Heavenly Tiger Flag | `tigerflag` | Thunder | bolt |
+| Time Restriction | `timerestrict` | Frost | area |
+| Life and Death Restriction | `lifedeathrestrict` | Frost | field |
+| Billion Soul Banner / Soul Banner method | `soulbanner` | Frost | field |
+| Spirit Servitude Seal | `servitude` | Frost | area |
+| Seven-Colored Divine Void Nail | `voidnail` | Frost | bolt |
+
+## Balance
+
+Measured with `cargo run --release -p pixfx-duel --example ladder -- --seeds 150 --telemetry`, the shipped policy (trained before these skills existed):
+
+| Match | Before | First draft of the skills | Shipped numbers |
+|---|---|---|---|
+| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) |
+| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% |
+| balanced vs aggressive script | 91.1% | 85.1% | 85.6% |
+| balanced vs turtle script | 100.0% | 99.9% | 99.9% |
+| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% |
+
+The first draft favoured Frost: its new skills (`yellowspring`, `soulbanner`, `summonrain`, `sevencolor`) land and hurt, while Thunder's (`gather`, `gravity`, `earthsplit`, `mountain`) rarely landed, and a larger pool dilutes Thunder's older, stronger core more. The shipped numbers raise Thunder's weak new skills and trim those four of Frost's; no number of the original 27 spells changed.
+
+## Techniques with no skill
+
+The sources name more techniques than the duel can show. Those left out, and why:
+
+| Technique | Why it has no skill |
+|---|---|
+| Yellow Spring Ascension Art, Thunder Essence Art, Nine-level cultivation methods, Slaughter Immortal Art, Spirit Stabilizing Art | cultivation methods: they train a body between fights, there is no action to cast |
+| Concealment, Disguising, Memory Erasing, Blood Refining Technique | out-of-fight uses (hiding a level, refining treasure); no duel action |
+| Dao Art Fusion, Eight Extremes Dao, Dao Transformation Yellow Spring, Condensed Spring Soul, Star Soul Extraction, Life Destruction Spirit Summoning | summon or fuse over many turns or planets, or trade life for power: the duel has no life-for-power or summoned-ally mechanic |
+| Ancient God Cauldron (swaps positions), Star Compass | a position swap the duel has no rule for; the long blink (`inchearth`) covers travel |
+| Third-step abilities with no name in the sources, Eternal Wood Spirit, Immortal Pointing Brush, Immortal Sealing Seal, Collection Pavilion | named without a described effect, or treasures that carry other techniques |
+| the passives (Dao Ancient Indestructible Body beyond its recovery, Ancient God bloodline) | a passive is a trait, not a skill; the duel's passives are the schools' traits |
+
+## Sources and coverage
+
+Read: the Baidu Baike pages for Wang Lin (techniques and treasures) and for *Renegade Immortal*, and the Wikipedia article (it names no technique). The Fandom wikis (`renegade-immortal-xian-ni`, `xian-ni`) and VS Battles answered HTTP 402 and were not read; the techniques that only they list (Ji Thunder, Earth Splitting, Fireball, Call the Wind, Summon the Rain, Magic Arsenal, Mountain Crumbles, Lands Collapse, Dark Moon, Clear Skies, Stop Spell, Falling Star, Body Formation, One Step Tread the Heaven, Sundered Night, Underworld Finger, Finger of Death) came from a search summary that quoted them, so their effects here follow the technique's name and role, not a read description. Translations of names differ between sources; the table gives each skill's source names.
+
+## Not done
+
+- **Icons.** The icon atlas (`site/art/skill-icons.sh`) is a generated sheet of 25. The new skills share the cell of the existing skill of their school that looks most like them (`site/assets/skill-icons.js`); drawing their own needs a new sheet.
+- **A retrain.** The shipped policy was trained on the 27 spells. It still clears the entry bar on the new pools (the table above), but it was never shown the new skills; a retrain on a desktop (`train/README.md`) is how its play improves with them.
+- **A season.** No season tag exists yet, so no bot is made stale. The first season freezes this table (`docs/tournament.md`).
