@@ -4,9 +4,11 @@ use wasmtime::{Engine, Instance, Memory, Module, ResourceLimiter, Store, Trap, T
 
 use crate::LIMITS;
 
-/// Sums every memory the instance grows to against `LIMITS.memory`: a grow past it returns -1 to the bot.
+/// Sums every memory and every table the instance grows to against `LIMITS.memory` and `LIMITS.table_elements`: a grow
+/// past either returns -1 to the bot, and a module declaring more than that fails to instantiate.
 struct Budget {
     used: usize,
+    table_used: usize,
 }
 
 impl ResourceLimiter for Budget {
@@ -26,10 +28,18 @@ impl ResourceLimiter for Budget {
 
     fn table_growing(
         &mut self,
-        _current: usize,
-        _desired: usize,
+        current: usize,
+        desired: usize,
         _max: Option<usize>,
     ) -> wasmtime::Result<bool> {
+        let total = self
+            .table_used
+            .saturating_sub(current)
+            .saturating_add(desired);
+        if total > LIMITS.table_elements {
+            return Ok(false);
+        }
+        self.table_used = total;
         Ok(true)
     }
 }
@@ -55,7 +65,13 @@ fn fault(e: wasmtime::Error) -> Fault {
 impl WasmBot {
     /// A fresh instance; a trap in the module's own start function is a fault.
     pub fn new(engine: &Engine, module: &Module) -> Result<WasmBot, Fault> {
-        let mut store = Store::new(engine, Budget { used: 0 });
+        let mut store = Store::new(
+            engine,
+            Budget {
+                used: 0,
+                table_used: 0,
+            },
+        );
         store.limiter(|budget| budget);
         store.set_fuel(LIMITS.fuel_setup).map_err(fault)?;
         let instance = Instance::new(&mut store, module, &[]).map_err(fault)?;

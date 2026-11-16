@@ -8,6 +8,8 @@ pub struct Limits {
     pub module: usize,
     /// Bytes of every memory together.
     pub memory: usize,
+    /// Elements of every table together.
+    pub table_elements: usize,
     /// Fuel per `arena_decide`.
     pub fuel_decide: u64,
     /// Fuel per `arena_start`, `arena_round` and instantiation.
@@ -17,6 +19,7 @@ pub struct Limits {
 pub const LIMITS: Limits = Limits {
     module: 32 << 20,
     memory: 256 << 20,
+    table_elements: 1 << 20,
     fuel_decide: 20_000_000,
     fuel_setup: 200_000_000,
 };

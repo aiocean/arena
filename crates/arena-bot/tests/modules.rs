@@ -151,6 +151,28 @@ fn grow_past_256_mib_across_two_memories_returns_minus_one() -> Test {
 }
 
 #[test]
+fn refuses_a_declared_table_over_the_cap() -> Test {
+    let text = bot(1, "i32.const 0").replace("(global", "(table 50000000 funcref)\n  (global");
+    let r = refusal(&text)?;
+    assert!(matches!(r, Refusal::Invalid(_)), "{r}");
+    assert!(r.to_string().contains("table"), "{r}");
+    Ok(())
+}
+
+#[test]
+fn a_table_grow_past_the_cap_returns_minus_one() -> Test {
+    assert_eq!(LIMITS.table_elements, 1 << 20);
+    // 1000000 elements fit; a second 1000000 would put the sum past 1 << 20
+    let mut bot = run(&bot(
+        1,
+        "ref.null func i32.const 1000000 table.grow 0 drop ref.null func i32.const 1000000 table.grow 0",
+    )
+    .replace("(global", "(table 1 funcref)\n  (global"))?;
+    assert_eq!(ok(decide(&mut bot))?, -1);
+    Ok(())
+}
+
+#[test]
 fn two_instances_keep_their_own_memory() -> Test {
     let engine = engine()?;
     let module = check(
