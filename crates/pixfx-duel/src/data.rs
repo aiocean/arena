@@ -348,6 +348,9 @@ pub fn evolves(school: School) -> &'static [[&'static str; 2]] {
             ["mountain", "ancientgod"],
             ["ancientthunder", "tigerflag"],
             ["demonfinger", "kunjiwhip"],
+            ["fireescape", "flameorigin"],
+            ["warprint", "heavenlychop"],
+            ["fingerdeath", "celestialslaughter"],
         ],
         School::Frost => &[
             ["shard", "icicle"],
@@ -364,6 +367,9 @@ pub fn evolves(school: School) -> &'static [[&'static str; 2]] {
             ["timerestrict", "lifedeathrestrict"],
             ["soulbanner", "servitude"],
             ["voidnail", "seize"],
+            ["ghostsummon", "soulvortex"],
+            ["soulrefine", "bodyformation"],
+            ["starrotation", "meritspirit"],
         ],
     }
 }
@@ -528,6 +534,9 @@ pub const FRAMES: Frames = Frames {
         "onestep",
         "nineturn",
         "sevencolor",
+        "heavenlychop",
+        "fireescape",
+        "warprint",
     ],
     ultimate_invincible: 0.3,
 };
@@ -744,7 +753,7 @@ const BASE: Spell = Spell {
 use Blow::{Magic, Physical};
 
 /// Every spell, in the duel's order.
-static SPELLS: [Spell; 77] = [
+static SPELLS: [Spell; 91] = [
     Spell {
         name: "slash",
         kind: Kind::Melee,
@@ -1987,6 +1996,226 @@ static SPELLS: [Spell; 77] = [
         speed: Some(420.0),
         ..BASE
     },
+    // Thunder: Finger of Death / 100 Fingers of Death: Three fingers of death fall one after another where the foe will be.
+    Spell {
+        name: "fingerdeath",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 34.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 4.0,
+        damage: Some(9.0),
+        sigil: Some(0.25),
+        impact: Some(0.08),
+        radius: Some(11.0),
+        notice: Some(0.0),
+        strikes: Some(3.0),
+        every: Some(0.25),
+        aim_ahead: Some(0.2),
+        ..BASE
+    },
+    // Thunder: Heavenly Chop (sword divine ability): A sword cut that splits heaven at close range: a heavy blow.
+    Spell {
+        name: "heavenlychop",
+        kind: Kind::Blast,
+        blow: Some(Physical),
+        fx: Some("arcane/sword-slash"),
+        cost: 34.0,
+        windup: 0.45,
+        recover: 0.5,
+        cooldown: 4.5,
+        range: Some(56.0),
+        damage: Some(26.0),
+        ..BASE
+    },
+    // Thunder: Nine Mysterious Spell, Fire Escape: Turns to flame and dashes through the foe, setting it burning.
+    Spell {
+        name: "fireescape",
+        kind: Kind::Dash,
+        blow: Some(Magic),
+        fx: Some("spawn/poof"),
+        cost: 28.0,
+        windup: 0.22,
+        recover: 0.4,
+        cooldown: 3.6,
+        distance: Some(80.0),
+        damage: Some(10.0),
+        burn: true,
+        ..BASE
+    },
+    // Thunder: Rise Three Realm Flame Origin: The origin of flame rises under the foe and burns it.
+    Spell {
+        name: "flameorigin",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 34.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 3.8,
+        damage: Some(19.0),
+        sigil: Some(0.35),
+        impact: Some(0.4),
+        radius: Some(20.0),
+        notice: Some(0.0),
+        burn: true,
+        ..BASE
+    },
+    // Thunder: War Spirit Print (Cloud Sea divine ability): A seal of war stamped on the foe at close range: a heavy blow that breaks its defence.
+    Spell {
+        name: "warprint",
+        kind: Kind::Blast,
+        blow: Some(Physical),
+        fx: Some("explosions/swirl-blast"),
+        cost: 32.0,
+        windup: 0.4,
+        recover: 0.5,
+        cooldown: 4.0,
+        range: Some(46.0),
+        damage: Some(22.0),
+        def_down: Some(3.0),
+        ..BASE
+    },
+    // Thunder: Earth Escape Technique: Sinks into the ground and comes out a few steps away.
+    Spell {
+        name: "earthescape",
+        kind: Kind::Blink,
+        fx: Some("explosions/puff-burst"),
+        cost: 14.0,
+        windup: 0.06,
+        recover: 0.1,
+        cooldown: 1.4,
+        distance: Some(40.0),
+        ..BASE
+    },
+    // Thunder: Celestial Slaughter Art (All Seer spell): A bolt of slaughter intent, slow to gather and heavy.
+    Spell {
+        name: "celestialslaughter",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 36.0,
+        windup: 0.5,
+        recover: 0.35,
+        cooldown: 4.5,
+        damage: Some(26.0),
+        speed: Some(360.0),
+        ..BASE
+    },
+    // Frost: Ghost Summoning Technique: Ghosts rise round the foe and drag it in while they cut it.
+    Spell {
+        name: "ghostsummon",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("critters/wisp"),
+        cost: 34.0,
+        windup: 0.45,
+        recover: 0.3,
+        cooldown: 6.0,
+        damage: Some(7.0),
+        life: Some(2.6),
+        height: Some(0.0),
+        pull: Some(8.0),
+        reach: Some(50.0),
+        under: Some(28.0),
+        tick: Some(5.0),
+        ..BASE
+    },
+    // Frost: Soul Vortex: A vortex of souls pulls the foe in, then bursts.
+    Spell {
+        name: "soulvortex",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/vortex-ring"),
+        cost: 30.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 3.6,
+        damage: Some(16.0),
+        impact: Some(0.5),
+        radius: Some(16.0),
+        notice: Some(0.1),
+        pull: Some(45.0),
+        reach: Some(56.0),
+        pull_until: Some(0.45),
+        ..BASE
+    },
+    // Frost: Soul Refining Technique: Refines a soul into life: heals and washes off burn, silence, defence down, chill and shock.
+    Spell {
+        name: "soulrefine",
+        kind: Kind::Heal,
+        fx: Some("holy/feather-burst"),
+        cost: 28.0,
+        windup: 0.7,
+        recover: 0.4,
+        cooldown: 8.0,
+        amount: Some(16.0),
+        ..BASE
+    },
+    // Frost: Star Rotation: Three stars turn down on the foe one after another where it will be.
+    Spell {
+        name: "starrotation",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 38.0,
+        windup: 0.4,
+        recover: 0.35,
+        cooldown: 4.5,
+        damage: Some(11.0),
+        sigil: Some(0.25),
+        impact: Some(0.08),
+        radius: Some(11.0),
+        notice: Some(0.0),
+        strikes: Some(3.0),
+        every: Some(0.35),
+        aim_ahead: Some(0.25),
+        ..BASE
+    },
+    // Frost: Merit Spirit (Ancient God spell): A spirit of merit stands over the caster: 1 to 3 charges, each stops a whole blow. Cleanses.
+    Spell {
+        name: "meritspirit",
+        kind: Kind::Ward,
+        fx: Some("holy/lotus"),
+        feet: true,
+        cost: 42.0,
+        windup: 0.5,
+        recover: 0.25,
+        cooldown: 8.5,
+        ..BASE
+    },
+    // Frost: Body Formation (Celestial Emperor Qing Lin spell): Forms the body anew: heals and washes off burn, silence, defence down, chill and shock.
+    Spell {
+        name: "bodyformation",
+        kind: Kind::Heal,
+        fx: Some("feedback/power-up"),
+        cost: 34.0,
+        windup: 0.75,
+        recover: 0.4,
+        cooldown: 9.5,
+        amount: Some(20.0),
+        ..BASE
+    },
+    // Frost: True and False Domain / True and False Seal: Open eyes are truth, closed eyes falsehood: a seal on the foe that silences it and breaks its defence.
+    Spell {
+        name: "truefalse",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("impacts/twin-converge"),
+        cost: 36.0,
+        windup: 0.35,
+        recover: 0.3,
+        cooldown: 4.0,
+        damage: Some(20.0),
+        impact: Some(0.5),
+        radius: Some(16.0),
+        notice: Some(0.1),
+        def_down: Some(2.0),
+        silence: Some(0.8),
+        ..BASE
+    },
 ];
 
 /// Every spell, in the duel's order.
@@ -2091,6 +2320,13 @@ static THUNDER: SchoolData = SchoolData {
         "demonfinger",
         "kunjiwhip",
         "tigerflag",
+        "fingerdeath",
+        "heavenlychop",
+        "fireescape",
+        "flameorigin",
+        "warprint",
+        "earthescape",
+        "celestialslaughter",
     ],
     ultimate: "tribulation",
     signature: Kind::Blast,
@@ -2257,6 +2493,13 @@ static FROST: SchoolData = SchoolData {
         "soulbanner",
         "servitude",
         "voidnail",
+        "ghostsummon",
+        "soulvortex",
+        "soulrefine",
+        "starrotation",
+        "meritspirit",
+        "bodyformation",
+        "truefalse",
     ],
     ultimate: "prison",
     signature: Kind::Zone,

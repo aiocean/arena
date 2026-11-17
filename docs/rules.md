@@ -21,7 +21,7 @@ where they explain a mechanic. When a number here and `data.rs` disagree, `data.
 | Stats | less hp and attack (2500 hp, 345 atk) | more hp and attack (3300 hp, 520 atk) |
 | Traits | `fury`: each blow it lands raises its attack 4%, up to 5 stacks for the round; `unyielding`: once a round, a killing blow leaves it on its last sliver of life | `attuned`: every second paid spell it casts earns a rage point |
 | Basics (always in reach) | slash, dive, blink | slash, dive, blink |
-| Pool (the bar draws from it) | 33 skills: bolt, palm, step, seal, orb, bell, heal, spark, burst, quake, hex, and the Renegade Immortal skills below | 39 skills: lotus, shatter, icicle, frostfire, collapse, shard, jet, flurry, void, mirror, ward, and the Renegade Immortal skills below |
+| Pool (the bar draws from it) | 40 skills: bolt, palm, step, seal, orb, bell, heal, spark, burst, quake, hex, and the Renegade Immortal skills below | 46 skills: lotus, shatter, icicle, frostfire, collapse, shard, jet, flurry, void, mirror, ward, and the Renegade Immortal skills below |
 | Ultimate (full rage) | tribulation: three thunderclaps fall one after another where the foe will be | prison: a great collapse drags the foe in from far off and freezes it |
 
 Frost's bigger stats are balanced by Thunder's faster, more varied kit. With both sides played by the same trained
@@ -46,7 +46,7 @@ cooldown and uncast for 6 s leaves for another draw (`STALE`), whether or not th
 - **Tiers and traits.** Each draw rolls a tier (common, rare, epic; legendary only through duplicates) and traits
   (swift, heavy, piercing, lingering, cheap) that change its power, cost and timings (`data.rs`, `bar.rs`).
 - **Evolving pairs.** Casting one skill of a pair while its partner is on the bar refills that slot at once with the
-  partner evolved (x1.5 power). Thunder: bolt + seal, palm + step, quake + burst, fireball + vermilion, jithunder + finger, gravity + earthsplit, gather + heartbeat, slashluo + onestep, mountain + ancientgod, ancientthunder + tigerflag, demonfinger + kunjiwhip. Frost: shard + icicle, shatter + flurry, lotus + jet, summonrain + summonwind, yinmoon + remnantnight, bodyfix + lifedeath, soulsearch + dreamdao, thirdeye + sevencolor, restriction + plumblossom, starfall + heavenflip, yellowspring + devour, timerestrict + lifedeathrestrict, soulbanner + servitude, voidnail + seize.
+  partner evolved (x1.5 power). Thunder: bolt + seal, palm + step, quake + burst, fireball + vermilion, jithunder + finger, gravity + earthsplit, gather + heartbeat, slashluo + onestep, mountain + ancientgod, ancientthunder + tigerflag, demonfinger + kunjiwhip, fireescape + flameorigin, warprint + heavenlychop, fingerdeath + celestialslaughter. Frost: shard + icicle, shatter + flurry, lotus + jet, summonrain + summonwind, yinmoon + remnantnight, bodyfix + lifedeath, soulsearch + dreamdao, thirdeye + sevencolor, restriction + plumblossom, starfall + heavenflip, yellowspring + devour, timerestrict + lifedeathrestrict, soulbanner + servitude, voidnail + seize, ghostsummon + soulvortex, soulrefine + bodyformation, starrotation + meritspirit.
 - **Lucky casts.** A cast sometimes rolls lucky (8%): doubled, free, or cast again (`data.rs`).
 
 So a bot has seven castable slots: the three basics, the three bar slots and the ultimate.
@@ -85,7 +85,7 @@ The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `da
 - **A blow during a windup breaks the cast**: the cast is lost.
 - **Counter:** a blow on a fighter in its windup does 1.2x and staggers 0.10 s longer.
 - **Punish:** a blow on a fighter in its recover does 1.2x and staggers 0.20 s longer.
-- **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts (ancientgod, slashluo, onestep, nineturn, sevencolor) recover 0.15 s longer when their blow is guarded.
+- **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts (ancientgod, slashluo, onestep, nineturn, sevencolor, heavenlychop, fireescape, warprint) recover 0.15 s longer when their blow is guarded.
 - **Ultimate opening:** an ultimate cannot be hit in the first 0.3 s of its windup; a blow passes through as a dodge.
 - A field's strike (void) gives neither a counter nor a punish.
 
@@ -100,18 +100,18 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 
 ## The Renegade Immortal skills
 
-50 skills of the Thunder and Frost pools are techniques of the novel *Renegade Immortal* (Xian Ni). Each is a spell of the kinds above, read by a bot by its kind and numbers, never its name (`docs/bot.md`); `docs/specs/2026-11-16-xianni-spells-design.md` says which technique each one is and which techniques have no skill.
+64 skills of the Thunder and Frost pools are techniques of the novel *Renegade Immortal* (Xian Ni). Each is a spell of the kinds above, read by a bot by its kind and numbers, never its name (`docs/bot.md`); `docs/specs/2026-11-16-xianni-spells-design.md` says which technique each one is and which techniques have no skill.
 
 **Thunder**
 
 | Skill | Kind | Qi | Does |
 |---|---|---|---|
-| Fireball (`fireball`) | bolt | 16 | A ball of fire that flies at the foe and sets it burning. |
-| Gravity Technique (`gravity`) | area | 24 | Pulls the foe in toward a point, then crushes it there. |
+| Fireball (`fireball`) | bolt | 14 | A ball of fire that flies at the foe and sets it burning. |
+| Gravity Technique (`gravity`) | area | 22 | Pulls the foe in toward a point, then crushes it there. |
 | Earth Split (`earthsplit`) | area | 28 | The ground under the foe splits and blows up, breaking its defence. Only hits on the ground. |
 | Finger of Annihilation (`finger`) | bolt | 28 | A thin, fast beam from one finger that hits hard. |
 | Ji Thunder (`jithunder`) | bolt | 24 | A heavy bolt of the Ji Realm that shocks. |
-| Thunder Gathering Seal (`gather`) | area | 38 | Gathers thunder under the foe and releases it in one burst: shocks, and hits harder per shock stack on the foe. |
+| Thunder Gathering Seal (`gather`) | area | 36 | Gathers thunder under the foe and releases it in one burst: shocks, and hits harder per shock stack on the foe. |
 | Ancient God Blood (`ancientgod`) | blast | 36 | The body swells into an Ancient God phantom for one heavy blow at close range. |
 | Slash Luo (`slashluo`) | dash | 30 | A sword form that cuts through space: dashes through the foe along a long line. |
 | Magic Arsenal (`arsenal`) | field | 48 | A ring of flying swords turns over the foe and cuts whoever stands under it, then strikes. |
@@ -124,10 +124,17 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | Indestructible Body (`indestructible`) | heal | 40 | Recovery outpaces destruction: heals and washes off burn, silence, defence down, chill and shock. |
 | Ancient Protection (`ancientprotect`) | ward | 42 | A golden bell of ancestral souls: 1 to 3 charges, each stops a whole blow. Cleanses. |
 | Vermilion Bird Transformation (`vermilion`) | blast | 30 | A burning bird of fire sweeps out of the palm at close range and sets the foe burning. |
-| Ancient Thunder Realm (`ancientthunder`) | area | 42 | An ancient thunder dragon falls twice on the foe, one strike after another, and shocks it. |
+| Ancient Thunder Realm (`ancientthunder`) | area | 38 | An ancient thunder dragon falls twice on the foe, one strike after another, and shocks it. |
 | Demon Transformation Finger (`demonfinger`) | bolt | 22 | A finger of demonic qi that silences what it hits. |
 | Kunji Whip (`kunjiwhip`) | blast | 26 | A whip that strikes the soul directly at middle reach: silences, and shocks. |
 | Heavenly Tiger Flag (`tigerflag`) | bolt | 26 | A heavenly tiger leaps from the flag in a straight line and mauls what it meets. |
+| Finger of Death (`fingerdeath`) | area | 34 | Three fingers of death fall one after another where the foe will be. |
+| Heavenly Chop (`heavenlychop`) | blast | 34 | A sword cut that splits heaven at close range: a heavy blow. |
+| Fire Escape (`fireescape`) | dash | 28 | Turns to flame and dashes through the foe, setting it burning. |
+| Rise Three Realm Flame Origin (`flameorigin`) | area | 34 | The origin of flame rises under the foe and burns it. |
+| War Spirit Print (`warprint`) | blast | 32 | A seal of war stamped on the foe at close range: a heavy blow that breaks its defence. |
+| Earth Escape (`earthescape`) | blink | 14 | Sinks into the ground and comes out a few steps away. |
+| Celestial Slaughter Art (`celestialslaughter`) | bolt | 36 | A bolt of slaughter intent, slow to gather and heavy. |
 
 **Frost**
 
@@ -161,3 +168,10 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | Soul Banner (`soulbanner`) | field | 44 | Spirits swirl in a vortex over the foe, dragging it in and cutting it while it stands there. |
 | Spirit Servitude Seal (`servitude`) | area | 34 | A seal under the foe that drags it in, then closes on it: silences. |
 | Seven-Colored Divine Void Nail (`voidnail`) | bolt | 34 | A nail of void driven at the foe at great speed: breaks its defence. |
+| Ghost Summoning (`ghostsummon`) | field | 34 | Ghosts rise round the foe and drag it in while they cut it. |
+| Soul Vortex (`soulvortex`) | area | 30 | A vortex of souls pulls the foe in, then bursts. |
+| Soul Refining (`soulrefine`) | heal | 28 | Refines a soul into life: heals and washes off burn, silence, defence down, chill and shock. |
+| Star Rotation (`starrotation`) | area | 38 | Three stars turn down on the foe one after another where it will be. |
+| Merit Spirit (`meritspirit`) | ward | 42 | A spirit of merit stands over the caster: 1 to 3 charges, each stops a whole blow. Cleanses. |
+| Body Formation (`bodyformation`) | heal | 34 | Forms the body anew: heals and washes off burn, silence, defence down, chill and shock. |
+| True and False Seal (`truefalse`) | area | 36 | Open eyes are truth, closed eyes falsehood: a seal on the foe that silences it and breaks its defence. |

@@ -1108,6 +1108,76 @@
    true
   ],
   [
+   "swift",
+   "fingerdeath",
+   true
+  ],
+  [
+   "swift",
+   "heavenlychop",
+   true
+  ],
+  [
+   "swift",
+   "fireescape",
+   true
+  ],
+  [
+   "swift",
+   "flameorigin",
+   true
+  ],
+  [
+   "swift",
+   "warprint",
+   true
+  ],
+  [
+   "swift",
+   "earthescape",
+   true
+  ],
+  [
+   "swift",
+   "celestialslaughter",
+   true
+  ],
+  [
+   "swift",
+   "ghostsummon",
+   true
+  ],
+  [
+   "swift",
+   "soulvortex",
+   true
+  ],
+  [
+   "swift",
+   "soulrefine",
+   true
+  ],
+  [
+   "swift",
+   "starrotation",
+   true
+  ],
+  [
+   "swift",
+   "meritspirit",
+   true
+  ],
+  [
+   "swift",
+   "bodyformation",
+   true
+  ],
+  [
+   "swift",
+   "truefalse",
+   true
+  ],
+  [
    "heavy",
    "slash",
    true
@@ -1493,6 +1563,76 @@
    true
   ],
   [
+   "heavy",
+   "fingerdeath",
+   true
+  ],
+  [
+   "heavy",
+   "heavenlychop",
+   true
+  ],
+  [
+   "heavy",
+   "fireescape",
+   true
+  ],
+  [
+   "heavy",
+   "flameorigin",
+   true
+  ],
+  [
+   "heavy",
+   "warprint",
+   true
+  ],
+  [
+   "heavy",
+   "earthescape",
+   false
+  ],
+  [
+   "heavy",
+   "celestialslaughter",
+   true
+  ],
+  [
+   "heavy",
+   "ghostsummon",
+   true
+  ],
+  [
+   "heavy",
+   "soulvortex",
+   true
+  ],
+  [
+   "heavy",
+   "soulrefine",
+   false
+  ],
+  [
+   "heavy",
+   "starrotation",
+   true
+  ],
+  [
+   "heavy",
+   "meritspirit",
+   false
+  ],
+  [
+   "heavy",
+   "bodyformation",
+   false
+  ],
+  [
+   "heavy",
+   "truefalse",
+   true
+  ],
+  [
    "piercing",
    "slash",
    true
@@ -1878,6 +2018,76 @@
    true
   ],
   [
+   "piercing",
+   "fingerdeath",
+   false
+  ],
+  [
+   "piercing",
+   "heavenlychop",
+   true
+  ],
+  [
+   "piercing",
+   "fireescape",
+   true
+  ],
+  [
+   "piercing",
+   "flameorigin",
+   false
+  ],
+  [
+   "piercing",
+   "warprint",
+   true
+  ],
+  [
+   "piercing",
+   "earthescape",
+   false
+  ],
+  [
+   "piercing",
+   "celestialslaughter",
+   true
+  ],
+  [
+   "piercing",
+   "ghostsummon",
+   false
+  ],
+  [
+   "piercing",
+   "soulvortex",
+   false
+  ],
+  [
+   "piercing",
+   "soulrefine",
+   false
+  ],
+  [
+   "piercing",
+   "starrotation",
+   false
+  ],
+  [
+   "piercing",
+   "meritspirit",
+   false
+  ],
+  [
+   "piercing",
+   "bodyformation",
+   false
+  ],
+  [
+   "piercing",
+   "truefalse",
+   false
+  ],
+  [
    "lingering",
    "slash",
    false
@@ -2263,6 +2473,76 @@
    false
   ],
   [
+   "lingering",
+   "fingerdeath",
+   false
+  ],
+  [
+   "lingering",
+   "heavenlychop",
+   false
+  ],
+  [
+   "lingering",
+   "fireescape",
+   false
+  ],
+  [
+   "lingering",
+   "flameorigin",
+   false
+  ],
+  [
+   "lingering",
+   "warprint",
+   false
+  ],
+  [
+   "lingering",
+   "earthescape",
+   false
+  ],
+  [
+   "lingering",
+   "celestialslaughter",
+   false
+  ],
+  [
+   "lingering",
+   "ghostsummon",
+   false
+  ],
+  [
+   "lingering",
+   "soulvortex",
+   false
+  ],
+  [
+   "lingering",
+   "soulrefine",
+   false
+  ],
+  [
+   "lingering",
+   "starrotation",
+   false
+  ],
+  [
+   "lingering",
+   "meritspirit",
+   false
+  ],
+  [
+   "lingering",
+   "bodyformation",
+   false
+  ],
+  [
+   "lingering",
+   "truefalse",
+   false
+  ],
+  [
    "cheap",
    "slash",
    true
@@ -2645,6 +2925,76 @@
   [
    "cheap",
    "voidnail",
+   true
+  ],
+  [
+   "cheap",
+   "fingerdeath",
+   true
+  ],
+  [
+   "cheap",
+   "heavenlychop",
+   true
+  ],
+  [
+   "cheap",
+   "fireescape",
+   true
+  ],
+  [
+   "cheap",
+   "flameorigin",
+   true
+  ],
+  [
+   "cheap",
+   "warprint",
+   true
+  ],
+  [
+   "cheap",
+   "earthescape",
+   true
+  ],
+  [
+   "cheap",
+   "celestialslaughter",
+   true
+  ],
+  [
+   "cheap",
+   "ghostsummon",
+   true
+  ],
+  [
+   "cheap",
+   "soulvortex",
+   true
+  ],
+  [
+   "cheap",
+   "soulrefine",
+   true
+  ],
+  [
+   "cheap",
+   "starrotation",
+   true
+  ],
+  [
+   "cheap",
+   "meritspirit",
+   true
+  ],
+  [
+   "cheap",
+   "bodyformation",
+   true
+  ],
+  [
+   "cheap",
+   "truefalse",
    true
   ]
  ],
@@ -3665,6 +4015,184 @@
    "damage": 20,
    "defDown": 4,
    "speed": 420
+  },
+  "fingerdeath": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 34,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 4,
+   "damage": 9,
+   "sigil": 0.25,
+   "impact": 0.08,
+   "radius": 11,
+   "notice": 0,
+   "strikes": 3,
+   "every": 0.25,
+   "aimAhead": 0.2
+  },
+  "heavenlychop": {
+   "kind": "blast",
+   "type": "physical",
+   "fx": "arcane/sword-slash",
+   "cost": 34,
+   "windup": 0.45,
+   "recover": 0.5,
+   "cooldown": 4.5,
+   "range": 56,
+   "damage": 26
+  },
+  "fireescape": {
+   "kind": "dash",
+   "type": "magic",
+   "fx": "spawn/poof",
+   "cost": 28,
+   "windup": 0.22,
+   "recover": 0.4,
+   "cooldown": 3.6,
+   "distance": 80,
+   "damage": 10,
+   "burn": true
+  },
+  "flameorigin": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 34,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 3.8,
+   "damage": 19,
+   "sigil": 0.35,
+   "impact": 0.4,
+   "radius": 20,
+   "notice": 0,
+   "burn": true
+  },
+  "warprint": {
+   "kind": "blast",
+   "type": "physical",
+   "fx": "explosions/swirl-blast",
+   "cost": 32,
+   "windup": 0.4,
+   "recover": 0.5,
+   "cooldown": 4,
+   "range": 46,
+   "damage": 22,
+   "defDown": 3
+  },
+  "earthescape": {
+   "kind": "blink",
+   "fx": "explosions/puff-burst",
+   "cost": 14,
+   "windup": 0.06,
+   "recover": 0.1,
+   "cooldown": 1.4,
+   "distance": 40
+  },
+  "celestialslaughter": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 36,
+   "windup": 0.5,
+   "recover": 0.35,
+   "cooldown": 4.5,
+   "damage": 26,
+   "speed": 360
+  },
+  "ghostsummon": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "critters/wisp",
+   "cost": 34,
+   "windup": 0.45,
+   "recover": 0.3,
+   "cooldown": 6,
+   "damage": 7,
+   "life": 2.6,
+   "height": 0,
+   "pull": 8,
+   "reach": 50,
+   "under": 28,
+   "tick": 5
+  },
+  "soulvortex": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/vortex-ring",
+   "cost": 30,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 3.6,
+   "damage": 16,
+   "impact": 0.5,
+   "radius": 16,
+   "notice": 0.1,
+   "pull": 45,
+   "reach": 56,
+   "pullUntil": 0.45
+  },
+  "soulrefine": {
+   "kind": "heal",
+   "fx": "holy/feather-burst",
+   "cost": 28,
+   "windup": 0.7,
+   "recover": 0.4,
+   "cooldown": 8,
+   "amount": 16
+  },
+  "starrotation": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 38,
+   "windup": 0.4,
+   "recover": 0.35,
+   "cooldown": 4.5,
+   "damage": 11,
+   "sigil": 0.25,
+   "impact": 0.08,
+   "radius": 11,
+   "notice": 0,
+   "strikes": 3,
+   "every": 0.35,
+   "aimAhead": 0.25
+  },
+  "meritspirit": {
+   "kind": "ward",
+   "fx": "holy/lotus",
+   "cost": 42,
+   "windup": 0.5,
+   "recover": 0.25,
+   "cooldown": 8.5,
+   "feet": true
+  },
+  "bodyformation": {
+   "kind": "heal",
+   "fx": "feedback/power-up",
+   "cost": 34,
+   "windup": 0.75,
+   "recover": 0.4,
+   "cooldown": 9.5,
+   "amount": 20
+  },
+  "truefalse": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "impacts/twin-converge",
+   "cost": 36,
+   "windup": 0.35,
+   "recover": 0.3,
+   "cooldown": 4,
+   "damage": 20,
+   "impact": 0.5,
+   "radius": 16,
+   "notice": 0.1,
+   "defDown": 2,
+   "silence": 0.8
   }
  },
  "schools": {
@@ -3708,7 +4236,14 @@
     "ancientthunder",
     "demonfinger",
     "kunjiwhip",
-    "tigerflag"
+    "tigerflag",
+    "fingerdeath",
+    "heavenlychop",
+    "fireescape",
+    "flameorigin",
+    "warprint",
+    "earthescape",
+    "celestialslaughter"
    ],
    "ultimate": "tribulation",
    "signature": "blast",
@@ -3947,7 +4482,14 @@
     "lifedeathrestrict",
     "soulbanner",
     "servitude",
-    "voidnail"
+    "voidnail",
+    "ghostsummon",
+    "soulvortex",
+    "soulrefine",
+    "starrotation",
+    "meritspirit",
+    "bodyformation",
+    "truefalse"
    ],
    "ultimate": "prison",
    "signature": "zone",
@@ -4345,7 +4887,10 @@
     "slashluo",
     "onestep",
     "nineturn",
-    "sevencolor"
+    "sevencolor",
+    "heavenlychop",
+    "fireescape",
+    "warprint"
    ],
    "ultimateInvincible": 0.3
   },

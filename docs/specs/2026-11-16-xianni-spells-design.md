@@ -2,20 +2,20 @@
 
 ## Intent
 
-The arena's duel is a cultivation duel. This adds the techniques of the novel *Renegade Immortal* (Xian Ni, Er Gen) as skills in the two schools' pools: 50 skills, 22 for Thunder and 28 for Frost, on top of the 27 spells the duel had.
+The arena's duel is a cultivation duel. This adds the techniques of the novel *Renegade Immortal* (Xian Ni, Er Gen) as skills in the two schools' pools: 64 skills, 29 for Thunder and 35 for Frost, on top of the 27 spells the duel had.
 
 ## How a technique becomes a skill
 
 - A skill is a spell of the duel's existing kinds (melee, dash, blast, bolt, orb, area, field, heal, ward, barrier, blink) and flags (shock, chill, burn, freeze, silence, defence down, pull, seal, rage steal, reflect, counter, strikes). No new rule was needed, so a bot still reads a skill by its kind and numbers (`docs/bot.md`): the 354 inputs and the 30 acts are unchanged.
 - The school follows the technique's nature: lightning, force, body, movement and swords are Thunder's; cold, restrictions, seals, souls, time and dreams are Frost's.
 - Numbers sit in the range of the skills of the same kind (`data.rs`): cost 10 to 50 qi, a heavy blow 28 to 34 power against the ultimates' 31, long gathers for big blows, and the heavy dashes and blasts are unsafe on block (`data::FRAMES`).
-- Evolving pairs (`data::evolves`) pair skills of one family. Each new skill is in exactly one pair.
+- Evolving pairs (`data::evolves`) pair skills of one family. A skill is in at most one pair; a skill with no family partner (`earthescape`, `inchearth`, `truefalse` and a few more) has none.
 - The effect of each skill is an effect of the pixfx registry that matches the technique (a sword ring for the Magic Arsenal, rune rings for restrictions, the night-sky effect for Remnant Night). A skill played once with `cast` uses a one-shot effect: the duel never stops a looping one.
 - Each effect takes its school's colours through `data::tint`, except effects whose own colours are the point (the jade bagua mirror, the golden bell, the lotus, the night sky).
 
 ## The pool
 
-A fight still draws 8 skills of its school (`POOL_SIZE`). With 33 Thunder and 39 Frost skills in the pools, `bar::fight_pool` now also guarantees that a payoff skill (palm, burst, gather; shatter, lotus, yellowspring) comes with a skill that lays the status it spends, because the draw no longer leaves out only 3 of 11.
+A fight still draws 8 skills of its school (`POOL_SIZE`). With 40 Thunder and 46 Frost skills in the pools, `bar::fight_pool` now also guarantees that a payoff skill (palm, burst, gather; shatter, lotus, yellowspring) comes with a skill that lays the status it spends, because the draw no longer leaves out only 3 of 11.
 
 ## Technique to skill
 
@@ -71,37 +71,54 @@ A fight still draws 8 skills of its school (`POOL_SIZE`). With 33 Thunder and 39
 | Billion Soul Banner / Soul Banner method | `soulbanner` | Frost | field |
 | Spirit Servitude Seal | `servitude` | Frost | area |
 | Seven-Colored Divine Void Nail | `voidnail` | Frost | bolt |
+| Finger of Death / 100 Fingers of Death | `fingerdeath` | Thunder | area |
+| Heavenly Chop (sword divine ability) | `heavenlychop` | Thunder | blast |
+| Nine Mysterious Spell, Fire Escape | `fireescape` | Thunder | dash |
+| Rise Three Realm Flame Origin | `flameorigin` | Thunder | area |
+| War Spirit Print (Cloud Sea divine ability) | `warprint` | Thunder | blast |
+| Earth Escape Technique | `earthescape` | Thunder | blink |
+| Celestial Slaughter Art (All Seer spell) | `celestialslaughter` | Thunder | bolt |
+| Ghost Summoning Technique | `ghostsummon` | Frost | field |
+| Soul Vortex | `soulvortex` | Frost | area |
+| Soul Refining Technique | `soulrefine` | Frost | heal |
+| Star Rotation | `starrotation` | Frost | area |
+| Merit Spirit (Ancient God spell) | `meritspirit` | Frost | ward |
+| Body Formation (Celestial Emperor Qing Lin spell) | `bodyformation` | Frost | heal |
+| True and False Domain / True and False Seal | `truefalse` | Frost | area |
 
 ## Balance
 
 Measured with `cargo run --release -p pixfx-duel --example ladder -- --seeds 150 --telemetry`, the shipped policy (trained before these skills existed):
 
-| Match | Before | First draft of the skills | Shipped numbers |
-|---|---|---|---|
-| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) |
-| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% |
-| balanced vs aggressive script | 91.1% | 85.1% | 85.6% |
-| balanced vs turtle script | 100.0% | 99.9% | 99.9% |
-| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% |
+| Match | Before | First draft of the skills | 50 skills | All 64 skills |
+|---|---|---|---|---|
+| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) | 94.1% (Thunder 95.6%, Frost 92.7%) |
+| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% | 93.0% |
+| balanced vs aggressive script | 91.1% | 85.1% | 85.6% | 85.7% |
+| balanced vs turtle script | 100.0% | 99.9% | 99.9% | 100.0% |
+| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% | 45.1% (Frost 54.9%) |
+
+The last column is the build in this repository, measured on 150 seeds. Thunder's mirror share sits at the low end of the band: the next retrain, or a nudge to a Thunder skill that rarely lands, is the lever.
 
 The first draft favoured Frost: its new skills (`yellowspring`, `soulbanner`, `summonrain`, `sevencolor`) land and hurt, while Thunder's (`gather`, `gravity`, `earthsplit`, `mountain`) rarely landed, and a larger pool dilutes Thunder's older, stronger core more. The shipped numbers raise Thunder's weak new skills and trim those four of Frost's; no number of the original 27 spells changed.
 
 ## Techniques with no skill
 
-The sources name more techniques than the duel can show. Those left out, and why:
+The source (the Fandom page "Wang Lin/Techniques", below) lists more than the duel can show. Entries without a skill, and why:
 
-| Technique | Why it has no skill |
+| Entry | Why it has no skill |
 |---|---|
-| Yellow Spring Ascension Art, Thunder Essence Art, Nine-level cultivation methods, Slaughter Immortal Art, Spirit Stabilizing Art | cultivation methods: they train a body between fights, there is no action to cast |
-| Concealment, Disguising, Memory Erasing, Blood Refining Technique | out-of-fight uses (hiding a level, refining treasure); no duel action |
-| Dao Art Fusion, Eight Extremes Dao, Dao Transformation Yellow Spring, Condensed Spring Soul, Star Soul Extraction, Life Destruction Spirit Summoning | summon or fuse over many turns or planets, or trade life for power: the duel has no life-for-power or summoned-ally mechanic |
-| Ancient God Cauldron (swaps positions), Star Compass | a position swap the duel has no rule for; the long blink (`inchearth`) covers travel |
-| Third-step abilities with no name in the sources, Eternal Wood Spirit, Immortal Pointing Brush, Immortal Sealing Seal, Collection Pavilion | named without a described effect, or treasures that carry other techniques |
-| the passives (Dao Ancient Indestructible Body beyond its recovery, Ancient God bloodline) | a passive is a trait, not a skill; the duel's passives are the schools' traits |
+| Furnace Becomes the World, Thunder Origin spell, Underworld Ascension Method, Ji Realm Spiritual Energy Refining, Refining Technique, Yin Energy Detection, Divine Path | cultivation methods and aids: they train or sense between fights, there is no action to cast |
+| Disguising Technique, Memory Erasing Technique | out-of-fight uses; the duel's silence skill (`spiritchange`) carries the memory wipe |
+| Specializations (restrictions, body tempering, the soul, killing intent), the Essences, True Bodies, the Main Body (27 Stars), Dao Source: Reincarnation | what a cultivator is, not an action; the schools' traits stand for them |
+| Ancient God "Tactics" | named without any description |
+| Dao Art Fusion, Eight Extremes Dao, Dao Transformation Yellow Spring, Condensed Spring Soul, Star Soul Extraction, Life Destruction Spirit Summoning (Baidu Baike) | fuse, summon over many turns or trade life for power: the duel has no ally, life-for-power or fusion mechanic |
+| Ancient God Cauldron (swaps positions), Star Compass (Baidu Baike) | a position swap the duel has no rule for; `inchearth` and `earthescape` cover travel |
+| Magic treasures with no combat verb (Immortal Pointing Brush, Immortal Sealing Seal, Collection Pavilion, Heaven Defying Bead) | they carry other techniques; the ones with a verb are skills (`tigerflag`, `soulbanner`, `kunjiwhip`, `voidnail`) |
 
 ## Sources and coverage
 
-Read: the Baidu Baike pages for Wang Lin (techniques and treasures) and for *Renegade Immortal*, and the Wikipedia article (it names no technique). The Fandom wikis (`renegade-immortal-xian-ni`, `xian-ni`) and VS Battles answered HTTP 402 and were not read; the techniques that only they list (Ji Thunder, Earth Splitting, Fireball, Call the Wind, Summon the Rain, Magic Arsenal, Mountain Crumbles, Lands Collapse, Dark Moon, Clear Skies, Stop Spell, Falling Star, Body Formation, One Step Tread the Heaven, Sundered Night, Underworld Finger, Finger of Death) came from a search summary that quoted them, so their effects here follow the technique's name and role, not a read description. Translations of names differ between sources; the table gives each skill's source names.
+Read in full: the Fandom page "Wang Lin/Techniques" (renegade-immortal-xian-ni.fandom.com, through its `api.php?action=parse&prop=wikitext`; the `/wiki/` URLs answer 402 and 403), the Baidu Baike pages for Wang Lin (techniques and treasures) and for *Renegade Immortal*, and the Wikipedia article (it names no technique). The Fandom page names each technique but gives few effects, so the effect of a skill follows the technique's name and role; where Baidu Baike describes one (Finger of Annihilation, Ghost-like arts, the restrictions, the Bai Fan arts) the skill follows that text. Not read: VS Battles (402) and the pages of single techniques on Fandom. Every combat entry of the Fandom page has a skill or a row above; names differ between sources, so the table gives each skill's source names.
 
 ## Not done
 

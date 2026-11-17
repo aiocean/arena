@@ -82,6 +82,20 @@ export const SPELL_INFO = {
   soulbanner: { name: "Soul Banner", does: "Spirits swirl in a vortex over the foe, dragging it in and cutting it while it stands there." },
   servitude: { name: "Spirit Servitude Seal", does: "A seal under the foe that drags it in, then closes on it: silences." },
   voidnail: { name: "Seven-Colored Divine Void Nail", does: "A nail of void driven at the foe at great speed: breaks its defence." },
+  fingerdeath: { name: "Finger of Death", does: "Three fingers of death fall one after another where the foe will be." },
+  heavenlychop: { name: "Heavenly Chop", does: "A sword cut that splits heaven at close range: a heavy blow." },
+  fireescape: { name: "Fire Escape", does: "Turns to flame and dashes through the foe, setting it burning." },
+  flameorigin: { name: "Rise Three Realm Flame Origin", does: "The origin of flame rises under the foe and burns it." },
+  warprint: { name: "War Spirit Print", does: "A seal of war stamped on the foe at close range: a heavy blow that breaks its defence." },
+  earthescape: { name: "Earth Escape", does: "Sinks into the ground and comes out a few steps away." },
+  celestialslaughter: { name: "Celestial Slaughter Art", does: "A bolt of slaughter intent, slow to gather and heavy." },
+  ghostsummon: { name: "Ghost Summoning", does: "Ghosts rise round the foe and drag it in while they cut it." },
+  soulvortex: { name: "Soul Vortex", does: "A vortex of souls pulls the foe in, then bursts." },
+  soulrefine: { name: "Soul Refining", does: "Refines a soul into life: heals and washes off burn, silence, defence down, chill and shock." },
+  starrotation: { name: "Star Rotation", does: "Three stars turn down on the foe one after another where it will be." },
+  meritspirit: { name: "Merit Spirit", does: "A spirit of merit stands over the caster: 1 to 3 charges, each stops a whole blow. Cleanses." },
+  bodyformation: { name: "Body Formation", does: "Forms the body anew: heals and washes off burn, silence, defence down, chill and shock." },
+  truefalse: { name: "True and False Seal", does: "Open eyes are truth, closed eyes falsehood: a seal on the foe that silences it and breaks its defence." },
 };
 
 /** What each trait does, in a line, read from the rules' `TRAITS` once the engine has loaded. */
