@@ -20,6 +20,7 @@
 use crate::target;
 use arena_calc::ailment::{AILMENTS, Ailment};
 use arena_calc::gem::gem;
+use arena_calc::keystone::ANCIENT_QI_MAX;
 use arena_calc::loadout::Loadout;
 use arena_duel::duel::Duel;
 use arena_duel::fighter::{Fighter, Phase, State};
@@ -88,6 +89,11 @@ fn ailment_list(stacks: &[u32; AILMENTS]) -> String {
         .map(|(a, n)| format!("{}:{n}", a.name()))
         .collect::<Vec<_>>()
         .join(",")
+}
+
+/// Whether a qi bar of `qi_max` is the uncapped one (Cổ Thần Quyết's `ANCIENT_QI_MAX`), not a size.
+pub fn qi_uncapped(qi_max: f64) -> bool {
+    qi_max >= ANCIENT_QI_MAX
 }
 
 /// A loadout's parts as flat strings, as every event carries them: its actives (`skill[support+support]`, comma
@@ -214,11 +220,15 @@ impl Observer {
             o.span.in_scope(|| {
                 for (i, f) in s.fighters.iter().enumerate() {
                     let (actives, supports, keystones, root) = loadout_fields(&f.loadout);
+                    // Cổ Thần Quyết has no qi cap: the rules give it a bar of `ANCIENT_QI_MAX`, which is no size to
+                    // chart, so the start leaves `qi` out (null in the store) and says `qi_uncapped`
+                    let uncapped = qi_uncapped(f.c.qi_max);
+                    let qi = (!uncapped).then_some(f.c.qi_max);
                     event!(target: target::MATCH, Level::INFO, {
                         match_id = %o.match_id, seed = s.seed, seat = i, bot = %o.seats[i],
                         actives = %actives, supports = %supports,
-                        keystones = %keystones, root = %root, life = f.c.life_max, qi = f.c.qi_max,
-                        foe = %o.seats[1 - i],
+                        keystones = %keystones, root = %root, life = f.c.life_max, qi = qi,
+                        qi_uncapped = uncapped, foe = %o.seats[1 - i],
                     }, "match.start");
                 }
                 event!(target: target::METRICS, Level::INFO, { monotonic_counter.arena_matches_total = 1_u64 });

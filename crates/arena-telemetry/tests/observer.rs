@@ -101,3 +101,10 @@ fn with_nothing_listening_the_observer_is_off() {
     }
     o.end(&duel, true);
 }
+
+#[test]
+fn an_uncapped_qi_bar_is_not_a_size() {
+    use arena_telemetry::duel::qi_uncapped;
+    assert!(qi_uncapped(arena_calc::keystone::ANCIENT_QI_MAX));
+    assert!(!qi_uncapped(100.0));
+}
