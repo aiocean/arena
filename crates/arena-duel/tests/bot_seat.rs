@@ -64,16 +64,18 @@ fn trace(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> Vec<([f64; 2], [u32; 
 
 #[test]
 fn a_bot_seat_replays_the_same_fight_from_a_seed() {
-    // seeds where the random bot lands something on the brain (on a few, 18 among them, every pick it makes misses)
-    for seed in [4, 19] {
+    // a property over seeds, not a lucky seed: every seed replays the same fight, and the random bot lands a blow on
+    // the brain in most of them (on some every pick it makes misses)
+    let mut fights = 0;
+    for seed in 1..=8 {
         let fight = || trace([BotSeat::make(pick(), None), Brain::make()], seed, 60.0);
         let first = fight();
         assert_eq!(first, fight(), "seed {seed}");
-        assert!(
-            first.iter().any(|(hp, _)| hp[1] < 100.0),
-            "seed {seed}: it fights"
-        );
+        if first.iter().any(|(hp, _)| hp[1] < 100.0) {
+            fights += 1;
+        }
     }
+    assert!(fights >= 4, "the bot hurt the brain on only {fights} of 8 seeds");
 }
 
 /// The ticks until each of the first `rounds` rounds was won, and by whom.

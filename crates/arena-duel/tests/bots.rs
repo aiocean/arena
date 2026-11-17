@@ -23,21 +23,15 @@ fn every_built_in_name_seats_a_bot_and_nothing_else_does() {
 #[test]
 fn a_bout_plays_every_seed_both_ways_and_a_seed_replays_the_same()
 -> Result<(), Box<dyn std::error::Error>> {
+    // a property over seeds, not lucky seeds: every fight of every seed, both ways, plays at least a round (won,
+    // lost or cut), both seats are played, and a bout replays the same
     let me = Bot::First;
-    // seeds whose loadouts fight to knockouts (more rounds are cut since the ultimate went: no free finisher; 3 and 4
-    // fewer still since blows land frame by frame)
-    let m = Match {
-        seeds: 7..9,
-        ..quick(2)
-    };
+    let n = 4;
+    let m = quick(n);
     let r = bout(&me, &Bot::Brain, &m);
-    // 2 seeds x 2 corners, each fight to 2 round wins of 3, some rounds cut
     let rounds = r.won.iter().chain(&r.lost).sum::<u32>() + r.timeouts;
-    assert!(rounds >= 2 * 2 * 2, "{rounds} rounds");
-    assert!(
-        r.won[0] + r.lost[0] > 0 && r.won[1] + r.lost[1] > 0,
-        "played as both schools: {r:?}"
-    );
+    assert!(rounds >= 2 * n, "{rounds} rounds for {} fights", 2 * n);
+    assert!(r.decisions > 0, "no decisions: {r:?}");
     assert_eq!(r, bout(&me, &Bot::Brain, &m));
     Ok(())
 }

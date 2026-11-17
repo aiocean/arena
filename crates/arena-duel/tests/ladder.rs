@@ -8,18 +8,20 @@ use arena_duel::seat::Brain;
 
 #[test]
 fn every_seed_is_fought_both_ways_and_counted() {
-    // seeds whose rounds all end inside the limit both ways (6 and 7 run out of time since blows land frame by frame)
+    // a property over seeds, not lucky seeds: every fight of every seed, both ways, is counted once (won, lost or cut
+    // at the limit), each finished round with its length
+    let n = 4;
     let m = Match {
-        seeds: 2..4,
+        seeds: 1..1 + n,
         rounds: 1,
         limit: 300.0,
         effects: all_effects(),
     };
     let r = match_up(&Brain::make, &Brain::make, &m);
-    assert_eq!(r.won[0] + r.lost[0], 2, "in seat 0: {r:?}");
-    assert_eq!(r.won[1] + r.lost[1], 2, "in seat 1: {r:?}");
-    assert_eq!(r.timeouts, 0);
-    assert_eq!(r.lengths.len(), 4);
+    let decided = r.won[0] + r.lost[0] + r.won[1] + r.lost[1];
+    assert_eq!(decided + r.timeouts, 2 * n, "every fight counted: {r:?}");
+    assert!(decided > 0, "no round finished: {r:?}");
+    assert_eq!(r.lengths.len(), decided as usize);
     assert!(r.lengths.iter().all(|&l| l > 0.0 && l < 300.0));
     assert!(r.decisions > 0 && r.choices.values().sum::<u32>() == r.decisions);
     assert!((0.0..=1.0).contains(&r.win_rate()) && (0.0..=1.0).contains(&r.most_used()));

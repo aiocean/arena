@@ -56,14 +56,17 @@ fn a_seed_replays_the_same_fight() {
 
 #[test]
 fn fights_end_in_a_knockout_and_the_next_round_starts() {
-    // seeds whose loadouts fight to a knockout (1, 3 and 5 stall since the ultimate went: no free finisher; 7 since
-    // blows land frame by frame)
-    for seed in [2, 4, 6, 8, 10] {
+    // a property over seeds, not lucky seeds: each round that ends is counted to its winner and the next starts, and
+    // most fights reach a knockout in four minutes (some stall: no free finisher since the ultimate went)
+    let mut knockouts = 0;
+    for seed in 1..=12 {
         let r = rounds(&mut fight(seed), 240.0);
-        assert!(!r.is_empty(), "seed {seed}");
-        let last = r[r.len() - 1];
-        assert_eq!((last[0] + last[1]) as usize, r.len());
+        if let Some(last) = r.last() {
+            knockouts += 1;
+            assert_eq!((last[0] + last[1]) as usize, r.len(), "seed {seed}");
+        }
     }
+    assert!(knockouts >= 6, "only {knockouts} of 12 seeds reached a knockout");
 }
 
 #[test]

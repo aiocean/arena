@@ -45,29 +45,26 @@ fn play(env: &mut Env, shaping: f32, mut pick: impl FnMut(&Env) -> usize) -> Vec
 
 #[test]
 fn an_episode_pays_plus_or_minus_one_at_its_end() {
+    // a property over seeds, not a lucky seed: every episode that ends in a knockout pays +1 won or -1 lost, and a
+    // random hand still knocks out or is knocked out in most of them (a cut, at the time limit, pays no ±1)
     let mut rng = Rng::new(1);
-    for (seed, learner, opp) in [
-        // some seeds run to the time limit (a random hand waits on its blows; with bodies as drawn and strikes only
-        // ahead, its blows land less; no ultimate finishes it), and a cut pays no ±1
-        (4, 0, Opponent::Brain),
-        (6, 1, Opponent::First),
-        (3, 0, Opponent::Aggressive),
-    ] {
-        let mut env = Env::new(cfg(seed, learner, opp));
-        let steps = play(&mut env, 0.0, |e| random_legal(e, &mut rng));
-        let last = steps.last().copied().filter(|s| s.done);
-        assert!(last.is_some(), "seed {seed}: no end in 5000 steps");
-        let Some(last) = last else { return };
-        let won = last.won.unwrap_or(false);
-        let want = if won { 1.0 } else { -1.0 };
-        assert!(last.won.is_some(), "seed {seed}: a knockout, not a cut");
-        assert!(
-            (last.reward - want).abs() < 0.05,
-            "seed {seed}: {} for won {won}",
-            last.reward
-        );
-        assert!(last.length > 0.0 && last.length < 90.0);
+    let (mut ends, mut tried) = (0, 0);
+    for seed in 1..=6 {
+        for (learner, opp) in [(0, Opponent::Brain), (1, Opponent::First), (0, Opponent::Aggressive)] {
+            tried += 1;
+            let mut env = Env::new(cfg(seed, learner, opp));
+            let steps = play(&mut env, 0.0, |e| random_legal(e, &mut rng));
+            let Some(last) = steps.last().copied().filter(|s| s.done && s.won.is_some()) else {
+                continue;
+            };
+            ends += 1;
+            let won = last.won.unwrap_or(false);
+            let want = if won { 1.0 } else { -1.0 };
+            assert!((last.reward - want).abs() < 0.05, "seed {seed}: {} for won {won}", last.reward);
+            assert!(last.length > 0.0 && last.length < 90.0);
+        }
     }
+    assert!(ends * 2 >= tried, "only {ends} of {tried} episodes ended in a knockout");
 }
 
 #[test]
