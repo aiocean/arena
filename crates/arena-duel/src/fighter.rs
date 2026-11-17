@@ -99,6 +99,9 @@ pub struct Fighter {
     pub barrier_key: Option<u32>,
     pub rang: f64,
     pub dodged: f64,
+    /// A blow it cast is still playing out (a bolt in flight, a seeker, a field, a spray, an area's strikes, a skill's
+    /// repeats): until it is over, it casts no other skill that binds (`bar::ready`, `Gem::binds`).
+    pub bound: bool,
     /// The way it walks: -1, 0 or 1.
     pub intent: f64,
     /// Walking this tick (bleeds run twice, Thừa Thắng's target moving).
@@ -161,6 +164,7 @@ impl Fighter {
             barrier_key: None,
             rang: 0.0,
             dodged: 0.0,
+            bound: false,
             intent: 0.0,
             moving: false,
             auras: Auras::default(),
@@ -200,6 +204,7 @@ impl Fighter {
         self.barrier_key = None;
         self.rang = 0.0;
         self.dodged = 0.0;
+        self.bound = false;
         self.intent = 0.0;
         self.moving = false;
         self.auras = Auras::default();

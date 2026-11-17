@@ -442,3 +442,21 @@ fn safer_skills_score_higher() {
     };
     assert!(power_score(&instant) > power_score(spark));
 }
+
+#[test]
+fn a_damaging_skill_binds_and_a_curse_a_buff_a_move_a_guard_a_heal_or_a_stance_never_does() {
+    let binds = |id: &str| gem::gem(id).is_some_and(Gem::binds);
+    for id in ["bolt", "orb", "fireball", "jet", "palm"] {
+        assert!(binds(id), "{id}");
+    }
+    // a heal, a ward, a blink, a curse, an aura
+    for id in ["heal", "ward", "blink", "hex", "slaughteraura"] {
+        assert!(!binds(id), "{id}");
+    }
+    // no role of `UNBOUND` binds, whatever it deals
+    for g in GEMS {
+        if gem::UNBOUND.iter().any(|&t| g.tags().has(t)) {
+            assert!(!g.binds(), "{}", g.id);
+        }
+    }
+}

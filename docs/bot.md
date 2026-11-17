@@ -77,7 +77,8 @@ Where an aim lands:
 - wait is always legal;
 - while the fighter cannot act (in its own cast, or held by a status), nothing else is;
 - jump and fly high whenever not flying (a jump in mid-air does nothing), land only when flying;
-- a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay, full rage for the ultimate;
+- a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay, full rage for the ultimate,
+  and, for a skill that deals damage, none of its last blows still playing out (`docs/rules.md`, "Skills");
   a silenced fighter casts only its blade (slash and dive), a sealed one cannot blink;
 - aiming ahead or short only for areas and blinks.
 

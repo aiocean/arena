@@ -53,6 +53,8 @@ pub struct Shot {
     /// The blow it carries.
     pub payload: Payload,
     pub kind: ShotKind,
+    /// It holds its caster (`Fighter::bound`) until it is over; a bolt sent back holds no one.
+    pub binds: bool,
 }
 
 impl Shot {
@@ -163,6 +165,7 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         });
         s.owner = foe;
         s.payload.by = foe;
+        s.binds = false;
         flight.dir = Point::new(-flight.dir.x, flight.dir.y);
         flight.pos = flight.pos.plus(flight.dir, 40.0 / T);
         flight.struck.clear();

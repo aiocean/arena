@@ -542,7 +542,7 @@ impl Fight {
 
     /// Whether seat `me` may start `slot` now (the brain reads this): free, a use stored, a card left, its costs
     /// payable with what it built last, a spell not while silenced, nothing barring it, the ultimate only on full
-    /// rage, an intent not already on, never a triggered skill.
+    /// rage, an intent not already on, never a triggered skill, a skill that binds not while its last blow plays out.
     pub fn can_cast(&self, me: usize, slot: usize, costs: &[(Resource, f64)]) -> bool {
         let f = &self.f[me];
         let c = &self.c[me];
@@ -559,6 +559,21 @@ impl Fight {
             && !(s.delivery == Delivery::Aura
                 && gem::aura_of(s.gem).is_some_and(|k| f.auras.on.iter().any(|a| a.kind == k)))
             && Self::can_pay(c, costs)
+            && !(s.gem.binds() && self.bound(me))
+    }
+
+    /// Whether a blow of `p` holds its caster until it plays out: cast by hand (not triggered, not a unit's) from a
+    /// skill that binds (`Gem::binds`).
+    fn binds(&self, p: &Payload) -> bool {
+        p.depth == 0
+            && p.from_unit.is_none()
+            && self.f[p.by].slots.get(p.slot).is_some_and(|s| s.gem.binds())
+    }
+
+    /// Whether a blow seat `me` cast still plays out: a projectile in flight, a blow still due.
+    pub fn bound(&self, me: usize) -> bool {
+        self.shots.iter().any(|s| s.payload.by == me && self.binds(&s.payload))
+            || self.pending.iter().any(|e| e.payload.by == me && self.binds(&e.payload))
     }
 
     /// The costs of `slot` as built now.

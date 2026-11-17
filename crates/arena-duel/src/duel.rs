@@ -203,7 +203,7 @@ pub fn tick_schedule() -> Schedule {
             between_rounds.run_if(not(fighting)),
             (
                 fields, turn::<0>, turn::<1>, keep_apart, shots, pending, units, wear, knock_outs,
-                flush,
+                hold, flush,
             )
                 .chain()
                 .run_if(fighting),
@@ -351,6 +351,16 @@ fn shots(mut state: ResMut<State>) {
         shot(state, id, TICK);
     }
     run_queue(state);
+}
+
+/// A fighter whose last blow is over (no shot of its own in flight, no repeat due) may cast a skill that binds again.
+fn hold(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    for f in 0..2 {
+        let bound = state.shots.iter().any(|s| s.binds && s.owner == f)
+            || state.pending.iter().any(|p| p.payload.by == f && p.payload.binds());
+        state.fighters[f].bound = bound;
+    }
 }
 
 /// The blows due by now land, in the order they were made.

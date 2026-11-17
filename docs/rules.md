@@ -44,6 +44,16 @@ area, field, heal, ward, barrier, blink), with two timings built for the cast (s
 
 Its role comes first: an intent (aura), a domain, a curse with no blow, a buff (stance, blessing), or a trap, mine,
 totem or minion (its tag, or a support's), each does what the design says; anything else moves as its motion.
+
+**A blow plays out before the next.** As in a fighting game, a skill that deals damage is over only when what it
+sent is over: while a fighter's bolt still flies, its seeker still circles, its field still turns, its spray still
+pours, its area's strikes still fall or its skill's repeats are still due, it casts no other such skill (its slots
+show not ready). It can still move, guard, jump, fly and meditate, and a skill with a role that tends it or works on
+its foe (curse, aura, blessing, movement, guard, recovery, stance: `arena_calc::gem::UNBOUND`, `Gem::binds`) it casts
+whenever it is free, even one that deals damage. What it did not cast by hand never holds it: a trap's, mine's,
+totem's or minion's blows, a triggered cast, a stored force; nor does a bolt a mirror sent back. An ultimate that deals damage waits too. It strikes again
+the tick after its last blow ends.
+
 Reaches and places are in the arena's pixels (`UNIT` = 4 of them to one of the world's); the damage system's unit,
 T, is a fighter's height, 240 of the arena's pixels.
 

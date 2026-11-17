@@ -104,6 +104,18 @@ pub struct Gem {
     pub effects: &'static [Effect],
 }
 
+/// The roles of a skill that tends its caster or works on its foe rather than strikes, as PoE's: it never waits for
+/// a blow to play out, nor holds its caster (`Gem::binds`).
+pub const UNBOUND: &[Tag] = &[
+    Tag::Curse,
+    Tag::Aura,
+    Tag::Blessing,
+    Tag::Movement,
+    Tag::Guard,
+    Tag::Recovery,
+    Tag::Stance,
+];
+
 impl Gem {
     pub fn tags(&self) -> Tags {
         Tags::of(self.tags)
@@ -115,6 +127,13 @@ impl Gem {
 
     pub fn is_ultimate(&self) -> bool {
         self.tags().has(Tag::Ultimate)
+    }
+
+    /// Whether a cast of it holds its caster until it plays out: it deals damage and is no curse, aura, blessing,
+    /// movement, guard, recovery or stance (`UNBOUND`). The duel casts no other such skill meanwhile.
+    pub fn binds(&self) -> bool {
+        let tags = self.tags();
+        !self.split.is_empty() && !UNBOUND.iter().any(|&t| tags.has(t))
     }
 
     /// The tags including those of its kinds of damage.

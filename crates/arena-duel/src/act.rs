@@ -846,7 +846,12 @@ pub fn push(
             0.0
         }
     });
+    let binds = p.binds();
+    if binds {
+        state.fighters[p.by].bound = true;
+    }
     state.shots.push(Shot {
+        binds,
         id,
         owner: p.by,
         name: p.skill,

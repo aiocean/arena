@@ -25,7 +25,7 @@ pub fn slot_of<'a>(f: &'a Fighter, name: &str) -> Option<&'a Slot> {
 /// Can `f` cast `name` now: in its kit and not cast by a trigger, its effect in the registry, on its bar if it is a
 /// bar skill, a use stored, a card left, payable, the ultimate only on full rage, a spell not while its soul is lost,
 /// a blink not while sealed or rooted, a guard skill not while barred, nothing its curses bar, an intent not on
-/// already.
+/// already, a skill that binds not while its last blow plays out.
 pub fn ready(f: &Fighter, name: &str) -> bool {
     let Some(k) = f.kit.get(name) else {
         return false;
@@ -42,6 +42,7 @@ pub fn ready(f: &Fighter, name: &str) -> bool {
             && (f.sealed > 0.0 || f.root > 0.0))
         && !(k.tags.has(Tag::Guard) && f.no_guard > 0.0)
         && !f.curses.barred(k.tags)
+        && !(f.bound && k.gem.binds())
         && !gem::aura_of(k.gem).is_some_and(|a| f.auras.on.iter().any(|o| o.kind == a))
         && can_pay(&f.c, &k.costs())
 }

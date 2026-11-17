@@ -68,6 +68,14 @@ pub struct Payload {
     pub powers: Powers,
 }
 
+impl Payload {
+    /// Whether it holds its caster until it plays out (`Fighter::bound`): a blow of a skill cast by hand that binds
+    /// (`Gem::binds`); a unit's blow and a triggered one never do.
+    pub fn binds(&self) -> bool {
+        self.depth == 0 && self.unit.is_none() && arena_calc::gem::gem(self.skill).is_some_and(|g| g.binds())
+    }
+}
+
 /// What a blow lands on: a fighter, or a unit by its id.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Target {
