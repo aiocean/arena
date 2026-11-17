@@ -1,0 +1,10 @@
+{
+  "fx": "arcane/bagua-mirror",
+  "fps": 8.0,
+  "loop": false,
+  "anchor": [83, 193],
+  "px": 0.2802,
+  "grow": { "from": 0.3, "secs": 0.3 },
+  "idle": { "from": 2, "to": 2, "secs": 2.9 },
+  "exit": "disappear/fade"
+}

@@ -1,5 +1,9 @@
 [
   {
+    "fx": "arcane/bagua-mirror",
+    "file": "arcane-bagua-mirror"
+  },
+  {
     "fx": "arcane/comet-rings",
     "file": "arcane-comet-rings"
   },
