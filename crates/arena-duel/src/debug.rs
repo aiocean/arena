@@ -10,6 +10,9 @@ use crate::data::Kind;
 use crate::fighter::{Phase, State};
 use crate::shot::{ShotKind, orb_at};
 
+/// How long a strike's box stays drawn after the tick it struck on, seconds.
+pub const STRIKE_SHOWN: f64 = 0.12;
+
 /// What a shape is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mark {
@@ -17,10 +20,9 @@ pub enum Mark {
     Body,
     /// A body that nothing can touch now (a dodge, a blink).
     Untouchable,
-    /// Where a melee or blast cast will strike when its windup ends: a foe whose body reaches into it is hit.
-    Windup,
-    /// The same area while the cast recovers (it has struck; the recover is the opening a foe can punish).
-    Recover,
+    /// Where a melee or blast cast struck: the rules test it once, on the tick its windup ends (the active frame), and
+    /// a foe whose body reaches into it is hit; it is shown for `STRIKE_SHOWN` after so an eye can catch it.
+    Strike,
     /// A shot in flight: a bolt or an orb hits a body it touches.
     Shot,
     /// An area that strikes where it stands or falls: a zone, a vortex.
@@ -72,31 +74,32 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         });
 
         let Some(act) = f.act else { continue };
+        // the strike is tested on the tick the windup ends, when the act turns to its recovery
+        if act.phase != Phase::Recover || act.t > STRIKE_SHOWN {
+            continue;
+        }
         let Some(k) = f.kit.index(act.spell) else {
             continue;
         };
         let sp = f.kit.skills[k].motion;
         let foe = &state.fighters[1 - me].body.spec;
-        let mark = match act.phase {
-            Phase::Windup => Mark::Windup,
-            _ => Mark::Recover,
-        };
-        // the band a foe's feet must be in to be struck, round the caster's own
         let (reach, level) = match sp.kind {
-            // act::strike, Melee: unit::in_front(x, air, range, chest + 16)
+            // act::strike, Melee: unit::in_front(x, air, face, range, chest + 16), its body test unit::strike_reaches
             Kind::Melee => (sp.range.unwrap_or(0.0), b.spec.chest + 16.0),
-            // act::strike, Blast: unit::enemies_near(x, air, range, foe's body)
+            // act::strike, Blast: unit::strike_reaches(x, air, face, range, foe's body)
             Kind::Blast => (sp.range.unwrap_or(0.0), foe.body),
             _ => continue,
         };
-        // a foe is struck when its middle is within reach + its half width: its body touching x ± reach
+        // unit::strike_reaches: from the striker's x to `reach` ahead, from its feet to `level` up
+        let face = if b.face < 0.0 { -1.0 } else { 1.0 };
+        let (x0, x1) = if face > 0.0 { (b.x, b.x + reach) } else { (b.x - reach, b.x) };
         out.push(Drawn {
             owner: Some(me),
-            mark,
+            mark: Mark::Strike,
             shape: Shape::Rect {
-                x0: b.x - reach,
-                y0: (b.air - level).max(0.0),
-                x1: b.x + reach,
+                x0,
+                y0: b.air,
+                x1,
                 y1: b.air + level,
             },
             skill: act.spell,

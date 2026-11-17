@@ -208,6 +208,19 @@ pub fn targets_of(state: &State, me: usize, floor: bool) -> Vec<Body> {
 }
 
 /// The nearest enemy body of seat `me` (the foe, a minion or a totem) a blade swung from `x` reaches: the foe within
+/// Does a strike from `x` (its striker's feet at `air`), reaching `reach` ahead the way `face` looks and `level` up
+/// from those feet, touch body `b`? The strike's box runs from `x` to `reach` ahead; the body's from its middle less
+/// its half width to its middle plus it, and from its feet to its top (its crouch when it ducks). A body behind the
+/// striker is not struck.
+pub fn strike_reaches(b: &crate::body::Body, x: f64, air: f64, face: f64, reach: f64, level: f64) -> bool {
+    let ahead = (b.x - x) * or_one(face);
+    let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
+    ahead >= -b.spec.half_width
+        && ahead <= reach + b.spec.half_width
+        && b.air < air + level
+        && b.air + top > air
+}
+
 /// `reach` of its edge either side and within `level` of `air`, a unit in front within `reach` of its edge.
 pub fn in_front(
     state: &State,
@@ -221,10 +234,7 @@ pub fn in_front(
     let foe = 1 - me;
     let f = &state.fighters[foe];
     let mut best: Option<(Target, f64)> = None;
-    if f.alive()
-        && (f.body.x - x).abs() <= reach + f.body.spec.half_width
-        && (f.body.air - air).abs() < level
-    {
+    if f.alive() && strike_reaches(&f.body, x, air, face, reach, level) {
         best = Some((Target::Fighter(foe), (f.body.x - x).abs()));
     }
     for u in state

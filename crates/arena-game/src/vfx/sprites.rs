@@ -365,4 +365,54 @@ mod tests {
         }
         Ok(())
     }
+
+    /// Every looping effect the rules start is stopped: a loop only ends on a stop (`animate`), so one the rules never
+    /// stop stays on screen for the rest of the fight. Two house brains fight ten seeds for two minutes each; a loop
+    /// still playing ten seconds after it began, with no stop, fails here.
+    #[test]
+    fn every_looping_effect_the_rules_start_is_stopped() -> Result<(), String> {
+        use arena_duel::duel::{Duel, DuelConfig, TICK};
+        use arena_duel::out::Out;
+        use arena_duel::seat::Brain;
+        use std::collections::BTreeMap;
+        let index = Index::read(INDEX)?;
+        let looping = |fx: &str| index.variants.iter().any(|v| v.fx == fx && v.looping);
+        let mut stuck: BTreeMap<String, u32> = BTreeMap::new();
+        for seed in 1..=10 {
+            let config = DuelConfig {
+                seed,
+                left: 88.0,
+                right: 1192.0,
+                ground: 632.0,
+                sky: 196.0,
+                effects: arena_duel::effects::all(),
+            };
+            let mut duel = Duel::new(config, [Brain::make(), Brain::make()]);
+            let mut open: BTreeMap<u32, (&'static str, f64)> = BTreeMap::new();
+            while duel.state().time < 120.0 {
+                for out in duel.step(TICK) {
+                    match out {
+                        Out::Play { key, fx, .. } if looping(fx) => {
+                            open.insert(key, (fx, duel.state().time));
+                        }
+                        Out::Stop { key } => {
+                            open.remove(&key);
+                        }
+                        _ => {}
+                    }
+                }
+                let now = duel.state().time;
+                open.retain(|_, (fx, at)| {
+                    if now - *at > 10.0 {
+                        *stuck.entry((*fx).to_string()).or_default() += 1;
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+        }
+        assert!(stuck.is_empty(), "loops never stopped: {stuck:?}");
+        Ok(())
+    }
 }

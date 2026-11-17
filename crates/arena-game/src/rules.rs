@@ -152,8 +152,38 @@ fn begin_fight(
     shown.fight += 1;
 }
 
+/// Moves a rules' event's rows by `dy` rules' pixels. The game stands its fighters on its layout's ground
+/// (`fighters::show`: the layout's ground less a fighter's height), so an event's row, measured down from the top of
+/// the rules' arena, is moved by the layout's ground less the rules' (in the rules' pixels): an effect, a number or a
+/// spark then sits where its fighter stands. On the page's own fights the two grounds are one and nothing moves; a
+/// live match is fought on the server's arena, whose ground a window of another size does not share.
+pub fn lift(out: &mut Out, dy: f64) {
+    match out {
+        Out::Play { y, .. }
+        | Out::Move { y, .. }
+        | Out::Hit { y, .. }
+        | Out::Tick { y, .. }
+        | Out::Block { y, .. }
+        | Out::Clash { y, .. }
+        | Out::Dodge { y, .. }
+        | Out::Heal { y, .. }
+        | Out::Ward { y, .. }
+        | Out::Barrier { y, .. }
+        | Out::Ko { y, .. }
+        | Out::Bump { y, .. }
+        | Out::Ultimate { y, .. }
+        | Out::Unyielding { y, .. } => *y += dy,
+        Out::Streak { y0, y1, .. } => {
+            *y0 += dy;
+            *y1 += dy;
+        }
+        _ => {}
+    }
+}
+
 fn step(
     pace: Res<Pace>,
+    layout: Res<Layout>,
     live: NonSend<Live>,
     mut lp: ResMut<LivePace>,
     mut fight: NonSendMut<Fight>,
@@ -180,9 +210,14 @@ fn step(
         }
         if behind > JUMP_TICKS {
             lp.jumps += 1;
-            // joined late, or slept: step to the present undrawn, its effects dropped
+            // joined late, or slept: step to the present undrawn. What starts in the jump is dropped, but an effect
+            // already playing is still told to stop, or it would play on for ever
             for _ in 0..behind {
-                duel.step(TICK);
+                for out in duel.step(TICK) {
+                    if matches!(out, Out::Stop { .. }) {
+                        fx.write(Fx(out));
+                    }
+                }
             }
             0.0
         } else {
@@ -198,7 +233,9 @@ fn step(
     } else {
         pace.run
     };
-    for out in duel.step(run) {
+    let dy = f64::from(layout.ground) * UNIT - duel.state().ground;
+    for mut out in duel.step(run) {
+        lift(&mut out, dy);
         fx.write(Fx(out));
     }
     shown.view = Some(view(duel.state()));

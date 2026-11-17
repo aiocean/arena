@@ -5,7 +5,7 @@
 //! system's projectile (`arena_calc::projectile::Flight`), in T: it pierces, forks and chains among the foe and the
 //! foe's units, and extra projectiles fan out from the cast.
 
-use crate::act::{blocks, burst, cast, clash, play, turn_aside, zone_height};
+use crate::act::{blocks, burst, cast_once, clash, play, turn_aside, zone_height};
 use crate::data::{Spell, T, look, orb_offset, spell};
 use crate::fighter::State;
 use crate::js::{js_min, js_sign, or_one};
@@ -294,7 +294,7 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 }
                 s.key = None;
                 let y = g - zone_height(sp, &fspec) - air;
-                cast(
+                cast_once(
                     state,
                     s.owner,
                     sp.fx.unwrap_or(""),

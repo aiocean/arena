@@ -92,6 +92,22 @@ answer. Grit shortens each hard control after the last (design 5.2).
 Supports' **triggers** (cast on crit, when hurt, when the shield breaks...) cast at once at the foe, through the
 damage system's event queue.
 
+## Bodies and where blows land
+
+All lengths are the arena's pixels (the page's world pixels times 4).
+
+- **A fighter's body** is the box a blow must touch: 48 wide round its middle, from its feet up to 228 (160 when it
+  ducks). It is sized to the fighters as drawn (243 tall to the top of the hair or crown, the chest's band about 50
+  wide), a little inside the figure (`data::HD_BODY`, `HD_DUCK`). Blows are felt, and bolts leave the caster, at the
+  shoulders, 152 up (`HD_CHEST`), 32 ahead of the caster's middle.
+- **A melee or blast strike** is a box from the striker's middle to its reach ahead, the way it faces, from its feet
+  up (a melee to its shoulders and a little more, a blast the foe's whole height). It is tested once, on the tick the
+  windup ends, and strikes a foe whose body reaches into it (`unit::strike_reaches`). A foe behind the striker is not
+  struck (it was, before 2026-11-18: a strike reached both ways).
+- Shots touch a body with their radius (`shot::overlaps`); zones and fields strike every body in their area.
+- An effect the rules play once and keep no hold of (a buff's or a curse's show, a heal, a blink, a plain blast) is
+  stopped as it starts when it loops, so it shows a moment and fades (`act::cast_once`).
+
 ## Defence
 
 - **Guard** stops only melee, blasts, dashes, bolts and orbs, and only facing the blow; zones and fields fall past

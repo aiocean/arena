@@ -76,6 +76,17 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
     play(state, fx, x, y, merged)
 }
 
+/// `cast`, for an effect nobody keeps to stop: a looping one is stopped as it starts, so it shows a moment and fades
+/// instead of playing for the rest of the fight (a buff or a curse that borrows a bolt's motion shows the bolt's
+/// looping effect once). Every play whose key is dropped goes through here.
+pub fn cast_once(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
+    let key = cast(state, me, fx, x, y, opts);
+    if crate::effects::loops(fx) {
+        state.emit(Out::Stop { key });
+    }
+    key
+}
+
 /// A streak of `me`'s qi from where it casts to (`x`, `y` up from the ground).
 pub fn streak(state: &mut State, me: usize, x: f64, y: f64) {
     let f = &state.fighters[me];
@@ -405,7 +416,7 @@ fn show(state: &mut State, me: usize, sp: &'static Spell, x: f64, y: f64) {
     if let Some(fx) = sp.fx
         && state.has(fx)
     {
-        cast(state, me, fx, x, y, PlayOpts::default());
+        cast_once(state, me, fx, x, y, PlayOpts::default());
     }
 }
 
@@ -476,7 +487,7 @@ pub fn strike(
                         && mair < 8.0
                         && state.has(slam)
                     {
-                        cast(state, me, slam, mx + face * 24.0, g, PlayOpts::default());
+                        cast_once(state, me, slam, mx + face * 24.0, g, PlayOpts::default());
                         state.emit(Out::Land {
                             x: mx,
                             strength: 1.0,
@@ -603,7 +614,9 @@ pub fn strike(
         Kind::Blast => {
             let range = sp.range.unwrap_or(0.0);
             let x = mx + face * range * 0.7;
-            let key = cast(
+            // a spray keeps the effect and stops it when it ends; a plain blast plays it once
+            let play_blast = if sp.spray.is_some() { cast } else { cast_once };
+            let key = play_blast(
                 state,
                 me,
                 sp.fx.unwrap_or(""),
@@ -621,6 +634,9 @@ pub fn strike(
                     Target::Unit(u) => {
                         hurt_unit(state, u, &p);
                     }
+                    // the blast goes off ahead of its caster: a foe behind it, or above or below its blast, is not caught
+                    Target::Fighter(_)
+                        if !crate::unit::strike_reaches(&state.fighters[foe].body, mx, mair, face, range, fspec.body) => {}
                     Target::Fighter(_) => {
                         let fx = state.fighters[foe].body.x;
                         let fair = state.fighters[foe].body.air;
@@ -671,9 +687,9 @@ pub fn strike(
                 state.right - mspec.half_width,
             );
             let fx = sp.fx.unwrap_or("");
-            cast(state, me, fx, from, g - mair, PlayOpts::default());
+            cast_once(state, me, fx, from, g - mair, PlayOpts::default());
             state.fighters[me].body.x = to;
-            cast(state, me, fx, to, g - mair, PlayOpts::default());
+            cast_once(state, me, fx, to, g - mair, PlayOpts::default());
             let y = mair + mspec.chest;
             state.emit(Out::Streak {
                 by: me,
@@ -735,7 +751,7 @@ fn heal(state: &mut State, me: usize, sp: &'static Spell) {
         x,
         y,
     });
-    cast(
+    cast_once(
         state,
         me,
         sp.fx.unwrap_or(""),
@@ -761,7 +777,7 @@ fn ward(state: &mut State, me: usize, sp: &'static Spell) {
         y,
     });
     let lift = if sp.feet { 0.0 } else { body };
-    cast(
+    cast_once(
         state,
         me,
         sp.fx.unwrap_or(""),
@@ -805,7 +821,7 @@ fn blink(state: &mut State, me: usize, sp: &'static Spell, target: Option<f64>) 
     let (mx, mair) = (state.fighters[me].body.x, state.fighters[me].body.air);
     let spec = state.fighters[me].body.spec;
     let fx = sp.fx.unwrap_or("");
-    cast(state, me, fx, mx, g - mair, PlayOpts::default());
+    cast_once(state, me, fx, mx, g - mair, PlayOpts::default());
     let to = if sp.swap {
         let at = state.fighters[foe].body.x;
         state.fighters[foe].body.x = mx;
@@ -822,7 +838,7 @@ fn blink(state: &mut State, me: usize, sp: &'static Spell, target: Option<f64>) 
         )
     };
     state.fighters[me].body.x = to;
-    cast(state, me, fx, to, g - mair, PlayOpts::default());
+    cast_once(state, me, fx, to, g - mair, PlayOpts::default());
     state.queue.push(Event::new(EventKind::Blinked, me));
 }
 
@@ -990,7 +1006,7 @@ pub fn turn_aside(state: &mut State, f: usize, x: f64, y: f64) {
         y: fy,
     });
     if state.has(CLASH) {
-        cast(
+        cast_once(
             state,
             f,
             CLASH,

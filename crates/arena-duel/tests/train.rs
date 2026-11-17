@@ -47,9 +47,10 @@ fn play(env: &mut Env, shaping: f32, mut pick: impl FnMut(&Env) -> usize) -> Vec
 fn an_episode_pays_plus_or_minus_one_at_its_end() {
     let mut rng = Rng::new(1);
     for (seed, learner, opp) in [
-        // seed 1 now runs to the time limit: a random hand waits on its blows, and a cut pays no ±1
+        // seeds 1 and 2 now run to the time limit (a random hand waits on its blows; with bodies as drawn and strikes
+        // only ahead, its blows land less), and a cut pays no ±1
         (5, 0, Opponent::Brain),
-        (2, 1, Opponent::First),
+        (6, 1, Opponent::First),
         (3, 0, Opponent::Aggressive),
     ] {
         let mut env = Env::new(cfg(seed, learner, opp));

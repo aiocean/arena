@@ -6,9 +6,9 @@
 //!   live, the link (frames and bytes in, the decisions and keyframes, the server-to-page delay, how far the page trails
 //!   what has come and whether it is catching up); and the last blows, blocks and dodges.
 //! - **The shapes** (`arena_duel::debug::shapes`, the very boxes the hit tests use): each body (gold for Thunder,
-//!   cyan for Frost, grey when nothing can touch it), the area a melee or blast cast will strike (orange in its windup,
-//!   red as it recovers), shots (magenta), fields (violet), units (white), the arena's walls, ground and sky, and a red
-//!   cross where a blow landed.
+//!   cyan for Frost, grey when nothing can touch it), the box a melee or blast cast strikes, red, from the tick it
+//!   struck on (its only active frame) for a moment after, shots (magenta), fields (violet), units (white), the arena's
+//!   walls, ground and sky, and a red cross where a blow landed.
 
 use crate::layout::Layout;
 use crate::live::Live;
@@ -136,10 +136,11 @@ fn who(names: &[String; 2], by: usize) -> String {
     }
 }
 
-fn events(mut fx: MessageReader<Fx>, shown: Res<Shown>, fight: NonSend<Fight>, mut view: ResMut<View>) {
+fn events(mut fx: MessageReader<Fx>, shown: Res<Shown>, layout: Res<Layout>, mut view: ResMut<View>) {
     let t = shown.view.as_ref().map_or(0.0, |v| v.time);
-    // a blow's y is the rules' row (down from the top): its height above the ground is what the shapes use
-    let ground = fight.duel.as_ref().map_or(0.0, |d| d.state().ground);
+    // a blow's y is a row down from the top, moved onto the layout's ground (`rules::lift`): its height above the
+    // ground is what the shapes use
+    let ground = f64::from(layout.ground) * UNIT;
     for Fx(out) in fx.read() {
         let line = match out {
             Out::Hit {
@@ -322,7 +323,7 @@ fn panel(
     }
     let _ = write!(
         s,
-        "body: gold Thunder / cyan Frost / grey untouchable | strike: orange windup, red recover | shot magenta | field violet | unit white | red X a blow"
+        "body: gold Thunder / cyan Frost / grey untouchable | strike red (active frame) | shot magenta | field violet | unit white | red X a blow"
     );
     text.0 = s;
 }
@@ -353,8 +354,7 @@ fn color(mark: Mark, owner: Option<usize>) -> Color {
             }
         }
         Mark::Untouchable => Color::srgba_u8(0x90, 0x90, 0x90, 200),
-        Mark::Windup => Color::srgba_u8(0xff, 0x9a, 0x2a, 240),
-        Mark::Recover => Color::srgba_u8(0xff, 0x40, 0x40, 200),
+        Mark::Strike => Color::srgba_u8(0xff, 0x30, 0x30, 255),
         Mark::Shot => Color::srgba_u8(0xff, 0x4a, 0xe0, 240),
         Mark::Field => Color::srgba_u8(0xb0, 0x7a, 0xff, 220),
         Mark::Unit => Color::srgba_u8(0xff, 0xff, 0xff, 220),

@@ -64,7 +64,8 @@ fn trace(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> Vec<([f64; 2], [u32; 
 
 #[test]
 fn a_bot_seat_replays_the_same_fight_from_a_seed() {
-    for seed in [3, 18] {
+    // seeds where the random bot lands something on the brain (on a few, 3 among them, every pick it makes misses)
+    for seed in [4, 18] {
         let fight = || trace([BotSeat::make(pick(), None), Brain::make()], seed, 60.0);
         let first = fight();
         assert_eq!(first, fight(), "seed {seed}");

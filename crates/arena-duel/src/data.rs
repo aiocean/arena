@@ -157,13 +157,22 @@ pub const KNOCKBACK: f64 = 520.0;
 /// (`sense`).
 pub const UNIT: f64 = 4.0;
 
-/// A fighter's body: the engine's site duel ([`BodySpec::default`]) in the arena's pixels; its times and shares as
-/// they are.
+/// The HD fighters' bodies as drawn, in the arena's pixels, measured on the sheets' standing frames
+/// (`arena-game/assets/fighters`): 243 pixels from the feet to the top of the hair or crown, the chest's band about
+/// 50 wide, 156 to 185 crouched. The body a blow must touch is a little inside the figure: up to the brow, not the hair
+/// (`HD_BODY`); blows are felt and shots leave at the shoulders (`HD_CHEST`); a crouch is `HD_DUCK` tall. The width
+/// stays the engine's (`half_width` 6, 48 wide), inside the torso.
+pub const HD_BODY: f64 = 228.0;
+pub const HD_CHEST: f64 = 152.0;
+pub const HD_DUCK: f64 = 160.0;
+
+/// A fighter's body: the engine's site duel ([`BodySpec::default`]) in the arena's pixels, its height, chest and crouch
+/// those of the HD figures as drawn (`HD_BODY`, `HD_CHEST`, `HD_DUCK`); its times and shares as they are.
 pub fn body_spec() -> BodySpec {
     let d = BodySpec::default();
     BodySpec {
-        body: d.body * UNIT,
-        chest: d.chest * UNIT,
+        body: HD_BODY,
+        chest: HD_CHEST,
         half_width: d.half_width * UNIT,
         room: d.room * UNIT,
         walk: d.walk * UNIT,
@@ -176,7 +185,7 @@ pub fn body_spec() -> BodySpec {
         launch_pop: d.launch_pop * UNIT,
         knockdown_bounce: d.knockdown_bounce * UNIT,
         knockdown_roll_distance: d.knockdown_roll_distance * UNIT,
-        duck: d.duck * UNIT,
+        duck: HD_DUCK,
         bounce: d.bounce * UNIT,
         hard_landing: d.hard_landing * UNIT,
         knockback: d.knockback * UNIT,
