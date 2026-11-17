@@ -24,7 +24,8 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
 - The screen is made for it: a fighter stands about 45% of the picture's height, so the duel's picture is about
   **500 px tall** before the page enlarges it.
 - The game shows those pixels **as drawn**: never halved, never scaled by a fraction, never rotated or smoothed. The
-  page enlarges the whole picture by a whole number (`image-rendering: pixelated`, `imageSmoothingEnabled = false`).
+  game enlarges the whole picture by a whole number (`crates/arena-game/src/layout.rs`, `scale`) and samples the
+  fighters' sheets nearest (`ImagePlugin::default_nearest`).
 - Every fighter in one duel has the same density. A smaller or larger character is drawn smaller or larger on the same
   grid (a child on a smaller body, a beast on a bigger canvas), never resized from another size.
 - Nothing on the way from PixelLab to the screen changes the pixels' size: the sheet keeps every frame as drawn.
@@ -44,12 +45,14 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
 
 - One **main colour** (the robe) and one **accent** (a lining, a sash, a trim). The two fighters of a duel must not share
   a main colour, and each must stand out against the stage's dark night ground.
-- The **school's colour** is the accent: each school's sheet turns the accent (the cultivator's crimson lining) into
-  the school's glow (thunder `#ffe066`, frost `#a6ecff`). A new character keeps its accent in one hue family, used
+- The **look's colour** is the accent: a look's sheet turns the accent (the cultivator's crimson lining) into the
+  look's glow (Thunder `#ffe066`, Frost `#a6ecff`). A new character keeps its accent in one hue family, used
   nowhere else on the body, so that recolour hits it and nothing else.
 - **White is the hit flash**: the painter draws a struck fighter all white. A character mostly in white (Thất Thải Đạo
   Nhân) needs its dark hair, sash and outline to carry the flash, or a flash that is not white. Check a hit frame.
-- Effects (qi, fire, lightning) are the game's particles (`crates/arena-game/src/vfx`) and take their colours from the effect palettes in
+- Effects (qi, fire, lightning) are not drawn into a fighter: they are sheets of their own, baked from `arena-vfx`'s
+  recipes (`crates/arena-game/assets/vfx`) or drawn by an image model (`art/vfx/<name>/`, "Spell effects drawn by an
+  image model" below), and played by `crates/arena-game/src/vfx` in the colours of the effect palettes in
   `crates/arena-duel/src/data.rs` (`Tint`). The character's own colours are never reused for an effect's glow.
 
 ## Making a character on PixelLab
@@ -66,7 +69,7 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
    stance: weapon already in hand, feet set. If the design is drawn at rest (a sword in its scabbard), make a
    `create_character_state` "in a ready fighting stance, weapon drawn" (about 25 generations at 256) and animate that
    state. Otherwise the weapon pops between scabbard and hand at every change of clip.
-3. Animate **east only**, every clip the painter picks from (`crates/arena-fighter`, `pick::CLIPS`):
+3. Animate **east only**, every clip the painter picks from (`crates/arena-duel/src/pick.rs`, `CLIPS`):
 
    `stance-idle walk dash jump duck guard slash overhead cast hit knockdown launched tumble getting-up roll frozen
    shocked meditate win defeat` (20)
@@ -99,19 +102,43 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
    clip. These are the required core; the
    optional clips, each falling back to a core one, are in `docs/specs/2026-11-17-fighter-clips-design.md`.
 4. Export (`get_character` → download) into `art/<character>/src/` and build the sheets with the character's
-   `tools/sheet.rs` into `crates/arena-game/assets/fighters/` (built into the game): one layout `<name>.json` and one `<name>-<school>.png` per school.
+   `tools/sheet.rs` into `crates/arena-game/assets/fighters/` (built into the game): one layout `<name>.json` and the look's pages, `<name>-<look>.png`, then `<name>-<look>-1.png` and on (each under
+   4096 pixels a side). Each character ships one look today: the cultivator Thunder, the Seven-Colored Daoist Frost.
    An effect the generator drew into a clip is taken out there, not left for the page.
 
 ## The sheet the game reads
 
-- PNG, RGBA, transparent ground, one row per clip, frames trimmed. Every school's PNG shares one layout JSON.
-- The JSON (`crates/arena-fighter`, `Layout`): `size`, `fps`, each clip's cells `{x, y, w, h, dx, dy}`, where `dx, dy`
-  is the cell's top-left measured from the **feet** (centre of the idle frame's bottom row), and `portrait`, the head box
-  for the HUD.
+- PNG, RGBA, transparent ground, one row per clip, frames trimmed, on pages. A look's pages share one layout JSON.
+- The JSON (`crates/arena-game/src/sheet.rs`, `Layout`): `pages` (or `size` for one page), `fps`, each clip's cells
+  `{page, x, y, w, h, dx, dy}`, where `dx, dy` is the cell's top-left measured from the **feet** (centre of the idle
+  frame's bottom row), and `portrait`, the head box for the HUD.
 - Clip names are the contract with the painter. A sheet with a clip renamed, missing or empty does not load
-  (`Sheet::new`, `LayoutError`).
+  (`sheet::parse`, `LayoutError`).
 - A weapon or anything else that follows a hand is placed per frame (`cultivator/tools/attach.rs`, `socket.rs`), not
   by eye.
+
+## Frame data and the sprite
+
+The sprite is the rules: where a fighter can be hit and where its blow or bolt comes from are measured from its frames,
+not set by hand. `cargo run -p arena-game --example frame_boxes -- crates/arena-duel/src/frames_data.rs` reads every
+look's sheet and writes, for every clip of `CLIPS` and every frame, the hurtboxes, the hitbox of a blow, the hand
+and each clip's active frame, into the rules' table (`arena_duel::frames`). So a redrawn clip is a
+rule change: run it again, re-pin the duel's goldens, measure with the ladder, and bump `arena_link::RULES_VERSION`.
+`cargo run -p arena-game --example hitbox_review -- <out dir>` draws review shots of real fights stopped on the
+frames that show the boxes. A skill's windup a foe can counter and its recover it can punish are drawn for as long as
+the rules keep them open: a change to a skill's `windup` or `recover` re-checks its clip, and a redrawn clip re-checks
+the numbers.
+
+## Spell effects drawn by an image model
+
+An effect is a hybrid of code and sprite (owner, 2026-11-17): the sprite keeps only the drawn shape, a few frames of
+it, smooth (no pixel art: the renderer makes any pixels); what code can do (a spin, a flight, a scale in or out, a
+fade, a tail) is code. Each effect is a folder `art/vfx/<name>/`: its prompts (one a look, in that look's colours, on
+pure black), the pictures generated (`generated/`), the frames keyed from them (`frames/<look>/NN.png`, by
+`art/vfx/tools/key.rs`) and `motion.json` (its id, fps, loop, anchor and size, and the motion code lays on it).
+`cargo -Zscript art/vfx/tools/vfx.rs --all art/vfx crates/arena-game/assets/drawn` packs every effect into the
+game's sheets; `arena_vfx::drawn` reads them and `crates/arena-game/src/vfx/drawn.rs` plays them. A drawn effect
+plays in place of its baked recipe.
 
 ## Known faults to redraw
 
@@ -132,7 +159,8 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
   the next on the page.
 - [ ] No pixel with alpha other than 0 or 255; at most 64 colours.
 - [ ] No effect glow left in the frames.
-- [ ] Each school's sheet: the accent recoloured, nothing else changed.
+- [ ] Each look's sheet: the accent recoloured, nothing else changed.
+- [ ] `frame_boxes` run again and its table reviewed (`hitbox_review`): the boxes sit on the body and the blade.
 - [ ] A hit frame on the dark stage: the white flash reads.
 - [ ] The poses read at the size the page shows them: slash, overhead and cast have three different silhouettes.
 - [ ] The sprite fits the body the rules give it (`body_spec` in `data.rs`: height `body`, half width `half_width`).
