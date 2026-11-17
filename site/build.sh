@@ -22,6 +22,8 @@ wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-in
 cp "$here"/*.html "$out/"
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
 cp "$here"/assets/bots/policy.wasm "$out/bots/"
+# the big files gzipped beside themselves: the server sends a file's .gz to a browser that takes gzip
+gzip -9 -k "$out/game/arena_game_bg.wasm" "$out/game/arena_game.js" "$out/bots/policy.wasm"
 bun "$here/docs.js" "$root/docs" "$out/docs"
 echo "arena site: $out"
 
