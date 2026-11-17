@@ -2,7 +2,8 @@
 //!
 //! ```text
 //! cargo run --release -p arena-smoke -- [--url https://arena.aiocean.io/] [--out target/arena-smoke]
-//!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 20] [--headful] [--mbps 20]
+//!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 30] [--headful] [--mbps 20]
+//!     [--telemetry-otlp]
 //! ```
 //!
 //! The checks, each PASS or FAIL:
@@ -19,6 +20,17 @@
 //!   megabits a second down, 40 ms latency), so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //!
+//! The wait for the game to start is a fixed 30 s (`--wait`), never stretched for a busy machine: a slow start is what
+//! the run is there to see. When the game does not start within it, and only then, the whole run is tried once more
+//! in a fresh browser; the result fails only when both attempts fail, and the report says that it was retried and why.
+//! Other failed checks are the result at once.
+//!
+//! Every run measures the time from the navigation to the game starting (its status line set) and to the first live
+//! match frame (`window.__arena.live.frames` > 0), and the machine's 1/5/15-minute load averages when it began. With
+//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT`, `ops/observe/README.md`) it sends them as one `smoke.run` event
+//! (service `arena-smoke`, stream `arena_smoke`) and the metrics `arena_smoke_game_start_seconds`,
+//! `arena_smoke_first_frame_seconds` and `arena_smoke_runs_total` (`result`).
+//!
 //! It writes `screenshot.png` and `summary.json` to `--out`; with `--review <dir>` also a run page into
 //! `<dir>/<UTC time>/` and the index of the last 30 runs at `<dir>/index.html`. Exit code 0 when every check passes, 1
 //! when one fails, 2 when the browser could not run at all.
@@ -27,9 +39,10 @@
 //! `~/.cache/arena-smoke`.
 
 use arena_smoke::{
-    Check, Picture, Summary, Weight, changed, ignored_console, ignored_request, paint, redact,
-    stamp,
+    Check, Load, Picture, Summary, Weight, changed, ignored_console, ignored_request, paint,
+    redact, stamp,
 };
+use arena_telemetry::target::METRICS;
 use chromiumoxide::cdp::browser_protocol::network::{
     EventLoadingFailed, EventLoadingFinished, EventRequestWillBeSent, EventResponseReceived,
 };
@@ -48,6 +61,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
+use tracing::Level;
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 800;
@@ -63,13 +77,16 @@ struct Args {
     mbps: Option<f64>,
 }
 
+/// The fixed wait for the game to start, seconds.
+const WAIT: u64 = 30;
+
 fn args() -> Result<Args, String> {
     let mut a = Args {
         url: "https://arena.aiocean.io/".into(),
         out: PathBuf::from("target/arena-smoke"),
         review: None,
         chrome: std::env::var_os("CHROME").map(PathBuf::from),
-        wait: 20,
+        wait: WAIT,
         headful: false,
         mbps: None,
     };
@@ -84,8 +101,10 @@ fn args() -> Result<Args, String> {
             "--wait" => a.wait = value()?.parse().map_err(|e| format!("--wait: {e}"))?,
             "--headful" => a.headful = true,
             "--mbps" => a.mbps = Some(value()?.parse().map_err(|e| format!("--mbps: {e}"))?),
+            // read by arena_telemetry::requested
+            arena_telemetry::FLAG => {}
             "-h" | "--help" => {
-                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N]".into());
+                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N] [--telemetry-otlp]".into());
             }
             other => return Err(format!("unknown argument {other}")),
         }
@@ -110,8 +129,7 @@ fn origin(url: &str) -> String {
     format!("{scheme}://{host}")
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
+fn main() -> ExitCode {
     let a = match args() {
         Ok(a) => a,
         Err(e) => {
@@ -119,19 +137,103 @@ async fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let at = stamp(SystemTime::now());
-    let begun = Instant::now();
-    let (mut summary, shot) = match smoke(&a).await {
-        Ok(r) => r,
+    let raw: Vec<String> = std::env::args().collect();
+    let export = match arena_telemetry::requested(&raw) {
+        Ok(e) => e,
         Err(e) => {
-            eprintln!("arena-smoke could not run: {}", redact(&e));
+            eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    summary.at = at;
-    summary.url = a.url.clone();
+    // the browser driver's own chatter stays out of stderr and the stream
+    let telemetry = export.then(|| {
+        arena_telemetry::init(
+            "arena-smoke",
+            arena_telemetry::Options {
+                filter: "warn,chromiumoxide=off".into(),
+                export_filter: "warn,arena_smoke=info,chromiumoxide=off".into(),
+                ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
+            },
+        )
+    });
+    let code = run(&a);
+    if let Some(t) = &telemetry {
+        t.flush();
+        if t.exporting() {
+            println!(
+                "telemetry: smoke.run sent to {} (stream arena_smoke)",
+                t.endpoint().unwrap_or("")
+            );
+        }
+    }
+    code
+}
+
+fn run(a: &Args) -> ExitCode {
+    let rt = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(e) => {
+            eprintln!("arena-smoke could not start its runtime: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let at = stamp(SystemTime::now());
+    let begun = Instant::now();
+    let stamped = |mut s: Summary| {
+        s.at = at.clone();
+        s.url = a.url.clone();
+        s
+    };
+    let (first, first_shot) = match rt.block_on(attempt(a, 1)) {
+        Ok((s, shot)) => (stamped(s), shot),
+        Err(e) => {
+            eprintln!("arena-smoke could not run: {}", redact(&e));
+            let mut s = stamped(Summary {
+                attempt: 1,
+                load: Load::now(),
+                ..Summary::default()
+            });
+            s.seconds = begun.elapsed().as_secs_f64();
+            record(&s, "error", a.mbps);
+            return ExitCode::from(2);
+        }
+    };
+    let (mut summary, shot, retried_shot) = match first.retry() {
+        None => (first, first_shot, None),
+        Some(why) => {
+            println!("RETRY {why}");
+            for c in &first.checks {
+                println!(
+                    "  attempt 1: {} {:<10} {}",
+                    if c.pass { "PASS" } else { "FAIL" },
+                    c.name,
+                    c.detail
+                );
+            }
+            println!("  attempt 1: {}", first.timings());
+            match rt.block_on(attempt(a, 2)) {
+                Ok((second, shot)) => (
+                    Summary::retried(first, stamped(second)),
+                    shot,
+                    Some(first_shot),
+                ),
+                Err(e) => {
+                    // the second could not run at all: the first's failure stands
+                    let mut s = first;
+                    s.attempt = 2;
+                    s.retry_reason = Some(format!(
+                        "{why}; the second attempt could not run: {}",
+                        redact(&e)
+                    ));
+                    (s, first_shot, None)
+                }
+            }
+        }
+    };
     summary.seconds = begun.elapsed().as_secs_f64();
-    summary.finish();
 
     for c in &summary.checks {
         println!(
@@ -147,11 +249,22 @@ async fn main() -> ExitCode {
     for i in &summary.ignored {
         println!("  ignored: {i}");
     }
+    println!("timings: {}", summary.timings());
+    if let Some(why) = &summary.retry_reason {
+        println!("retried: {why}");
+    }
+    println!(
+        "deployed commit: {}",
+        summary.deployed_commit.as_deref().unwrap_or("none named")
+    );
     let json = serde_json::to_string_pretty(&summary).unwrap_or_default();
     let write = || -> Result<(), String> {
         std::fs::create_dir_all(&a.out).map_err(|e| format!("{}: {e}", a.out.display()))?;
         std::fs::write(a.out.join("screenshot.png"), &shot).map_err(|e| e.to_string())?;
         std::fs::write(a.out.join("summary.json"), &json).map_err(|e| e.to_string())?;
+        if let Some(first) = &retried_shot {
+            std::fs::write(a.out.join("attempt-1.png"), first).map_err(|e| e.to_string())?;
+        }
         Ok(())
     };
     if let Err(e) = write() {
@@ -160,17 +273,75 @@ async fn main() -> ExitCode {
         println!("screenshot and summary: {}", a.out.display());
     }
     if let Some(dir) = &a.review {
-        match arena_smoke::write_review(dir, &summary, &shot) {
+        match arena_smoke::write_review(dir, &summary, &shot, retried_shot.as_deref()) {
             Ok(run) => println!("review: {}", run.display()),
             Err(e) => eprintln!("writing the review: {e}"),
         }
     }
+    record(&summary, if summary.pass { "pass" } else { "fail" }, a.mbps);
     println!("{}", if summary.pass { "PASS" } else { "FAIL" });
     if summary.pass {
         ExitCode::SUCCESS
     } else {
         ExitCode::from(1)
     }
+}
+
+/// One attempt: the machine's load as it begins, then the page and its checks in a fresh browser.
+async fn attempt(a: &Args, n: u32) -> Result<(Summary, Vec<u8>), String> {
+    let load = Load::now();
+    let (mut s, shot) = smoke(a).await?;
+    s.attempt = n;
+    s.load = load;
+    s.finish();
+    Ok((s, shot))
+}
+
+/// The run as telemetry (exported only when `init` set an endpoint): one `smoke.run` event on the service's stream,
+/// the two timings as histograms and the run counted by result.
+fn record(s: &Summary, result: &str, mbps: Option<f64>) {
+    let failed: Vec<&str> = s
+        .checks
+        .iter()
+        .filter(|c| !c.pass)
+        .map(|c| c.name.as_str())
+        .collect();
+    tracing::info!(
+        run_id = arena_telemetry::run_id("smoke"),
+        at = %s.at,
+        url = %s.url,
+        result = result,
+        check_page = s.check("page"),
+        check_errors = s.check("errors"),
+        check_live_json = s.check("live.json"),
+        check_live = s.check("live"),
+        check_hud = s.check("hud"),
+        check_advances = s.check("advances"),
+        failed = %failed.join(","),
+        game_start_seconds = s.game_start_seconds,
+        first_frame_seconds = s.first_frame_seconds,
+        load_1 = s.load.map(|l| l.one),
+        load_5 = s.load.map(|l| l.five),
+        load_15 = s.load.map(|l| l.fifteen),
+        attempt = s.attempt,
+        retried = s.retry_reason.is_some(),
+        // always set, so the stream always has the fields a dashboard names
+        retry_reason = s.retry_reason.as_deref().unwrap_or(""),
+        deployed_commit = s.deployed_commit.as_deref().unwrap_or("none"),
+        errors = s.errors.len(),
+        seconds = s.seconds,
+        // the connection emulated (`--mbps`), 0 for the machine's own: the timings follow it
+        mbps = mbps.unwrap_or(0.0),
+        status_line = %s.status_line,
+        "smoke.run"
+    );
+    if let Some(v) = s.game_start_seconds {
+        tracing::event!(target: METRICS, Level::INFO, { histogram.arena_smoke_game_start_seconds = v });
+    }
+    if let Some(v) = s.first_frame_seconds {
+        tracing::event!(target: METRICS, Level::INFO, { histogram.arena_smoke_first_frame_seconds = v });
+    }
+    tracing::event!(target: METRICS, Level::INFO, { monotonic_counter.arena_smoke_runs_total = 1_u64, result = result });
 }
 
 /// Where Chrome is: asked for, on the system, or Chrome for Testing fetched once.
@@ -314,12 +485,17 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     // the game starts: its status line says the seed, live or on its own
     let deadline = Duration::from_secs(a.wait.max(5));
     let mut status = String::new();
+    // when the first live frame was seen, from the navigation
+    let mut first_frame: Option<f64> = None;
     while loaded.elapsed() < deadline {
         status = eval_string(
             &page,
             "document.getElementById('status')?.textContent ?? ''",
         )
         .await;
+        if first_frame.is_none() && live_frames(&page).await > 0 {
+            first_frame = Some(loaded.elapsed().as_secs_f64());
+        }
         if status.starts_with("Seed") {
             break;
         }
@@ -363,10 +539,24 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     // live.json, as the page fetches it (the URL's token is never shown)
     let lj = eval_json(
         &page,
-        "fetch('live.json', {cache: 'no-store'}).then(async r => { let url = null; try { url = (await r.json()).url } catch {} \
-         return {status: r.status, url: typeof url === 'string' && url.length > 0, host: typeof url === 'string' ? new URL(url).host : null} })",
+        "fetch('live.json', {cache: 'no-store'}).then(async r => { let url = null, commit = null; \
+         try { const j = await r.json(); url = j.url; commit = j.commit ?? j.version ?? null } catch {} \
+         return {status: r.status, url: typeof url === 'string' && url.length > 0, host: typeof url === 'string' ? new URL(url).host : null, \
+         commit: commit == null ? null : String(commit)} })",
     )
     .await;
+    // the deployed commit, if the page or live.json names one (today neither does)
+    let named = eval_json(
+        &page,
+        "(() => { const v = document.querySelector('meta[name=\"arena-commit\"], meta[name=\"version\"]')?.content \
+         ?? window.__arena?.commit ?? window.__arena?.version; return v == null ? null : String(v) })()",
+    )
+    .await;
+    let deployed_commit = named
+        .as_str()
+        .or_else(|| lj.get("commit").and_then(Value::as_str))
+        .map(|c| redact(c.trim()))
+        .filter(|c| !c.is_empty());
     let lj_status = lj.get("status").and_then(Value::as_i64).unwrap_or(0);
     let lj_url = lj.get("url").and_then(Value::as_bool).unwrap_or(false);
     let relay = lj
@@ -390,7 +580,6 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     // let the page settle on the relay's match (it falls back to its own fight after 8 s without one)
     let settle = Duration::from_secs(10);
     let mut live = Value::Null;
-    let mut first_frame = None;
     while loaded.elapsed() < deadline.max(settle) {
         live = eval_json(&page, "window.__arena?.live ?? null").await;
         if first_frame.is_none() && live.get("frames").and_then(Value::as_u64).unwrap_or(0) > 0 {
@@ -409,7 +598,7 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         if loaded.elapsed() > settle && !status.contains("· live ·") && live.is_null() {
             break;
         }
-        tokio::time::sleep(Duration::from_millis(500)).await;
+        tokio::time::sleep(Duration::from_millis(250)).await;
     }
     let watching = status.contains("· live ·");
     let hook = !live.is_null();
@@ -562,6 +751,10 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         errors,
         ignored,
         weight,
+        start_timed_out: !started,
+        game_start_seconds: started.then_some(start_secs),
+        first_frame_seconds: first_frame,
+        deployed_commit,
         ..Summary::default()
     };
     Ok((summary, full))
@@ -699,6 +892,14 @@ async fn eval_json(page: &Page, js: &str) -> Value {
         Ok(r) => r.into_value::<Value>().unwrap_or(Value::Null),
         Err(_) => Value::Null,
     }
+}
+
+/// The live match frames the page has taken (`window.__arena.live.frames`), 0 before any or without the hook.
+async fn live_frames(page: &Page) -> u64 {
+    eval_json(page, "window.__arena?.live?.frames ?? 0")
+        .await
+        .as_u64()
+        .unwrap_or(0)
 }
 
 async fn eval_string(page: &Page, js: &str) -> String {

@@ -26,8 +26,51 @@ impl Check {
     }
 }
 
-/// What a run found, written as `summary.json` beside its screenshot.
+/// The machine's load averages over the last 1, 5 and 15 minutes.
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct Load {
+    pub one: f64,
+    pub five: f64,
+    pub fifteen: f64,
+}
+
+impl Load {
+    /// The first three numbers of `/proc/loadavg` (`0.52 0.58 0.59 1/389 12345`) or of macOS's `sysctl -n
+    /// vm.loadavg` (`{ 11.46 17.68 17.08 }`).
+    pub fn parse(text: &str) -> Option<Load> {
+        let mut n = text
+            .split(|c: char| c.is_whitespace() || c == '{' || c == '}')
+            .filter(|w| !w.is_empty())
+            .map(|w| w.replace(',', ".").parse::<f64>());
+        Some(Load {
+            one: n.next()?.ok()?,
+            five: n.next()?.ok()?,
+            fifteen: n.next()?.ok()?,
+        })
+    }
+
+    /// The machine's load now: `/proc/loadavg` on Linux, `sysctl -n vm.loadavg` on macOS; `None` when neither answers.
+    pub fn now() -> Option<Load> {
+        if let Ok(t) = fs::read_to_string("/proc/loadavg") {
+            return Load::parse(&t);
+        }
+        let out = std::process::Command::new("sysctl")
+            .args(["-n", "vm.loadavg"])
+            .output()
+            .ok()?;
+        Load::parse(&String::from_utf8_lossy(&out.stdout))
+    }
+
+    /// `11.46 / 17.68 / 17.08`.
+    pub fn shown(&self) -> String {
+        format!("{:.2} / {:.2} / {:.2}", self.one, self.five, self.fifteen)
+    }
+}
+
+/// What a run found, written as `summary.json` beside its screenshot. A run from before a field was added reads
+/// back with it empty.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Summary {
     /// When the run began, UTC (`stamp`).
     pub at: String,
@@ -40,11 +83,28 @@ pub struct Summary {
     pub errors: Vec<String>,
     /// What was seen and let pass as noise, with why.
     pub ignored: Vec<String>,
-    /// How long the run took, in seconds.
+    /// How long the run took, in seconds (both attempts when it was retried).
     pub seconds: f64,
     /// What a first visit downloaded (a fresh browser, nothing cached) and how long it took to see the game.
     #[serde(default)]
     pub weight: Weight,
+    /// Which attempt this is: 1, or 2 when the first was retried.
+    pub attempt: u32,
+    /// The game did not start (its status line never said `Seed`) within the wait: the one failure that is retried.
+    pub start_timed_out: bool,
+    /// Seconds from the navigation to the game starting (wasm running, the status line set); `None` if it did not.
+    pub game_start_seconds: Option<f64>,
+    /// Seconds from the navigation to the first live match frame (`window.__arena.live.frames` > 0); `None` if none
+    /// came while the run watched.
+    pub first_frame_seconds: Option<f64>,
+    /// The machine's load averages when the attempt began.
+    pub load: Option<Load>,
+    /// The deployed commit, when the page or `live.json` names one.
+    pub deployed_commit: Option<String>,
+    /// Why the run was retried, when it was.
+    pub retry_reason: Option<String>,
+    /// The first attempt, when the run was retried (this summary is the second's).
+    pub first_attempt: Option<Box<Summary>>,
 }
 
 /// A first visit's bytes and timings: every response's bytes on the wire (`encodedDataLength`: compressed, headers
@@ -171,6 +231,51 @@ fn path_of(url: &str) -> String {
 impl Summary {
     pub fn finish(&mut self) {
         self.pass = !self.checks.is_empty() && self.checks.iter().all(|c| c.pass);
+    }
+
+    /// Whether this attempt is retried, and why: only when the game did not start within the wait. Any other failed
+    /// check is the result.
+    pub fn retry(&self) -> Option<String> {
+        self.start_timed_out.then(|| {
+            let page = self
+                .checks
+                .iter()
+                .find(|c| c.name == "page")
+                .map_or(String::new(), |c| format!(": {}", c.detail));
+            format!(
+                "attempt {} timed out waiting for the game to start{page}",
+                self.attempt
+            )
+        })
+    }
+
+    /// The run of two attempts: the second's result, with the first kept beside it and why it was retried.
+    pub fn retried(first: Summary, mut second: Summary) -> Summary {
+        second.attempt = first.attempt + 1;
+        second.retry_reason = first.retry();
+        second.first_attempt = Some(Box::new(first));
+        second
+    }
+
+    /// The check named `name`: `PASS`, `FAIL`, or `none` when the run has no such check.
+    pub fn check(&self, name: &str) -> &'static str {
+        match self.checks.iter().find(|c| c.name == name) {
+            Some(c) if c.pass => "PASS",
+            Some(_) => "FAIL",
+            None => "none",
+        }
+    }
+
+    /// One line of its timings: `game 5.3 s · first frame 7.8 s · load 2.10 / 1.95 / 1.80 · attempt 1`.
+    pub fn timings(&self) -> String {
+        let secs = |s: Option<f64>| s.map_or("none".to_string(), |s| format!("{s:.1} s"));
+        format!(
+            "game start {} · first frame {} · load {} · attempt {}",
+            secs(self.game_start_seconds),
+            secs(self.first_frame_seconds),
+            self.load.map_or("unknown".to_string(), |l| l.shown()),
+            self.attempt.max(1)
+        )
     }
 }
 
@@ -420,6 +525,8 @@ pub fn run_page(s: &Summary) -> String {
 <p><a href=\"../\">all runs</a></p>
 <h1>Arena smoke test, {at}: {v}</h1>
 <p>{url} · {secs:.1} s · status line: <code>{status}</code></p>
+<p>{timings} · deployed commit: {commit}</p>
+{retry}
 <table><tr><th></th><th>check</th><th>what was seen</th></tr>{rows}</table>
 <h2>Errors</h2>{errors}
 <h2>Ignored as noise</h2>{ignored}
@@ -432,6 +539,18 @@ pub fn run_page(s: &Summary) -> String {
         url = esc(&s.url),
         secs = s.seconds,
         status = esc(&s.status_line),
+        timings = esc(&s.timings()),
+        commit = s.deployed_commit.as_deref().map_or("<span class=\"muted\">none named</span>".to_string(), |c| format!("<code>{}</code>", esc(c))),
+        retry = match (&s.retry_reason, &s.first_attempt) {
+            (Some(why), Some(first)) => format!(
+                "<p class=\"fail\">Retried: {}</p><p class=\"muted\">The first attempt: {} · {} · its checks: {} · <a href=\"attempt-1.png\">its screenshot</a></p>",
+                esc(why),
+                if first.pass { "PASS" } else { "FAIL" },
+                esc(&first.timings()),
+                esc(&first.checks.iter().map(|c| format!("{} {}", c.name, if c.pass { "PASS" } else { "FAIL" })).collect::<Vec<_>>().join(", ")),
+            ),
+            _ => String::new(),
+        },
         errors = list(&s.errors),
         ignored = list(&s.ignored),
     )
@@ -448,8 +567,17 @@ pub fn index_page(runs: &[Summary]) -> String {
                 .map(|c| format!("{} {}", verdict(c.pass), esc(&c.name)))
                 .collect::<Vec<_>>()
                 .join("<br>");
+            let secs = |s: Option<f64>| s.map_or("–".to_string(), |s| format!("{s:.1} s"));
+            let timing = format!(
+                "start {}<br>frame {}<br>load {}<br>attempt {}{}",
+                secs(s.game_start_seconds),
+                secs(s.first_frame_seconds),
+                s.load.map_or("–".to_string(), |l| l.shown()),
+                s.attempt.max(1),
+                if s.retry_reason.is_some() { " (retried: the game did not start)" } else { "" },
+            );
             format!(
-                "<tr><td><a href=\"{at}/\">{at}</a></td><td>{}</td><td>{checks}</td><td><a href=\"{at}/\"><img src=\"{at}/screenshot.png\" alt=\"\" width=\"240\" loading=\"lazy\"></a></td></tr>",
+                "<tr><td><a href=\"{at}/\">{at}</a></td><td>{}</td><td>{checks}</td><td class=\"muted\">{timing}</td><td><a href=\"{at}/\"><img src=\"{at}/screenshot.png\" alt=\"\" width=\"240\" loading=\"lazy\"></a></td></tr>",
                 verdict(s.pass),
                 at = esc(&s.at),
             )
@@ -458,8 +586,8 @@ pub fn index_page(runs: &[Summary]) -> String {
     format!(
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>arena smoke runs</title><style>{STYLE}</style></head><body>
 <h1>Arena smoke runs</h1>
-<p class=\"muted\">The smoke test of https://arena.aiocean.io/ after each deploy (<code>cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke</code>), newest first, the last {KEEP} kept.</p>
-<table><tr><th>run (UTC)</th><th></th><th>checks</th><th></th></tr>{rows}</table>
+<p class=\"muted\">The smoke test of https://arena.aiocean.io/ after each deploy (<code>cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry-otlp</code>), newest first, the last {KEEP} kept. Times are from the navigation; load is the machine's 1 / 5 / 15-minute load average when the run began.</p>
+<table><tr><th>run (UTC)</th><th></th><th>checks</th><th>timings</th><th></th></tr>{rows}</table>
 </body></html>
 "
     )
@@ -474,6 +602,7 @@ pub fn write_review(
     dir: &Path,
     s: &Summary,
     screenshot: &[u8],
+    first_screenshot: Option<&[u8]>,
 ) -> Result<std::path::PathBuf, String> {
     let run = dir.join(&s.at);
     fs::create_dir_all(&run).map_err(|e| format!("{}: {e}", run.display()))?;
@@ -484,6 +613,9 @@ pub fn write_review(
     };
     write("summary.json", json.as_bytes())?;
     write("screenshot.png", screenshot)?;
+    if let Some(first) = first_screenshot {
+        write("attempt-1.png", first)?;
+    }
     write("index.html", run_page(s).as_bytes())?;
 
     let mut names: Vec<String> = fs::read_dir(dir)
@@ -681,6 +813,72 @@ mod tests {
     }
 
     #[test]
+    fn load_reads_linux_and_macos() {
+        let l = Load {
+            one: 0.52,
+            five: 0.58,
+            fifteen: 0.59,
+        };
+        assert_eq!(Load::parse("0.52 0.58 0.59 1/389 12345\n"), Some(l));
+        assert_eq!(Load::parse("{ 0.52 0.58 0.59 }\n"), Some(l));
+        assert_eq!(Load::parse("{ 0,52 0,58 0,59 }"), Some(l));
+        assert_eq!(Load::parse(""), None);
+        assert_eq!(Load::parse("{ 1.0 2.0 }"), None);
+        assert_eq!(l.shown(), "0.52 / 0.58 / 0.59");
+    }
+
+    #[test]
+    fn only_a_start_timeout_is_retried_and_the_second_attempt_decides() {
+        let attempt = |timed_out: bool, pass: bool| {
+            let mut s = Summary {
+                attempt: 1,
+                start_timed_out: timed_out,
+                game_start_seconds: (!timed_out).then_some(4.0),
+                checks: vec![
+                    Check::new("page", !timed_out, "game not started after 30 s"),
+                    Check::new("hud", pass, "seen"),
+                ],
+                ..Summary::default()
+            };
+            s.finish();
+            s
+        };
+        // another check failing is the result, not retried
+        assert_eq!(attempt(false, false).retry(), None);
+        let first = attempt(true, false);
+        let why = first.retry();
+        assert!(
+            why.as_deref()
+                .is_some_and(|w| w.contains("timed out") && w.contains("30 s")),
+            "{why:?}"
+        );
+        // the second passes: the run passes, retried, the first kept
+        let run = Summary::retried(first.clone(), attempt(false, true));
+        assert!(run.pass);
+        assert_eq!(run.attempt, 2);
+        assert_eq!(run.retry_reason, why);
+        assert!(run.first_attempt.as_ref().is_some_and(|f| !f.pass));
+        assert!(run.timings().contains("attempt 2"));
+        assert_eq!(run.check("page"), "PASS");
+        assert_eq!(run.check("live"), "none");
+        // both fail: the run fails
+        let run = Summary::retried(first, attempt(true, false));
+        assert!(!run.pass);
+        let page = run_page(&run);
+        assert!(page.contains("Retried: attempt 1 timed out"), "{page}");
+        assert!(index_page(&[run]).contains("attempt 2 (retried"));
+    }
+
+    #[test]
+    fn an_older_summary_reads_back() -> Result<(), String> {
+        let old = r#"{"at":"2026-11-17T21-10-42Z","url":"u","pass":true,"checks":[],"status_line":"","errors":[],"ignored":[],"seconds":1.0}"#;
+        let s: Summary = serde_json::from_str(old).map_err(|e| e.to_string())?;
+        assert_eq!((s.attempt, s.game_start_seconds, s.load), (0, None, None));
+        assert!(s.timings().contains("attempt 1"));
+        Ok(())
+    }
+
+    #[test]
     fn the_review_keeps_the_last_runs_newest_first() -> Result<(), String> {
         let dir = std::env::temp_dir().join(format!("arena-smoke-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
@@ -691,7 +889,7 @@ mod tests {
                 ..Summary::default()
             };
             s.finish();
-            write_review(&dir, &s, b"png")?;
+            write_review(&dir, &s, b"png", None)?;
         }
         let runs = fs::read_dir(&dir)
             .map_err(|e| e.to_string())?

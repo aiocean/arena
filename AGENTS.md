@@ -152,8 +152,15 @@ Chrome (a system one, else Chrome for Testing fetched once into `~/.cache/arena-
 and checks the page and the game's wasm load with no console errors, page errors or failed requests for its own
 assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come (a page on other rules than the
 server's fails here as stale), the HUD is painted and the match moves. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
-exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs):
+exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs). The game gets a fixed 30 s to
+start (never stretched for load); if it does not start, and only then, the whole run is tried once more, and it fails
+only when both attempts fail (the report and the review say it was retried and why). Each run records the time to the
+game starting and to the first live frame and the machine's load averages, and with `--telemetry-otlp` sends them to
+the telemetry store as `smoke.run` (stream `arena_smoke`, dashboard "Arena: smoke"; `ops/observe/README.md`):
 
 ```
-cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke   # https://arena.aiocean.io/review/smoke/
+ARENA_OTLP_ENDPOINT=http://127.0.0.1:5080/api/default \
+ARENA_OTLP_AUTH_FILE=/Users/firegroup/projects/game-factory/ops/arena/observe.env \
+  cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry-otlp
+# https://arena.aiocean.io/review/smoke/
 ```

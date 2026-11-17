@@ -29,7 +29,13 @@ type Boxed = Box<dyn Layer<Registry> + Send + Sync>;
 /// The bucket bounds of every `*_fuel` histogram (a bot's fuel a decision; the cap is 2e7).
 const FUEL: [f64; 9] = [1e3, 1e4, 1e5, 3e5, 1e6, 3e6, 1e7, 2e7, 1e8];
 
-/// The bucket bounds of every `*_seconds` histogram.
+/// The bucket bounds of the smoke test's `arena_smoke_*_seconds` histograms: a page loading, its game starting, its
+/// first live frame (about a second to past the fixed 30 s wait).
+const PAGE_SECONDS: [f64; 13] = [
+    0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 7.5, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0,
+];
+
+/// The bucket bounds of every other `*_seconds` histogram.
 const SECONDS: [f64; 14] = [
     1e-5, 2.5e-5, 5e-5, 1e-4, 2.5e-4, 5e-4, 1e-3, 2.5e-3, 5e-3, 1e-2, 2.5e-2, 5e-2, 0.1, 1.0,
 ];
@@ -387,16 +393,19 @@ fn exporting(
     let meter_provider = SdkMeterProvider::builder()
         .with_resource(own)
         .with_reader(reader)
-        // a `*_seconds` histogram times a step, a think or a publish (microseconds to a second); a `*_fuel` one
-        // counts a bot's fuel (a thousand to the cap and past it)
+        // a `*_seconds` histogram times a step, a think or a publish (microseconds to a second), the smoke test's a
+        // page's start (seconds); a `*_fuel` one counts a bot's fuel (a thousand to the cap and past it)
         .with_view(|i: &Instrument| {
-            let bounds: &[f64] = if i.name().ends_with("_seconds") {
-                &SECONDS
-            } else if i.name().ends_with("_fuel") {
-                &FUEL
-            } else {
-                return None;
-            };
+            let bounds: &[f64] =
+                if i.name().starts_with("arena_smoke_") && i.name().ends_with("_seconds") {
+                    &PAGE_SECONDS
+                } else if i.name().ends_with("_seconds") {
+                    &SECONDS
+                } else if i.name().ends_with("_fuel") {
+                    &FUEL
+                } else {
+                    return None;
+                };
             Stream::builder()
                 .with_aggregation(Aggregation::ExplicitBucketHistogram {
                     boundaries: bounds.to_vec(),

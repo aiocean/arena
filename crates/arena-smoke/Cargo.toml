@@ -18,6 +18,9 @@ png = "0.18"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs"] }
+# a run as telemetry (`--telemetry-otlp`): one smoke.run event and its timings as metrics
+arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["otlp"] }
+tracing = "0.1"
 
 [lints]
 workspace = true

@@ -451,12 +451,14 @@ dependencies = [
 name = "arena-smoke"
 version = "0.1.0"
 dependencies = [
+ "arena-telemetry",
  "chromiumoxide",
  "futures",
  "png",
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
