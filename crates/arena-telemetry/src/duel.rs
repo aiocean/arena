@@ -4,7 +4,8 @@
 //!
 //! Events, each with `match_id` and `round` (and inside a `match` span and a `round` span):
 //!
-//! - target `arena::match` (stream `arena_match`): `match.start` (one per seat: seed, its bot, its loadout),
+//! - target `arena::match` (stream `arena_match`): `match.start` (one per seat: seed, its bot, its loadout; from the
+//!   live server also what runs the bot, `runtime`, and the server's commit, `build`),
 //!   `round.start`, `round.end` (winner, seconds), `forfeit` (a seat that gave up: a bot that faulted out),
 //!   `match.end` (result, rounds, seconds, cut);
 //! - target `arena::duel` (stream `arena_duel_events`): `cast`, `hit`, `stopped` (guard, barrier, ward, dodge, clash),
@@ -198,7 +199,35 @@ impl Observer {
     /// Begin watching `duel` as match `match_id`, its seats named `seats` (a bot, a brain, a corner): emits
     /// `match.start` and opens the match's span. Snapshots every second of fight time (`every`).
     pub fn start(duel: &Duel, match_id: impl Into<String>, seats: [&str; 2]) -> Observer {
-        let match_id = match_id.into();
+        Observer::begin(duel, match_id.into(), seats, [None, None], None)
+    }
+
+    /// As [`Observer::start`], each `match.start` row also saying what runs its seat's bot (`runtime`: `onnx`,
+    /// `wasm`, `builtin`) and the build of the program fighting the match (`build`: its commit), as the live server
+    /// reports its matches.
+    pub fn start_seated(
+        duel: &Duel,
+        match_id: impl Into<String>,
+        seats: [&str; 2],
+        runtimes: [&str; 2],
+        build: &str,
+    ) -> Observer {
+        Observer::begin(
+            duel,
+            match_id.into(),
+            seats,
+            runtimes.map(Some),
+            Some(build),
+        )
+    }
+
+    fn begin(
+        duel: &Duel,
+        match_id: String,
+        seats: [&str; 2],
+        runtimes: [Option<&str>; 2],
+        build: Option<&str>,
+    ) -> Observer {
         let s = duel.state();
         let on = tracing::enabled!(target: target::MATCH, Level::INFO)
             || tracing::enabled!(target: target::DUEL, Level::INFO)
@@ -235,7 +264,7 @@ impl Observer {
                         match_id = %o.match_id, seed = s.seed, seat = i, bot = %o.seats[i],
                         actives = %actives, supports = %supports,
                         keystones = %keystones, root = %root, life = f.c.life_max, qi = qi,
-                        qi_uncapped = uncapped, foe = %o.seats[1 - i],
+                        qi_uncapped = uncapped, foe = %o.seats[1 - i], runtime = runtimes[i], build = build,
                     }, "match.start");
                 }
                 event!(target: target::METRICS, Level::INFO, { monotonic_counter.arena_matches_total = 1_u64 });
