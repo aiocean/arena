@@ -9,6 +9,7 @@
 //! scene and the effects behind the fighters, never the fighters), the light goes on, and the dust, streaks and
 //! numbers go on `front`. The film bars go on `hud` in `Frame::React`, so the bars the HUD paints lie over them.
 
+pub mod bubble;
 pub mod draw;
 pub mod fight;
 pub mod math;
@@ -49,6 +50,7 @@ pub struct FeelPlugin;
 
 impl Plugin for FeelPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(bubble::BubblePlugin);
         app.init_resource::<Jolts>()
             .init_resource::<Feel>()
             .configure_sets(
