@@ -93,9 +93,27 @@ each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...) and `
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
 pair 15%; seats, styles and both loadouts drawn per fight.
 
-**The shipped AI** is trained on these rules and ABI 2 (305 inputs, 27 acts): run `abi2`, then the fine-tune `abi2b`
-(`--init` from it, `--lr 1e-4 --ent 0.003 0.002 --shaping-until 0`), moved onto each rule change as it landed and
-resumed from its checkpoint. Watch the per-seat and per-look win rates in the log.
+**The state of the house AI** (2026-11-18). The shipped AI (`7bac778`) is update 1510 of run `abi2b`. That run is a
+fine-tune (`--init runs/abi2/last.pt --lr 1e-4 --ent 0.003 0.002 --shaping-until 0`) of run `abi2`, trained from
+scratch on ABI 2 (305 inputs, 27 acts). Both were moved onto each rule change as it landed and resumed from their
+checkpoints; the model was laddered and shipped on RULES_VERSION 10.
+
+Its ladder (150 seeds):
+- vs the brain: 92.0% (seats 90.9 / 93.2; Thunder 94.4 / Frost 89.6);
+- vs the first mind: 92.8%;
+- vs the aggressive and turtle scripts: 89.8% and 98.6%;
+- its own mirror: seat 0 49.1%.
+
+The known skew: in its own mirror Thunder wins 67% of the rounds, against 53% in the brain's mirror. The policy
+leans on Frost's slash, which is drawn backwards and still strikes with its reach box (`art/README.md`).
+
+Next:
+1. Redraw Frost's slash.
+2. Fine-tune from `runs/abi2b/last.pt` on that main, kept in the trainer's clone (`projects/arena-train`, with
+   `u1510.pt` beside it; `runs/` stays out of git).
+3. Ship only a checkpoint that beats this one on the ladder, on the rules it ships with.
+
+Watch the per-seat and per-look win rates in the log.
 
 ## Making it your own
 
