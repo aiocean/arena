@@ -529,8 +529,6 @@ pub const RING: f64 = 0.22;
 /// How urgent a threat must be before a fighter spends its barrier on it.
 pub const BARRIER_THREAT: f64 = 10.0;
 pub const CLASH: &str = "impacts/parry";
-/// The spark where a blow lands on a body.
-pub const HIT_SPARK: &str = "impacts/hit";
 
 /// What being struck at a weak moment adds to a blow: its power is multiplied by `power` (the power damage and launch
 /// read), and a blow that staggers rather than throws holds its target `stagger` seconds longer.

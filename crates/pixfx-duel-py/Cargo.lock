@@ -729,6 +729,7 @@ dependencies = [
 [[package]]
 name = "pixfx-core"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-draw",
@@ -737,6 +738,7 @@ dependencies = [
 [[package]]
 name = "pixfx-draw"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
 ]
@@ -766,6 +768,7 @@ dependencies = [
 [[package]]
 name = "pixfx-effects"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -775,6 +778,7 @@ dependencies = [
 [[package]]
 name = "pixfx-fighter"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -784,6 +788,7 @@ dependencies = [
 [[package]]
 name = "pixfx-mind"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
 ]

@@ -26,9 +26,6 @@ pub struct PlayOpts {
     pub flip: Option<bool>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub seed: Option<u32>,
-    /// How heavy a blow an impact shows, 0 to 1.
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub power: Option<f64>,
 }
 
 /// When a blow caught the one it struck: at no weak moment, gathering a cast (a COUNTER) or recovering from one (a
@@ -55,12 +52,9 @@ pub enum How {
     )
 )]
 pub enum Out {
-    /// Start effect `fx` at (`x`, `y`) under `key`; `by` is the fighter whose spell it is (none for the arena's own,
-    /// such as a clash), so a page can draw it in that fighter's school.
+    /// Start effect `fx` at (`x`, `y`) under `key`.
     Play {
         key: u32,
-        #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-        by: Option<usize>,
         fx: &'static str,
         x: f64,
         y: f64,

@@ -7,7 +7,6 @@
 
 pub mod act;
 pub mod bar;
-pub mod calc;
 pub mod data;
 pub mod duel;
 pub mod fighter;

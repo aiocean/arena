@@ -8,6 +8,6 @@ pub mod paint;
 pub mod pick;
 pub mod sheet;
 
-pub use paint::{Marks, coarse, draw, draw_marks, draw_portrait, stamp};
+pub use paint::{Marks, coarse, draw, draw_marks, draw_portrait};
 pub use pick::{Shot, pick};
 pub use sheet::{Cell, Layout, LayoutError, Sheet};

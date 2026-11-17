@@ -595,6 +595,7 @@ dependencies = [
 [[package]]
 name = "pixfx-mind"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
 ]
@@ -1278,19 +1279,3 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
-
-[[patch.unused]]
-name = "pixfx-core"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "pixfx-draw"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "pixfx-effects"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "pixfx-fighter"
-version = "0.1.0"

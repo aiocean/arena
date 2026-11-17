@@ -155,7 +155,7 @@ pub fn draw_portrait(
     alpha: f64,
     face: f64,
 ) {
-    let Some(p) = sheet.layout.portrait else { return };
+    let p = sheet.layout.portrait;
     let k = (size / p.w.max(p.h).max(1)).max(1);
     let (w, h) = (p.w * k, p.h * k);
     let (x0, y0) = (
@@ -171,8 +171,8 @@ pub fn draw_portrait(
     }
 }
 
-/// `cell` drawn with its feet (an effect's anchor) at `feet`, mirrored when facing left, all white when `white`.
-pub fn stamp(
+/// `cell` drawn with its feet at `feet`, mirrored when facing left, all white when `white`.
+fn stamp(
     frame: &mut Frame,
     sheet: &Sheet,
     cell: Cell,

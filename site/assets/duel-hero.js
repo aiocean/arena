@@ -2,7 +2,7 @@
 // wasm (`duel.js`), drawn by pixfx-canvas2d (workers paint the effects), with the fighters, the scene's light, the HUD
 // and its tooltips. The page owns the animation-frame loop and calls `step(dt)` each frame.
 import { FightFeel, Lighting, Sprites, createPixfx, lookColors, putOutLight, stepLights } from "../pkg/pixfx-canvas2d.js";
-import { DECOR, RAGE, UNIT, createDuel, createFighters, createVfx, freeDuel, step } from "./duel.js";
+import { DECOR, RAGE, UNIT, createDuel, createFighters, freeDuel, step } from "./duel.js";
 import { BARS_TALL, actorOf, drawBars, drawFine, drawNumbers, drawSkills, drawStreaks, hudAt, paintFighters } from "./duel-art.js";
 import { buffInfo, skillInfo } from "./duel-info.js";
 import { createScene, drawScene } from "./duel-scene.js";
@@ -24,62 +24,40 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
  *  (`<fighter>-<school>.png`, then `-1.png` and on, as many as the layout has pages). Fetched once, for every hero.
  *  Thunder is Vương Lâm (the cultivator), frost the Seven-Colored Daoist. */
 const FIGHTERS = { thunder: "cultivator", frost: "seven-colored-daoist" };
-
-/** A sheet's pages in `dir/` beside this module (`<base>.png`, then `<base>-1.png` and on, as many as its layout's
- *  JSON has pages) as RGBA bytes one after another. */
-async function readPages(dir, layout, base) {
-  const { pages = [], size } = JSON.parse(layout);
-  const count = Math.max(1, pages.length || (size ? 1 : 0));
-  const page = async (file) => {
-    const image = new Image();
-    image.src = new URL(`${dir}/${file}`, import.meta.url).href;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(image, 0, 0);
-    return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  };
-  const parts = await Promise.all(Array.from({ length: count }, (_, i) => page(i === 0 ? `${base}.png` : `${base}-${i}.png`)));
-  const rgba = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-  let at = 0;
-  for (const p of parts) {
-    rgba.set(p, at);
-    at += p.length;
-  }
-  return rgba;
-}
-
-/** A text file in `dir/` beside this module, or a clear error. */
-const text = (dir, file) =>
-  fetch(new URL(`${dir}/${file}`, import.meta.url)).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`${file}: HTTP ${r.status}`))));
-
 let fighterSheets = null;
 function loadFighterSheets() {
   fighterSheets ??= (async () => {
+    const url = (file) => new URL(`fighters/${file}`, import.meta.url);
+    const page = async (file) => {
+      const image = new Image();
+      image.src = url(file).href;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    };
     const sheets = await Promise.all(Object.entries(FIGHTERS).map(async ([school, fighter]) => {
-      const layout = await text("fighters", `${fighter}.json`);
-      return [school, { layout, rgba: await readPages("fighters", layout, `${fighter}-${school}`) }];
+      const layout = await fetch(url(`${fighter}.json`)).then((r) =>
+        r.ok ? r.text() : Promise.reject(new Error(`${fighter}.json: HTTP ${r.status}`)),
+      );
+      const { pages = [], size } = JSON.parse(layout);
+      const count = Math.max(1, pages.length || (size ? 1 : 0));
+      const files = Array.from({ length: count }, (_, i) => (i === 0 ? `${fighter}-${school}.png` : `${fighter}-${school}-${i}.png`));
+      const parts = await Promise.all(files.map(page));
+      const rgba = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+      let at = 0;
+      for (const p of parts) {
+        rgba.set(p, at);
+        at += p.length;
+      }
+      return [school, { layout, rgba }];
     }));
     return { schools: Object.fromEntries(sheets) };
   })();
   return fighterSheets;
-}
-
-/** The spell effects drawn from sprite sheets (`site/assets/vfx/`, `art/vfx/tools/vfx.rs`): `index.json` names each
- *  effect the rules play (`"projectiles/laser-bolt"`) that has a sheet, `<file>.json` and its pages beside it. An
- *  effect without one plays as the engine's. None when there is no index. Fetched once, for every hero. */
-let vfxSheets = null;
-function loadVfxSheets() {
-  vfxSheets ??= (async () => {
-    const index = await fetch(new URL("vfx/index.json", import.meta.url)).then((r) => (r.ok ? r.json() : []));
-    return Promise.all(index.map(async ({ fx, file }) => {
-      const layout = await text("vfx", `${file}.json`);
-      return { fx, layout, rgba: await readPages("vfx", layout, file) };
-    }));
-  })();
-  return vfxSheets;
 }
 
 /** Fetch each named bot module beside this module as bytes, `[left, right]`, from `bots/` (`site/embed.sh` puts the
@@ -106,7 +84,7 @@ export async function loadBots(files) {
  * bots `useBots` seated last), `seed()` is the seed of the duel now playing, `free()` lets it all go.
  */
 export function createHero(canvas, signal, icons, engine, { seed: first, replay = false } = {}) {
-  const view = { canvas, icons, stage: null, duel: null, feel: null, sprites: null, fighters: null, vfx: null, drawn: new Map(), lighting: null, lights: [], layout: null, handles: new Map(), wrapped: [] };
+  const view = { canvas, icons, stage: null, duel: null, feel: null, sprites: null, fighters: null, lighting: null, lights: [], layout: null, handles: new Map(), wrapped: [] };
   const have = new Set(engine.effects());
   // a picture Rust painted (fighters, faces, light), drawn and let go at once: the fighters and faces in their own
   // finer pixels, the rest in the world's
@@ -157,11 +135,6 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     loadFighterSheets().then((sheets) => {
       if (built === builds && !view.fighters) view.fighters = createFighters(w, h, sheets);
     }).catch((e) => console.error("duel: the fighters' sheets did not load:", e));
-    // and the spell effects that have sprite sheets, once theirs have; until then (and for the rest) the engine's
-    view.drawn.clear();
-    loadVfxSheets().then((sheets) => {
-      if (built === builds && !view.vfx && sheets.length > 0) view.vfx = createVfx(w, h, sheets);
-    }).catch((e) => console.error("duel: the effects' sheets did not load:", e));
     view.lighting = new Lighting(w, h);
     // the bars go just under the page's top bar when it lies over the hero (positioned absolute or fixed, as on the
     // pixfx site); a top bar in the page's flow (the arena's own pages, where it sits under the hero) leaves the bars
@@ -193,13 +166,7 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
   /** The duel's effect commands, on the stage. */
   function play(commands) {
     for (const c of commands) {
-      // an effect with a sprite sheet for its caster's school is drawn from it, the rest by the engine
-      const school = c.by == null ? "" : view.duel.fighters[c.by].school;
-      if (c.type === "play" && view.vfx?.has(c.fx, school)) {
-        view.drawn.set(c.key, { fx: c.fx, school, x: c.x, y: c.y, t: 0, flip: !!c.opts?.flip });
-      } else if (c.type === "play") view.handles.set(c.key, view.stage.play(c.fx, c.x, c.y, c.opts));
-      else if (c.type === "move" && view.drawn.has(c.key)) Object.assign(view.drawn.get(c.key), { x: c.x, y: c.y });
-      else if (c.type === "stop" && view.drawn.has(c.key)) view.drawn.delete(c.key);
+      if (c.type === "play") view.handles.set(c.key, view.stage.play(c.fx, c.x, c.y, c.opts));
       else if (c.type === "move" && view.handles.has(c.key)) view.handles.get(c.key).setPosition(c.x, c.y);
       else if (c.type === "stop" && view.handles.has(c.key)) {
         view.handles.get(c.key).stop();
@@ -274,15 +241,6 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
       p.body?.free();
     }
     show(painted.dust);
-    // the spell effects drawn from sprite sheets, over the fighters; a one-shot one that has played out goes
-    if (view.vfx && view.drawn.size > 0) {
-      view.vfx.begin();
-      for (const [key, e] of view.drawn) {
-        e.t += reduceMotion ? 0 : run;
-        if (!view.vfx.draw(e.fx, e.school, e.t, e.x, e.y, e.flip)) view.drawn.delete(key);
-      }
-      show(view.vfx.picture());
-    }
     // the magic lights the dais, the peaks and the fighters in its own colour
     show(view.lighting.paint(view.lights, lampGlows(view.layout.lamps, ground, view.duel.time)));
     view.stage.drawLayer("front");
@@ -315,9 +273,6 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     view.sprites?.free();
     view.fighters?.free();
     view.fighters = null;
-    view.vfx?.free();
-    view.vfx = null;
-    view.drawn.clear();
     view.feel?.free();
     view.lighting?.free();
     if (view.duel) freeDuel(view.duel);

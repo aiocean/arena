@@ -149,7 +149,7 @@ pub struct Picture {
 
 impl Picture {
     /// The lit part of `frame`, or none when nothing shows.
-    pub(crate) fn of(frame: &Frame, unit: u32) -> Option<Picture> {
+    fn of(frame: &Frame, unit: u32) -> Option<Picture> {
         let b = PixelBox::lit(frame)?;
         let len = b.w as usize * b.h as usize * 4;
         let (mut color, mut light) = (vec![0; len], vec![0; len]);

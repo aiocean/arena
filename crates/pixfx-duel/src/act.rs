@@ -4,9 +4,9 @@
 
 use crate::bar::{has_trait, slot_of, spend};
 use crate::data::{
-    BLOOD_POWER, BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, HIT_SPARK,
-    KNOCKBACK, Kind, LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance,
-    body_spec, payoff, school, spell, tint,
+    BLOOD_POWER, BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, KNOCKBACK, Kind,
+    LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance, body_spec, payoff, school,
+    spell, tint,
 };
 use crate::fighter::{Act, Burning, Phase, Slot, State, Told};
 use crate::out::{How, Note, Out, PlayOpts, Stop};
@@ -36,16 +36,10 @@ fn roll_seed(state: &mut State) -> u32 {
 
 /// Start effect `fx` at (`x`, `y`); returns its key.
 pub fn play(state: &mut State, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
-    play_by(state, None, fx, x, y, opts)
-}
-
-/// As [`play`], for fighter `by`'s spell.
-pub fn play_by(state: &mut State, by: Option<usize>, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
     state.key += 1;
     let key = state.key;
     state.emit(Out::Play {
         key,
-        by,
         fx,
         x,
         y,
@@ -68,9 +62,8 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
         height: opts.height.or(base.and_then(|t| t.height)),
         flip: opts.flip,
         seed: opts.seed.or(Some(seed)),
-        power: opts.power,
     };
-    play_by(state, Some(me), fx, x, y, merged)
+    play(state, fx, x, y, merged)
 }
 
 /// A streak of `me`'s qi from where it casts to (`x`, `y` up from the ground).
@@ -948,7 +941,6 @@ pub fn hurt(
         x,
         y,
     });
-    spark(state, f, power, launch, crit, blow, dir);
     // rage for the blow: an attuned fighter's spells were paid for when cast, so only its blade earns here
     let attacker = &mut state.fighters[by];
     if !ultimate && !(attacker.stats.attuned && kind != Some(Kind::Melee)) {
@@ -1031,39 +1023,6 @@ pub fn hurt(
         gain_rage(&mut state.fighters[by], steal);
     }
     true
-}
-
-/// The spark where a blow of `power` lands on fighter `f`'s chest, thrown the way `dir` pushes: a jab's small, a
-/// throw's big; a blade's in struck metal, a spell's in the striker's school. Seeded by its key, so it draws no dice.
-fn spark(state: &mut State, f: usize, power: f64, launch: bool, crit: bool, blow: Blow, dir: f64) {
-    if !state.has(HIT_SPARK) {
-        return;
-    }
-    let weight = js_min(
-        1.0,
-        js_max(0.15, (power - 3.0) / 12.0) + if crit { 0.15 } else { 0.0 },
-    );
-    let weight = if launch { js_max(weight, 0.8) } else { weight };
-    let palette: Option<&'static [&'static str]> = match blow {
-        Blow::Physical => None,
-        Blow::Magic => Some(&school(state.fighters[1 - f].school).circle),
-    };
-    let me = &state.fighters[f];
-    let (x, y) = (me.body.x, state.ground - me.chest());
-    let seed = Some(state.key + 1);
-    play(
-        state,
-        HIT_SPARK,
-        x,
-        y,
-        PlayOpts {
-            palette,
-            flip: Some(dir < 0.0),
-            seed,
-            power: Some(weight),
-            ..PlayOpts::default()
-        },
-    );
 }
 
 /// Two blows meet at (`x`, `y` on screen): a clash, its spark, and the fighters in it pushed apart.

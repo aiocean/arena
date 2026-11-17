@@ -106,21 +106,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "arena-vfx"
-version = "0.1.0"
-dependencies = [
- "arena-fighter",
- "libm",
- "pixfx-draw",
-]
-
-[[package]]
 name = "arena-wasm"
 version = "0.1.0"
 dependencies = [
  "arena-bot",
  "arena-fighter",
- "arena-vfx",
  "js-sys",
  "pixfx-core",
  "pixfx-draw",
@@ -1047,6 +1037,7 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 [[package]]
 name = "pixfx-core"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-draw",
@@ -1058,6 +1049,7 @@ dependencies = [
 [[package]]
 name = "pixfx-draw"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "serde",
@@ -1083,6 +1075,7 @@ dependencies = [
 [[package]]
 name = "pixfx-effects"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -1092,6 +1085,7 @@ dependencies = [
 [[package]]
 name = "pixfx-fighter"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "pixfx-core",
@@ -1104,6 +1098,7 @@ dependencies = [
 [[package]]
 name = "pixfx-mind"
 version = "0.1.0"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
 dependencies = [
  "libm",
  "serde",

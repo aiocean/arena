@@ -12,7 +12,6 @@ crate-type = ["cdylib", "rlib"]
 # admission only: the page runs the module itself
 arena-bot = { path = "../arena-bot" }
 arena-fighter = { path = "../arena-fighter" }
-arena-vfx = { path = "../arena-vfx" }
 js-sys.workspace = true
 pixfx-duel = { path = "../pixfx-duel", features = ["serde"] }
 pixfx-core.workspace = true
