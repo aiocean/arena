@@ -1,0 +1,27 @@
+# The arena's telemetry store: OpenObserve, one container that takes logs, metrics and traces over OTLP and serves the
+# query UI and dashboards. Bound to 127.0.0.1 only; the outside reaches the UI through the arena tunnel, behind the
+# tool's own login. See ops/observe/README.md.
+#
+#   docker compose --env-file ~/projects/game-factory/ops/arena/observe.env -f ops/observe/compose.yaml up -d
+name: arena-observe
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:v0.15.3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5080:5080" # UI, HTTP API, OTLP over HTTP (/api/<org>/v1/{logs,metrics,traces})
+      - "127.0.0.1:5081:5081" # OTLP over gRPC
+    environment:
+      ZO_ROOT_USER_EMAIL: ${ZO_ROOT_USER_EMAIL:?set in ops/arena/observe.env}
+      ZO_ROOT_USER_PASSWORD: ${ZO_ROOT_USER_PASSWORD:?set in ops/arena/observe.env}
+      ZO_DATA_DIR: /data
+      # retention: data older than this is deleted by the compactor (the disk is tight)
+      ZO_COMPACT_DATA_RETENTION_DAYS: "14"
+      ZO_TELEMETRY: "false"
+      ZO_WEB_URL: https://arena-obs.aiocean.io
+    volumes:
+      - ${OBSERVE_DATA:-/Users/firegroup/services/arena/observe/data}:/data
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
