@@ -116,8 +116,8 @@ pub struct Weight {
     pub requests: u32,
     /// Kind (`kind_of`), its bytes and its requests, the heaviest first.
     pub by_kind: Vec<(String, u64, u32)>,
-    /// The ten heaviest responses: URL (path only) and bytes.
-    pub largest: Vec<(String, u64)>,
+    /// The ten heaviest responses: URL (path only), bytes, and seconds from the first request to its last byte.
+    pub largest: Vec<(String, u64, f64)>,
     /// Navigation to the status line saying `Seed ...` (the game's wasm fetched, compiled and running).
     pub game_start_s: Option<f64>,
     /// Navigation to the first match frame from the relay (`window.__arena.live.frames > 0`).
@@ -128,10 +128,11 @@ pub struct Weight {
 }
 
 impl Weight {
-    /// Sum `responses` (URL, MIME type, bytes on the wire) into a weight.
-    pub fn of(responses: &[(String, String, u64)]) -> Weight {
+    /// Sum `responses` (URL, MIME type, bytes on the wire, seconds from the first request to its last byte) into a
+    /// weight.
+    pub fn of(responses: &[(String, String, u64, f64)]) -> Weight {
         let mut kinds: HashMap<&'static str, (u64, u32)> = HashMap::new();
-        for (url, mime, bytes) in responses {
+        for (url, mime, bytes, _) in responses {
             let k = kinds.entry(kind_of(url, mime)).or_default();
             k.0 += bytes;
             k.1 += 1;
@@ -141,7 +142,10 @@ impl Weight {
             .map(|(k, (b, n))| (k.to_string(), b, n))
             .collect();
         by_kind.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-        let mut largest: Vec<_> = responses.iter().map(|(u, _, b)| (path_of(u), *b)).collect();
+        let mut largest: Vec<_> = responses
+            .iter()
+            .map(|(u, _, b, t)| (path_of(u), *b, *t))
+            .collect();
         largest.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
         largest.truncate(10);
         Weight {
@@ -648,7 +652,7 @@ mod tests {
 
     #[test]
     fn a_visit_is_weighed_by_kind_heaviest_first() {
-        let r = |u: &str, m: &str, b: u64| (u.to_string(), m.to_string(), b);
+        let r = |u: &str, m: &str, b: u64| (u.to_string(), m.to_string(), b, 1.0);
         let w = Weight::of(&[
             r("https://arena.aiocean.io/", "text/html", 4_000),
             r(
@@ -684,14 +688,14 @@ mod tests {
         assert_eq!(w.by_kind[1], ("image".to_string(), 2_100_000, 2));
         assert_eq!(w.largest[0].0, "/game/arena_game_bg.wasm");
         assert!(
-            w.largest.iter().all(|(u, _)| !u.contains("secret")),
+            w.largest.iter().all(|(u, _, _)| !u.contains("secret")),
             "a query never shown: {:?}",
             w.largest
         );
         assert!(
             w.largest
                 .iter()
-                .any(|(u, _)| u == "fonts.gstatic.com/s/x.woff2")
+                .any(|(u, _, _)| u == "fonts.gstatic.com/s/x.woff2")
         );
         assert!(
             w.line()

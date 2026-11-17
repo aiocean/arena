@@ -385,8 +385,8 @@ struct Seen {
     responses: Vec<(String, i64)>,
     /// Every response by request id: URL and MIME type.
     answers: HashMap<String, (String, String)>,
-    /// Every finished response: URL, MIME type and bytes on the wire.
-    finished: Vec<(String, String, u64)>,
+    /// Every finished response: URL, MIME type, bytes on the wire and the browser's clock at its last byte.
+    finished: Vec<(String, String, u64, f64)>,
     /// The browser's clock (seconds) at the first request, and at the last response finished.
     first_sent: Option<f64>,
     last_done: f64,
@@ -738,7 +738,13 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     );
     let mut weight = {
         let s = lock(&seen);
-        let mut w = Weight::of(&s.finished);
+        let t0 = s.first_sent.unwrap_or(0.0);
+        let since: Vec<_> = s
+            .finished
+            .iter()
+            .map(|(u, m, b, at)| (u.clone(), m.clone(), *b, at - t0))
+            .collect();
+        let mut w = Weight::of(&since);
         w.all_loaded_s = s.first_sent.map(|t| s.last_done - t);
         w
     };
@@ -861,8 +867,9 @@ async fn listen(page: &Page, seen: &Arc<Mutex<Seen>>, own: &str) -> Result<(), S
             {
                 // bytes on the wire: a whole number, though the protocol sends a float
                 let bytes = ev.encoded_data_length.max(0.0) as u64;
-                s.finished.push((url, mime, bytes));
-                s.last_done = s.last_done.max(*ev.timestamp.inner());
+                let at = *ev.timestamp.inner();
+                s.finished.push((url, mime, bytes, at));
+                s.last_done = s.last_done.max(at);
             }
         }
     });
