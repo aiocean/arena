@@ -2,7 +2,7 @@
 
 mod common;
 
-use arena_mind::policy::{OBS, TAG, observe};
+use arena_mind::policy::{BLOCKS, OBS, TAG, UNITS, observe};
 use arena_mind::*;
 use common::*;
 
@@ -46,6 +46,34 @@ fn every_observation_value_is_finite_and_bounded() {
             let mut s = sense(3.0, me(mx), foe(fx));
             s.slots = slots();
             s.me.vx = 1e6;
+            s.slotx[1] = Some(SlotX {
+                damage: f64::NAN,
+                cooldown: f64::INFINITY,
+                inflict: [1e9; AILMENTS],
+                supports: u128::MAX,
+                ..SlotX::default()
+            });
+            s.effects[0].ailments[5] = AilmentOn {
+                stacks: 5.0,
+                cap: 0.0,
+                left: f64::INFINITY,
+                strength: -1e9,
+            };
+            s.units = vec![UnitSeen {
+                mine: false,
+                kind: UnitKind::Trap,
+                x: f64::NAN,
+                y: 1e9,
+                hp: 1.0,
+                left: Some(f64::NAN),
+                armed: false,
+                next: 0.0,
+            }];
+            s.me_act = Some(ActFrames {
+                hitbox: Some([f64::NAN, 0.0, 1e9, -1e9]),
+                to_window: f64::INFINITY,
+                ..ActFrames::default()
+            });
             let mut f = foe(fx);
             f.doing = doing.clone();
             f.out_for = 50.0;
@@ -76,11 +104,15 @@ fn every_observation_value_is_finite_and_bounded() {
 }
 
 #[test]
-fn the_tag_lands_at_the_end_unchanged() {
+fn the_tag_lands_where_abi_2_ended_unchanged() {
     let tag = [0.0, 1.0, 0.0, 0.0, 1.0];
     let s = sense(1.0, me(40.0), foe(150.0));
     let o = observe(&s, &foe(150.0), &[], &kit(), &tag);
-    assert_eq!(&o[OBS - TAG..], &tag);
+    assert_eq!(&o[TAG_AT..TAG_AT + TAG], &tag);
+    assert!(
+        o[TAG_AT + TAG..].iter().all(|&v| v == 0.0),
+        "nothing else sensed"
+    );
 }
 
 #[test]
@@ -136,7 +168,9 @@ fn threats_past_the_fourth_nearest_are_dropped_and_missing_ones_are_zero() {
     );
 }
 
-// The documented layout (`observe.rs`'s header): me 18, foe 38, threats 4 x 12, slots 7 x 35, tag 5.
+// The documented layout (`observe.rs`'s header, `docs/bot.md`): ABI 2's me 17, foe 37, threats 4 x 12, slots 6 x 33,
+// tag 5, whose indices never move; then ABI 3's two casts 11 each, slot builds 6 x 148, effects 2 x 113, units
+// 8 x 12, the foe's slots 6 x 34.
 const MY_WINDUP: usize = 14;
 const MY_RECOVER: usize = 15;
 const MY_LEFT: usize = 16;
@@ -147,9 +181,87 @@ const SLOT: usize = 33;
 const SLOT_STUN: usize = 21;
 const SLOT_CHILL: usize = 27;
 
+const TAG_AT: usize = 300;
+const ME_ACT: usize = 305;
+const FOE_ACT: usize = 316;
+const SLOTX_AT: usize = 327;
+const SLOTX: usize = 148;
+const EFFECTS_AT: usize = 1215;
+const EFFECT: usize = 113;
+const UNITS_AT: usize = 1441;
+const UNIT: usize = 12;
+const FOE_SLOTS_AT: usize = 1537;
+const FOE_SLOT: usize = 34;
+
 #[test]
 fn obs_is_the_documented_sum() {
-    assert_eq!(OBS, 17 + 37 + 4 * 12 + 6 * 33 + TAG);
+    assert_eq!(
+        TAG_AT,
+        17 + 37 + 4 * 12 + 6 * 33,
+        "ABI 2's inputs keep their places"
+    );
+    assert_eq!(
+        OBS,
+        TAG_AT + TAG + 2 * 11 + 6 * SLOTX + 2 * EFFECT + UNITS * UNIT + 6 * FOE_SLOT
+    );
+    assert_eq!(OBS, 1741);
+    let starts: Vec<usize> = BLOCKS
+        .iter()
+        .scan(0, |at, b| {
+            let start = *at;
+            *at += b.1;
+            Some(start)
+        })
+        .collect();
+    assert_eq!(
+        starts,
+        [
+            0,
+            17,
+            54,
+            102,
+            TAG_AT,
+            ME_ACT,
+            FOE_ACT,
+            SLOTX_AT,
+            EFFECTS_AT,
+            UNITS_AT,
+            FOE_SLOTS_AT
+        ]
+    );
+    assert_eq!(BLOCKS.iter().map(|b| b.1).sum::<usize>(), OBS);
+}
+
+/// `docs/bot.md`'s table of what a bot sees: each row's range and its block's name (the first bold words).
+fn documented() -> Vec<(usize, usize, String)> {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/bot.md");
+    let text = std::fs::read_to_string(path).unwrap_or_default();
+    text.lines()
+        .filter_map(|line| {
+            let cells: Vec<&str> = line.split('|').map(str::trim).collect();
+            let (a, b) = cells.get(1)?.split_once("..")?;
+            let name = cells.get(3)?.strip_prefix("**")?.split("**").next()?;
+            Some((
+                a.parse().ok()?,
+                b.parse().ok()?,
+                name.trim_end_matches('.').to_string(),
+            ))
+        })
+        .collect()
+}
+
+#[test]
+fn the_documented_table_is_the_layout() {
+    let mut at = 0;
+    let want: Vec<(usize, usize, String)> = BLOCKS
+        .iter()
+        .map(|&(name, len)| {
+            at += len;
+            (at - len, at, name.to_string())
+        })
+        .collect();
+    assert_eq!(documented(), want, "docs/bot.md, \"What it sees\"");
+    assert_eq!(want.last().map(|w| w.1), Some(OBS));
 }
 
 #[test]
@@ -222,6 +334,157 @@ fn a_slot_of_a_stunning_skill_carries_its_stun() {
     let o = observe(&s, &foe(150.0), &[], &kit, &[0.0; TAG]);
     assert!((v(&o, SLOTS_AT + SLOT + SLOT_STUN) - 0.6).abs() < 1e-6);
     assert_eq!(v(&o, SLOTS_AT + SLOT_STUN), 0.0, "the blade does not stun");
+}
+
+fn observed(s: &Sense) -> [f32; OBS] {
+    observe(s, &s.foe, &[], &kit(), &[0.0; TAG])
+}
+
+#[test]
+fn a_bleed_on_the_foe_shows_in_its_effects() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    let none = observed(&s);
+    s.effects[1].ailments[0] = AilmentOn {
+        stacks: 2.0,
+        cap: 8.0,
+        left: 3.0,
+        strength: 0.02,
+    };
+    s.effects[1].element = Some(2);
+    let o = observed(&s);
+    let foe = EFFECTS_AT + EFFECT;
+    assert_eq!(
+        [v(&o, foe), v(&o, foe + 1), v(&o, foe + 2), v(&o, foe + 3)],
+        [0.25, 0.8, 0.3, 0.2]
+    );
+    assert_eq!(v(&o, foe + EFFECT - 7 + 2), 1.0, "its root");
+    let differing = o.iter().zip(&none).filter(|(a, b)| a != b).count();
+    assert_eq!(differing, 5, "only the foe's bleed and root");
+    assert_eq!(v(&o, EFFECTS_AT), 0.0, "not on me");
+}
+
+#[test]
+fn units_show_nearest_first_from_my_side() {
+    let unit = |x: f64, mine: bool| UnitSeen {
+        mine,
+        kind: UnitKind::Minion,
+        x,
+        y: 24.0,
+        hp: 0.5,
+        left: None,
+        armed: true,
+        next: 0.4,
+    };
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    // nine units: the farthest is not seen
+    s.units = (0..9)
+        .map(|i| unit(200.0 - 10.0 * i as f64, i == 8))
+        .collect();
+    let o = observed(&s);
+    let first = UNITS_AT;
+    assert_eq!(v(&o, first), 1.0);
+    assert_eq!(v(&o, first + 1), 1.0, "the nearest is mine");
+    assert_eq!(&o[first + 2..first + 6], &[0.0, 0.0, 0.0, 1.0], "a minion");
+    assert!(
+        (v(&o, first + 6) - 0.8).abs() < 1e-6,
+        "{}",
+        v(&o, first + 6)
+    );
+    assert!((v(&o, first + 7) - 0.48).abs() < 1e-6);
+    assert_eq!(v(&o, first + 9), 4.0, "it lasts: 40 s");
+    let last = UNITS_AT + (UNITS - 1) * UNIT;
+    assert!((v(&o, last + 6) - 1.5).abs() < 1e-6, "the eighth: 190");
+    assert_eq!(v(&o, UNITS_AT + UNITS * UNIT), 0.0, "the next block");
+}
+
+#[test]
+fn a_slot_shows_its_cooldown_and_its_build() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    s.slots = slots();
+    let plain = observed(&s);
+    let x = SlotX {
+        cooldown_left: 1.2,
+        cooldown: 1.5,
+        stored: 0.0,
+        max_uses: 1.0,
+        qi: 25.0,
+        damage: 20.0,
+        pierce: 2.0,
+        inflict: [0.5; AILMENTS],
+        supports: 1 << 3 | 1 << 118,
+        ..SlotX::default()
+    };
+    s.slotx[2] = Some(x);
+    let o = observed(&s);
+    let at = SLOTX_AT + 2 * SLOTX;
+    assert_eq!([v(&o, at), v(&o, at + 1)], [1.2, 0.15]);
+    assert_eq!(v(&o, at + 14), 0.5, "pierce / 4");
+    assert_eq!(v(&o, at + 18), 0.5, "the first ailment");
+    assert_eq!(v(&o, at + 29 + 3), 1.0);
+    assert_eq!(v(&o, at + 29 + 118), 1.0);
+    assert_eq!(v(&o, at + 29 + 4), 0.0);
+    // the ABI 2 slot reads the built cost and damage
+    let slot = SLOTS_AT + 2 * SLOT;
+    assert_eq!([v(&o, slot + 14), v(&o, slot + 15)], [0.5, 0.4]);
+    assert_ne!(v(&plain, slot + 14), 0.5);
+}
+
+#[test]
+fn the_foes_cast_shows_once_it_is_seen() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    s.foe.doing = blade_windup(0.05);
+    s.foe_act = Some(ActFrames {
+        to_window: 0.15,
+        window: 0.2,
+        to_punish: 0.15,
+        recover: 0.32,
+        hitbox: Some([120.0, 10.0, 145.0, 30.0]),
+        ..ActFrames::default()
+    });
+    let mut idle = s.foe.clone();
+    idle.doing = Doing::Idle;
+    let hidden = observe(&s, &idle, &[], &kit(), &[0.0; TAG]);
+    assert!(
+        hidden[FOE_ACT..FOE_ACT + 11].iter().all(|&x| x == 0.0),
+        "not seen yet"
+    );
+    let o = observed(&s);
+    assert_eq!(v(&o, FOE_ACT), 1.0);
+    assert!((v(&o, FOE_ACT + 2) - 0.15).abs() < 1e-6);
+    assert_eq!(v(&o, FOE_ACT + 6), 1.0, "a hitbox");
+    assert!(
+        (v(&o, FOE_ACT + 7) - 0.8).abs() < 1e-6,
+        "near edge 80 ahead"
+    );
+    assert!((v(&o, FOE_ACT + 8) - 1.05).abs() < 1e-6);
+    assert!((v(&o, FOE_ACT + 10) - 0.6).abs() < 1e-6);
+    assert!(
+        o[ME_ACT..FOE_ACT].iter().all(|&x| x == 0.0),
+        "I do not cast"
+    );
+}
+
+#[test]
+fn the_foes_slots_show_its_kind_and_build() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    s.foe_slots[4] = Some(FoeSlot {
+        kind: SkillKind::Bolt,
+        ready: true,
+        reach: 200.0,
+        built: SlotX {
+            cooldown_left: 0.5,
+            stored: 2.0,
+            windup: 0.3,
+            ..SlotX::default()
+        },
+    });
+    let o = observed(&s);
+    let at = FOE_SLOTS_AT + 4 * FOE_SLOT;
+    assert_eq!(&o[at..at + 4], &[1.0, 1.0, 0.5, 0.5]);
+    assert_eq!(v(&o, at + 4 + 4), 1.0, "a bolt");
+    assert!((v(&o, at + 16) - 0.3).abs() < 1e-6);
+    assert_eq!(v(&o, at + 22), 2.0, "reach / 100");
+    assert!(o[FOE_SLOTS_AT..at].iter().all(|&x| x == 0.0));
 }
 
 /// Value `i` of an observation, NaN past its end.

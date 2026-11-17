@@ -10,7 +10,7 @@ mod observe;
 pub use action::{ACTIONS, Act, Aim, SLOTS, choice, legal};
 pub use mind::{Due, PolicyMind};
 pub use net::{GROUP, HIDDEN, Net, NetError, Tensor, WIDTH, sample};
-pub use observe::{OBS, TAG, observe};
+pub use observe::{BLOCKS, OBS, TAG, UNITS, observe};
 
 use crate::sense::{Foe, Me};
 

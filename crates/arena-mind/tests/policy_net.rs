@@ -197,4 +197,4 @@ fn logits_are_pinned_for_a_seeded_network() {
     assert_eq!(h, PINNED, "{h:#x}");
 }
 
-const PINNED: u64 = 0xb091_faf1_7fa4_7e3f;
+const PINNED: u64 = 0x9647_a4b3_8ac4_3238;

@@ -1,6 +1,6 @@
 [package]
 name = "arena-bot"
-description = "A bot as a WebAssembly module (the arena-bot-2 ABI): admit one (validate, meter, hash) and, with `host`, run it in a duel seat"
+description = "A bot as a WebAssembly module (the arena-bot-3 ABI): admit one (validate, meter, hash) and, with `host`, run it in a duel seat"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

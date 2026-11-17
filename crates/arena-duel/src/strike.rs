@@ -178,6 +178,17 @@ pub fn build(state: &State, me: usize, k: usize, level: Option<u8>) -> Option<Bu
     Some(build_skill(&skill, &ks.supports, &f.c, &f.sheet, &sit))
 }
 
+/// Seat `me`'s every kit skill built as it would be cast now, kept for its mind (`KitSkill::seen`): at a round's
+/// start, once both fighters are fresh. A cast keeps its own build (`act::begin`). Building reads the state and
+/// changes nothing in the fight.
+pub fn see(state: &mut State, me: usize) {
+    for k in 0..state.fighters[me].kit.skills.len() {
+        if let Some(b) = build(state, me, k, None) {
+            state.fighters[me].kit.skills[k].see(&b);
+        }
+    }
+}
+
 /// The payload of seat `me`'s kit skill `k` as `built`, at chain `depth`.
 pub fn payload(state: &State, me: usize, k: usize, built: &Built, depth: u8) -> Payload {
     let ks = &state.fighters[me].kit.skills[k];

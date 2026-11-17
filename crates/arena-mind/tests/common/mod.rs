@@ -143,6 +143,12 @@ pub fn sense(time: f64, me: Me, foe: Foe) -> Sense {
         power: vec![],
         stacks: vec![],
         slots: vec![],
+        me_act: None,
+        foe_act: None,
+        slotx: [None; 6],
+        effects: Default::default(),
+        units: vec![],
+        foe_slots: [None; 6],
     }
 }
 

@@ -178,6 +178,7 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
         ks.uses.stored = ks.uses.stored.min(ks.uses.max);
         ks.uses.try_use();
         ks.count += 1;
+        ks.see(&built);
         if let Some(n) = &mut ks.card {
             *n = n.saturating_sub(1);
         }

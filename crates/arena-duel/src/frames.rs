@@ -154,27 +154,37 @@ pub fn overlap(a: [f64; 4], b: [f64; 4]) -> bool {
 
 /// The clip fighter `f`'s cast plays (a blade blow's `slash` or `overhead`, a spell's `cast` or `dash`), if it casts.
 fn act_clip(state: &State, f: usize) -> Option<&'static str> {
-    let fi = state.fighters.get(f)?;
-    let a = appearance(
-        fi.body.pose,
-        fi.body.pose_t,
-        false,
-        fi.act
-            .map(|a| (a.spell, a.phase, a.t, crate::act::phase_span(&a))),
-    )
-    .act?;
-    Some(match (a.how, a.dive) {
+    let a = state.fighters.get(f)?.act?;
+    crate::data::spell(a.spell).map(clip_for)
+}
+
+/// The clip a cast of `s` plays: a blow from the palm off the air is the `overhead` cut, a lunge the `dash`, any
+/// other blade the `slash`, any other spell the `cast`.
+pub fn clip_for(s: &crate::data::Spell) -> &'static str {
+    match (crate::pose::gather_of(s.kind), s.dive) {
         (crate::pose::Gather::Palm, true) => "overhead",
         (crate::pose::Gather::Lunge, _) => "dash",
-        _ => {
-            let s = crate::data::spell(fi.act?.spell)?;
-            if s.kind == crate::data::Kind::Melee {
-                "slash"
-            } else {
-                "cast"
-            }
-        }
-    })
+        _ if s.kind == crate::data::Kind::Melee => "slash",
+        _ => "cast",
+    }
+}
+
+/// When clip `clip` of look `look`'s active window opens and how long it stays open, in seconds, for a cast of
+/// `windup` and `recover`: it opens as the wind-up ends on the active frame, and stays open while the recovery's
+/// progress shows the window's frames (`pick` plays the frames from the active one to the last over the recovery,
+/// each the nearest to its progress), the last of them to half a frame past it. `None` for a clip with no window.
+pub fn window_of(look: Look, clip: &str, windup: f64, recover: f64) -> Option<(f64, f64)> {
+    let (window, frames) = clip_of(look, clip)?;
+    let (first, end) = window?;
+    let last = frames.len().saturating_sub(1);
+    let first = first.min(last);
+    let span = last - first;
+    let share = if span == 0 {
+        1.0
+    } else {
+        ((end.clamp(first, last) - first) as f64 + 0.5) / span as f64
+    };
+    Some((windup, recover * share.min(1.0)))
 }
 
 /// The active frame of fighter `f`'s cast: where its blade or casting hand reaches farthest (the frame the rules

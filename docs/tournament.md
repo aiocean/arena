@@ -12,8 +12,8 @@ house AI may still change, and a change may mean a bot needs retraining. There a
 in testing; the release workflow (`.github/workflows/release.yml`, a tag `arena-s<N>`) is kept, dormant, for when
 seasons start.
 
-What a bot depends on, and what a later season would freeze: the rules; the 305 inputs, the 27 acts, the legality
-rules and the timing; the bot ABI (`arena-bot-2`), the module features it accepts and its budgets (`docs/bot.md`,
+What a bot depends on, and what a later season would freeze: the rules; the 1741 inputs, the 27 acts, the legality
+rules and the timing; the bot ABI (`arena-bot-3`), the module features it accepts and its budgets (`docs/bot.md`,
 "The bot module"). The model inside a bot is never part of it: any size, any shape, retrained at will.
 
 ## What a player submits
@@ -39,7 +39,7 @@ A bot module enters the season only if:
 1. it is admitted: a valid module of the accepted features, no imports, the exports with their signatures, within
    size and memory (`arena_bot::admit` names what is wrong). The arena writes the fuel counter into it; that module is
    the bot from then on, and its SHA-256 is its identity;
-2. it answers: `arena_abi()` is 2, and 32 fixed decisions from real fights, played twice in fresh instances, give the
+2. it answers: `arena_abi()` is 3, and 32 fixed decisions from real fights, played twice in fresh instances, give the
    same acts both times within fuel;
 3. it is good enough to be worth a slot (below).
 

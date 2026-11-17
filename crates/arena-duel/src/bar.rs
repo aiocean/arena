@@ -127,13 +127,17 @@ const NO_SLOT: SlotView = SlotView {
     stale: 0.0,
 };
 
+/// The seconds to `u`'s next use: 0 with one stored.
+pub fn cooldown_left(u: &arena_calc::charge::Uses) -> f64 {
+    if u.stored > 0 { 0.0 } else { u.recharge_left }
+}
+
 /// The cooldown view of `f`'s skill `name`: the time to its next use (0 with one stored) and its whole cooldown, its
 /// uses stored and their most.
 fn cooling(f: &Fighter, name: &str) -> (f64, f64, u8, u8) {
     f.kit.get(name).map_or((0.0, 0.0, 0, 0), |k| {
         let u = k.uses;
-        let left = if u.stored > 0 { 0.0 } else { u.recharge_left };
-        (left, u.cooldown, u.stored, u.max)
+        (cooldown_left(&u), u.cooldown, u.stored, u.max)
     })
 }
 

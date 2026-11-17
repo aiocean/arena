@@ -99,3 +99,129 @@ fn a_lost_soul_silences_and_a_root_seals() {
         "a root shows where a freeze did"
     );
 }
+
+#[test]
+fn the_minds_counts_are_the_damage_systems() {
+    use arena_calc::{ailment, aura, curse, keystone, loadout, support};
+    assert_eq!(arena_mind::AILMENTS, ailment::AILMENTS);
+    assert_eq!(arena_mind::AILMENTS, ailment::Ailment::ALL.len());
+    assert_eq!(arena_mind::SUPPORTS, support::SUPPORTS.len());
+    let mut curses: Vec<usize> = curse::Kind::SAMPLES.iter().map(|k| k.index()).collect();
+    curses.sort_unstable();
+    curses.dedup();
+    assert_eq!(curses, (0..arena_mind::CURSES).collect::<Vec<_>>());
+    assert_eq!(arena_mind::AURAS, aura::AURA_KINDS);
+    assert_eq!(arena_mind::KEYSTONES, keystone::Keystone::ALL.len());
+    assert_eq!(arena_mind::ROOTS, loadout::ROOTS.len());
+}
+
+/// Seat 0 casts `skill` once, seat 1 stands, both with plain loadouts.
+fn one_cast(skill: &'static str) -> Duel {
+    common::duel_of(
+        5,
+        [common::caster(skill), common::idle()],
+        [common::loadout(&[]), common::loadout(&[])],
+    )
+}
+
+#[test]
+fn a_cast_shows_its_frames_to_both_and_its_cooldown_after() {
+    let mut d = one_cast("slash");
+    let mut seen = (false, false, false);
+    let mut cooled = false;
+    for _ in 0..90 {
+        d.step(1.0 / 60.0);
+        let (mine, theirs) = (sense_of(d.state(), 0), sense_of(d.state(), 1));
+        assert_eq!(
+            mine.me_act, theirs.foe_act,
+            "one cast, seen from both sides"
+        );
+        let Some(a) = mine.me_act else { continue };
+        assert!(a.window > 0.0 && a.recover > 0.0, "{a:?}");
+        if a.to_punish > 0.0 {
+            seen.0 = true;
+            assert!(a.to_window > 0.0 && !a.in_window);
+        }
+        seen.1 |= a.in_window;
+        seen.2 |= a.hitbox.is_some();
+        let x = mine.slotx[0].unwrap_or_default();
+        assert!(x.cooldown > 0.0, "the slash is slot 0: {x:?}");
+        cooled |= x.stored < x.max_uses && x.cooldown_left > 0.0;
+    }
+    assert_eq!(
+        seen,
+        (true, true, true),
+        "wound up, in its window, with a blade"
+    );
+    assert!(cooled, "the slash cooled down after it was cast");
+    let s = sense_of(d.state(), 0);
+    let foe = s.foe_slots[0].map(|f| f.built.windup);
+    assert_eq!(foe, sense_of(d.state(), 1).slotx[0].map(|x| x.windup));
+}
+
+#[test]
+fn a_plain_skill_builds_to_its_own_damage_and_a_support_shows() {
+    let mut l = common::loadout(&["fireball"]);
+    l.actives[0].supports = vec!["fork".to_string()];
+    let mut d = common::duel_of(
+        5,
+        [common::idle(), common::idle()],
+        [l, common::loadout(&[])],
+    );
+    d.step(1.0 / 60.0);
+    let s = d.state_mut();
+    s.fighters[0].bar[0] = common::common("fireball");
+    s.fighters[1].bar[0] = common::common("fireball");
+    let (mine, theirs) = (sense_of(d.state(), 0), sense_of(d.state(), 1));
+    let plain = theirs.slotx[3].unwrap_or_default();
+    let want = arena_duel::sense::skill_of("fireball");
+    assert!(
+        (plain.damage - want.damage).abs() < 1e-9 * want.damage,
+        "{plain:?}"
+    );
+    assert!((plain.qi - want.cost).abs() < 1e-9);
+    assert_eq!(plain.supports, 0);
+    let forked = mine.slotx[3].unwrap_or_default();
+    let at = arena_calc::support::SUPPORTS
+        .iter()
+        .position(|s| s.id == "fork")
+        .unwrap_or(usize::MAX);
+    assert_eq!(forked.supports, 1 << at);
+    assert!(forked.fork >= 1.0, "{forked:?}");
+    assert_eq!(theirs.foe_slots[3].map(|f| f.built.fork), Some(forked.fork));
+}
+
+#[test]
+fn a_bleed_and_a_unit_show_where_they_are() {
+    use arena_calc::ailment::Ailment;
+    use arena_calc::dot::Dot;
+    let mut d = common::duel_of(
+        7,
+        [common::always("beans"), common::idle()],
+        [common::loadout(&["beans"]), common::loadout(&[])],
+    );
+    d.step(1.0 / 60.0);
+    let s = d.state_mut();
+    s.fighters[0].bar[0] = common::common("beans");
+    s.fighters[0].c.souls = 30.0;
+    s.fighters[1].body.x = s.fighters[0].body.x + 500.0;
+    let life = s.fighters[1].c.life_max;
+    s.fighters[1]
+        .c
+        .ailments
+        .bleeds
+        .lay(Dot::new(Ailment::Bleed, 5.0, 3.0));
+    let s = sense_of(d.state(), 0);
+    let bleed = s.effects[1].ailments[Ailment::Bleed.index()];
+    assert_eq!((bleed.stacks, bleed.left), (1.0, 3.0));
+    assert!((bleed.strength - 5.0 / life).abs() < 1e-12);
+    assert_eq!(s.effects[0].ailments[Ailment::Bleed.index()].stacks, 0.0);
+    common::run(&mut d, 1.0);
+    let (mine, theirs) = (sense_of(d.state(), 0), sense_of(d.state(), 1));
+    assert!(!mine.units.is_empty(), "the beans stand up");
+    for u in &mine.units {
+        assert!(u.mine && u.kind == arena_mind::UnitKind::Minion, "{u:?}");
+        assert!(u.hp > 0.0 && u.hp <= 1.0);
+    }
+    assert!(theirs.units.iter().all(|u| !u.mine));
+}

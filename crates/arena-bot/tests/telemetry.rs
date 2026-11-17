@@ -112,7 +112,7 @@ fn a_module_reports_its_fuel_and_faults() {
     // decision k loops k * 1000 times; the 5th traps
     let wat = r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 2)
+  (func (export "arena_abi") (result i32) i32.const 3)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))

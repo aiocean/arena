@@ -8,7 +8,7 @@
 //! cost a clock read).
 
 use crate::meter::Tally;
-use crate::{ACTIONS, Admitted, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};
+use crate::{ABI, ACTIONS, Admitted, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};
 use arena_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -137,6 +137,12 @@ impl Bot {
             tally: Tally::new("wasm", Arc::clone(&runner.name), Some(DECIDE_FUEL)),
             buf: Vec::with_capacity(OBS * 4 + ACTIONS),
         };
+        let abi = bot.abi()?;
+        if abi != ABI {
+            return Err(Fault(format!(
+                "arena_abi() is {abi}, not {ABI}: the module is not arena-bot-{ABI}"
+            )));
+        }
         bot.refuel(SETUP_FUEL)?;
         let input = input_at.call(&mut bot.store, ()).map_err(fault)?;
         bot.input = u32::from_ne_bytes(input.to_ne_bytes()) as usize;

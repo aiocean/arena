@@ -6,18 +6,26 @@
 //! system's state is mapped onto the slots that fit it and the rest left at zero (design 16).
 
 use crate::act::recover_of;
-use crate::bar::ready;
-use crate::data::{BAR, Kind, Spell, UNIT, spell};
+use crate::bar::{cooldown_left, ready};
+use crate::data::{BAR, FRAMES, Kind, Spell, T, UNIT, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
+use crate::frames::{clip_for, strike_hitbox, window_of};
 use crate::kit::Place;
 use crate::shot::{ShotKind, orb_at};
+use crate::unit::{FLOOR_Y, UNIT_Y};
 use arena_calc::ailment::{Ailment, Control};
+use arena_calc::aura::AuraKind;
+use arena_calc::device;
 use arena_calc::dot::{BURN_RATE, BURN_TIME};
 use arena_calc::element::Element;
 use arena_calc::gem::{self, Effect};
+use arena_calc::keystone::Keystone;
+use arena_calc::loadout::ROOTS;
+use arena_calc::stat::{Source, Stat};
+use arena_mind::policy::SLOTS;
 use arena_mind::{
-    ActPhase, Acting, Arena, Choice, Doing, Foe, Inflicts, Me, Sense, Skill, SkillKind, Threat,
-    ThreatShape,
+    ActFrames, ActPhase, Acting, AilmentOn, Arena, Choice, Doing, Effects, Foe, FoeSlot, Inflicts,
+    Me, Sense, Skill, SkillKind, SlotX, Threat, ThreatShape, UnitKind, UnitSeen,
 };
 
 /// A length or speed in the arena's pixels, in the engine's.
@@ -59,28 +67,7 @@ pub fn skill_of(name: &str) -> Skill {
             inflicts: Inflicts::default(),
         };
     };
-    let kind = if s.dive {
-        SkillKind::Dive
-    } else {
-        match s.kind {
-            Kind::Melee => SkillKind::Melee,
-            Kind::Dash => SkillKind::Dash,
-            Kind::Blast => SkillKind::Blast,
-            Kind::Bolt => SkillKind::Bolt,
-            Kind::Orb => SkillKind::Seeker,
-            Kind::Zone => SkillKind::Area,
-            Kind::Void => SkillKind::Field,
-            Kind::Heal => SkillKind::Heal,
-            Kind::Ward => SkillKind::Ward,
-            Kind::Barrier => SkillKind::Barrier,
-            Kind::Blink => SkillKind::Blink,
-        }
-    };
-    let reach = match s.kind {
-        Kind::Dash | Kind::Blink => s.distance.unwrap_or(f64::NAN),
-        Kind::Melee | Kind::Blast => s.range.unwrap_or(f64::NAN),
-        _ => s.reach.unwrap_or(0.0),
-    };
+    let (kind, reach) = (kind_of(s), reach_of(s));
     let damage = if s.kind == Kind::Heal {
         s.amount
     } else {
@@ -105,6 +92,36 @@ pub fn skill_of(name: &str) -> Skill {
         strikes: s.strikes.map_or(1, |n| n as u32),
         grounded: s.grounded,
         inflicts: inflicts_of(s),
+    }
+}
+
+/// What skill `s` does, as arena-mind knows skills.
+fn kind_of(s: &Spell) -> SkillKind {
+    if s.dive {
+        return SkillKind::Dive;
+    }
+    match s.kind {
+        Kind::Melee => SkillKind::Melee,
+        Kind::Dash => SkillKind::Dash,
+        Kind::Blast => SkillKind::Blast,
+        Kind::Bolt => SkillKind::Bolt,
+        Kind::Orb => SkillKind::Seeker,
+        Kind::Zone => SkillKind::Area,
+        Kind::Void => SkillKind::Field,
+        Kind::Heal => SkillKind::Heal,
+        Kind::Ward => SkillKind::Ward,
+        Kind::Barrier => SkillKind::Barrier,
+        Kind::Blink => SkillKind::Blink,
+    }
+}
+
+/// How far skill `s` reaches, in the arena's pixels: a dash's or blink's distance, a blade's or blast's range, an
+/// area's or field's reach.
+fn reach_of(s: &Spell) -> f64 {
+    match s.kind {
+        Kind::Dash | Kind::Blink => s.distance.unwrap_or(f64::NAN),
+        Kind::Melee | Kind::Blast => s.range.unwrap_or(f64::NAN),
+        _ => s.reach.unwrap_or(0.0),
     }
 }
 
@@ -287,6 +304,7 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
     let f = &state.fighters[me];
     let foe = &state.fighters[1 - me];
     let b = &f.body;
+    let slots = slots_of(f);
     let free = !(f.act.is_some()
         || b.reeling()
         || b.squat > 0.0
@@ -343,8 +361,191 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
         // every skill strikes at its own power (no bar tiers)
         power: Vec::new(),
         stacks: Vec::new(),
-        slots: slots_of(f),
+        slotx: slots_at(&slots, |k| slotx_of(f, k)),
+        slots,
+        me_act: act_frames_of(state, me),
+        foe_act: act_frames_of(state, 1 - me),
+        effects: [effects_of(f), effects_of(foe)],
+        units: units_of(state, me),
+        foe_slots: slots_at(&slots_of(foe), |k| {
+            let ks = foe.kit.skills.get(k)?;
+            Some(FoeSlot {
+                kind: kind_of(ks.motion),
+                ready: ready(foe, ks.gem.id),
+                reach: seen(reach_of(ks.motion)),
+                built: slotx_of(foe, k)?,
+            })
+        }),
     }
+}
+
+/// `at` of each of a fighter's `slots` (`slots_of`), `None` for an empty one.
+fn slots_at<T>(slots: &[Option<usize>], at: impl Fn(usize) -> Option<T>) -> [Option<T>; SLOTS] {
+    core::array::from_fn(|i| slots.get(i).copied().flatten().and_then(&at))
+}
+
+/// Fighter `f`'s cast under way as its clip times it, its hitbox in the minds' pixels.
+fn act_frames_of(state: &State, f: usize) -> Option<ActFrames> {
+    let fi = &state.fighters[f];
+    let a = fi.act?;
+    let recover = recover_of(&a);
+    let (_, window) = spell(a.spell)
+        .and_then(|s| window_of(fi.look, clip_for(s), a.windup, recover))
+        .unwrap_or((0.0, 0.0));
+    let windup = a.phase == Phase::Windup;
+    let left = (a.windup - a.t).max(0.0);
+    Some(ActFrames {
+        in_window: !windup && a.t < window,
+        to_window: if windup && window > 0.0 { left } else { 0.0 },
+        window,
+        to_punish: if windup { left } else { 0.0 },
+        recover,
+        hitbox: strike_hitbox(state, f).map(|b| b.map(seen)),
+    })
+}
+
+/// Fighter `f`'s kit skill `k` as it builds now (`KitSkill::seen`), with its uses and its clip's window.
+fn slotx_of(f: &Fighter, k: usize) -> Option<SlotX> {
+    let ks = f.kit.skills.get(k)?;
+    let (v, u) = (&ks.seen, &ks.uses);
+    let (window_start, window) =
+        window_of(f.look, clip_for(ks.motion), v.windup, v.recover).unwrap_or((0.0, 0.0));
+    Some(SlotX {
+        cooldown_left: cooldown_left(u),
+        cooldown: u.cooldown,
+        stored: f64::from(u.stored),
+        max_uses: f64::from(u.max),
+        windup: v.windup,
+        recover: v.recover,
+        blocked_extra: if FRAMES.unsafe_on_block.contains(&ks.gem.id) {
+            FRAMES.blocked_recover
+        } else {
+            0.0
+        },
+        window_start,
+        window,
+        damage: v.damage,
+        qi: v.qi,
+        projectiles: f64::from(v.projectiles),
+        strikes: f64::from(v.strikes),
+        area: v.area,
+        pierce: f64::from(v.pierce),
+        chain: f64::from(v.chain),
+        fork: f64::from(v.fork),
+        inert: v.inert as f64,
+        inflict: v.inflict,
+        supports: v.supports,
+    })
+}
+
+/// What lies on fighter `f`: its ailments, controls, curses, auras, its skills' buffs, its shields, its loadout's
+/// keystones and its root.
+fn effects_of(f: &Fighter) -> Effects {
+    let c = &f.c;
+    let mut e = Effects::default();
+    let longest = |left: &mut dyn Iterator<Item = f64>| left.fold(0.0, f64::max);
+    for a in Ailment::ALL {
+        let i = a.index();
+        let (left, strength) = match c.ailments.dots(a) {
+            Some(d) => (
+                longest(&mut d.0.iter().map(|x| x.left)),
+                d.strongest()
+                    .filter(|_| c.life_max > 0.0)
+                    .map_or(0.0, |x| x.dps / c.life_max),
+            ),
+            None => (longest(&mut c.ailments.on[i].left.iter().copied()), 0.0),
+        };
+        e.ailments[i] = AilmentOn {
+            stacks: c.ailments.stacks(a),
+            cap: a.data().cap,
+            left,
+            strength,
+        };
+    }
+    let b = &f.body;
+    e.stun = b.stun;
+    e.root = f.root;
+    e.down = if b.down.is_some() { b.out_for() } else { 0.0 };
+    e.shocked = b.shocked;
+    e.soul_lost = c.soul_lost;
+    e.sealed = f.sealed;
+    e.no_guard = f.no_guard;
+    e.choke = c.choke;
+    e.rot = c.rot;
+    for cu in &f.curses.on {
+        if let Some(l) = e.curses.get_mut(cu.kind.index()) {
+            *l = l.max(cu.left);
+        }
+    }
+    for a in &f.auras.on {
+        if let Some(i) = AuraKind::ALL.iter().position(|k| *k == a.kind) {
+            e.auras[i] = true;
+        }
+    }
+    for x in &c.effects {
+        if let (Source::Skill(_), Some(left)) = (x.source, x.left) {
+            e.buffs += 1.0;
+            e.buff_left = e.buff_left.max(left);
+            e.buff_size += x
+                .mods
+                .iter()
+                .filter(|m| matches!(m.stat, Stat::Damage | Stat::Taken))
+                .map(|m| m.value.abs())
+                .sum::<f64>();
+        }
+    }
+    e.shield = if c.shield_max > 0.0 {
+        c.shield / c.shield_max
+    } else {
+        0.0
+    };
+    e.ward = f.charges;
+    e.barrier = f.barrier;
+    for (on, k) in e.keystones.iter_mut().zip(Keystone::ALL) {
+        *on = f.has(k);
+    }
+    e.element = c.root.and_then(|r| ROOTS.iter().position(|o| *o == r));
+    e
+}
+
+/// The traps, mines, totems and minions standing, as fighter `me` sees them: lengths in the minds' pixels, each
+/// one's height its body's centre (`UNIT_Y`, or `FLOOR_Y` for what lies on the floor), its time left and arming from
+/// its group's `device::Placed`.
+fn units_of(state: &State, me: usize) -> Vec<UnitSeen> {
+    state
+        .units
+        .iter()
+        .map(|u| {
+            let placed = state
+                .groups
+                .iter()
+                .find(|g| g.owner == u.owner && g.skill == u.skill)
+                .map(|g| &g.placed);
+            let d = placed.and_then(|p| p.standing.iter().find(|d| d.id == u.device));
+            let spawn = placed.map(|p| &p.spawn);
+            let age = d.map_or(0.0, |d| d.age);
+            let next = match u.kind {
+                device::Kind::Minion => u.next_strike - state.time,
+                device::Kind::Totem => d.map_or(0.0, |d| d.next_cast - d.age),
+                device::Kind::Trap | device::Kind::Mine => 0.0,
+            };
+            UnitSeen {
+                mine: u.owner == me,
+                kind: match u.kind {
+                    device::Kind::Trap => UnitKind::Trap,
+                    device::Kind::Mine => UnitKind::Mine,
+                    device::Kind::Totem => UnitKind::Totem,
+                    device::Kind::Minion => UnitKind::Minion,
+                },
+                x: seen(u.x),
+                y: seen(if u.on_floor() { FLOOR_Y } else { UNIT_Y } * T),
+                hp: u.hp() / 100.0,
+                left: spawn.and_then(|s| s.lifetime).map(|l| (l - age).max(0.0)),
+                armed: spawn.is_none_or(|s| age >= s.arm),
+                next: next.max(0.0),
+            }
+        })
+        .collect()
 }
 
 /// Fighter `f`'s castable slots for a policy: its three basics, then its bar's slots, each the index of

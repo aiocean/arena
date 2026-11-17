@@ -31,7 +31,7 @@ import arena_duel as pd
 env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker threads
 env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
 env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
-obs, mask = env.observe()                  # float32[n, 305], bool[n, 27]
+obs, mask = env.observe()                  # float32[n, 1741], bool[n, 27]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 ```
 
@@ -93,6 +93,11 @@ each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...) and `
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
 pair 15%; seats, styles and both loadouts drawn per fight.
 
+**A wider observation.** An ABI that appends inputs keeps the old ones at their indices, so a trained policy carries
+over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n>` copies its first layer into the
+new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
+logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
+
 **The state of the house AI** (2026-11-18). The shipped AI (`7bac778`) is update 1510 of run `abi2b`. That run is a
 fine-tune (`--init runs/abi2/last.pt --lr 1e-4 --ent 0.003 0.002 --shaping-until 0`) of run `abi2`, trained from
 scratch on ABI 2 (305 inputs, 27 acts). Both were moved onto each rule change as it landed and resumed from their
@@ -148,12 +153,12 @@ house AI with your model's logits and fails.
 
 ## Bring your own model (ONNX)
 
-Any model that maps the 305 inputs to the 27 acts' logits can be a bot, whatever its size or shape, trained with
-any library. Export it to ONNX: input float32 `[1, 305]`, output float32 `[1, 27]` (opset 17 with PyTorch's legacy
+Any model that maps the 1741 inputs to the 27 acts' logits can be a bot, whatever its size or shape, trained with
+any library. Export it to ONNX: input float32 `[1, 1741]`, output float32 `[1, 27]` (opset 17 with PyTorch's legacy
 exporter is what tract reads best). `export.py` does it for the trainer's network; for your own model:
 
 ```python
-torch.onnx.export(model, (torch.zeros(1, 305),), "mine.onnx", opset_version=17, dynamo=False)
+torch.onnx.export(model, (torch.zeros(1, 1741),), "mine.onnx", opset_version=17, dynamo=False)
 ```
 
 Build it into a bot module, then run the submission checks on it:

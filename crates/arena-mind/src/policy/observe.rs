@@ -1,8 +1,10 @@
-//! The observation: the fighter, the foe it sees, the nearest threats and its slots, as `OBS` floats in a frame
-//! where the foe is ahead (positive x), every value clamped to [-4, 4] and anything not finite read as 0. Times are
-//! in seconds unless a scale is given.
+//! The observation: the fighter, the foe it sees, the nearest threats and its slots, then the frame data of both
+//! casts, what each slot builds to, what lies on both fighters, the things on the field and the foe's slots, as
+//! `OBS` floats in a frame where the foe is ahead (positive x), every value clamped to [-4, 4] and anything not
+//! finite read as 0. Times are in seconds unless a scale is given. ABI 3 only appended to ABI 2's 305: those keep
+//! their indices and meaning, except that a slot's cost and damage are what it builds to now.
 //!
-//! Layout, in order (index ranges are of the whole observation):
+//! Layout, in order (index ranges are of the whole observation; `BLOCKS` lists the blocks):
 //! - me (`ME` = 17, 0..17): distance to the wall behind and ahead over the arena's width, air over the ceiling,
 //!   facing the foe, hp / 100, qi / 100, flying, hover over the ceiling, vx toward the foe / 200, can act, silenced,
 //!   sealed, barrier, shield (0..14); winding up, recovering, seconds left in that phase (14..17, zero when it uses
@@ -17,15 +19,39 @@
 //!   (projectile, area, seeker, field, barrage), distance ahead / 100, height / 50, speed toward me / 200, lands
 //!   in, size / 50, damage / 50;
 //! - slots (`SLOTS` x `SLOT` = 6 x 33, 102..300), zero when empty, each: present, ready, kind (12), cost / 50,
-//!   damage x power / 50, reach / 100, windup, recover, radius / 50 (+0..+20); then what it inflicts (`Inflicts`,
-//!   +20..+33): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3, burn's share
-//!   of attack a second x 5, chill stacks a hit adds now (x `Sense::stacks`) over the most it holds, slow per chill
-//!   stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4, share of attack per
-//!   shock twitch x 10, pull / 100;
-//! - the game's tag (`TAG` = 5, 300..305).
+//!   damage x power / 50 (both as built now, `SlotX`, when the game says), reach / 100, windup, recover,
+//!   radius / 50 (+0..+20); then what it inflicts (`Inflicts`, +20..+33): freeze s, stun s, silence s / 2,
+//!   defence-down s / 5, defence lost (share), burn s / 3, burn's share of attack a second x 5, chill stacks a hit
+//!   adds now (x `Sense::stacks`) over the most it holds, slow per chill stack x 4, shock stacks a hit adds now over
+//!   the most it holds, hold per shock twitch x 4, share of attack per shock twitch x 10, pull / 100;
+//! - the game's tag (`TAG` = 5, 300..305);
+//! - my cast, then the foe's (`ACT` = 11 each, 305..316 and 316..327), zero when not casting (the foe's also until
+//!   it is seen acting): acting, in its active window, seconds to the window, the window's length, seconds until
+//!   punishable (its recovery begins), the recovery's span, a hitbox, the hitbox's near and far x ahead of me / 100,
+//!   its bottom and top over the ground / 50 (`ActFrames`);
+//! - slot builds (`SLOTS` x `SLOTX` = 6 x 148, 327..1215), zero for an empty slot, each (`SlotX`): cooldown left,
+//!   cooldown / 10, stored uses / 4, most uses / 4, windup, recover, the recovery a guarded blow adds, the active
+//!   window's start and length, damage / 50, qi / 50, extra projectiles / 4, strikes / 4, area factor, pierce / 4,
+//!   chain / 4, fork / 4, inert supports / 3 (+0..+18); each ailment a blow lays over its full (+18..+29); the
+//!   supports it carries, one flag each (+29..+148);
+//! - effects (2 x `EFFECT` = 2 x 113, 1215..1441), on me then on the foe (`Effects`): each ailment's stacks over its
+//!   full, full / 10, longest time left / 10, a burn's or bleed's strongest damage a second over full life x 10
+//!   (+0..+44); stun, root, down, shocked, soul lost, sealed, no guard, choke, rot, seconds (+44..+53); each curse's
+//!   time left / 10 (+53..+65); auras held (+65..+80); buffs / 3, the longest's time left / 10, their sizes summed
+//!   (+80..+83); energy shield share, ward charges / 3, barrier s (+83..+86); keystones (+86..+106); root one-hot
+//!   (+106..+113);
+//! - units (`UNITS` x `UNIT` = 8 x 12, 1441..1537), nearest first, zero when absent: present, mine, kind (trap,
+//!   mine, totem, minion), distance ahead / 100, height over my feet / 50, life share, time left / 10 (40 s for
+//!   one that lasts), armed, seconds to its next blow;
+//! - the foe's slots (`SLOTS` x `FOE_SLOT` = 6 x 34, 1537..1741), zero when empty: present, ready, cooldown left,
+//!   stored uses / 4, kind (12), windup, recover, the active window's start and length, damage / 50, qi / 50,
+//!   reach / 100, each ailment a blow lays over its full (11).
 
 use super::{SLOTS, ahead};
-use crate::sense::{ActPhase, Doing, Foe, Sense, Threat, ThreatShape};
+use crate::sense::{
+    AILMENTS, AURAS, ActFrames, ActPhase, CURSES, Doing, Effects, Foe, KEYSTONES, ROOTS, SUPPORTS,
+    Sense, SlotX, Threat, ThreatShape, UnitKind,
+};
 use crate::skill::{Skill, SkillKind};
 
 const ME: usize = 17;
@@ -35,7 +61,45 @@ const THREAT: usize = 12;
 const SLOT: usize = 33;
 /// The game's tag: who the fighter is (the duel: its look, 2, and its style, 3).
 pub const TAG: usize = 5;
-pub const OBS: usize = ME + FOE + THREATS * THREAT + SLOTS * SLOT + TAG;
+/// A cast's frame data.
+const ACT: usize = 11;
+/// A slot's build: 18 numbers, an ailment's share each, a support's flag each.
+const SLOTX: usize = 18 + AILMENTS + SUPPORTS;
+/// What lies on one fighter: four numbers an ailment, 9 controls, the curses, the auras, 3 for buffs, 3 for shields,
+/// the keystones, the roots.
+const EFFECT: usize = 4 * AILMENTS + 9 + CURSES + AURAS + 3 + 3 + KEYSTONES + ROOTS;
+/// The things on the field it sees, nearest first.
+pub const UNITS: usize = 8;
+const UNIT: usize = 12;
+/// One of the foe's slots: 23 numbers and an ailment's share each.
+const FOE_SLOT: usize = 23 + AILMENTS;
+
+/// Every block in order, as `docs/bot.md` names it, with its length.
+pub const BLOCKS: [(&str, usize); 11] = [
+    ("Me", ME),
+    ("Foe", FOE),
+    ("Threats", THREATS * THREAT),
+    ("Slots", SLOTS * SLOT),
+    ("Tag", TAG),
+    ("My cast", ACT),
+    ("Foe's cast", ACT),
+    ("Slot builds", SLOTS * SLOTX),
+    ("Effects", 2 * EFFECT),
+    ("Units", UNITS * UNIT),
+    ("Foe's slots", SLOTS * FOE_SLOT),
+];
+
+pub const OBS: usize = total(&BLOCKS);
+
+const fn total(blocks: &[(&str, usize)]) -> usize {
+    let mut n = 0;
+    let mut i = 0;
+    while i < blocks.len() {
+        n += blocks[i].1;
+        i += 1;
+    }
+    n
+}
 
 const KINDS: [SkillKind; 12] = [
     SkillKind::Melee,
@@ -222,8 +286,17 @@ pub fn observe(
         o.flag(true);
         o.flag(sense.ready.get(k).copied().unwrap_or(false));
         o.kind(Some(s.kind));
-        o.put(s.cost / 50.0);
-        o.put(s.damage * sense.power.get(k).copied().unwrap_or(1.0) / 50.0);
+        let power = sense.power.get(k).copied().unwrap_or(1.0);
+        match sense.slotx.get(i).copied().flatten() {
+            Some(x) => {
+                o.put(x.qi / 50.0);
+                o.put(x.damage * power / 50.0);
+            }
+            None => {
+                o.put(s.cost / 50.0);
+                o.put(s.damage * power / 50.0);
+            }
+        }
         o.put(s.reach / 100.0);
         o.put(s.windup);
         o.put(s.recover);
@@ -248,7 +321,178 @@ pub fn observe(
     for &t in tag {
         o.put(f64::from(t));
     }
+
+    o.act(sense.me_act.as_ref(), me.x, dir);
+    // the foe's cast is seen as its doing is: not while the delay still hides it
+    let seen = match (&foe.doing, &sense.foe.doing) {
+        (
+            Doing::Act { kind, phase, .. },
+            Doing::Act {
+                kind: k, phase: p, ..
+            },
+        ) => kind == k && phase == p,
+        _ => false,
+    };
+    o.act(sense.foe_act.as_ref().filter(|_| seen), me.x, dir);
+
+    for x in &sense.slotx {
+        match x {
+            Some(x) => o.slotx(x),
+            None => o.skip(SLOTX),
+        }
+    }
+
+    for e in &sense.effects {
+        o.effects(e);
+    }
+
+    let mut units: Vec<_> = sense.units.iter().collect();
+    units.sort_by(|a, b| libm::fabs(a.x - me.x).total_cmp(&libm::fabs(b.x - me.x)));
+    for i in 0..UNITS {
+        let Some(u) = units.get(i) else {
+            o.skip(UNIT);
+            continue;
+        };
+        o.flag(true);
+        o.flag(u.mine);
+        for k in [
+            UnitKind::Trap,
+            UnitKind::Mine,
+            UnitKind::Totem,
+            UnitKind::Minion,
+        ] {
+            o.flag(u.kind == k);
+        }
+        o.put((u.x - me.x) * dir / 100.0);
+        o.put((u.y - me.air) / 50.0);
+        o.put(u.hp);
+        o.put(u.left.unwrap_or(LASTS).min(LASTS) / 10.0);
+        o.flag(u.armed);
+        o.put(u.next);
+    }
+
+    for f in &sense.foe_slots {
+        let Some(f) = f else {
+            o.skip(FOE_SLOT);
+            continue;
+        };
+        let x = &f.built;
+        o.flag(true);
+        o.flag(f.ready);
+        o.put(x.cooldown_left);
+        o.put(x.stored / 4.0);
+        o.kind(Some(f.kind));
+        o.put(x.windup);
+        o.put(x.recover);
+        o.put(x.window_start);
+        o.put(x.window);
+        o.put(x.damage / 50.0);
+        o.put(x.qi / 50.0);
+        o.put(f.reach / 100.0);
+        for &v in &x.inflict {
+            o.put(v);
+        }
+    }
     o.v
+}
+
+/// The seconds a unit that never falls apart reads as.
+const LASTS: f64 = 40.0;
+
+impl Out {
+    /// A cast's frame data (`ACT`), its hitbox seen from `x` with the foe on side `dir`.
+    fn act(&mut self, a: Option<&ActFrames>, x: f64, dir: f64) {
+        let Some(a) = a else {
+            self.skip(ACT);
+            return;
+        };
+        self.flag(true);
+        self.flag(a.in_window);
+        self.put(a.to_window);
+        self.put(a.window);
+        self.put(a.to_punish);
+        self.put(a.recover);
+        match a.hitbox {
+            Some([x0, y0, x1, y1]) => {
+                let (n, f) = ((x0 - x) * dir, (x1 - x) * dir);
+                self.flag(true);
+                self.put(n.min(f) / 100.0);
+                self.put(n.max(f) / 100.0);
+                self.put(y0 / 50.0);
+                self.put(y1 / 50.0);
+            }
+            None => self.skip(5),
+        }
+    }
+
+    /// A slot's build (`SLOTX`).
+    fn slotx(&mut self, x: &SlotX) {
+        self.put(x.cooldown_left);
+        self.put(x.cooldown / 10.0);
+        self.put(x.stored / 4.0);
+        self.put(x.max_uses / 4.0);
+        self.put(x.windup);
+        self.put(x.recover);
+        self.put(x.blocked_extra);
+        self.put(x.window_start);
+        self.put(x.window);
+        self.put(x.damage / 50.0);
+        self.put(x.qi / 50.0);
+        self.put(x.projectiles / 4.0);
+        self.put(x.strikes / 4.0);
+        self.put(x.area);
+        self.put(x.pierce / 4.0);
+        self.put(x.chain / 4.0);
+        self.put(x.fork / 4.0);
+        self.put(x.inert / 3.0);
+        for &v in &x.inflict {
+            self.put(v);
+        }
+        for i in 0..SUPPORTS {
+            self.flag(x.supports >> i & 1 == 1);
+        }
+    }
+
+    /// What lies on one fighter (`EFFECT`).
+    fn effects(&mut self, e: &Effects) {
+        for a in &e.ailments {
+            self.put(if a.cap > 0.0 { a.stacks / a.cap } else { 0.0 });
+            self.put(a.cap / 10.0);
+            self.put(a.left / 10.0);
+            self.put(a.strength * 10.0);
+        }
+        for c in [
+            e.stun,
+            e.root,
+            e.down,
+            e.shocked,
+            e.soul_lost,
+            e.sealed,
+            e.no_guard,
+            e.choke,
+            e.rot,
+        ] {
+            self.put(c);
+        }
+        for &c in &e.curses {
+            self.put(c / 10.0);
+        }
+        for &a in &e.auras {
+            self.flag(a);
+        }
+        self.put(e.buffs / 3.0);
+        self.put(e.buff_left / 10.0);
+        self.put(e.buff_size);
+        self.put(e.shield);
+        self.put(e.ward / 3.0);
+        self.put(e.barrier);
+        for &k in &e.keystones {
+            self.flag(k);
+        }
+        for r in 0..ROOTS {
+            self.flag(e.element == Some(r));
+        }
+    }
 }
 
 /// Seconds phase `phase` of a skill lasts.

@@ -303,6 +303,9 @@ fn begin_round(state: &mut State, seats: &mut Seats) {
         state.fighters[f].body.start_round(state.left + span * at);
     }
     for f in 0..2 {
+        crate::strike::see(state, f);
+    }
+    for f in 0..2 {
         for i in 0..BAR.slots {
             draw(state, f, i, None);
         }
