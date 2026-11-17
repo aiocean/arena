@@ -172,6 +172,10 @@ plays in place of its baked recipe.
   face away too (mirroring only frames 6-11 flips the head mid-clip). It stays as drawn until it is redrawn facing
   east with the arm sweeping forward (the image key is out of its monthly limit until 2026-12-01); the rules' reach
   box covers the blow meanwhile. Its `cast` reads right: both hands push toward the foe, from frame 10.
+- **Totems, minions, traps and mines have no pictures**: the game draws each as a flat block of its owner's colour
+  with a life bar over it (`crates/arena-game/src/units.rs`), a pale bar beside the fighters in a fight
+  (`review/visual-qa`, seed 2). Each kind wants a drawn sprite, made like a spell's effect (`art/vfx/`), once the
+  image key has its limit back (2026-12-01).
 
 ## Before a character ships
 
