@@ -363,6 +363,15 @@ fn decision_cost(new: &dyn Fn() -> SharedDecider, effects: &[String]) {
     }
     let mut mind = policy_mind(duel.state(), 0, Style::Balanced);
     let bot = new();
+    // a module decides only inside a fight it was started on (as `BotSeat::new` starts it): unstarted, every call traps
+    let started = {
+        let mut b = bot.borrow_mut();
+        b.start(1).and_then(|()| b.round())
+    };
+    if let Err(e) = started {
+        println!("decision cost: the bot would not start: {e:?}");
+        return;
+    }
     let mut decided = 0_u32;
     let start = Instant::now();
     for _ in 0..20 {
