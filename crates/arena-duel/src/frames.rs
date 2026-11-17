@@ -22,13 +22,19 @@ pub struct Frame {
     pub hand: Option<[f64; 2]>,
 }
 
-/// One look's clips: the frames a second they play at, and each clip's active frame (where a blade or a casting hand
-/// reaches farthest ahead: the frame the rules strike or cast on) and frames in order.
+/// One look's clips: the frames a second they play at, and each clip's active window (its first frame is where a
+/// blade or a casting hand reaches farthest ahead, the frame the rules strike or cast on; a blade's window runs on
+/// while the blade stays out ahead) and frames in order.
 #[derive(Debug)]
 pub struct LookFrames {
     pub fps: f64,
-    pub clips: &'static [(&'static str, Option<usize>, &'static [Frame])],
+    pub clips: &'static [Clip],
 }
+
+/// A clip's first and last active frames.
+pub type Window = Option<(usize, usize)>;
+/// A clip: its name, its active window, its frames.
+pub type Clip = (&'static str, Window, &'static [Frame]);
 
 fn look_frames(look: Look) -> &'static LookFrames {
     match look {
@@ -37,8 +43,8 @@ fn look_frames(look: Look) -> &'static LookFrames {
     }
 }
 
-/// Clip `clip` of look `look`: its active frame and its frames.
-fn clip_of(look: Look, clip: &str) -> Option<(Option<usize>, &'static [Frame])> {
+/// Clip `clip` of look `look`: its active window and its frames.
+fn clip_of(look: Look, clip: &str) -> Option<(Window, &'static [Frame])> {
     look_frames(look)
         .clips
         .iter()
@@ -53,7 +59,7 @@ pub fn len(look: Look, clip: &str) -> usize {
 
 /// The active frame of clip `clip` of look `look`: where its wind-up ends and the blow or the cast goes out.
 pub fn active(look: Look, clip: &str) -> Option<usize> {
-    clip_of(look, clip).and_then(|(a, _)| a)
+    clip_of(look, clip).and_then(|(a, _)| a).map(|(start, _)| start)
 }
 
 /// The frames a second look `look`'s clips play at.
@@ -61,13 +67,30 @@ pub fn fps(look: Look) -> f64 {
     look_frames(look).fps
 }
 
-/// The frame fighter `f` shows now, as `pick` chooses it (and the game draws it).
-pub fn frame_of(state: &State, f: usize) -> Option<&'static Frame> {
+/// The clip and frame fighter `f` shows now, as `pick` chooses them (and the game draws them).
+fn shown(state: &State, f: usize) -> Option<(&'static str, usize)> {
     let fi = state.fighters.get(f)?;
     let b = &fi.body;
     let a = appearance(b.pose, b.pose_t, !fi.alive(), fi.act.map(|a| (a.spell, a.phase, a.t)));
     let shot = pick(&a, fps(fi.look), |c| len(fi.look, c), |c| active(fi.look, c));
-    clip_of(fi.look, shot.clip)?.1.get(shot.frame)
+    Some((shot.clip, shot.frame))
+}
+
+/// The frame fighter `f` shows now.
+pub fn frame_of(state: &State, f: usize) -> Option<&'static Frame> {
+    let (clip, i) = shown(state, f)?;
+    clip_of(state.fighters.get(f)?.look, clip)?.1.get(i)
+}
+
+/// Whether fighter `f` shows a frame of its blade blow's active window now: a blow that has not landed may still.
+pub fn in_window(state: &State, f: usize) -> bool {
+    let (Some((clip, i)), Some(fi)) = (shown(state, f), state.fighters.get(f)) else {
+        return false;
+    };
+    act_clip(state, f) == Some(clip)
+        && clip_of(fi.look, clip)
+            .and_then(|(w, _)| w)
+            .is_some_and(|(start, end)| i >= start && i <= end)
 }
 
 /// Box `r` (from the feet, facing right) of a fighter standing at `x`, its feet at `air`, facing `face`.
@@ -118,15 +141,18 @@ fn act_clip(state: &State, f: usize) -> Option<&'static str> {
 fn active_frame(state: &State, f: usize) -> Option<&'static Frame> {
     let fi = state.fighters.get(f)?;
     let clip = act_clip(state, f)?;
-    let (active, frames) = clip_of(fi.look, clip)?;
-    frames.get(active?)
+    let (window, frames) = clip_of(fi.look, clip)?;
+    frames.get(window?.0)
 }
 
-/// The hitbox of fighter `f`'s blade blow in the arena, from its clip's active frame: where the hand and blade are
-/// drawn. `None` for a clip drawn with no blade out ahead (the rules then strike their own box).
+/// The hitbox of fighter `f`'s blade blow in the arena: where the hand and blade are drawn on the frame it shows, if
+/// that frame is in the clip's active window, else on the window's first frame. `None` for a clip drawn with no blade
+/// out ahead (the rules then strike their own box).
 pub fn strike_hitbox(state: &State, f: usize) -> Option<[f64; 4]> {
     let b = &state.fighters.get(f)?.body;
-    active_frame(state, f)?.hit.map(|r| place(r, b.x, b.air, b.face))
+    let now = if in_window(state, f) { frame_of(state, f).and_then(|fr| fr.hit) } else { None };
+    now.or_else(|| active_frame(state, f)?.hit)
+        .map(|r| place(r, b.x, b.air, b.face))
 }
 
 /// Where fighter `f`'s casting hand is in the arena (x, height above the ground) on its clip's active frame: where a

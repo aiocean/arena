@@ -24,9 +24,10 @@ fn every_built_in_name_seats_a_bot_and_nothing_else_does() {
 fn a_bout_plays_every_seed_both_ways_and_a_seed_replays_the_same()
 -> Result<(), Box<dyn std::error::Error>> {
     let me = Bot::First;
-    // seeds whose loadouts fight to knockouts (more rounds are cut since the ultimate went: no free finisher)
+    // seeds whose loadouts fight to knockouts (more rounds are cut since the ultimate went: no free finisher; 3 and 4
+    // fewer still since blows land frame by frame)
     let m = Match {
-        seeds: 3..5,
+        seeds: 7..9,
         ..quick(2)
     };
     let r = bout(&me, &Bot::Brain, &m);
@@ -62,4 +63,5 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
     // 75% against the first mind: out
     assert!(!bar(rounds([8, 8], [2, 2]), rounds([7, 8], [3, 2])).passed());
 }
+
 

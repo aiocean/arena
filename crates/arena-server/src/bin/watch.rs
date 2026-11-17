@@ -95,7 +95,7 @@ async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
             frames += 1;
             let frame = decode(&frame.payload).context("a frame did not decode")?;
             match follow.apply(frame) {
-                Applied::OtherRules => bail!("the match was fought on other rules than this build's"),
+                Applied::OtherRules(v) => bail!("the match was fought on rules {v}, this build's are {}", arena_link::RULES_VERSION),
                 Applied::Taken | Applied::Ignored => {}
             }
             if follow.snapshot().is_some_and(|s| s.ended.is_some()) {

@@ -30,10 +30,11 @@ use serde::{Deserialize, Serialize};
 
 /// The rules build, and the frames' shape, this link speaks for (2: `Through` carries the server's clock; 3: bodies
 /// sized to the HD figures, strikes ahead of the striker; 4: hurtboxes and hitboxes frame by frame; 5: no ultimate,
-/// the top tier priced, one Tín Niệm skill a loadout). A page whose rules differ steps a different fight from the same
-/// decisions, so the server refuses it (and the page reloads itself). Bump this with any change to the rules or to a bot's inputs or
+/// the top tier priced, one Tín Niệm skill a loadout; 6: a blade's active window, the blade never hurt, hurtboxes
+/// inside the cloth). A page whose rules differ steps a different fight from the same decisions, so it says so and
+/// stops (`Applied::OtherRules`). Bump this with any change to the rules or to a bot's inputs or
 /// acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 5;
+pub const RULES_VERSION: u32 = 6;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.
@@ -163,8 +164,9 @@ pub enum Applied {
     Taken,
     /// It came before any keyframe, or repeated what is held: nothing changed.
     Ignored,
-    /// The keyframe was fought on other rules than this build's: the page must reload.
-    OtherRules,
+    /// The keyframe was fought on other rules than this build's (the server's `RULES_VERSION` given): the page must
+    /// reload, or the server is behind it.
+    OtherRules(u32),
 }
 
 impl Follow {
@@ -187,7 +189,7 @@ impl Follow {
         match frame {
             Frame::Keyframe(s) => {
                 if s.rules != RULES_VERSION {
-                    return Applied::OtherRules;
+                    return Applied::OtherRules(s.rules);
                 }
                 self.through = self.through.max(s.ticks);
                 self.snapshot = Some(s);

@@ -116,6 +116,6 @@ fn follow_builds_the_match_from_its_frames() -> Result<(), String> {
     assert_eq!(s.ended, Some(Ended::Winner(1)));
     // other rules: the page reloads
     let other = Snapshot::new(RULES_VERSION + 1, 9, ARENA, ["a".into(), "b".into()]);
-    assert_eq!(f.apply(Frame::Keyframe(other)), Applied::OtherRules);
+    assert_eq!(f.apply(Frame::Keyframe(other)), Applied::OtherRules(RULES_VERSION + 1));
     Ok(())
 }

@@ -63,8 +63,13 @@ impl Watching {
 
     /// Take in a frame. `Err` when the match was fought on rules other than this build's (the page must reload).
     pub fn frame(&mut self, frame: Frame) -> Result<(), String> {
-        if self.follow.apply(frame) == Applied::OtherRules {
-            return Err("the arena runs newer rules: reload the page".into());
+        if let Applied::OtherRules(theirs) = self.follow.apply(frame) {
+            let ours = arena_link::RULES_VERSION;
+            return Err(if theirs > ours {
+                format!("The arena runs newer rules ({theirs}, this page has {ours}): reload the page")
+            } else {
+                format!("The arena's server runs older rules ({theirs}, this page has {ours}): live matches are paused until it is updated")
+            });
         }
         let Some(snap) = self.follow.snapshot() else {
             return Ok(());

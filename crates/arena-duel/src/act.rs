@@ -515,6 +515,18 @@ pub fn strike(
                         hurt(state, foe, &p, face);
                     }
                 }
+                // a fighter's blade that missed tries again next tick while its clip's active window lasts (its blade
+                // still out ahead as the frames go by), one hit a swing (`frames::in_window`)
+                None if caster && crate::frames::in_window(state, me) => {
+                    state.pending.push(Pending {
+                        at: state.time + crate::duel::TICK,
+                        payload: p,
+                        motion: sp,
+                        origin: o,
+                        aim: target,
+                        target: None,
+                    });
+                }
                 None => {}
             }
         }

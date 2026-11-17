@@ -16,9 +16,10 @@
 //!   the hand and the blade.
 //! - **hand**, on the active frame of a casting clip: the farthest point the body holds out in the torso's band,
 //!   where a bolt leaves.
-//! - **active frame**: the frame that reaches farthest ahead, at least `REACH_MIN` beyond the clip's first frame
-//!   (none when no frame does, as on a clip drawn striking behind). `pick` ends the wind-up on it: the rules strike or
-//!   cast on the frame the picture strikes on.
+//! - **active window**: from the frame that reaches farthest ahead (at least `REACH_MIN` beyond the clip's least
+//!   reach; none when no frame does, as on a clip drawn striking behind) on while a blade stays out ahead. `pick` ends
+//!   the wind-up on its first frame: the rules strike or cast on the frame the picture strikes on, and a blade that
+//!   missed tries again on each frame of the window, one hit a swing.
 
 // offline tooling over pictures: it writes the table the rules use, its own rounding is not the rules'
 #![allow(clippy::disallowed_methods)]
@@ -32,6 +33,12 @@ use std::fmt::Write as _;
 const SOLID: u8 = 64;
 /// The waist: this share of the figure's height from its lowest pixel up splits legs from torso.
 const WAIST: f64 = 0.45;
+/// The share of a band's rows a box's edges leave out on each side: a hurtbox sits inside the drawn body, so a robe's
+/// flare, a sleeve or a blade on a few rows does not widen it (cloth is not body).
+const LOW: f64 = 0.3;
+/// The least thickness (pixels, up and down) a column held out ahead must have to be an arm or a hand: a blade is
+/// thinner, and a blade is never hurt (it is the hitbox, disjointed from the body, as fighting games have it).
+const LIMB: usize = 7;
 /// The hair or crown's share of the height left off the top of the head's box.
 const HAIR: f64 = 0.04;
 /// How far an arm held out reaches from the torso, at most (a blade beyond it is not the body).
@@ -182,7 +189,7 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
         if ls.len() < 4 {
             return None;
         }
-        let (x0, x1) = (percentile(&mut ls, 0.15), percentile(&mut rs, 0.85));
+        let (x0, x1) = (percentile(&mut ls, LOW), percentile(&mut rs, 1.0 - LOW));
         (x1 > x0).then_some([x0, lo, x1, hi])
     };
     let legs = band(ymin, waist);
@@ -197,12 +204,23 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
         body.iter().copied().filter(|&(x, y)| y >= lo && y < hi && x > edge + 2).collect()
     };
     if REACHING.contains(&clip) {
-        let arm: Vec<_> = ahead(waist, top).into_iter().filter(|p| p.0 <= edge + ARM as i32).collect();
-        if arm.len() > 30 {
+        // the arm and hand: columns ahead of the torso as thick as a limb, from the torso's edge out to the first
+        // thin one (where a blade starts)
+        let band = ahead(waist, top);
+        // `ahead` starts two pixels out from the edge
+        let mut x1 = edge + 2;
+        loop {
+            let col: Vec<_> = band.iter().filter(|p| p.0 == x1 + 1).collect();
+            if col.len() < LIMB || x1 - edge >= ARM as i32 {
+                break;
+            }
+            x1 += 1;
+        }
+        let arm: Vec<_> = band.iter().filter(|p| p.0 <= x1).collect();
+        if x1 - edge >= 6 && !arm.is_empty() {
             let y0 = arm.iter().map(|a| a.1).min().unwrap_or(waist);
             let y1 = arm.iter().map(|a| a.1).max().unwrap_or(waist) + 1;
-            let x1 = arm.iter().map(|a| a.0).max().unwrap_or(edge) + 1;
-            out.hurt.push([edge, y0, x1, y1]);
+            out.hurt.push([edge, y0, x1 + 1, y1]);
         }
     }
     let farthest = |lo: i32| body.iter().filter(|p| p.1 >= lo && p.1 < top).map(|p| p.0 + 1).max().unwrap_or(0);
@@ -276,11 +294,25 @@ fn main() -> Result<(), String> {
                 .filter(|(_, b)| b.reach - rest >= REACH_MIN)
                 .max_by_key(|(i, b)| (b.reach, std::cmp::Reverse(*i)))
                 .map(|(i, _)| i);
-            let active_s = active.map_or("None".into(), |a| format!("Some({a})"));
+            // a blade's active window: from that frame on while its blade stays out ahead (a cut swinging round
+            // behind the body can no longer strike the foe ahead); a cast's is its one frame
+            let window = active.map(|a| {
+                let mut end = a;
+                if BLADES.contains(clip) {
+                    while all.get(end + 1).is_some_and(|b| b.reach - rest >= REACH_MIN && b.hit.is_some()) {
+                        end += 1;
+                    }
+                }
+                (a, end)
+            });
+            let active_s = window.map_or("None".into(), |(a, e)| format!("Some(({a}, {e}))"));
             let _ = writeln!(src, "            (\"{clip}\", {active_s}, &[");
             for (i, mut b) in all.into_iter().enumerate() {
-                if Some(i) != active {
+                let inside = window.is_some_and(|(a, e)| i >= a && i <= e);
+                if !inside {
                     b.hit = None;
+                }
+                if Some(i) != active {
                     b.hand = None;
                 }
                 let hurt: Vec<String> = b.hurt.iter().map(rect).collect();
