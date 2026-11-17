@@ -152,12 +152,14 @@ A bot can also be written by hand in any language that compiles to WebAssembly.
 The AI the site plays is an ONNX model like any player's: `crates/arena-duel/weights/policy.onnx` (`train/export.py`
 writes it; 128 wide, two residual blocks of 256, a simplicial embedding, about 198K parameters). Natively it runs with
 tract (`arena_bot::onnx`: the ladder, the tests, a trainer's sparring partner, `arena_duel.HOUSE` in Python); on the
-site and in the tournament it is the module `bots/onnx` builds from it, `bots/policy.wasm`:
+site and in the tournament it is the module `bots/onnx` builds from it (`site/build.sh` writes it to
+`site/dist/bots/policy.wasm`):
 
 ```
 cargo run -p arena-bot --example onnx -- crates/arena-duel/weights/policy.onnx policy.wasm
 ```
 
-The pages admit a module the way a submission is admitted, then run it with the browser's own WebAssembly, on the same
-fuel, and play the same fights bit for bit as the tournament's native host (`site/tests/policy.test.js` against
-`crates/arena-bot/tests/goldens/house_fight.json`). The home page takes a `.wasm` in each corner: drop one in and it fights at once.
+The game on the page admits a dropped module the way a submission is admitted (`crates/arena-game/src/web.rs`) and
+runs it with the browser's own WebAssembly, on the same fuel as the tournament's native host; the house module's native
+fights are pinned by `crates/arena-bot/tests/house_fight.rs` (`goldens/house_fight.json`). Until a module is dropped
+in, the home page shows the arena server's live house matches; drop a `.wasm` into a corner and it fights at once.

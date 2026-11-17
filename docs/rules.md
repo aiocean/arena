@@ -13,7 +13,8 @@ numbers only where they explain a mechanic. When a number here and the code disa
   shield, 100 sense, 100 qi, 400 might, 600 armour, no resistances; design 1). A fighter looks as Vương Lâm in
   Thunder's colours or as the Seven-Colored Daoist in Frost's: its art, so its frames and the boxes its body and
   blows have, and nothing else. The ladder, the trainer and the server draw the looks apart from the seats
-  (`ladder::looks_of`): each seed is fought in both looks, so neither seat keeps one look's art.
+  (`ladder::looks_of`): the looks swap every other seed, and the ladder fights each seed in both, so neither seat
+  keeps one look's art. A bot is told its look, never its seat (`docs/bot.md`).
 - A round ends when one fighter's life reaches 0 (unless a keystone gives it a spare life). A round that passes the
   time limit is **cut**. In training a cut round counts as lost for the learner, so stalling never pays. In the
   ladder a cut ends that fight: it shows in the `cut` column, and its unplayed rounds count neither way.
@@ -105,7 +106,8 @@ damage system's event queue.
 ## Bodies and where blows land
 
 All lengths are the arena's pixels (the page's world pixels times 4). Blows land as in a fighting game: on frame data
-tied to the fighters' clips (`arena_duel::frames`; `art/README.md`, "Frame data and the sprite").
+tied to the fighters' clips (`arena_duel::frames`; `art/README.md`, "Frame data and the sprite"): the boxes are
+measured from the sprite sheets, so a redrawn clip changes the rules.
 
 - **Hurtboxes follow the frame a fighter shows.** Every frame of every clip of each look carries one to three
   hurtboxes measured on its sprite: the head and torso, the legs, and on a clip that strikes or casts the arm and hand
