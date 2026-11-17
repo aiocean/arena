@@ -210,7 +210,8 @@ fn live_matches() -> Value {
     let m = "arena_match";
     dashboard(
         "Arena: live matches",
-        "The live server's house matches (arena-server): how many, how they end, how long they last.",
+        "The live server's matches (arena-server), the house AI against the built-in minds in turn: how many, how they \
+         end, how long they last, and how the house AI does against each mind.",
         "24h",
         vec![
             panel("metric", "Matches in progress", m, format!(
@@ -247,6 +248,23 @@ fn live_matches() -> Value {
                 "SELECT rounds AS x_axis_1, count(*) AS y_axis_1 FROM arena_match WHERE body = 'match.end' \
                  AND result != 'abandoned' AND {LIVE} GROUP BY x_axis_1 ORDER BY x_axis_1"))
                 .axes("Rounds", "Matches"),
+            panel("table", "Results by pairing", m, format!(
+                "SELECT CASE WHEN bot_0 = 'house' THEN bot_1 ELSE bot_0 END AS x_axis_1, count(*) AS matches, \
+                 sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot = 'house' THEN 1 ELSE 0 END) AS house_wins, \
+                 sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot != 'house' THEN 1 ELSE 0 END) AS mind_wins, \
+                 sum(CASE WHEN result IN ('draw', 'cut') THEN 1 ELSE 0 END) AS draws_cuts, \
+                 round(100.0 * sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot = 'house' THEN 1 ELSE 0 END) \
+                 / count(*), 1) AS house_win_pct \
+                 FROM arena_match WHERE body = 'match.end' AND {LIVE} AND (bot_0 = 'house' OR bot_1 = 'house') \
+                 AND result IN ('seat0', 'seat1', 'draw', 'cut') GROUP BY x_axis_1 ORDER BY x_axis_1"))
+                .about("The house AI (ONNX) against each built-in mind it meets in turn: matches it won (two rounds), \
+                        the mind won, and drawn or cut at two minutes; its win rate over all of them. Matches stopped \
+                        by a restart are left out.")
+                .columns(&[
+                    ("Opponent", "x_axis_1"), ("Matches", "matches"), ("House wins", "house_wins"),
+                    ("Mind wins", "mind_wins"), ("Draws / cuts", "draws_cuts"), ("House win %", "house_win_pct"),
+                ])
+                .size(COLS, 8),
             panel("table", "Recent matches", m, format!(
                 "SELECT to_timestamp_micros(_timestamp) AS ended, match_id, result, winner_bot, rounds, wins_0, wins_1, \
                  seconds, wall_seconds, bot_0, bot_1 FROM arena_match WHERE body = 'match.end' AND {LIVE} \

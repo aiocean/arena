@@ -7,7 +7,7 @@
     "startTime": 0,
     "type": "relative"
   },
-  "description": "The live server's house matches (arena-server): how many, how they end, how long they last.",
+  "description": "The live server's matches (arena-server), the house AI against the built-in minds in turn: how many, how they end, how long they last, and how the house AI does against each mind.",
   "owner": "owner@aiocean.io",
   "role": "",
   "tabs": [
@@ -604,15 +604,114 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
-          "description": "",
+          "description": "The house AI (ONNX) against each built-in mind it meets in turn: matches it won (two rounds), the mind won, and drawn or cut at two minutes; its win rate over all of them. Matches stopped by a restart are left out.",
           "htmlContent": "",
           "id": "Panel_9",
           "layout": {
-            "h": 12,
+            "h": 8,
             "i": 9,
             "w": 48,
             "x": 0,
             "y": 24
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_match",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Opponent"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "matches",
+                    "color": null,
+                    "column": "matches",
+                    "label": "Matches"
+                  },
+                  {
+                    "alias": "house_wins",
+                    "color": null,
+                    "column": "house_wins",
+                    "label": "House wins"
+                  },
+                  {
+                    "alias": "mind_wins",
+                    "color": null,
+                    "column": "mind_wins",
+                    "label": "Mind wins"
+                  },
+                  {
+                    "alias": "draws_cuts",
+                    "color": null,
+                    "column": "draws_cuts",
+                    "label": "Draws / cuts"
+                  },
+                  {
+                    "alias": "house_win_pct",
+                    "color": null,
+                    "column": "house_win_pct",
+                    "label": "House win %"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT CASE WHEN bot_0 = 'house' THEN bot_1 ELSE bot_0 END AS x_axis_1, count(*) AS matches, sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot = 'house' THEN 1 ELSE 0 END) AS house_wins, sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot != 'house' THEN 1 ELSE 0 END) AS mind_wins, sum(CASE WHEN result IN ('draw', 'cut') THEN 1 ELSE 0 END) AS draws_cuts, round(100.0 * sum(CASE WHEN result IN ('seat0', 'seat1') AND winner_bot = 'house' THEN 1 ELSE 0 END) / count(*), 1) AS house_win_pct FROM arena_match WHERE body = 'match.end' AND service_name = 'arena-server' AND (bot_0 = 'house' OR bot_1 = 'house') AND result IN ('seat0', 'seat1', 'draw', 'cut') GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Results by pairing",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_10",
+          "layout": {
+            "h": 12,
+            "i": 10,
+            "w": 48,
+            "x": 0,
+            "y": 32
           },
           "markdownContent": "",
           "queries": [
