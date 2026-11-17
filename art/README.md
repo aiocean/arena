@@ -113,6 +113,16 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
 - A weapon or anything else that follows a hand is placed per frame (`cultivator/tools/attach.rs`, `socket.rs`), not
   by eye.
 
+## Known faults to redraw
+
+- **The Seven-Colored Daoist's (Frost's) `slash`** is drawn backwards: from frame 6 the arm sweeps out behind him while
+  his face and body turn to the foe (`assets/fighters/seven-colored-daoist.json`, `slash`), so the blow's hand
+  reaches away from what it hits. Mirroring the clip as a stand-in was tried (2026-11-18) and does not read: mirrored,
+  the arm reaches the foe but the face and chest turn away from it, and the six stance frames before the swing would
+  face away too (mirroring only frames 6-11 flips the head mid-clip). It stays as drawn until it is redrawn facing
+  east with the arm sweeping forward (the image key is out of its monthly limit until 2026-12-01); the rules' reach
+  box covers the blow meanwhile. Its `cast` reads right: both hands push toward the foe, from frame 10.
+
 ## Before a character ships
 
 - [ ] East rotation beside the references at 1x: same height (±12 px), outline and shading.
