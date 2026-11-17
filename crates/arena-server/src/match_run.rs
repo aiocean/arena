@@ -198,7 +198,11 @@ impl Match {
             None
         };
         self.ended = ended;
-        if let (Some(e), Some(o)) = (ended, self.observer.take()) {
+        // take the observer only once the match is over: taken on a tick that goes on, it would drop, and a dropped
+        // observer reports the match abandoned and watches nothing more
+        if let Some(e) = ended
+            && let Some(o) = self.observer.take()
+        {
             o.end(&self.duel, matches!(e, Ended::Draw));
         }
         Some(Tick {
