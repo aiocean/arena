@@ -33,8 +33,16 @@ if [[ -n "${ARENA_LIVE_URL:-}" ]]; then
   printf '{"url":"%s"}\n' "$ARENA_LIVE_URL" > "$out/live.json"
 fi
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
-# the big files gzipped beside themselves: the server sends a file's .gz to a browser that takes gzip
-gzip -9 -k "$out/game/arena_game_bg.wasm" "$out/game/arena_game.js" "$out/bots/policy.wasm"
+# the big files compressed beside themselves: the server (game-factory backend/web, games-server) sends a file's .br to
+# a browser that takes brotli, else its .gz. Brotli at its best is a third smaller than gzip on the game's wasm (4.5 MB
+# against 6.7 MB). Without a `brotli` on the machine the site ships gzip only.
+big=("$out/game/arena_game_bg.wasm" "$out/game/arena_game.js" "$out/bots/policy.wasm")
+gzip -9 -k "${big[@]}"
+if command -v brotli >/dev/null; then
+  brotli -q 11 -k "${big[@]}"
+else
+  echo "site/build.sh: no brotli here, gzip only" >&2
+fi
 bun "$here/docs.js" "$root/docs" "$out/docs"
 echo "arena site: $out"
 
