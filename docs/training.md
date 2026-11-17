@@ -93,10 +93,9 @@ each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...) and `
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
 pair 15%; seats, styles and both loadouts drawn per fight.
 
-**The shipped AI was trained on the old rules** (two schools, Thunder and Frost). The rules now play by the damage
-system (`docs/rules.md`) with random loadouts; the inputs kept their shape (`docs/bot.md`), so it still runs, but it
-needs a retrain: it learned to play its seat (which its inputs used to say) rather than its look, so in its own mirror
-one look now wins far more than the other. Watch the per-seat win rates in the log.
+**The shipped AI** is trained on these rules and ABI 2 (305 inputs, 27 acts): run `abi2`, then the fine-tune `abi2b`
+(`--init` from it, `--lr 1e-4 --ent 0.003 0.002 --shaping-until 0`), moved onto each rule change as it landed and
+resumed from its checkpoint. Watch the per-seat and per-look win rates in the log.
 
 ## Making it your own
 
@@ -167,14 +166,21 @@ prints:
 
 | Match | Bar |
 |---|---|
-| vs the brain | at least 75%, 65% in each seat |
+| vs the brain | at least 75%, 65% in each seat and in each look |
 | vs the first mind | at least 80% |
 | vs the aggressive and turtle scripts | |
 | its own mirror, seat 0's share | 45-55% |
 
-(The shipped AI's numbers on the old rules no longer hold; they are measured again after its retrain.)
+Under the table it prints the bot's share in each look against each opponent, and for each mirror the share of rounds
+each look won (each seed is fought in both looks).
 
-Under the table it prints, for each mirror, the share of rounds each look won (each seed is fought in both looks).
+**The look gap.** A new house AI ships when it beats the shipped one on the ladder, on the rules it ships with. Its
+look gap (Thunder's share against Frost's) is judged against the built-in opponents, with a margin for noise: 150
+seeds give each look about 450 rounds, a point or two either way. The house AI's own mirror look share is tracked,
+not gating, while Frost's slash is drawn backwards (`art/README.md`): a stronger policy leans on that defect harder
+in self-play (Thunder won 67% of the house mirror at the 2026-11-18 ship, against 53% in the brain's mirror, which
+shows the rules' own fairness). Redrawing the slash should close it; until then a policy gains nothing in fairness
+by playing worse.
 `--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
 
