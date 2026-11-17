@@ -68,11 +68,13 @@ impl Default for Start {
     }
 }
 
-/// Where the game's assets are: beside the game's wasm on the page (`site/build.sh` copies them to `game/assets`),
-/// and natively in the crate's `assets` (or `assets` beside the executable, when the crate is not where it was built).
+/// Where the game's assets are: on the page, `game/assets-<hash of the pictures>` (`site/build.sh` names the folder
+/// by its content and builds the name in, `ARENA_ASSETS`, so a browser keeps them for good and new art is a new
+/// folder), else `game/assets`; natively the crate's `assets` (or `assets` beside the executable, when the crate is
+/// not where it was built).
 fn assets_path() -> String {
     if cfg!(target_arch = "wasm32") {
-        return "game/assets".into();
+        return option_env!("ARENA_ASSETS").unwrap_or("game/assets").into();
     }
     let built = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
     if std::path::Path::new(built).is_dir() {
