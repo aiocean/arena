@@ -1,8 +1,10 @@
-//! The spells' effects. Nearly all of them are sprite sheets baked from the effect painters of `arena-vfx`
-//! (`sprites`): the rules play one (`Out::Play`), move it (`Out::Move`) and stop it (`Out::Stop`), and each playing is
-//! an entity whose sprites show its frame behind and over the fighters. An effect that reads the fighter it plays on,
+//! The spells' effects. Those drawn by an image model play from their drawn sheets, moved by code (`drawn`); nearly
+//! all the rest are sprite sheets baked from the effect painters of `arena-vfx` (`sprites`): the rules play one
+//! (`Out::Play`), move it (`Out::Move`) and stop it (`Out::Stop`), and each playing is an entity whose sprites show its
+//! frame behind and over the fighters. An effect that reads the fighter it plays on,
 //! or that fills the whole scene, is painted live on the world's pictures instead (`Playing`).
 
+pub mod drawn;
 pub mod sprites;
 
 use crate::layers::{Canvases, Cleared};
@@ -59,7 +61,7 @@ impl Plugin for VfxPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Playing>()
             .add_message::<PlayEffect>()
-            .add_plugins(sprites::SpritesPlugin)
+            .add_plugins((sprites::SpritesPlugin, drawn::DrawnPlugin))
             .add_systems(
                 Update,
                 (live, advance)

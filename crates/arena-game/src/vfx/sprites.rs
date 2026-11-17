@@ -212,7 +212,7 @@ fn commands(
                 x,
                 y,
                 opts,
-            } if arena_vfx::baked(fx) => {
+            } if arena_vfx::baked(fx) && !super::drawn::plays(fx) => {
                 let at = (Layout::world(*x), Layout::world(*y));
                 let start = Start {
                     fx,

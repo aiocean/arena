@@ -1,0 +1,12 @@
+{
+  "fx": "impacts/star-converge",
+  "fps": 10.0,
+  "loop": false,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.25,
+  "turns": 0.3,
+  "exit": "disappear/fade"
+}

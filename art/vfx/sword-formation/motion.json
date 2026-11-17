@@ -1,0 +1,16 @@
+{
+  "fx": "arcane/sword-formation",
+  "fps": 10.0,
+  "loop": true,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.2941,
+  "grow": {
+    "from": 0.3,
+    "secs": 0.3
+  },
+  "turns": 0.104,
+  "exit": "disappear/fade"
+}

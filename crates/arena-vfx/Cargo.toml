@@ -8,6 +8,8 @@ license.workspace = true
 [dependencies]
 image = { version = "0.25", default-features = false, features = ["png"] }
 arena-duel = { path = "../arena-duel" }
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 serde_json = { workspace = true, features = ["preserve_order"] }

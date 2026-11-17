@@ -1,0 +1,12 @@
+{
+  "fx": "arcane/comet-rings",
+  "fps": 10.0,
+  "loop": false,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.2802,
+  "turns": 1.0,
+  "exit": "disappear/fade"
+}

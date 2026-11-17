@@ -1,0 +1,134 @@
+[
+  {
+    "fx": "arcane/comet-rings",
+    "file": "arcane-comet-rings"
+  },
+  {
+    "fx": "arcane/comma-seal",
+    "file": "arcane-comma-seal"
+  },
+  {
+    "fx": "arcane/hex-shield",
+    "file": "arcane-hex-shield"
+  },
+  {
+    "fx": "arcane/restriction",
+    "file": "arcane-restriction"
+  },
+  {
+    "fx": "arcane/rune-circle",
+    "file": "arcane-rune-circle"
+  },
+  {
+    "fx": "arcane/shuriken-seal",
+    "file": "arcane-shuriken-seal"
+  },
+  {
+    "fx": "arcane/sword-formation",
+    "file": "arcane-sword-formation"
+  },
+  {
+    "fx": "arcane/sword-slash",
+    "file": "arcane-sword-slash"
+  },
+  {
+    "fx": "arcane/sword-strike",
+    "file": "arcane-sword-strike"
+  },
+  {
+    "fx": "arcane/twin-shuriken",
+    "file": "arcane-twin-shuriken"
+  },
+  {
+    "fx": "arcane/vortex-ring",
+    "file": "arcane-vortex-ring"
+  },
+  {
+    "fx": "critters/wisp",
+    "file": "critters-wisp"
+  },
+  {
+    "fx": "explosions/dirt-explosion",
+    "file": "explosions-dirt-explosion"
+  },
+  {
+    "fx": "explosions/implosion",
+    "file": "explosions-implosion"
+  },
+  {
+    "fx": "explosions/plasma-explosion",
+    "file": "explosions-plasma-explosion"
+  },
+  {
+    "fx": "explosions/puff-burst",
+    "file": "explosions-puff-burst"
+  },
+  {
+    "fx": "explosions/small-explosion",
+    "file": "explosions-small-explosion"
+  },
+  {
+    "fx": "explosions/swirl-blast",
+    "file": "explosions-swirl-blast"
+  },
+  {
+    "fx": "feedback/power-up",
+    "file": "feedback-power-up"
+  },
+  {
+    "fx": "holy/feather-burst",
+    "file": "holy-feather-burst"
+  },
+  {
+    "fx": "holy/golden-bell",
+    "file": "holy-golden-bell"
+  },
+  {
+    "fx": "holy/lotus",
+    "file": "holy-lotus"
+  },
+  {
+    "fx": "impacts/star-converge",
+    "file": "impacts-star-converge"
+  },
+  {
+    "fx": "impacts/twin-converge",
+    "file": "impacts-twin-converge"
+  },
+  {
+    "fx": "lightning/ball-lightning",
+    "file": "lightning-ball-lightning"
+  },
+  {
+    "fx": "nature/poison-cloud",
+    "file": "nature-poison-cloud"
+  },
+  {
+    "fx": "projectiles/laser-bolt",
+    "file": "projectiles-laser-bolt"
+  },
+  {
+    "fx": "shadow/void-orb",
+    "file": "shadow-void-orb"
+  },
+  {
+    "fx": "shadow/winter-ordeal",
+    "file": "shadow-winter-ordeal"
+  },
+  {
+    "fx": "spawn/poof",
+    "file": "spawn-poof"
+  },
+  {
+    "fx": "spawn/swirl-portal",
+    "file": "spawn-swirl-portal"
+  },
+  {
+    "fx": "water/splash",
+    "file": "water-splash"
+  },
+  {
+    "fx": "water/water-jet",
+    "file": "water-water-jet"
+  }
+]

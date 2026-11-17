@@ -1,0 +1,11 @@
+{
+  "fx": "arcane/rune-circle",
+  "fps": 8.0,
+  "loop": true,
+  "anchor": [
+    83,
+    70
+  ],
+  "px": 0.4833,
+  "exit": "disappear/fade"
+}

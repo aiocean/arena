@@ -1,0 +1,16 @@
+{
+  "fx": "explosions/plasma-explosion",
+  "fps": 8.0,
+  "loop": false,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.4023,
+  "idle": {
+    "from": 2,
+    "to": 3,
+    "secs": 0.4
+  },
+  "exit": "disappear/fade"
+}

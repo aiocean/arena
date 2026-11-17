@@ -7,6 +7,7 @@
 // nothing here decides the fight (it only draws it): std's float rounding and transcendentals are fine
 #![allow(clippy::disallowed_methods)]
 
+pub mod drawn;
 pub mod kit;
 pub mod raster;
 pub mod recipes;

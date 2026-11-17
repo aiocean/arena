@@ -1,0 +1,16 @@
+{
+  "fx": "shadow/void-orb",
+  "fps": 5.0,
+  "loop": true,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.2714,
+  "grow": {
+    "from": 0.3,
+    "secs": 0.3
+  },
+  "turns": 0.6,
+  "exit": "disappear/fade"
+}

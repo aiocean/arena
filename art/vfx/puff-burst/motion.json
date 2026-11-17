@@ -1,0 +1,15 @@
+{
+  "fx": "explosions/puff-burst",
+  "fps": 10.0,
+  "loop": false,
+  "anchor": [
+    83,
+    136
+  ],
+  "px": 0.2812,
+  "grow": {
+    "from": 0.6,
+    "secs": 0.15
+  },
+  "exit": "disappear/fade"
+}

@@ -1,0 +1,1 @@
+{"pages":[[167,344]],"fps":10.0,"looping":true,"clips":{"frost":[{"page":0,"x":0,"y":0,"w":166,"h":171,"dx":-83,"dy":-83}],"thunder":[{"page":0,"x":0,"y":172,"w":166,"h":171,"dx":-83,"dy":-83}]},"motion":{"exit":"disappear/fade","turns":0.104,"grow":{"from":0.3,"secs":0.3},"px":0.2941}}

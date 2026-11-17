@@ -1,0 +1,16 @@
+{
+  "fx": "critters/wisp",
+  "fps": 8.0,
+  "loop": true,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.3,
+  "grow": {
+    "from": 0.3,
+    "secs": 0.3
+  },
+  "turns": 0.45,
+  "exit": "disappear/fade"
+}

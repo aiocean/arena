@@ -1,0 +1,16 @@
+{
+  "fx": "feedback/power-up",
+  "fps": 10.0,
+  "loop": false,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.3471,
+  "idle": {
+    "from": 3,
+    "to": 5,
+    "secs": 2.0
+  },
+  "exit": "disappear/fade"
+}

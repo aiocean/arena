@@ -1,0 +1,16 @@
+{
+  "fx": "explosions/small-explosion",
+  "fps": 8.0,
+  "loop": false,
+  "anchor": [
+    83,
+    165
+  ],
+  "px": 0.4938,
+  "idle": {
+    "from": 4,
+    "to": 5,
+    "secs": 3.0
+  },
+  "exit": "disappear/fade"
+}

@@ -1,0 +1,24 @@
+{
+  "fx": "holy/golden-bell",
+  "fps": 8.0,
+  "loop": false,
+  "anchor": [
+    83,
+    186
+  ],
+  "px": 0.3869,
+  "fly": {
+    "from": [
+      0,
+      -45
+    ],
+    "secs": 0.22,
+    "hold": 0
+  },
+  "idle": {
+    "from": 2,
+    "to": 5,
+    "secs": 2.4
+  },
+  "exit": "disappear/fade"
+}

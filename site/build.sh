@@ -19,10 +19,11 @@ mkdir -p "$out/assets" "$out/game" "$out/bots"
 wasm-bindgen --target web --no-typescript --out-dir "$out/game" "$target/wasm32-unknown-unknown/web/arena_game.wasm"
 wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
   "$out/game/arena_game_bg.wasm" -o "$out/game/arena_game_bg.wasm"
-# the game's pictures, which it loads beside its wasm: the fighters' and the effects' sheets
-mkdir -p "$out/game/assets/fighters" "$out/game/assets/vfx"
+# the game's pictures, which it loads beside its wasm: the fighters' and the effects' sheets (baked and drawn)
+mkdir -p "$out/game/assets/fighters" "$out/game/assets/vfx" "$out/game/assets/drawn"
 cp "$root"/crates/arena-game/assets/fighters/*.png "$out/game/assets/fighters/"
 cp "$root"/crates/arena-game/assets/vfx/*.png "$out/game/assets/vfx/"
+cp "$root"/crates/arena-game/assets/drawn/*.webp "$out/game/assets/drawn/"
 cp "$here"/*.html "$out/"
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
 # the big files gzipped beside themselves: the server sends a file's .gz to a browser that takes gzip

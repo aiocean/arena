@@ -1,0 +1,26 @@
+{
+  "fx": "explosions/swirl-blast",
+  "fps": 12.0,
+  "loop": false,
+  "anchor": [
+    83,
+    93
+  ],
+  "px": 0.2604,
+  "turns": 2.5,
+  "fly": {
+    "from": [
+      -28,
+      0
+    ],
+    "secs": 0.3,
+    "hold": 3
+  },
+  "tail": {
+    "secs": 0.4,
+    "taper": 0,
+    "soft": 0.15,
+    "breakup": 1
+  },
+  "exit": "disappear/fade"
+}
