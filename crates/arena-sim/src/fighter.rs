@@ -60,7 +60,9 @@ pub enum Act {
         dir: f64,
     },
     /// After the blow, before it can act again.
-    Recover { left: f64 },
+    Recover {
+        left: f64,
+    },
 }
 
 /// A fighter's side of the fight besides its cultivator.
@@ -117,49 +119,50 @@ impl Fighter {
 
         let mut slots = Vec::new();
         let mut triggers = Vec::new();
-        let mut add = |g: &'static Gem, place: Place, supports: Vec<&'static Support>, fuse: Option<&str>| {
-            let mut skill = Skill::of(g, SKILL_LEVEL, might);
-            if let Some(partner) = fuse.and_then(gem::gem) {
-                skill = support::fuse(&skill, &Skill::of(partner, SKILL_LEVEL, might));
-            }
-            let own = skill.all_tags();
-            let tags = supports
-                .iter()
-                .filter(|s| s.fits(own))
-                .flat_map(|s| s.mods.becomes.iter().copied())
-                .fold(own, Tags::with);
-            for s in &supports {
-                if let Some(t) = s.trigger_for(&skill) {
-                    triggers.push(t);
+        let mut add =
+            |g: &'static Gem, place: Place, supports: Vec<&'static Support>, fuse: Option<&str>| {
+                let mut skill = Skill::of(g, SKILL_LEVEL, might);
+                if let Some(partner) = fuse.and_then(gem::gem) {
+                    skill = support::fuse(&skill, &Skill::of(partner, SKILL_LEVEL, might));
                 }
-            }
-            // Kênh Dẫn Pháp casts while channelling; the simulator has no channel, so that skill is cast by hand
-            let triggered = supports.iter().any(|s| {
-                s.behaviours.contains(&Behaviour::Triggered)
-                    && !s
-                        .behaviours
-                        .iter()
-                        .any(|b| matches!(b, Behaviour::CastWhileChannelling { .. }))
-            });
-            let delivery = Delivery::of(g, tags);
-            let built = build_skill(&skill, &supports, &c, &sheet, &Situation::default());
-            let area = arena_calc::play::area_factor(&built.table);
-            slots.push(SkillSlot {
-                gem: g,
-                skill,
-                supports,
-                place,
-                triggered,
-                tags,
-                delivery,
-                inner: Delivery::of(g, crate::delivery::without_device(tags)),
-                range: delivery.range(tags, libm::sqrt(area)),
-                charges: Uses::of(&built),
-                uses: 0,
-                card: g.uses,
-                estimate: 0.0,
-            });
-        };
+                let own = skill.all_tags();
+                let tags = supports
+                    .iter()
+                    .filter(|s| s.fits(own))
+                    .flat_map(|s| s.mods.becomes.iter().copied())
+                    .fold(own, Tags::with);
+                for s in &supports {
+                    if let Some(t) = s.trigger_for(&skill) {
+                        triggers.push(t);
+                    }
+                }
+                // Kênh Dẫn Pháp casts while channelling; the simulator has no channel, so that skill is cast by hand
+                let triggered = supports.iter().any(|s| {
+                    s.behaviours.contains(&Behaviour::Triggered)
+                        && !s
+                            .behaviours
+                            .iter()
+                            .any(|b| matches!(b, Behaviour::CastWhileChannelling { .. }))
+                });
+                let delivery = Delivery::of(g, tags);
+                let built = build_skill(&skill, &supports, &c, &sheet, &Situation::default());
+                let area = arena_calc::play::area_factor(&built.table);
+                slots.push(SkillSlot {
+                    gem: g,
+                    skill,
+                    supports,
+                    place,
+                    triggered,
+                    tags,
+                    delivery,
+                    inner: Delivery::of(g, crate::delivery::without_device(tags)),
+                    range: delivery.range(tags, libm::sqrt(area)),
+                    charges: Uses::of(&built),
+                    uses: 0,
+                    card: g.uses,
+                    estimate: 0.0,
+                });
+            };
         for id in BASICS {
             if let Some(g) = gem::gem(id) {
                 add(g, Place::Basic, Vec::new(), None);
@@ -212,6 +215,39 @@ impl Fighter {
             report,
         };
         (f, c)
+    }
+
+    /// A skill a trigger casts that the fighter does not carry (a linked attack, `event::Scale::Event`), added as
+    /// a triggered slot with no supports. Returns its slot.
+    pub fn link(&mut self, id: &str, might: f64) -> Option<usize> {
+        let g = gem::gem(id)?;
+        let skill = Skill::of(g, SKILL_LEVEL, might);
+        let tags = skill.all_tags();
+        let delivery = Delivery::of(g, tags);
+        let built = build_skill(
+            &skill,
+            &[],
+            &Cultivator::new(),
+            &self.sheet,
+            &Situation::default(),
+        );
+        self.slots.push(SkillSlot {
+            gem: g,
+            skill,
+            supports: Vec::new(),
+            place: Place::Linked,
+            triggered: true,
+            tags,
+            delivery,
+            inner: Delivery::of(g, crate::delivery::without_device(tags)),
+            range: delivery.range(tags, 1.0),
+            charges: Uses::of(&built),
+            uses: 0,
+            card: None,
+            estimate: 0.0,
+        });
+        self.report.skills.push(SkillLine::new(g.id, Place::Linked));
+        Some(self.slots.len() - 1)
     }
 
     /// Whether it holds keystone `k` (Cực Cảnh of any kind counts for any).

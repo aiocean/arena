@@ -20,7 +20,9 @@ fn main() -> Result<(), String> {
     let mut out: Option<String> = None;
     let mut i = 0;
     while i < args.len() {
-        let v = args.get(i + 1).ok_or(format!("{} needs a value", args[i]))?;
+        let v = args
+            .get(i + 1)
+            .ok_or(format!("{} needs a value", args[i]))?;
         let num = |v: &str| v.parse::<u64>().map_err(|_| format!("not a number: {v}"));
         match args[i].as_str() {
             "--seeds" => config.seeds = num(v)? as u32,

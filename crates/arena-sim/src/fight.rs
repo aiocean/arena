@@ -41,13 +41,14 @@ use arena_calc::support::Behaviour;
 use arena_calc::tag::Tag;
 
 use crate::delivery::{
-    FIGHTER_Y, AREA_RADIUS, BLESSING_TAKEN, BLINK_LENGTH, BUFF_SECONDS, DASH_LENGTH, DELAYED, Delivery,
-    NOVA_RADIUS, PROJECTILE_SPEED, PULSE, REACH_NEAR, STANCE_MORE, WARD_CHARGES, WARD_SECONDS,
+    AREA_RADIUS, BLESSING_TAKEN, BLINK_LENGTH, BUFF_SECONDS, DASH_LENGTH, DELAYED, Delivery,
+    FIGHTER_Y, NOVA_RADIUS, PROJECTILE_SPEED, PULSE, REACH_NEAR, STANCE_MORE, WARD_CHARGES,
+    WARD_SECONDS,
 };
 use crate::fighter::{Act, Fighter};
-use crate::units::{Group, Unit};
 use crate::report::{Place, SideReport};
 use crate::rng::Rng;
+use crate::units::{Group, Unit};
 use crate::{
     BODY, COUNTER_STAGGER, DT, FIELD, HITSTUN, MAX_ROUNDS, PUNISH_STAGGER, RAGE_MAX, ROUND_TIME,
     ROUNDS_TO_WIN, RUN_SPEED, WALL, brain,
@@ -256,7 +257,9 @@ impl Fight {
     pub fn play(mut self) -> MatchResult {
         let mut rounds = Vec::new();
         let mut wins = [0u8; 2];
-        while wins[0] < ROUNDS_TO_WIN && wins[1] < ROUNDS_TO_WIN && rounds.len() < MAX_ROUNDS as usize
+        while wins[0] < ROUNDS_TO_WIN
+            && wins[1] < ROUNDS_TO_WIN
+            && rounds.len() < MAX_ROUNDS as usize
         {
             let r = self.round();
             if let Some(w) = r.winner {
@@ -455,7 +458,13 @@ impl Fight {
             Some(l) => Skill::of(s.gem, l, self.c[me].might),
             None => s.skill.clone(),
         };
-        Some(build_skill(&skill, &s.supports, &self.c[me], &f.sheet, &sit))
+        Some(build_skill(
+            &skill,
+            &s.supports,
+            &self.c[me],
+            &f.sheet,
+            &sit,
+        ))
     }
 
     /// The damage a blow of `built` is expected to deal the foe now: its parts after steps 1 to 4, times its
@@ -479,14 +488,15 @@ impl Fight {
             };
             total += p * cut;
         }
-        let dot = parts[Element::Fire.index()] * arena_calc::dot::BURN_RATE * arena_calc::dot::BURN_TIME
-            + if h.force_ailment == arena_calc::ailment::ForceAilment::Bleed {
-                parts[Element::Force.index()]
-                    * arena_calc::dot::BLEED_RATE
-                    * arena_calc::dot::BLEED_TIME
-            } else {
-                0.0
-            };
+        let dot =
+            parts[Element::Fire.index()] * arena_calc::dot::BURN_RATE * arena_calc::dot::BURN_TIME
+                + if h.force_ailment == arena_calc::ailment::ForceAilment::Bleed {
+                    parts[Element::Force.index()]
+                        * arena_calc::dot::BLEED_RATE
+                        * arena_calc::dot::BLEED_TIME
+                } else {
+                    0.0
+                };
         total += 0.5 * dot;
         let crit = if h.instant {
             1.0
@@ -803,7 +813,9 @@ impl Fight {
             Delivery::Aura => {
                 if let Some(k) = gem::aura_of(g) {
                     let (f, c) = (&mut self.f[me], &mut self.c[me]);
-                    let _ = f.auras.light_with(k, built.rank, true, c, built.reservation);
+                    let _ = f
+                        .auras
+                        .light_with(k, built.rank, true, c, built.reservation);
                 }
             }
             Delivery::Domain { damaging } => {
@@ -814,7 +826,9 @@ impl Fight {
                     } else {
                         FIELD / 2.0
                     };
-                    let _ = self.field.raise(me, k, built.rank, centre, pos, FIELD / 2.0);
+                    let _ = self
+                        .field
+                        .raise(me, k, built.rank, centre, pos, FIELD / 2.0);
                 }
                 if damaging {
                     self.emit(me, slot, &built, delivery, self.f[foe].x, depth, place);
@@ -969,8 +983,9 @@ impl Fight {
                 }
             }
             let now = self.time + 1e-9;
-            let (due, wait): (Vec<Emission>, Vec<Emission>) =
-                std::mem::take(&mut self.pending).into_iter().partition(|e| e.at <= now);
+            let (due, wait): (Vec<Emission>, Vec<Emission>) = std::mem::take(&mut self.pending)
+                .into_iter()
+                .partition(|e| e.at <= now);
             self.pending = wait;
             for e in due {
                 let me = e.payload.by;
@@ -995,7 +1010,11 @@ impl Fight {
                         | Delivery::Area { .. }
                         | Delivery::Domain { .. }
                         | Delivery::Device(_) => {
-                            let centre = if e.delivery == Delivery::Nova { x } else { e.aim };
+                            let centre = if e.delivery == Delivery::Nova {
+                                x
+                            } else {
+                                e.aim
+                            };
                             let shape = Shape::Circle {
                                 centre: Point::new(centre, FIGHTER_Y),
                                 radius: e.radius,
@@ -1131,7 +1150,8 @@ impl Fight {
             let (striker, target) = two(&mut self.c, by);
             resolve_with(&hit, (!unit).then_some(&*striker), target, &def, rolls)
         };
-        self.queue.extend(event::events_of(&out, &blow, &self.c[on]));
+        self.queue
+            .extend(event::events_of(&out, &blow, &self.c[on]));
         if out.evaded {
             self.f[by].report.skills[p.slot].missed += 1;
             self.note(|_| format!("{} dodges {}", SEAT[on], gem.id));
@@ -1146,6 +1166,7 @@ impl Fight {
             c.qi = (c.qi + out.gains.qi).min(c.qi_max);
             c.sense = (c.sense + out.gains.sense).min(c.sense_max);
             c.gain_intent(out.gains.intent);
+            c.gain_souls(out.gains.souls);
             for &s in &out.stars {
                 c.add_star(s, RES.stars_max);
             }
@@ -1153,7 +1174,8 @@ impl Fight {
                 c.hurt(out.recoil);
             }
         }
-        // Nạp Hồn: soul damage dealt earns souls (`RES.souls_per_damage` a soul)
+        // Nạp Hồn: soul damage dealt earns souls again (`RES.souls_per_damage` a soul), on top of the income every
+        // fighter has (`Gains::souls`)
         let soul = out.dealt[Element::Soul.index()];
         if !unit
             && soul > 0.0
@@ -1162,11 +1184,15 @@ impl Fight {
                 .iter()
                 .any(|x| x.behaviours.contains(&Behaviour::SoulsFromSoul))
         {
-            let c = &mut self.c[by];
-            c.souls = (c.souls + soul / RES.souls_per_damage).min(RES.souls_max);
+            self.c[by].gain_souls(soul / RES.souls_per_damage);
         }
         let f = &mut self.f[by];
-        if !unit && p.rage && !p.ultimate && p.depth == 0 && !(f.has(Keystone::Attuned) && hit.tags.has(Tag::Attack)) {
+        if !unit
+            && p.rage
+            && !p.ultimate
+            && p.depth == 0
+            && !(f.has(Keystone::Attuned) && hit.tags.has(Tag::Attack))
+        {
             f.rage = (f.rage + 1).min(RAGE_MAX);
         }
         if !unit && f.has(Keystone::Fury) {
@@ -1180,7 +1206,8 @@ impl Fight {
             }
         }
         if !unit {
-            f.history.push((self.time, u32::from(killed), 1, 0.0, kinds));
+            f.history
+                .push((self.time, u32::from(killed), 1, 0.0, kinds));
         }
         let dealt = out.to_shield + out.to_life + out.to_sense;
         let line = &mut f.report.skills[p.slot];
@@ -1302,12 +1329,14 @@ impl Fight {
     /// A cast a trigger returned: built at its level and factor, delivered at once at the foe.
     fn trigger_cast(&mut self, cast: Cast) {
         let me = cast.by.min(1);
-        let Some(slot) = self.f[me]
-            .slots
-            .iter()
-            .position(|s| s.gem.id == cast.skill)
-        else {
-            return;
+        // a linked attack the fighter does not carry (Liên Hoàn Suy Yếu's) joins its skills, unsupported, unused
+        // by hand
+        let slot = match self.f[me].slots.iter().position(|s| s.gem.id == cast.skill) {
+            Some(i) => i,
+            None => match self.f[me].link(cast.skill, self.c[me].might) {
+                Some(i) => i,
+                None => return,
+            },
         };
         let Some(mut built) = self.build(me, slot, Some(cast.level)) else {
             return;
@@ -1384,10 +1413,7 @@ impl Fight {
                 }
             }
             curse::Event::Backfire {
-                by,
-                element,
-                share,
-                ..
+                by, element, share, ..
             } => {
                 let by = (by as usize).min(1);
                 let h = curse::strike_hit(element, share, self.c[by].life_max);

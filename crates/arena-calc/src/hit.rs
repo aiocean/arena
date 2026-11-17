@@ -111,8 +111,8 @@ pub struct Hit {
     pub higher_intent: bool,
 }
 
-/// What a striker gains from a blow that lands: life (as healing), qi, sense and killing intent. The fight gives
-/// them to the striker (`hit::resolve` holds the striker by reference).
+/// What a striker gains from a blow that lands: life (as healing), qi, sense, killing intent and souls. The fight
+/// gives them to the striker (`hit::resolve` holds the striker by reference).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Gains {
@@ -120,6 +120,10 @@ pub struct Gains {
     pub qi: f64,
     pub sense: f64,
     pub intent: f64,
+    /// Hồn (rules, 1): one for each `RES.souls_per_damage` soul damage the blow dealt, and `RES.souls_kill` when it
+    /// killed a target with a soul. The fight adds them through `Cultivator::gain_souls`.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub souls: f64,
 }
 
 /// A timed effect a blow puts on its target: on every landing blow, or only when it lays stacks of `on` (Nhiên
@@ -746,12 +750,20 @@ pub fn resolve_with(
         }
     }
     out.leech += hit.leech * out.total();
+    let killed = life_before > 0.0 && target.life <= 0.0;
+    // souls (rules, 1): soul damage dealt, and a kill of anything with a soul
+    let souls = out.dealt[Element::Soul.index()].max(0.0) / RES.souls_per_damage
+        + if killed && !target.soulless_body {
+            RES.souls_kill
+        } else {
+            0.0
+        };
     out.gains = Gains {
         qi: hit.on_hit.qi + hit.qi_leech * out.total(),
+        souls: hit.on_hit.souls + souls,
         ..hit.on_hit
     };
     // the striker's stars
-    let killed = life_before > 0.0 && target.life <= 0.0;
     for &(h, s, chance) in &hit.star_on {
         let on = match h {
             Happened::Hit => true,

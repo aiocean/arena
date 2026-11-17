@@ -345,13 +345,13 @@ pub const GEMS: &[Gem] = pool::ALL;
 
 /// The pool's rows, with tags, kinds and resources in scope.
 mod pool {
+    use super::{Effect, Gem, Resource as R, Tier, effectiveness_of, spell_base_of};
     use crate::ailment::Control as Ctl;
     use crate::ailment::ForceAilment;
     use crate::cultivator::Star;
     use crate::element::Element as E;
     use crate::grade::Rank;
     use crate::tag::Tag::{self, *};
-    use super::{Effect, Gem, Resource as R, Tier, effectiveness_of, spell_base_of};
 
     /// Fist, palm and slam shake (Chấn); everything else cuts (Thương).
     const fn force_of(tags: &[Tag]) -> ForceAilment {

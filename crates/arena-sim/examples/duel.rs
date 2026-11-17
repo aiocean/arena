@@ -78,10 +78,14 @@ fn main() -> Result<(), String> {
     }
     println!(
         "match: {}",
-        m.winner.map_or("drawn".to_string(), |w| format!("{} wins", ["A", "B"][w]))
+        m.winner
+            .map_or("drawn".to_string(), |w| format!("{} wins", ["A", "B"][w]))
     );
     for (name, side) in [("A", &m.sides[0]), ("B", &m.sides[1])] {
-        println!("{name}: dealt {:.0} ({:.0} over time)", side.damage, side.dot);
+        println!(
+            "{name}: dealt {:.0} ({:.0} over time)",
+            side.damage, side.dot
+        );
         for s in side.skills.iter().filter(|s| s.used()) {
             println!(
                 "  {:<18} casts {:>3} (+{} triggered) landed {:>3} missed {:>3} damage {:>7.0}",

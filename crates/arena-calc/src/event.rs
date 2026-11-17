@@ -636,8 +636,9 @@ pub const GUARD_BREAK_SHARE: f64 = 1.0;
 /// Liên Hoàn Suy Yếu's internal cooldown.
 pub const GUARD_BREAK_COOLDOWN: f64 = 1.0;
 
-/// Liên Hoàn Suy Yếu (cast when the shield breaks, CM6): the shield or guard breaking casts Chưởng with a base of
-/// what it absorbed.
+/// Liên Hoàn Suy Yếu (cast when the shield breaks, CM6): the shield or guard breaking casts Chưởng (a linked attack,
+/// whatever skill the support hangs on: [`Trigger::casting`]) with a base of what it absorbed. The fight builds the
+/// linked skill from the pool when the fighter does not carry it.
 pub const CAST_ON_SHIELD_BREAK: Trigger = Trigger {
     id: "castonshieldbreak",
     name: "Liên Hoàn Suy Yếu",
@@ -784,10 +785,14 @@ pub const ALL: &[Trigger] = &[
 
 impl Trigger {
     /// The same trigger casting `skill` at `level` (a trigger support casts the skill it is hung on). A trigger that
-    /// does not cast is returned as it is.
+    /// does not cast is returned as it is. A trigger whose damage is the event's ([`Scale::Event`], Liên Hoàn Suy
+    /// Yếu) keeps its own linked attack and takes only the level: the skill it hangs on is a guard, which deals no
+    /// damage of its own, and the research has the broken shield fire an attack worth what it absorbed.
     pub fn casting(mut self, skill: &'static str, level: u8) -> Trigger {
         if let Effect::Cast(c) = &mut self.does {
-            c.skill = skill;
+            if !matches!(c.scale, Scale::Event { .. }) {
+                c.skill = skill;
+            }
             c.level = level;
         }
         self

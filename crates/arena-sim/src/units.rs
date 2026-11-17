@@ -12,8 +12,8 @@
 //!   without its totem tag.
 //! - **Minion**: runs at the foe at `MINION_SPEED` and strikes the nearest enemy body in front within
 //!   `MINION_REACH` every `MINION_EVERY`, each blow the summoning skill's built blow times `Spawn::damage`.
-//!   It dies when its life runs out: its owner's `MinionDied` goes into the event queue. The rules give no souls for
-//!   a minion's death, so none are given.
+//!   It dies when its life runs out: its owner's `MinionDied` goes into the event queue, and each fighter within
+//!   `RES.souls_reach` of it gains a soul (`Cultivator::minion_died`).
 //!
 //! A device's or a minion's blow is the built blow of the cast that made it, kept at the making: one blow each (a
 //! skill's `Hits` is spread over the totem's casts and the minion's blows, not multiplied by them). Its owner gets
@@ -142,7 +142,9 @@ impl Fight {
         let groups = &self.groups;
         self.units.retain(|u| {
             groups.iter().any(|g| {
-                g.owner == u.owner && g.slot == u.slot && g.placed.standing.iter().any(|d| d.id == u.device)
+                g.owner == u.owner
+                    && g.slot == u.slot
+                    && g.placed.standing.iter().any(|d| d.id == u.device)
             })
         });
     }
@@ -214,7 +216,14 @@ impl Fight {
     }
 
     /// A blow of unit `u`, due now, from where it stands: `target` when it must land there.
-    fn unit_blow(&mut self, u: usize, delay: f64, delivery: Delivery, aim: f64, target: Option<Tgt>) {
+    fn unit_blow(
+        &mut self,
+        u: usize,
+        delay: f64,
+        delivery: Delivery,
+        aim: f64,
+        target: Option<Tgt>,
+    ) {
         let unit = &self.units[u];
         let place = self.f[unit.owner].slots[unit.slot].place;
         // an area lands no farther than the unit reaches
@@ -256,9 +265,9 @@ impl Fight {
             let (owner, slot) = (g.owner, g.slot);
             let near = g.placed.standing.iter().any(|d| {
                 d.armed(&g.placed.spawn)
-                    && self
-                        .unit_of(owner, slot, d.id)
-                        .is_some_and(|u| (foe_x - d.at.x).abs() <= self.units[u].radius + FIGHTER_RADIUS)
+                    && self.unit_of(owner, slot, d.id).is_some_and(|u| {
+                        (foe_x - d.at.x).abs() <= self.units[u].radius + FIGHTER_RADIUS
+                    })
             });
             if !near {
                 continue;
@@ -373,7 +382,13 @@ impl Fight {
             } else {
                 Some(&self.c[by])
             };
-            resolve_with(&p.hit, striker, &mut self.units[i].c, &Defence::default(), rolls)
+            resolve_with(
+                &p.hit,
+                striker,
+                &mut self.units[i].c,
+                &Defence::default(),
+                rolls,
+            )
         };
         let line = &mut self.f[by].report.skills[p.slot];
         if out.evaded {
@@ -386,8 +401,11 @@ impl Fight {
         line.device_blows += u32::from(p.from_unit.is_some());
         if p.from_unit.is_none() {
             let gem = self.f[by].slots[p.slot].gem;
-            self.queue
-                .push(Event::new(EventKind::Hit, by).with_skill(gem.id, p.hit.tags).at_depth(p.depth));
+            self.queue.push(
+                Event::new(EventKind::Hit, by)
+                    .with_skill(gem.id, p.hit.tags)
+                    .at_depth(p.depth),
+            );
         }
         let kind = self.units[i].kind;
         self.note(|f| {
@@ -424,8 +442,14 @@ impl Fight {
         }
         g.placed.hurt(id, f64::INFINITY);
         let kind = self.units[i].kind;
+        let at = self.units[i].x;
         self.units.remove(i);
         if kind == Kind::Minion {
+            // souls (rules, 1): every fighter within reach of a minion's death gains one, whoever's it was
+            for seat in 0..2 {
+                let d = (self.f[seat].x - at).abs();
+                self.c[seat].minion_died(d);
+            }
             let mut e = Event::new(EventKind::MinionDied, owner);
             if let Some(b) = by {
                 e = e.against(b);

@@ -1886,7 +1886,6 @@ fn trigger_supports_cast_the_skill_they_are_hung_on() {
         ("critcast", CAST_ON_CRIT),
         ("hurtcast", CAST_WHEN_HURT),
         ("lowlifecast", CAST_ON_LOW_LIFE),
-        ("chainweaken", CAST_ON_SHIELD_BREAK),
     ] {
         let got = sup(id).trigger_for(&skill);
         assert!(got.is_some(), "{id} has no trigger");
@@ -1899,6 +1898,15 @@ fn trigger_supports_cast_the_skill_they_are_hung_on() {
         };
         assert_eq!(cast, Some(("fireball", 7)), "{id}");
     }
+    // Liên Hoàn Suy Yếu hangs on a guard, which deals nothing: it keeps its linked attack, at the guard's level
+    let guard = Skill::of(pool_gem("ward"), 7, 0.0);
+    let got = sup("chainweaken").trigger_for(&guard);
+    assert_eq!(got.map(|t| t.id), Some(CAST_ON_SHIELD_BREAK.id));
+    let cast = got.and_then(|t| match t.does {
+        Effect::Cast(c) => Some((c.skill, c.level)),
+        _ => None,
+    });
+    assert_eq!(cast, Some(("palm", 7)));
     for id in ["critcast", "hurtcast", "lowlifecast", "channelcast"] {
         assert!(
             plain("fireball", &[id])

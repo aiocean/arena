@@ -126,7 +126,11 @@ fn a_trap_springs_only_after_arming() {
     let life = f.c[1].life + f.c[1].shield;
     while f.time < t0 + TRAP_ARM - 2.0 * DT {
         f.step();
-        assert_eq!(f.f[0].report.skills[slot].device_blows, 0, "sprang at {}", f.time);
+        assert_eq!(
+            f.f[0].report.skills[slot].device_blows, 0,
+            "sprang at {}",
+            f.time
+        );
         assert_eq!(f.units_of(0, Kind::Trap).count(), 1);
     }
     for _ in 0..6 {
@@ -224,7 +228,10 @@ fn a_chain_jumps_from_the_foe_to_its_minion() {
             u.x = 9.0;
         }
     }
-    assert!(f.c[1].life + f.c[1].shield < foe, "the foe was struck first");
+    assert!(
+        f.c[1].life + f.c[1].shield < foe,
+        "the foe was struck first"
+    );
     assert!(
         f.units.first().is_none_or(|u| u.c.life < full),
         "the chain went on to the minion"

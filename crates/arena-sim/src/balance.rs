@@ -305,7 +305,7 @@ pub fn run(config: Config) -> Table {
 fn tally(rows: &mut Vec<Row>, l: &Loadout, side: &crate::report::SideReport, score: f64) {
     for line in &side.skills {
         let id = match line.place {
-            Place::Basic => continue,
+            Place::Basic | Place::Linked => continue,
             Place::Active(_) | Place::Ultimate => line.id,
         };
         let r = row(rows, Kind::Gem, id);
@@ -411,11 +411,10 @@ impl Table {
             if i > 0 {
                 s.push(',');
             }
-            let id: String = r
-                .id
-                .chars()
-                .filter(|c| !matches!(c, '"' | '\\') && !c.is_control())
-                .collect();
+            let id: String =
+                r.id.chars()
+                    .filter(|c| !matches!(c, '"' | '\\') && !c.is_control())
+                    .collect();
             let _ = write!(
                 s,
                 "{{\"kind\":\"{}\",\"id\":\"{}\",\"tier\":\"{}\",\"picks\":{},\"games\":{},\"wrMinus50\":{:.3},\"usedRate\":{:.4},\"avgDamage\":{:.1},\"avgDistCast\":{:.3},\"avgDistHit\":{:.3}}}",

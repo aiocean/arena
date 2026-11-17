@@ -8,7 +8,10 @@
 //! - a trap arms [`TRAP_ARM`] after it lands, then springs on the first enemy within [`TRAP_RADIUS`];
 //! - a mine arms [`MINE_ARM`] after it lands; on the owner's command every armed mine goes off, the oldest first,
 //!   [`MINE_STAGGER`] apart (PoE's detonation in sequence);
-//! - a totem casts the skill [`Spawn::first_cast`] after it stands, then every [`Spawn::cast_interval`];
+//! - a totem casts the skill [`Spawn::first_cast`] after it stands, then every [`Spawn::cast_interval`]: the skill's
+//!   windup and recover or its cooldown, whichever is longer, but never more than [`TOTEM_CADENCE_SHARE`] of the
+//!   totem's lifetime, so a skill whose cooldown outlasts the totem (Vạn Kiếm Trận, 9 s against 8 s) still casts
+//!   several times on it, as a PoE totem casts at its own pace;
 //! - a minion is a record with life: the fight moves it and has it strike.
 //!
 //! A device's blow is the built hit itself: the support's less (Bẫy Trận, Địa Lôi Trận 10%, Pháp Đàn 30%) is in it
@@ -42,6 +45,10 @@ pub const MINE_STAGGER: f64 = 0.1;
 pub const MINION_CAP: f64 = 2.0;
 /// The shortest time between two casts of a totem.
 pub const MIN_CAST_INTERVAL: f64 = 0.1;
+/// The longest time between two casts of a totem, as a share of its lifetime: a totem casts at least about
+/// `1 / TOTEM_CADENCE_SHARE` times before it falls apart, whatever the skill's cooldown. The cooldown still paces
+/// the hand that raises totems; on the totem it only slows the cadence up to this.
+pub const TOTEM_CADENCE_SHARE: f64 = 0.25;
 
 /// What a skill makes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -126,7 +133,7 @@ pub fn spawn(b: &Built) -> Option<Spawn> {
             first_cast: b.windup.max(0.0),
             cast_interval: (b.windup + b.recover)
                 .max(b.cooldown)
-                .max(MIN_CAST_INTERVAL),
+                .clamp(MIN_CAST_INTERVAL, TOTEM_LIFETIME * TOTEM_CADENCE_SHARE),
             ..device(
                 Kind::Totem,
                 t.get(Stat::TotemCount, 0.0),

@@ -11,6 +11,8 @@ pub enum Place {
     Active(usize),
     /// The ultimate.
     Ultimate,
+    /// A skill a trigger casts that the loadout does not carry (a linked attack, `event::Scale::Event`).
+    Linked,
 }
 
 /// One skill's numbers over a match.

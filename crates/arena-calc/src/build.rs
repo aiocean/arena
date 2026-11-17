@@ -367,6 +367,7 @@ pub fn build_skill(
         qi: t.get(Stat::QiOnHit, 0.0),
         sense: t.get(Stat::SenseOnHit, 0.0),
         intent: t.get(Stat::IntentOnHit, 0.0),
+        souls: 0.0,
     };
     hit.shield_bypass = t.get(Stat::ShieldBypass, 0.0).clamp(0.0, 1.0);
     hit.execute = t.get(Stat::Execute, 0.0).clamp(0.0, 1.0);

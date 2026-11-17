@@ -81,11 +81,19 @@ fn a_melee_only_loadout_closes_in_to_hit() {
     let m = play_match(5, &l, &l);
     let mut landed = 0;
     for side in &m.sides {
-        for s in side.skills.iter().filter(|s| matches!(s.place, Place::Active(_))) {
+        for s in side
+            .skills
+            .iter()
+            .filter(|s| matches!(s.place, Place::Active(_)))
+        {
             landed += s.landed;
             if s.landed > 0 {
                 // the fighters start 6 T apart: every hit came after closing in
-                assert!(s.dist_hit / f64::from(s.landed) <= REACH_NEAR + 1e-9, "{}", s.id);
+                assert!(
+                    s.dist_hit / f64::from(s.landed) <= REACH_NEAR + 1e-9,
+                    "{}",
+                    s.id
+                );
             }
         }
     }
@@ -176,5 +184,8 @@ fn the_balance_run_works_on_a_tiny_input() {
         threads: 1,
         ..t.config
     });
-    assert_eq!((one.matches, one.seat0_wins, &one.rows), (t.matches, t.seat0_wins, &t.rows));
+    assert_eq!(
+        (one.matches, one.seat0_wins, &one.rows),
+        (t.matches, t.seat0_wins, &t.rows)
+    );
 }

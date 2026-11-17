@@ -80,8 +80,13 @@ pub struct Res {
     pub demon: f64,
     pub demon_until: f64,
     pub souls_max: f64,
-    /// A soul for each this much soul damage dealt.
+    /// A soul for each this much soul damage dealt (`hit::Gains::souls`).
     pub souls_per_damage: f64,
+    /// Souls for a kill of anything with a soul (`hit::Gains::souls`), and for a minion that dies within
+    /// `souls_reach` T of the fighter, whoever's it was (`Cultivator::minion_died`).
+    pub souls_kill: f64,
+    pub souls_minion: f64,
+    pub souls_reach: f64,
     pub stars_max: f64,
     pub star_time: f64,
     /// Thần: damage taken down and resistances up a star; Yêu: speed a star; Ma: crit chance and multi, soul a star.
@@ -121,6 +126,9 @@ pub const RES: Res = Res {
     demon_until: 80.0,
     souls_max: 30.0,
     souls_per_damage: 100.0,
+    souls_kill: 1.0,
+    souls_minion: 1.0,
+    souls_reach: 4.0,
     stars_max: 3.0,
     star_time: 10.0,
     star_body: 0.04,
@@ -556,6 +564,22 @@ impl Cultivator {
         self.stars[i] = 0.0;
         self.star_time[i] = 0.0;
         n
+    }
+
+    /// Souls gained, up to `RES.souls_max`.
+    pub fn gain_souls(&mut self, n: f64) {
+        self.souls = (self.souls + n.max(0.0)).min(RES.souls_max);
+    }
+
+    /// A minion died `distance` T away (rules, 1: "+1 mỗi triệu hồi chết trong 4T quanh mình"): a soul when it was
+    /// within `RES.souls_reach`. Returns the souls gained.
+    pub fn minion_died(&mut self, distance: f64) -> f64 {
+        if distance.abs() > RES.souls_reach {
+            return 0.0;
+        }
+        let before = self.souls;
+        self.gain_souls(RES.souls_minion);
+        self.souls - before
     }
 
     /// Killing intent gained.
