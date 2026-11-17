@@ -26,6 +26,9 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 type Boxed = Box<dyn Layer<Registry> + Send + Sync>;
 
+/// The bucket bounds of every `*_fuel` histogram (a bot's fuel a decision; the cap is 2e7).
+const FUEL: [f64; 9] = [1e3, 1e4, 1e5, 3e5, 1e6, 3e6, 1e7, 2e7, 1e8];
+
 /// The bucket bounds of every `*_seconds` histogram.
 const SECONDS: [f64; 14] = [
     1e-5, 2.5e-5, 5e-5, 1e-4, 2.5e-4, 5e-4, 1e-3, 2.5e-3, 5e-3, 1e-2, 2.5e-2, 5e-2, 0.1, 1.0,
@@ -60,6 +63,20 @@ impl Default for Options {
             metrics_every: Duration::from_secs(10),
             panic_hook: true,
             stderr: true,
+        }
+    }
+}
+
+impl Options {
+    /// For a tool whose output is a table: only warnings on stderr, its events exported.
+    pub fn tool(version: &'static str) -> Options {
+        Options {
+            version,
+            filter: "warn".to_string(),
+            // the machinery's own chatter (tract's CPU notes, wasmtime's compiler) stays out of the stream
+            export_filter: "info,tract_linalg=warn,tract_core=warn,tract_onnx=warn,wasmtime=warn,cranelift=warn"
+                .to_string(),
+            ..Options::default()
         }
     }
 }
@@ -367,17 +384,23 @@ fn exporting(
     let meter_provider = SdkMeterProvider::builder()
         .with_resource(own)
         .with_reader(reader)
-        // a `*_seconds` histogram times a step, a think or a publish: microseconds to a tenth of a second
+        // a `*_seconds` histogram times a step, a think or a publish (microseconds to a second); a `*_fuel` one
+        // counts a bot's fuel (a thousand to the cap and past it)
         .with_view(|i: &Instrument| {
-            i.name().ends_with("_seconds").then(|| {
-                Stream::builder()
-                    .with_aggregation(Aggregation::ExplicitBucketHistogram {
-                        boundaries: SECONDS.to_vec(),
-                        record_min_max: true,
-                    })
-                    .build()
-                    .ok()
-            })?
+            let bounds: &[f64] = if i.name().ends_with("_seconds") {
+                &SECONDS
+            } else if i.name().ends_with("_fuel") {
+                &FUEL
+            } else {
+                return None;
+            };
+            Stream::builder()
+                .with_aggregation(Aggregation::ExplicitBucketHistogram {
+                    boundaries: bounds.to_vec(),
+                    record_min_max: true,
+                })
+                .build()
+                .ok()
         })
         .build();
     let only_metrics = FilterFn::new(|m: &Metadata<'_>| under(m.target(), target::METRICS));

@@ -89,6 +89,30 @@ pub fn service_stream(service: &str) -> String {
         .collect()
 }
 
+/// The flag a tool (the ladder, the balance run, a sim) takes to export its runs.
+pub const FLAG: &str = "--telemetry-otlp";
+
+/// Whether a tool should export: `--telemetry-otlp` among `args`, or `ARENA_OTLP_ENDPOINT` set. The flag without
+/// an endpoint is an error, so a run meant to be measured is never silently lost.
+pub fn requested(args: &[String]) -> Result<bool, String> {
+    let flag = args.iter().any(|a| a == FLAG);
+    let endpoint = std::env::var("ARENA_OTLP_ENDPOINT").is_ok_and(|v| !v.trim().is_empty());
+    if flag && !endpoint {
+        return Err(format!(
+            "{FLAG} needs ARENA_OTLP_ENDPOINT (and ARENA_OTLP_AUTH_FILE): see ops/observe/README.md"
+        ));
+    }
+    Ok(flag || endpoint)
+}
+
+/// An id for one run of a tool, `prefix-<unix ms>`, on every event it sends.
+pub fn run_id(prefix: &str) -> String {
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis());
+    format!("{prefix}-{ms}")
+}
+
 /// The commit the telemetry was built at (`build.rs`), or "unknown".
 pub const GIT_HASH: &str = env!("ARENA_GIT_HASH");
 

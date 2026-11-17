@@ -4,10 +4,11 @@
 //!
 //! Events, each with `match_id` and `round` (and inside a `match` span and a `round` span):
 //!
-//! - target `arena::match` (stream `arena_match`): `match.start` (seed, seats, both loadouts), `round.start`,
-//!   `round.end` (winner, seconds), `match.end` (result, rounds, seconds, cut);
+//! - target `arena::match` (stream `arena_match`): `match.start` (one per seat: seed, its bot, its loadout),
+//!   `round.start`, `round.end` (winner, seconds), `forfeit` (a seat that gave up: a bot that faulted out),
+//!   `match.end` (result, rounds, seconds, cut);
 //! - target `arena::duel` (stream `arena_duel_events`): `cast`, `hit`, `stopped` (guard, barrier, ward, dodge, clash),
-//!   `broken`, `dot`, `heal`, `ward`, `barrier`, `ultimate`, `unyielding`, `ko`, `status`, `ailment`, `curse`,
+//!   `broken`, `dot`, `heal`, `ward`, `barrier`, `unyielding`, `ko`, `status`, `ailment`, `curse`,
 //!   `unit.spawn`, `unit.act`, `unit.hurt`, `unit.die`, and a `snapshot` of each fighter every `every` seconds of
 //!   fight time;
 //! - target `arena::metrics`: `arena_matches_total`, `arena_rounds_total`, `arena_casts_total` (skill),
@@ -89,8 +90,9 @@ fn ailment_list(stacks: &[u32; AILMENTS]) -> String {
         .join(",")
 }
 
-/// A loadout's parts as flat strings: actives (`skill[support+support]`), supports, ultimate, keystones, root.
-fn loadout_fields(l: &Loadout) -> (String, String, String, String) {
+/// A loadout's parts as flat strings, as every event carries them: its actives (`skill[support+support]`, comma
+/// separated), its supports, its keystones and its root element.
+pub fn loadout_fields(l: &Loadout) -> (String, String, String, String) {
     let actives = l
         .actives
         .iter()
@@ -174,6 +176,8 @@ pub struct Observer {
     reported: [[bool; STATUSES.len()]; 2],
     since: [[Option<f64>; STATUSES.len()]; 2],
     began: Instant,
+    /// Each seat's forfeit, once reported.
+    forfeited: [bool; 2],
     on: bool,
     ended: bool,
 }
@@ -202,6 +206,7 @@ impl Observer {
             reported: [statuses(&s.fighters[0]), statuses(&s.fighters[1])],
             since: [[None; STATUSES.len()]; 2],
             began: Instant::now(),
+            forfeited: [false; 2],
             on,
             ended: false,
         };
@@ -211,7 +216,7 @@ impl Observer {
                     let (actives, supports, keystones, root) = loadout_fields(&f.loadout);
                     event!(target: target::MATCH, Level::INFO, {
                         match_id = %o.match_id, seed = s.seed, seat = i, bot = %o.seats[i],
-                        actives = %actives, supports = %supports, ultimate = %f.loadout.ultimate,
+                        actives = %actives, supports = %supports,
                         keystones = %keystones, root = %root, life = f.c.life_max, qi = f.c.qi_max,
                         foe = %o.seats[1 - i],
                     }, "match.start");
@@ -265,6 +270,15 @@ impl Observer {
         let _round = round_span.enter();
         self.events(s, out);
         self.changes(s);
+        for seat in 0..2 {
+            if !self.forfeited[seat] && duel.seat(seat).forfeit() {
+                self.forfeited[seat] = true;
+                event!(target: target::MATCH, Level::WARN, {
+                    match_id = %self.match_id, round = self.round, seat = seat, bot = %self.seats[seat],
+                    seconds = s.time,
+                }, "forfeit");
+            }
+        }
         if let Some(w) = s.winner
             && !self.round_over
         {
@@ -399,9 +413,6 @@ impl Observer {
                 Out::Barrier { by, .. } => event!(target: target::DUEL, Level::INFO, {
                     match_id = id, round = round, by = by,
                 }, "barrier"),
-                Out::Ultimate { by, .. } => event!(target: target::DUEL, Level::INFO, {
-                    match_id = id, round = round, by = by,
-                }, "ultimate"),
                 Out::Unyielding { by, .. } => event!(target: target::DUEL, Level::INFO, {
                     match_id = id, round = round, by = by,
                 }, "unyielding"),
@@ -494,8 +505,8 @@ impl Observer {
                     event!(target: target::DUEL, Level::INFO, {
                         match_id = %id, round = round, who = who, bot = %self.seats[who], skill = spell,
                         skill_name = name, tags = %tags, kinds = %kinds,
-                        ultimate = k.is_some_and(|k| matches!(k.place, arena_duel::kit::Place::Ultimate)),
-                        qi = f.qi(), rage = f.rage,
+                        basic = k.is_some_and(|k| matches!(k.place, arena_duel::kit::Place::Basic)),
+                        qi = f.qi(),
                     }, "cast");
                     event!(target: target::METRICS, Level::INFO, {
                         monotonic_counter.arena_casts_total = 1_u64, skill = spell,
@@ -546,7 +557,7 @@ impl Observer {
             event!(target: target::DUEL, Level::INFO, {
                 match_id = %self.match_id, round = self.round, who = who, bot = %self.seats[who], time = s.time,
                 life = f.c.life, life_max = f.c.life_max, shield = f.c.shield, sense = f.c.sense, qi = f.c.qi,
-                rage = f.rage, x = f.body.x, y = f.body.air, ailments = %ailment_list(&ailments(f)),
+                x = f.body.x, y = f.body.air, ailments = %ailment_list(&ailments(f)),
                 curses = %curses(f).join(","), units = units, act = f.act.map_or("", |a| a.spell),
             }, "snapshot");
         }
