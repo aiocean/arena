@@ -80,8 +80,9 @@ pub trait Instance: Send + Sync {
     fn paint(&self, paint: &mut Paint);
 }
 
-/// An effect that belongs to the scene rather than to a spell (sized to the whole world): painted live by the game.
-pub const AMBIENT: &[&str] = &["weather/fireflies"];
+/// An effect painted live by the game: one that belongs to the scene rather than to a spell (sized to the whole world),
+/// or a field of loose specks (a flurry) that is cheap to paint and costly to bake, a frame of mostly empty canvas each.
+pub const AMBIENT: &[&str] = &["weather/fireflies", "weather/snow"];
 
 /// Whether effect `fx` is played from a baked sprite sheet.
 pub fn baked(fx: &str) -> bool {

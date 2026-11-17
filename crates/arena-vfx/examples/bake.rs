@@ -2,7 +2,7 @@
 //! size; the game mirrors a sheet for the facing) is found by fighting brain duels over many seeds, and each is
 //! painted frame by frame (`fps_of`), behind and over the fighters, trimmed, the same picture kept once, and every
 //! frame packed onto pages tallest first. An effect that reads the fighter (`SPRITE_AWARE`) or
-//! the whole scene (`AMBIENT`) is painted live by the game and never baked. Writes `<out>/vfx-<n>.png` and
+//! the whole scene (`AMBIENT`) is painted live by the game and never baked. Writes `<out>/vfx-<n>.webp` (lossless) and
 //! `<out>/index.txt` (`arena_vfx::sheet`).
 //!
 //! `cargo run --release -p arena-vfx --example bake -- crates/arena-game/assets/vfx [--seeds 60]`
@@ -282,22 +282,21 @@ fn main() -> Result<(), String> {
             .map(|c| c.y + c.h)
             .max()
             .unwrap_or(1);
-        let name = format!("vfx-{i}.png");
+        let name = format!("vfx-{i}.webp");
         let img = image::RgbaImage::from_raw(
             PAGE,
             used,
             page.bytes()[..(PAGE * used * 4) as usize].to_vec(),
         )
         .ok_or("a page's bytes")?;
-        let file =
-            std::fs::File::create(format!("{out}/{name}")).map_err(|e| format!("{name}: {e}"))?;
-        let png = image::codecs::png::PngEncoder::new_with_quality(
-            std::io::BufWriter::new(file),
-            image::codecs::png::CompressionType::Best,
-            image::codecs::png::FilterType::Adaptive,
-        );
-        img.write_with_encoder(png)
-            .map_err(|e| format!("{name}: {e}"))?;
+        // lossless (libwebp at its slowest): the effects are pixel art drawn a texel a world pixel, and their specks
+        // keep no better lossy
+        let mut config = webp::WebPConfig::new().map_err(|()| "webp: no config")?;
+        (config.lossless, config.quality, config.method) = (1, 100.0, 6);
+        let bytes = webp::Encoder::from_rgba(img.as_raw(), PAGE, used)
+            .encode_advanced(&config)
+            .map_err(|e| format!("{name}: {e:?}"))?;
+        std::fs::write(format!("{out}/{name}"), &*bytes).map_err(|e| format!("{name}: {e}"))?;
         index.pages.push((name, [PAGE, used]));
     }
     println!(

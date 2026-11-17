@@ -22,7 +22,7 @@ wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-in
 # the game's pictures, which it loads beside its wasm: the fighters' and the effects' sheets (baked and drawn)
 mkdir -p "$out/game/assets/fighters" "$out/game/assets/vfx" "$out/game/assets/drawn"
 cp "$root"/crates/arena-game/assets/fighters/*.png "$out/game/assets/fighters/"
-cp "$root"/crates/arena-game/assets/vfx/*.png "$out/game/assets/vfx/"
+cp "$root"/crates/arena-game/assets/vfx/*.webp "$out/game/assets/vfx/"
 cp "$root"/crates/arena-game/assets/drawn/*.webp "$out/game/assets/drawn/"
 cp "$here"/*.html "$out/"
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
