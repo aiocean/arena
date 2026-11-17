@@ -1,6 +1,9 @@
 # A season's release: prebuilt wheels of the env module (`pip install arena-duel` without Rust), the shipped weights
 # and their checksums, attached to a GitHub release. Pushing a tag `arena-s<N>` releases season N; running the workflow
 # by hand only builds the wheels, as a check.
+#
+# Dormant while the arena is in testing: there are no season tags yet (`docs/tournament.md`), so nothing triggers it
+# but a hand run. It is kept for when seasons start.
 name: release
 
 on:

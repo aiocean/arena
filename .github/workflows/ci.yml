@@ -85,3 +85,8 @@ jobs:
         run: rustup target add wasm32-unknown-unknown && cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
       - name: Build the site (the game for the browser, the house bot, the docs pages)
         run: site/build.sh
+      - name: Native = wasm (the page replays in WebAssembly what the server fought natively)
+        run: |
+          cargo build --release -p arena-duel --example wasm_hashes --target wasm32-unknown-unknown
+          wasm-bindgen --target nodejs --out-dir target/wasm-hashes target/wasm32-unknown-unknown/release/examples/wasm_hashes.wasm
+          node crates/arena-duel/tests/wasm/native_wasm.mjs target/wasm-hashes
