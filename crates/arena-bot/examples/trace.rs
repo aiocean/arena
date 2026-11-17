@@ -9,10 +9,10 @@
 //! The policy rows play the house AI (`weights/policy.onnx`) natively.
 
 use arena_bot::onnx::Onnx;
-use pixfx_duel::duel::{Duel, DuelConfig, TICK};
-use pixfx_duel::ladder::Bot;
-use pixfx_duel::sense::sense_of;
-use pixfx_duel::view::view;
+use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::ladder::Bot;
+use arena_duel::sense::sense_of;
+use arena_duel::view::view;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufWriter, Write};
@@ -40,7 +40,7 @@ fn fights() -> Res<Vec<(Bot, Bot, u32, f64)>> {
 }
 
 fn write(file: &str, unit: f64) -> Res<()> {
-    let effects: Vec<String> = pixfx_duel::effects::all();
+    let effects: Vec<String> = arena_duel::effects::all();
     let mut w = BufWriter::new(std::fs::File::create(file)?);
     for (a, b, seed, secs) in fights()? {
         let config = DuelConfig {

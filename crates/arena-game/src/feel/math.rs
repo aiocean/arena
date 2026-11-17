@@ -2,7 +2,7 @@
 //! same bits (the workspace keeps `f64::sin` and its kin out for that reason, and this crate has no `libm` of its
 //! own): floor, square root, sine, JS `Math.round`, and the engine's hash and Perlin noise (`pixfx-draw::math`).
 
-pub use pixfx_duel::js::{js_max, js_min, js_round};
+pub use arena_duel::js::{js_max, js_min, js_round};
 
 /// The largest whole number not above `x` (for the sizes a picture has; `x` well inside `i64`).
 pub fn floor(x: f64) -> f64 {

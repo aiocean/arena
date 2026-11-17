@@ -1,0 +1,27 @@
+[package]
+name = "arena-duel"
+description = "The landing duel's rules: two cultivators with loadouts from the shared pool, their skills, bars, units and rounds through the damage system, deterministic from a seed"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libm.workspace = true
+arena-mind = { path = "../arena-mind" }
+# the damage system: every blow, ailment, loadout and field behaviour
+arena-calc.workspace = true
+# the rules run as systems of one single-threaded schedule over the duel's world
+bevy_ecs = { version = "0.20", default-features = false, features = ["std"] }
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+# exact float parsing and the fixture's key order
+serde_json = { version = "=1.0.154", features = ["float_roundtrip", "preserve_order"] }
+
+# the trace compares whole fights, views and senses as JSON
+[features]
+# serde for the commands, events and views, in the shapes JS reads them (camelCase, tagged with "type")
+serde = ["dep:serde", "arena-mind/serde", "arena-calc/serde"]
+
+[lints]
+workspace = true

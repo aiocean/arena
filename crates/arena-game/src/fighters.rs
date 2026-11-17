@@ -11,10 +11,10 @@ use crate::sheet::{self, Cell};
 use bevy::asset::RenderAssetUsages;
 use bevy::image::{CompressedImageFormats, ImageSampler, ImageType};
 use bevy::prelude::*;
-use pixfx_duel::data::{Kind, UNIT, spell};
-use pixfx_duel::fighter::Phase;
-use pixfx_duel::pose::Gather;
-use pixfx_duel::view::FighterView;
+use arena_duel::data::{Kind, UNIT, spell};
+use arena_duel::fighter::Phase;
+use arena_duel::pose::Gather;
+use arena_duel::view::FighterView;
 
 /// A fighter's sheet: its layout and its pages as textures.
 pub struct Look {
@@ -23,7 +23,7 @@ pub struct Look {
 }
 
 /// Each look's fighter: Thunder (Vương Lâm) first, then Frost (the Seven-Colored Daoist). Seat 0 looks like the
-/// first, seat 1 like the second (`pixfx_duel::data::Look`).
+/// first, seat 1 like the second (`arena_duel::data::Look`).
 #[derive(Resource)]
 pub struct Looks(pub Vec<Look>);
 

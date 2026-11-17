@@ -11,7 +11,7 @@ use crate::layout::Layout;
 use crate::raster::{Blend, Rgba, hex};
 use crate::rules::{Fx, Pace, Shown};
 use bevy::prelude::*;
-use pixfx_duel::out::Out;
+use arena_duel::out::Out;
 
 /// How far an effect's light reaches, in world pixels; those not listed reach `REACH_DEFAULT`.
 const REACH: [(&str, f64); 10] = [
@@ -156,7 +156,7 @@ fn kindle(
                     reach,
                     color,
                     strength: STRENGTH,
-                    life: (!pixfx_duel::effects::loops(fx)).then_some(FLASH),
+                    life: (!arena_duel::effects::loops(fx)).then_some(FLASH),
                     age: 0.0,
                 });
             }

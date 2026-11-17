@@ -1,8 +1,8 @@
 //! Which frame of which animation a fighter shows: its pose, how long it has held it, and for a wind-up how far
 //! along it is. Pure: the same appearance always picks the same frame.
 
-use pixfx_duel::js::js_round;
-use pixfx_duel::pose::{Gather, Pose};
+use arena_duel::js::js_round;
+use arena_duel::pose::{Gather, Pose};
 
 /// What picks a fighter's frame: its pose, how long it has held it, whether it is out, and the cast it is gathering.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -1,5 +1,5 @@
 //! The shared pool: every skill (thần thông) any fighter may take, with its tags, kinds of damage, rank, base, costs
-//! and timings (design, sections 3 and 11). No class owns a skill. `spell` names the `data::SPELLS` entry of the duel (`pixfx-duel`) a skill
+//! and timings (design, sections 3 and 11). No class owns a skill. `spell` names the `data::SPELLS` entry of the duel (`arena-duel`) a skill
 //! borrows its motion and effect from until it has its own.
 
 use crate::ailment::{Control, ForceAilment};

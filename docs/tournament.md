@@ -6,7 +6,7 @@ This is the design; what is not built yet is listed in `docs/roadmap.md`.
 ## One season, while we test
 
 The arena runs a single season for now, the test one, on this repo's `main`. Nothing is frozen yet: the rules (every
-number in `crates/pixfx-duel/src/data.rs`, the frame data, the bar), what a bot sees and does (`docs/bot.md`) and the
+number in `crates/arena-duel/src/data.rs`, the frame data, the bar), what a bot sees and does (`docs/bot.md`) and the
 house AI may still change, and a change may mean a bot needs retraining. There are no season tags.
 
 What a bot depends on, and what a later season would freeze: the rules; the 354 inputs, the 30 acts, the legality

@@ -19,10 +19,10 @@ You need [Rust](https://rustup.rs) and [uv](https://docs.astral.sh/uv/). From a 
 ```sh
 cd train
 uv sync
-uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # the rules as a Python module
+uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml   # the rules as a Python module
 uv run pytest
 # fine-tune from the shipped AI (trained on the old rules: it needs a retrain on the damage system)
-uv run python ppo.py --run mine --init ../crates/pixfx-duel/weights/policy.onnx --updates 600 --lr 1e-4 \
+uv run python ppo.py --run mine --init ../crates/arena-duel/weights/policy.onnx --updates 600 --lr 1e-4 \
   --ent 0.003 0.002 --shaping-until 0
 uv run python export.py runs/mine/last.pt --out mine.onnx --check runs/mine/check.json
 cd .. && cargo run -p arena-bot --example onnx -- train/mine.onnx mine.wasm   # the bot you submit
@@ -47,7 +47,7 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --bot 
 The same from Python (an ONNX model's bytes):
 
 ```python
-import pixfx_duel as pd
+import arena_duel as pd
 mine = open("mine.onnx", "rb").read()
 pd.bout(mine, "brain", seeds=(1, 151))   # {'win_rate': ..., 'as_seat0': ..., 'as_seat1': ..., ...}
 pd.entry_bar(mine)                       # {'passed': True, 'vs_brain': {...}, 'vs_first': {...}}
@@ -73,12 +73,12 @@ above.
 |---|---|
 | `crates/arena-calc` | The damage system, pure and deterministic: ten kinds of damage, ailments, fusion, ranks, daos, curses, intents, domains, supports, keystones, the shared pool of skills and loadouts, and what the field-bound stats do (projectiles, motion, stored uses, devices). Design: `docs/specs/2026-11-17-damage-system-design.md`. |
 | `crates/arena-sim` | A headless simulator over `arena-calc` (two scripted fighters on a 1D field) that measures loadouts against each other for balance. Not the real fight. |
-| `crates/pixfx-duel` | The rules: two seats with loadouts, every blow through `arena-calc`, the rotating bar, traps, mines, totems and minions, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
+| `crates/arena-duel` | The rules: two seats with loadouts, every blow through `arena-calc`, the rotating bar, traps, mines, totems and minions, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
 | `crates/arena-mind` | The minds: what a trained policy sees and may do and its timing (`policy`), and the rules' own utility brain. |
 | `crates/arena-vfx` | The spells' effects painted on the CPU, and the tool that bakes them into the sprite sheets the game plays (`examples/bake.rs`). |
 | `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell particles, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm). |
-| `crates/pixfx-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
-| `crates/pixfx-duel-py` | The rules as a Python module (`import pixfx_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
+| `crates/arena-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
+| `crates/arena-duel-py` | The rules as a Python module (`import arena_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
 | `crates/arena-bot` | A bot as a WebAssembly module: admits one (validate, meter, hash), runs it in a seat (`host`), runs an ONNX policy natively (`onnx`), and the commands a player builds, checks and measures a bot with (`onnx`, `check`, `match`, `ladder`). |
 | `bots/onnx` | The template that builds any ONNX policy into a bot module (its own workspace, wasm32 only). |
 | `train/` | The PPO trainer that made the house AI: the network (any size), the opponents it trains against, export to ONNX. |

@@ -5,9 +5,9 @@
 
 use arena_bot::admit;
 use arena_bot::host::Runner;
-use pixfx_duel::data::UNIT;
-use pixfx_duel::duel::{Duel, DuelConfig, TICK};
-use pixfx_duel::seat::BotSeat;
+use arena_duel::data::UNIT;
+use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::seat::BotSeat;
 use serde_json::{Value, json};
 
 const MODULE: &str = concat!(
@@ -25,7 +25,7 @@ fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error
         .map_err(|e| format!("{MODULE}: {e}; build it with site/build.sh"))?;
     let runner = Runner::new(&admit(&bytes)?).map_err(|e| e.0)?;
     let (left, right) = (runner.decider(), runner.decider());
-    let effects: Vec<String> = pixfx_duel::effects::all();
+    let effects: Vec<String> = arena_duel::effects::all();
     let mut all = serde_json::Map::new();
     for seed in 1..=3_u32 {
         let config = DuelConfig {

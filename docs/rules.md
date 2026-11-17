@@ -1,6 +1,6 @@
 # Rules
 
-How a fight works, for a bot author. The rules are `crates/pixfx-duel`; how much a blow deals, what it lays and what
+How a fight works, for a bot author. The rules are `crates/arena-duel`; how much a blow deals, what it lays and what
 a skill costs is the damage system, `crates/arena-calc`, whose design is
 [`docs/specs/2026-11-17-damage-system-design.md`](specs/2026-11-17-damage-system-design.md) (Vietnamese; it is the
 authority, and every number in it is a documented `pub const`). This page says how the fight uses it, and names

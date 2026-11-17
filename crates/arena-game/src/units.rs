@@ -8,8 +8,8 @@ use crate::layout::Layout;
 use crate::rules::Shown;
 use arena_calc::device::Kind;
 use bevy::prelude::*;
-use pixfx_duel::data::{Look, T};
-use pixfx_duel::view::UnitView;
+use arena_duel::data::{Look, T};
+use arena_duel::view::UnitView;
 
 pub struct UnitsPlugin;
 

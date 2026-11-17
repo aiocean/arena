@@ -10,13 +10,13 @@
 
 use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
-use pixfx_duel::duel::{Duel, DuelConfig, TICK};
-use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::ladder::{Match, Record, SeatLog, SkillLog, match_up};
-use pixfx_duel::scripted::Scripted;
-use pixfx_duel::seat::{BotSeat, Brain, MakeSeat, SharedDecider, policy_mind};
-use pixfx_duel::sense::sense_of;
-use pixfx_duel::style::Style;
+use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::first_mind::FirstMind;
+use arena_duel::ladder::{Match, Record, SeatLog, SkillLog, match_up};
+use arena_duel::scripted::Scripted;
+use arena_duel::seat::{BotSeat, Brain, MakeSeat, SharedDecider, policy_mind};
+use arena_duel::sense::sense_of;
+use arena_duel::style::Style;
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Rc::new(move || onnx.decider())
         }
     };
-    let effects: Vec<String> = pixfx_duel::effects::all();
+    let effects: Vec<String> = arena_duel::effects::all();
     let m = Match {
         seeds: 1..seeds + 1,
         rounds,
@@ -252,7 +252,7 @@ fn print_telemetry(name: &str, r: &Record) {
         let u = s
             .skills
             .iter()
-            .filter(|(n, _)| pixfx_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
+            .filter(|(n, _)| arena_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
             .map(|(_, k)| k.casts)
             .sum::<u32>();
         format!("{u} / {:.0}", s.rage_spent)
@@ -261,7 +261,7 @@ fn print_telemetry(name: &str, r: &Record) {
         let d = s
             .skills
             .iter()
-            .filter(|(n, _)| pixfx_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
+            .filter(|(n, _)| arena_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
             .map(|(_, k)| k.damage)
             .sum::<f64>();
         format!("{:.2}", d / 100.0)

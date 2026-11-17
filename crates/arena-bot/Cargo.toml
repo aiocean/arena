@@ -10,7 +10,7 @@ sha2 = "0.11"
 wasm-encoder = { version = "0.263", features = ["wasmparser"] }
 wasmparser = "0.263"
 # the host: wasmtime, and the seat the duel asks
-pixfx-duel = { path = "../pixfx-duel", optional = true }
+arena-duel = { path = "../arena-duel", optional = true }
 arena-mind = { path = "../arena-mind", optional = true }
 wasmtime = { version = "40", optional = true, default-features = false, features = ["cranelift", "runtime", "std"] }
 # an ONNX policy run natively (the house AI in the ladder and the tests, a trainer's opponents)
@@ -22,10 +22,10 @@ serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"
 wat = "1"
 
 [features]
-host = ["dep:pixfx-duel", "dep:arena-mind", "dep:wasmtime"]
-onnx = ["dep:pixfx-duel", "dep:arena-mind", "dep:tract-onnx"]
+host = ["dep:arena-duel", "dep:arena-mind", "dep:wasmtime"]
+onnx = ["dep:arena-duel", "dep:arena-mind", "dep:tract-onnx"]
 # the trace example: every tick as JSON, the rules' serde shapes
-trace = ["onnx", "pixfx-duel/serde"]
+trace = ["onnx", "arena-duel/serde"]
 
 [[example]]
 name = "check"

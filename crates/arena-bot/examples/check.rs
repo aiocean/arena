@@ -5,13 +5,13 @@
 
 use arena_bot::host::Runner;
 use arena_bot::{ABI, ACTIONS, DECIDE_FUEL, OBS, admit};
-use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, entry_bar_of};
-use pixfx_duel::seat::Decider;
+use arena_duel::ladder::{Bot, EntryBar, Match, Record, entry_bar_of};
+use arena_duel::seat::Decider;
 use serde_json::Value;
 use std::rc::Rc;
 
 /// Observations from real fights and their masks (`train/export.py` wrote them).
-const FIXED: &str = include_str!("../../pixfx-duel/tests/fixtures/policy_check.json");
+const FIXED: &str = include_str!("../../arena-duel/tests/fixtures/policy_check.json");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seeds: from..from + seeds,
         rounds: 3,
         limit: 120.0,
-        effects: pixfx_duel::effects::all(),
+        effects: arena_duel::effects::all(),
     };
     println!(
         "4. the entry bar: seeds {from}..={}, both ways, 3 rounds",

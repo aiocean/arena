@@ -5,7 +5,7 @@
 use super::fight::{Dust, Number, NumberKind, Streak};
 use super::math::{floor, hypot, js_round, sin, sqrt};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
-use pixfx_duel::data::Look;
+use arena_duel::data::Look;
 
 /// Each look's glow (the engine's looks): a hit's number and a streak are drawn in the striker's.
 pub fn glow(look: Look) -> Rgba {

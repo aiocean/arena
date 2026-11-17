@@ -288,8 +288,8 @@ checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
 name = "arena-bot"
 version = "0.1.0"
 dependencies = [
+ "arena-duel",
  "arena-mind",
- "pixfx-duel",
  "serde_json",
  "sha2",
  "tract-onnx",
@@ -309,18 +309,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "arena-duel"
+version = "0.1.0"
+dependencies = [
+ "arena-calc",
+ "arena-mind",
+ "bevy_ecs",
+ "libm",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "arena-game"
 version = "0.1.0"
 dependencies = [
  "arena-bot",
  "arena-calc",
+ "arena-duel",
  "arena-mind",
  "arena-vfx",
  "bevy",
  "getrandom 0.3.4",
  "image",
  "js-sys",
- "pixfx-duel",
  "serde",
  "serde_json",
  "wasm-bindgen",
@@ -350,8 +362,8 @@ dependencies = [
 name = "arena-vfx"
 version = "0.1.0"
 dependencies = [
+ "arena-duel",
  "image",
- "pixfx-duel",
  "serde_json",
 ]
 
@@ -4752,18 +4764,6 @@ dependencies = [
  "atomic-waker",
  "fastrand",
  "futures-io",
-]
-
-[[package]]
-name = "pixfx-duel"
-version = "0.1.0"
-dependencies = [
- "arena-calc",
- "arena-mind",
- "bevy_ecs",
- "libm",
- "serde",
- "serde_json",
 ]
 
 [[package]]

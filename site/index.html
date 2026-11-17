@@ -109,14 +109,14 @@
           <pre><code>git clone https://github.com/aiocean/arena
 cd arena/train && uv sync
 uv run maturin develop --release \
-  -m ../crates/pixfx-duel-py/Cargo.toml</code></pre>
+  -m ../crates/arena-duel-py/Cargo.toml</code></pre>
           <a href="https://github.com/aiocean/arena">github.com/aiocean/arena</a>
         </li>
         <li class="frame">
           <h3>Train</h3>
           <p>Fine-tune from the shipped AI with PPO, or train any model you like, and export it as ONNX.</p>
           <pre><code>uv run python ppo.py --run mine \
-  --init ../crates/pixfx-duel/weights/policy.onnx
+  --init ../crates/arena-duel/weights/policy.onnx
 uv run python export.py runs/mine/last.pt --out mine.onnx</code></pre>
           <a href="docs/training.html">Training</a>
         </li>

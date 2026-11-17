@@ -24,7 +24,7 @@ bevy = { version = "0.20", default-features = false, features = [
     "bevy_text", "default_font", "png", "webgl2",
 ] }
 image = { version = "0.25", default-features = false, features = ["png"] }
-pixfx-duel = { path = "../pixfx-duel" }
+arena-duel = { path = "../arena-duel" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

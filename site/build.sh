@@ -15,7 +15,7 @@ target="${CARGO_TARGET_DIR:-$root/target}"
 
 rm -rf "$out"
 mkdir -p "$out/assets" "$out/game" "$out/bots"
-(cd "$root" && cargo run -q -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx "$out/bots/policy.wasm")
+(cd "$root" && cargo run -q -p arena-bot --example onnx -- crates/arena-duel/weights/policy.onnx "$out/bots/policy.wasm")
 wasm-bindgen --target web --no-typescript --out-dir "$out/game" "$target/wasm32-unknown-unknown/web/arena_game.wasm"
 wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
   "$out/game/arena_game_bg.wasm" -o "$out/game/arena_game_bg.wasm"

@@ -1,5 +1,5 @@
 # The checks every change passes. The rules run on Linux x86_64 and macOS arm64: their goldens
-# (crates/pixfx-duel/tests/goldens) pin every event of seeded fights, so a green run on both is the proof that a fight
+# (crates/arena-duel/tests/goldens) pin every event of seeded fights, so a green run on both is the proof that a fight
 # replays bit for bit on either, which tournament replays rely on.
 name: ci
 
@@ -42,7 +42,7 @@ jobs:
         run: rustup show active-toolchain || rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: crates/pixfx-duel-py
+          workspaces: crates/arena-duel-py
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -55,12 +55,12 @@ jobs:
           CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
         run: |
           uv sync
-          uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml
+          uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml
           uv run pytest
       - name: Clippy on the binding
         env:
           CARGO_PROFILE_RELEASE_LTO: "false"
-        run: PYO3_PYTHON=$PWD/train/.venv/bin/python cargo clippy --manifest-path crates/pixfx-duel-py/Cargo.toml -- -D warnings
+        run: PYO3_PYTHON=$PWD/train/.venv/bin/python cargo clippy --manifest-path crates/arena-duel-py/Cargo.toml -- -D warnings
 
   site:
     name: game and site (wasm)

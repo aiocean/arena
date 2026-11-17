@@ -18,7 +18,7 @@ use crate::layout::{Layout, MainCamera};
 use crate::rules::{Fx, Pace, Shown};
 use bevy::prelude::*;
 use fight::{DUSK_DEPTH, FightFeel};
-use pixfx_duel::data::Look;
+use arena_duel::data::Look;
 
 /// Whole world pixels the screen's answer to a blow jolts each fighter off its place.
 #[derive(Resource, Default, Clone, Copy)]

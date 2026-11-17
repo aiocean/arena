@@ -1,4 +1,4 @@
-# A season's release: prebuilt wheels of the env module (`pip install pixfx-duel` without Rust), the shipped weights
+# A season's release: prebuilt wheels of the env module (`pip install arena-duel` without Rust), the shipped weights
 # and their checksums, attached to a GitHub release. Pushing a tag `arena-s<N>` releases season N; running the workflow
 # by hand only builds the wheels, as a check.
 name: release
@@ -41,7 +41,7 @@ jobs:
           target: ${{ matrix.target }}
           rust-toolchain: ${{ steps.toolchain.outputs.channel }}
           manylinux: auto
-          working-directory: crates/pixfx-duel-py
+          working-directory: crates/arena-duel-py
           args: --release --out ../../dist -i python3.12 python3.13
       - uses: actions/upload-artifact@v4
         with:
@@ -61,12 +61,12 @@ jobs:
           merge-multiple: true
       - name: The season's files and their checksums
         run: |
-          cp crates/pixfx-duel/weights/policy.onnx dist/
+          cp crates/arena-duel/weights/policy.onnx dist/
           cd dist && sha256sum * > SHA256SUMS
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes "Season ${GITHUB_REF_NAME#arena-s}: the rules at this tag on the pixfx engine rev pinned in Cargo.toml. Install the env module with
-          \`pip install pixfx-duel --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}\`.
+          \`pip install arena-duel --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}\`.
           policy.onnx is the house AI (build it into a bot module with bots/onnx); SHA256SUMS lists every file's hash."

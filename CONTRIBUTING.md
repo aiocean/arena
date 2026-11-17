@@ -14,7 +14,7 @@ CI (`.github/workflows/ci.yml`) runs them on every push and pull request, the ru
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace --all-targets            # the goldens pin seeded fights: green on both platforms = same fights
-(cd train && uv sync && uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml && uv run pytest)
+(cd train && uv sync && uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml && uv run pytest)
 cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
 site/build.sh
 ```
@@ -24,10 +24,10 @@ site/build.sh
 While the arena is in testing there is one season on `main` and no release: players build from a clone. When a
 release is wanted:
 
-1. Set the version in `crates/pixfx-duel-py/pyproject.toml`.
+1. Set the version in `crates/arena-duel-py/pyproject.toml`.
 2. Tag the commit `arena-s<N>` and push the tag. `.github/workflows/release.yml` builds the wheels (Linux x86_64,
    macOS arm64 and x86_64; Python 3.12 and 3.13) and makes the release: the wheels, `policy.onnx` (the house AI) and `SHA256SUMS`.
 3. Players install the env without Rust:
-   `pip install pixfx-duel --find-links https://github.com/aiocean/arena/releases/expanded_assets/arena-s<N>`.
+   `pip install arena-duel --find-links https://github.com/aiocean/arena/releases/expanded_assets/arena-s<N>`.
 
 Running the release workflow by hand only builds the wheels, as a check.

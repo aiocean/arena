@@ -5,7 +5,7 @@
 
 `--resume` continues a run where it stopped (its optimiser and its place in the schedule); `--init` starts a new run,
 with its own schedule, from another run's network (a `.pt` checkpoint, critic included, or an ONNX model such as the
-house AI's, `../crates/pixfx-duel/weights/policy.onnx`, at that model's size). The network's size is yours:
+house AI's, `../crates/arena-duel/weights/policy.onnx`, at that model's size). The network's size is yours:
 `--width`, `--hidden`, `--blocks` (a bot may be any size within its fuel; the house AI is 128, 256, 2).
 
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end).
@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from torch.distributions import Categorical
 
-import pixfx_duel as pd
+import arena_duel as pd
 from league import League
 from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss
 

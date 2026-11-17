@@ -8,8 +8,8 @@ use super::glyphs::{DIGIT, buff, icon_cell};
 use crate::layout::{BARS_TALL, Layout};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
 use bevy::math::ops;
-use pixfx_duel::data::{Look, RAGE};
-use pixfx_duel::view::{DuelView, FighterView};
+use arena_duel::data::{Look, RAGE};
+use arena_duel::view::{DuelView, FighterView};
 
 const BRONZE_LIGHT: &str = "#f0cf7a";
 const BRONZE_MID: &str = "#b8893c";

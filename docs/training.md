@@ -2,7 +2,7 @@
 
 Everything here runs from a checkout of the arena, [github.com/aiocean/arena](https://github.com/aiocean/arena)
 (`git clone https://github.com/aiocean/arena`). Commands run from the repo root. The trainer is `train/` (Python, PyTorch, `uv`); the rules
-it trains on are the same Rust rules the page plays, through `crates/pixfx-duel-py`. What a bot sees and
+it trains on are the same Rust rules the page plays, through `crates/arena-duel-py`. What a bot sees and
 does is `docs/bot.md`.
 
 ## What you need
@@ -20,14 +20,14 @@ does is `docs/bot.md`.
 git clone https://github.com/aiocean/arena
 cd arena/train
 uv sync
-uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # again after any change to the Rust rules
+uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml   # again after any change to the Rust rules
 uv run pytest
 ```
 
 ## The environment
 
 ```python
-import pixfx_duel as pd
+import arena_duel as pd
 
 env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker threads
 env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
@@ -48,7 +48,7 @@ reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 
 ## The reward
 
-Today the reward is computed in Rust (`crates/pixfx-duel/src/train.rs`), per decision:
+Today the reward is computed in Rust (`crates/arena-duel/src/train.rs`), per decision:
 
 | Term | Value |
 |---|---|
@@ -83,7 +83,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--gamma`, `--lam` | 0.995, 0.95 | discount and GAE lambda |
 | `--clip`, `--epochs`, `--minibatches` | 0.2, 4, 8 | PPO clip, passes over each rollout, minibatches per pass |
 | `--device`, `--seed` | cpu, 1 | torch device; the seed for torch, numpy and the fight seeds |
-| `--init` | | start from a `.pt` checkpoint or an ONNX model (the house AI's: `../crates/pixfx-duel/weights/policy.onnx`), at its size, with a fresh schedule |
+| `--init` | | start from a `.pt` checkpoint or an ONNX model (the house AI's: `../crates/arena-duel/weights/policy.onnx`), at its size, with a fresh schedule |
 | `--width`, `--hidden`, `--blocks` | 128, 256, 2 | the network's size for a run from scratch (any size a bot's fuel allows) |
 | `--resume` | | continue a run, optimiser and schedule included; the league restarts with only the current policy (past selves are not saved) |
 
@@ -106,7 +106,7 @@ per-seat win rates in the log.
 | Different sparring partners | `MIX` in `league.py`, or other ONNX models through `set_model` |
 | Another algorithm or model | anything that drives `VecEnv` and ends in an ONNX model (`net.py`'s `to_onnx`) |
 | A bigger network | `--width`, `--hidden`, `--blocks` |
-| A head start | `--init ../crates/pixfx-duel/weights/policy.onnx` |
+| A head start | `--init ../crates/arena-duel/weights/policy.onnx` |
 | More of one seat | `--seat0` |
 
 The inputs and acts are the arena's (`docs/bot.md`); the model is yours.
@@ -117,9 +117,9 @@ The inputs and acts are the arena's (`docs/bot.md`); the model is yours.
 uv run python export.py runs/<run>/last.pt --out mine.onnx
 ```
 
-It writes the policy as an ONNX model and `crates/pixfx-duel/tests/fixtures/policy_check.json`: 32 observations from
+It writes the policy as an ONNX model and `crates/arena-duel/tests/fixtures/policy_check.json`: 32 observations from
 real fights and PyTorch's logits for them. Left without `--out`, it replaces the house AI
-(`crates/pixfx-duel/weights/policy.onnx`, in your clone the AI the page and the ladder play); then check that Rust
+(`crates/arena-duel/weights/policy.onnx`, in your clone the AI the page and the ladder play); then check that Rust
 computes what PyTorch did:
 
 ```sh
@@ -180,5 +180,5 @@ final blows.
 Drop your module into a corner on [arena.aiocean.io](https://arena.aiocean.io/#insert), or on your own build
 (`site/build.sh --serve`, then http://127.0.0.1:8771/): it takes the corner at once, the other corner keeps the house
 bot or another module, and the seed box replays a fight. The same two modules and seed play the same fight anywhere.
-To make your model the bot the home page plays, export it over the house AI (`crates/pixfx-duel/weights/policy.onnx`)
+To make your model the bot the home page plays, export it over the house AI (`crates/arena-duel/weights/policy.onnx`)
 and build the site: `site/embed.sh` builds the house module from it.

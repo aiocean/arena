@@ -10,7 +10,7 @@ export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 export CARGO_BUILD_BUILD_DIR=${CARGO_BUILD_BUILD_DIR:-/tmp/pixfx-build-train} CARGO_INCREMENTAL=0
 echo "SETUP $(date)"
 uv sync -q || { echo "FAIL uv sync"; exit 1; }
-uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml 2>&1 | tail -2
+uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml 2>&1 | tail -2
 uv run pytest -q 2>&1 | tail -3
 uv run pytest -q >/dev/null 2>&1 || { echo "FAIL pytest"; exit 1; }
 for try in 1 2 3 4 5 6; do

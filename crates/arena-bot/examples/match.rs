@@ -8,7 +8,7 @@
 
 use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
-use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar_of};
+use arena_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar_of};
 use std::rc::Rc;
 
 fn bot(spec: &str) -> Result<Bot, Box<dyn std::error::Error>> {
@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seeds: from..from + seeds,
         rounds,
         limit,
-        effects: pixfx_duel::effects::all(),
+        effects: arena_duel::effects::all(),
     };
     println!(
         "seeds {}..={}, both ways, {rounds} rounds, rounds cut at {limit} s",

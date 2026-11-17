@@ -5,10 +5,10 @@
 use crate::bots::Seating;
 use crate::layout::Layout;
 use bevy::prelude::*;
-use pixfx_duel::data::UNIT;
-use pixfx_duel::duel::{Duel, DuelConfig};
-use pixfx_duel::out::Out;
-use pixfx_duel::view::{DuelView, view};
+use arena_duel::data::UNIT;
+use arena_duel::duel::{Duel, DuelConfig};
+use arena_duel::out::Out;
+use arena_duel::view::{DuelView, view};
 
 /// A command or event of this frame's step, in the rules' pixels (`Layout::world` brings a length to the world's).
 #[derive(Message, Clone, Debug)]
@@ -66,7 +66,7 @@ pub fn config(layout: &Layout, seed: u32) -> DuelConfig {
         right: layout.right as f64 * unit,
         ground: layout.ground as f64 * unit,
         sky: layout.sky as f64 * unit,
-        effects: pixfx_duel::effects::all(),
+        effects: arena_duel::effects::all(),
     }
 }
 

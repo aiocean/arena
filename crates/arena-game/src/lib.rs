@@ -1,4 +1,4 @@
-//! The arena's duel as a Bevy game. The rules (`pixfx-duel`, themselves a bevy_ecs world stepped in whole ticks) run
+//! The arena's duel as a Bevy game. The rules (`arena-duel`, themselves a bevy_ecs world stepped in whole ticks) run
 //! inside the game as a non-send resource; what a step hands back (effect commands and events, `Out`) becomes
 //! messages the rest of the game answers: the spells play as particles, the fight's feel shakes and stops the
 //! screen, the HUD shows the bars and skills. Natively each corner's bot runs in wasmtime (the house AI from its

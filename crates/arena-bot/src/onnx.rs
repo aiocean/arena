@@ -5,14 +5,14 @@
 
 use crate::{ACTIONS, OBS};
 use arena_mind::policy::sample;
-use pixfx_duel::seat::{Decider, Fault, SharedDecider};
+use arena_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 use tract_onnx::prelude::*;
 
 /// The house AI the arena ships, as ONNX.
-pub const HOUSE: &[u8] = include_bytes!("../../pixfx-duel/weights/policy.onnx");
+pub const HOUSE: &[u8] = include_bytes!("../../arena-duel/weights/policy.onnx");
 
 /// A loaded, optimised ONNX policy: the observation, float32 `[1, 354]`, to the acts' logits, `[1, 30]` or `[30]`.
 /// Cheap to clone; many seats share one.

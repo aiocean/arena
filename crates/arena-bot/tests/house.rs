@@ -4,12 +4,12 @@
 
 use arena_bot::onnx::Onnx;
 use arena_bot::{ACTIONS, OBS};
-use pixfx_duel::ladder::{Bot, Match, entry_bar_of};
+use arena_duel::ladder::{Bot, Match, entry_bar_of};
 use serde_json::Value;
 use std::rc::Rc;
 
 /// Observations from real fights, their masks and PyTorch's logits (`train/export.py` writes them).
-const CHECK: &str = include_str!("../../pixfx-duel/tests/fixtures/policy_check.json");
+const CHECK: &str = include_str!("../../arena-duel/tests/fixtures/policy_check.json");
 
 #[test]
 fn the_house_onnx_matches_pytorch() -> Result<(), Box<dyn std::error::Error>> {
@@ -71,7 +71,7 @@ fn the_house_ai_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>>
         seeds: 1..7,
         rounds: 3,
         limit: 120.0,
-        effects: pixfx_duel::effects::all(),
+        effects: arena_duel::effects::all(),
     };
     let bar = entry_bar_of(&Bot::Decider(Rc::new(move || onnx.decider())), &m);
     assert!(bar.passed(), "{bar:?}");

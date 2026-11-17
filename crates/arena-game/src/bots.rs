@@ -4,9 +4,9 @@
 //! built from the same model. Each corner gets its own instance, which keeps its memory for the corner's whole match.
 
 use bevy::prelude::*;
-use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::seat::BotSeat;
-use pixfx_duel::seat::{Brain, MakeSeat, SharedDecider};
+use arena_duel::first_mind::FirstMind;
+use arena_duel::seat::BotSeat;
+use arena_duel::seat::{Brain, MakeSeat, SharedDecider};
 use std::rc::Rc;
 use std::sync::Arc;
 

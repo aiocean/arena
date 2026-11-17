@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-import pixfx_duel as pd
+import arena_duel as pd
 from net import Policy, from_onnx, hl_gauss, load_onnx, to_onnx
 
 

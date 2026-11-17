@@ -6,7 +6,7 @@
 
 use super::math::{floor, js_max, js_min, js_round, perlin, sqrt};
 use crate::layout::Layout;
-use pixfx_duel::out::{How, Out};
+use arena_duel::out::{How, Out};
 
 /// Hit-stop frames at 60 a second: light, medium, launch, and what a crit, a ranged blow, a counter, a punish add.
 const STOP_LIGHT: f64 = 6.0;
@@ -415,7 +415,7 @@ impl FightFeel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pixfx_duel::data::UNIT;
+    use arena_duel::data::UNIT;
 
     fn hit(power: f64, crit: bool) -> Out {
         Out::Hit {

@@ -713,7 +713,7 @@ Kích thước đầu vào đổi, nên `pixfx-mind` (`policy`) và mọi bot đ
 
 ### 14.1 Nối vào trận (bước 2): đã làm, và quyết định khi thiết kế im lặng
 
-Trận thật (`crates/pixfx-duel`, bản Bevy) giờ đánh bằng `arena-calc`, gọi như `arena-sim` gọi
+Trận thật (`crates/arena-duel`, bản Bevy) giờ đánh bằng `arena-calc`, gọi như `arena-sim` gọi
 (`crates/arena-sim/src/fight.rs` là mẫu): bỏ `School`, chill, freeze và sáu chiêu băng; hai ghế giống hệt nhau, khác
 nhau ở bộ đồ (ngẫu nhiên theo seed trên xúc xắc riêng, hoặc truyền vào `Duel::with_loadouts`); Thunder và Frost chỉ còn
 là hình vẽ (`data::Look`). Mọi đòn qua `build_skill` + `resolve_with` (né, chí mạng, nhân đôi, tinh theo thứ tự);

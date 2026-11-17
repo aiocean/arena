@@ -4,14 +4,14 @@ What the player kit and the tournament still need, most important first. Each it
 
 ## The player kit
 
-1. **A reward written in Python.** Today the reward is fixed in Rust (`crates/pixfx-duel/src/train.rs`) and a player
+1. **A reward written in Python.** Today the reward is fixed in Rust (`crates/arena-duel/src/train.rs`) and a player
    changes it only by editing Rust. `step` should also hand back the facts of each decision (damage dealt and taken,
    blows landed, guarded and punished, statuses, the round's end), so a trainer computes any reward in Python; the
    Rust reward stays the default.
 2. **Install from PyPI.** A release would carry prebuilt wheels (`CONTRIBUTING.md`, "Releasing"),
-   installed with `--find-links`. Publishing them to PyPI makes `pip install pixfx-duel` enough.
+   installed with `--find-links`. Publishing them to PyPI makes `pip install arena-duel` enough.
 3. **Every submission check from Python.** The checks run today as `arena-bot`'s `check` example (admitted, answers,
-   the entry bar) and the bar alone as `pixfx_duel.entry_bar`; add one `pixfx_duel.check(module)` that runs them all.
+   the entry bar) and the bar alone as `arena_duel.entry_bar`; add one `arena_duel.check(module)` that runs them all.
 4. **Data to learn from.** A recorder that writes a fight's decisions (observation, legal acts, the act taken, the
    outcome) from a seed and two files, and a published set of the shipped AI's fights, for imitation learning.
 5. **See why a bot acts.** On the home page, pause on a frame and see each act's probability, which acts are legal and

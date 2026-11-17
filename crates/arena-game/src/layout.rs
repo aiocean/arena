@@ -7,7 +7,7 @@ use bevy::core_pipeline::tonemapping::{DebandDither, Tonemapping};
 use bevy::prelude::*;
 use bevy::render::view::Msaa;
 use bevy::window::PrimaryWindow;
-use pixfx_duel::data::UNIT;
+use arena_duel::data::UNIT;
 
 /// How tall the bars at the top are, in world pixels.
 pub const BARS_TALL: f32 = 26.0;

@@ -367,7 +367,7 @@ fn decor(
         return;
     }
     backdrop.decor_for = shown.fight;
-    let have = pixfx_duel::effects::all();
+    let have = arena_duel::effects::all();
     let has = |id: &str| have.iter().any(|e| e == id);
     if has(NIGHT) {
         // one fireflies canvas the scene's size: the meadow on the dais (its ground mid-width, 10 pixels above its

@@ -12,7 +12,7 @@ ailments (`ailment`), burn and bleed as damage over time (`dot`), a fighter's ba
 domains (`domain`), one-use cards and bluffs (`card`), supports (`support`), keystones (`keystone`), the shared pool
 of skills (`gem`), a skill built into a blow (`build`) and the loadout a player picks (`loadout`). No classes, no ice.
 
-A fight (`pixfx-duel` today, its Bevy port next) builds a `Hit` here, calls `hit::resolve` and applies the
+A fight (`arena-duel` today, its Bevy port next) builds a `Hit` here, calls `hit::resolve` and applies the
 `Outcome` it gets back. Positions, bodies, shots and dice live in the fight: every roll comes in as an argument.
 
 ## Traps

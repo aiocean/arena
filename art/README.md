@@ -50,7 +50,7 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
 - **White is the hit flash**: the painter draws a struck fighter all white. A character mostly in white (Thất Thải Đạo
   Nhân) needs its dark hair, sash and outline to carry the flash, or a flash that is not white. Check a hit frame.
 - Effects (qi, fire, lightning) are the game's particles (`crates/arena-game/src/vfx`) and take their colours from the effect palettes in
-  `crates/pixfx-duel/src/data.rs` (`Tint`). The character's own colours are never reused for an effect's glow.
+  `crates/arena-duel/src/data.rs` (`Tint`). The character's own colours are never reused for an effect's glow.
 
 ## Making a character on PixelLab
 

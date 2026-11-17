@@ -1,7 +1,7 @@
 """The batched duel environments: random legal play ends every episode with a round's outcome, and replays."""
 
 import numpy as np
-import pixfx_duel as pd
+import arena_duel as pd
 
 
 def random_episodes(n, seed, steps=3000):

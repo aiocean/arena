@@ -2,8 +2,8 @@
 //! the damage system (its kinds of damage and its tags), each buff, and the tooltip for a slot of a fighter's skill
 //! bar or a buff under its bars.
 
-use pixfx_duel::bar::{Buff, SlotView};
-use pixfx_duel::data::{RAGE, spell};
+use arena_duel::bar::{Buff, SlotView};
+use arena_duel::data::{RAGE, spell};
 
 /// Skill `name`'s English name, where the page named it.
 pub fn spell_name(name: &str) -> Option<&'static str> {

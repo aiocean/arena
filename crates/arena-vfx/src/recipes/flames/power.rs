@@ -816,7 +816,7 @@ impl Show for Power {
     fn draw(&self, p: &mut Painter, _t: f64, layer: Layer) {
         // the rules play it at the top of the fighter's head; the body it grips stands on its feet
         let (x, y, flip, angle) = p.placement();
-        let feet = pixfx_duel::data::body_spec().body / pixfx_duel::data::UNIT;
+        let feet = arena_duel::data::body_spec().body / arena_duel::data::UNIT;
         p.place(x, y + feet, flip, angle);
         let (a, fl, s, t) = (self.aura(), self.flare(), self.s, self.t);
         let c = &self.c;

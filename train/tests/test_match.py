@@ -2,7 +2,7 @@
 
 import pytest
 
-import pixfx_duel as pd
+import arena_duel as pd
 
 HOUSE = pd.HOUSE
 

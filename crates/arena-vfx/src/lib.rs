@@ -94,8 +94,8 @@ fn colors(c: Option<&'static [&'static str]>) -> Option<Vec<Rgba>> {
 impl Spawn {
     /// How the rules' play options read at world pixel (`x`, `y`) over the ground's row `ground` (lengths in the
     /// options are the rules' pixels, `UNIT` of them a world pixel).
-    pub fn of(x: f32, y: f32, ground: f32, opts: &pixfx_duel::out::PlayOpts) -> Spawn {
-        let world = |v: f64| (v / pixfx_duel::data::UNIT) as f32;
+    pub fn of(x: f32, y: f32, ground: f32, opts: &arena_duel::out::PlayOpts) -> Spawn {
+        let world = |v: f64| (v / arena_duel::data::UNIT) as f32;
         Spawn {
             x,
             y,
@@ -115,7 +115,7 @@ impl Spawn {
 
 /// Which baked sheet of an effect a playing of it shows: its colours and size, never its seed (a sheet is one playing)
 /// nor its facing (the game mirrors a sheet baked facing right). The bake and the game key a playing the same way.
-pub fn variant_key(opts: &pixfx_duel::out::PlayOpts) -> String {
+pub fn variant_key(opts: &arena_duel::out::PlayOpts) -> String {
     let list = |c: Option<&[&str]>| c.map_or(String::new(), |cs| cs.join(","));
     let num = |v: Option<f64>| v.map_or(String::new(), |v| format!("{v:.0}"));
     format!(

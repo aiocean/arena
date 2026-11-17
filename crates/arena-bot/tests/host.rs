@@ -3,7 +3,7 @@
 
 use arena_bot::host::Runner;
 use arena_bot::{ACTIONS, OBS, admit};
-use pixfx_duel::seat::Decider;
+use arena_duel::seat::Decider;
 
 /// A bot whose `arena_decide` is `body` (an `i32` from the param `$u`), with a counter at address 0 it may use.
 fn runner(body: &str) -> Runner {

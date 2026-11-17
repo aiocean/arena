@@ -20,7 +20,7 @@ use bevy::text::FontSize;
 use bevy::window::PrimaryWindow;
 use info::{Tip, Tone};
 use paint::{Geo, Hit, Painted, Pen, Seen};
-use pixfx_duel::data::UNIT;
+use arena_duel::data::UNIT;
 
 /// The skill icon atlases: 24 and 32 pixels an icon, five to a row.
 const SKILLS_24: &[u8] = include_bytes!("../../assets/skills-24.png");

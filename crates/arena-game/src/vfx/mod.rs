@@ -10,7 +10,7 @@ use crate::layout::Layout;
 use crate::rules::{Fx, Pace, Shown};
 pub use arena_vfx::{Effect, Instance, Paint, Spawn, kit, recipes};
 use bevy::prelude::*;
-use pixfx_duel::out::{Out, PlayOpts};
+use arena_duel::out::{Out, PlayOpts};
 use std::collections::BTreeMap;
 
 /// An effect played by the game itself rather than the rules (the scene's braziers): at world pixel (`x`, `y`).

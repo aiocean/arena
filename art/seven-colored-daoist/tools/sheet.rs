@@ -9,7 +9,7 @@ serde_json = "1"
 png = "0.17"
 ---
 //! sheet: builds a fighter's sprite sheets for the duel from a PixelLab character export: every animation's
-//! east frames with their pixels as drawn (the arena's pixels are the export's: `pixfx-duel`'s `UNIT`), trimmed,
+//! east frames with their pixels as drawn (the arena's pixels are the export's: `arena-duel`'s `UNIT`), trimmed,
 //! packed one animation per row, with the feet found once on the first
 //! idle frame (the export keeps every animation on one canvas, feet in one place). Writes, into <outdir>:
 //!   <name>.json            the layout `arena-fighter` reads: each page's size, fps, each animation's cells (page,

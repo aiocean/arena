@@ -588,7 +588,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pixfx-duel-train"
+name = "arena-duel-train"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

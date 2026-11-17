@@ -1,9 +1,9 @@
-"""Write a policy as the ONNX model the arena ships (`crates/pixfx-duel/weights/policy.onnx`: the house AI, the
+"""Write a policy as the ONNX model the arena ships (`crates/arena-duel/weights/policy.onnx`: the house AI, the
 model `bots/onnx` builds into the house bot module) and the check its Rust test reads: 32 observations from real
 fights, their masks, and PyTorch's logits for them.
 
     uv run python export.py runs/<run>/last.pt                               # a checkpoint
-    uv run python export.py ../crates/pixfx-duel/weights/policy.onnx         # re-check a model as it is
+    uv run python export.py ../crates/arena-duel/weights/policy.onnx         # re-check a model as it is
 """
 
 import argparse
@@ -13,12 +13,12 @@ import pathlib
 import numpy as np
 import torch
 
-import pixfx_duel as pd
+import arena_duel as pd
 from net import Policy, from_onnx, to_onnx
 
 HERE = pathlib.Path(__file__).parent
-HOUSE = HERE / "../crates/pixfx-duel/weights/policy.onnx"
-CHECK = HERE / "../crates/pixfx-duel/tests/fixtures/policy_check.json"
+HOUSE = HERE / "../crates/arena-duel/weights/policy.onnx"
+CHECK = HERE / "../crates/arena-duel/tests/fixtures/policy_check.json"
 
 
 def observations(n=32, seed=424242):

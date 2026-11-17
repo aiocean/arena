@@ -94,7 +94,7 @@ mod tests {
         for r in all() {
             assert_eq!(
                 r.looping,
-                pixfx_duel::effects::loops(r.id),
+                arena_duel::effects::loops(r.id),
                 "{} loops wrongly",
                 r.id
             );

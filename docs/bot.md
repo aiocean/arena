@@ -1,7 +1,7 @@
 # The bot
 
 What a bot sees, what it can do, when it decides, and the file a player submits. The code is the source of truth:
-`crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/pixfx-duel/src/seat.rs` and
+`crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/arena-duel/src/seat.rs` and
 `crates/arena-bot`.
 
 ## What it sees: 354 numbers
@@ -146,13 +146,13 @@ A bot can also be written by hand in any language that compiles to WebAssembly.
 
 ## The house AI
 
-The AI the site plays is an ONNX model like any player's: `crates/pixfx-duel/weights/policy.onnx` (`train/export.py`
+The AI the site plays is an ONNX model like any player's: `crates/arena-duel/weights/policy.onnx` (`train/export.py`
 writes it; 128 wide, two residual blocks of 256, a simplicial embedding, about 198K parameters). Natively it runs with
-tract (`arena_bot::onnx`: the ladder, the tests, a trainer's sparring partner, `pixfx_duel.HOUSE` in Python); on the
+tract (`arena_bot::onnx`: the ladder, the tests, a trainer's sparring partner, `arena_duel.HOUSE` in Python); on the
 site and in the tournament it is the module `bots/onnx` builds from it, `bots/policy.wasm`:
 
 ```
-cargo run -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx policy.wasm
+cargo run -p arena-bot --example onnx -- crates/arena-duel/weights/policy.onnx policy.wasm
 ```
 
 The pages admit a module the way a submission is admitted, then run it with the browser's own WebAssembly, on the same

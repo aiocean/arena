@@ -11,7 +11,7 @@ use crate::rules::{Fx, Pace, Shown};
 use arena_vfx::sheet::{Cell, Index};
 use arena_vfx::variant_key;
 use bevy::prelude::*;
-use pixfx_duel::out::{Out, PlayOpts};
+use arena_duel::out::{Out, PlayOpts};
 
 /// The sheets' layout, baked beside them.
 const INDEX: &str = include_str!("../../assets/vfx/index.txt");
@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn every_played_effect_is_baked() -> Result<(), String> {
         let index = Index::read(INDEX)?;
-        for (fx, _) in pixfx_duel::effects::EFFECTS {
+        for (fx, _) in arena_duel::effects::EFFECTS {
             if arena_vfx::baked(fx) && arena_vfx::recipes::find(fx).is_some() {
                 assert!(
                     index.variants.iter().any(|v| v.fx == *fx),

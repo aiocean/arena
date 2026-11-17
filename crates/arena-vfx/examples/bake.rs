@@ -12,8 +12,8 @@
 use arena_vfx::raster::Canvas;
 use arena_vfx::sheet::{Cell, Index, Variant};
 use arena_vfx::{Paint, Spawn, baked, recipes, variant_key};
-use pixfx_duel::duel::{Duel, DuelConfig, TICK};
-use pixfx_duel::out::{Out, PlayOpts};
+use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::out::{Out, PlayOpts};
 use std::collections::BTreeMap;
 
 /// Frames a second a sheet is baked at: a quick blow at the fighters' 20, a long one at 15, a loop (a slow cycle: a
@@ -46,7 +46,7 @@ fn plays(seeds: u32) -> BTreeMap<(String, String), PlayOpts> {
             right: 1680.0,
             ground: 900.0,
             sky: 600.0,
-            effects: pixfx_duel::effects::all(),
+            effects: arena_duel::effects::all(),
         });
         for _ in 0..(120.0 / TICK) as u32 {
             for out in duel.step(TICK) {

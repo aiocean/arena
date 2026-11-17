@@ -3,7 +3,7 @@
 //! (`FUEL_EXPORT`); a trap or an empty counter is a `Fault`, and the instance plays on with its memory as left.
 
 use crate::{ACTIONS, Admitted, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};
-use pixfx_duel::seat::{Decider, Fault, SharedDecider};
+use arena_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasmtime::{Config, Engine, Global, Instance, Memory, Module, Store, TypedFunc, Val};
@@ -31,7 +31,7 @@ impl Runner {
         Bot::new(self)
     }
 
-    /// Fresh instances for `pixfx_duel::ladder::Bot::Decider`; an instance that cannot be made faults on every call.
+    /// Fresh instances for `arena_duel::ladder::Bot::Decider`; an instance that cannot be made faults on every call.
     pub fn decider(&self) -> SharedDecider {
         match self.instance() {
             Ok(bot) => Rc::new(RefCell::new(bot)),
