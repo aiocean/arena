@@ -1,7 +1,7 @@
 # Training a bot
 
-Everything here runs from a checkout of the arena; Cargo fetches the pixfx engine at the pinned rev
-(`CONTRIBUTING.md`). Commands run from the repo root. The trainer is `train/` (Python, PyTorch, `uv`); the rules
+Everything here runs from a checkout of the arena, [github.com/aiocean/arena](https://github.com/aiocean/arena)
+(`git clone https://github.com/aiocean/arena`); Cargo fetches the pixfx engine at the pinned rev (`CONTRIBUTING.md`). Commands run from the repo root. The trainer is `train/` (Python, PyTorch, `uv`); the rules
 it trains on are the same Rust rules the page plays, through `crates/pixfx-duel-py`. What a bot sees and
 does is `docs/bot.md`.
 
@@ -17,7 +17,8 @@ does is `docs/bot.md`.
 ## Setup
 
 ```sh
-cd train
+git clone https://github.com/aiocean/arena
+cd arena/train
 uv sync
 uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # again after any change to the Rust rules
 uv run pytest

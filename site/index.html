@@ -28,6 +28,7 @@
       <a href="docs/rules.html">Rules</a>
       <a href="docs/training.html">Train a bot</a>
       <a href="docs/tournament.html">Tournament</a>
+      <a href="https://github.com/aiocean/arena">GitHub</a>
     </nav>
   </header>
 
@@ -40,6 +41,7 @@
       <div class="actions">
         <a class="button" href="docs/training.html">Train a bot</a>
         <a class="button quiet" href="watch.html">Watch two bots</a>
+        <a class="button quiet" href="https://github.com/aiocean/arena">Get the code on GitHub</a>
       </div>
     </section>
 
@@ -84,6 +86,15 @@
       <p class="eyebrow">From clone to the arena</p>
       <h2 id="how-title">How a bot gets made</h2>
       <ol class="how-steps">
+        <li class="frame">
+          <h3>Get the code</h3>
+          <p>The rules, the trainer and the tools are all in one open repo (MIT). You need Rust and uv.</p>
+          <pre><code>git clone https://github.com/aiocean/arena
+cd arena/train && uv sync
+uv run maturin develop --release \
+  -m ../crates/pixfx-duel-py/Cargo.toml</code></pre>
+          <a href="https://github.com/aiocean/arena">github.com/aiocean/arena</a>
+        </li>
         <li class="frame">
           <h3>Train</h3>
           <p>Fine-tune from the shipped AI with PPO, or train any model you like, and export it as ONNX.</p>

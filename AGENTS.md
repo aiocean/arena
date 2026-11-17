@@ -39,7 +39,8 @@ on the arena; the pixfx site embeds the arena's duel through `site/embed.sh`.
 - A new house AI: `train/export.py` (writes `crates/pixfx-duel/weights/policy.onnx` and its check), then
   `cargo test -p arena-bot --features onnx --test house`, `site/build.sh` (builds the house module), and re-pin
   `crates/arena-bot/tests/goldens/house_fight.json` (delete it, run `cargo test -p arena-bot --all-features`), which
-  `site/tests/policy.test.js` checks the page against. There is no weights file (`.bin`) any more: every bot is ONNX or
+  `site/tests/policy.test.js` checks the page against. CI does not run the `arena-bot` features (wasmtime and tract are
+  too heavy for it): run them locally before a push that touches a bot, the house AI or the rules. There is no weights file (`.bin`) any more: every bot is ONNX or
   a module.
 - Long training runs go on a desktop as launchd jobs, never on a laptop (`train/README.md`, "Training on a
   desktop").

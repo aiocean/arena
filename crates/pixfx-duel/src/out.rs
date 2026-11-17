@@ -26,6 +26,9 @@ pub struct PlayOpts {
     pub flip: Option<bool>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub seed: Option<u32>,
+    /// How heavy a blow an impact shows, 0 to 1.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub power: Option<f64>,
 }
 
 /// When a blow caught the one it struck: at no weak moment, gathering a cast (a COUNTER) or recovering from one (a

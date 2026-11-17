@@ -108,7 +108,7 @@ h1, h2 { text-wrap: balance; }
 .school li b { color: var(--tone); font-family: var(--mono); font-weight: 500; }
 .schools .balance { margin: 1.75rem 0 0; text-align: center; font-size: 0.95rem; }
 
-.how-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.75rem; counter-reset: step; }
+.how-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; counter-reset: step; }
 .how-steps li { counter-increment: step; display: flex; flex-direction: column; margin: 0; padding: 1.4rem 1.4rem 1.2rem; }
 .how-steps h3 { margin: 0 0 0.4rem; font: 700 1.35rem var(--display); }
 .how-steps h3::before { content: counter(step, decimal-leading-zero); margin-right: 0.6rem; color: var(--bronze-hi); }

@@ -48,6 +48,10 @@ enum Play {
     At(f64),
 }
 
+/// Seconds a struck fighter holds the first frame of its `hit`, the furthest it reels, before it recovers: the blow
+/// reads on the body after the hit-stop lets go.
+pub const REEL: f64 = 0.1;
+
 /// The part of an animation a pose plays: frames from `from` to `to` as fractions of the animation, and how.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Part {
@@ -124,8 +128,13 @@ pub fn pick(a: &Appearance, fps: f64, len: impl Fn(&str) -> usize) -> Shot {
     let last = len(p.clip).saturating_sub(1) as f64;
     let (first, end) = (js_round(p.from * last), js_round(p.to * last));
     let span = (end - first).max(0.0);
-    let step = if a.pose_t.is_finite() {
-        floor(a.pose_t.max(0.0) * fps)
+    let t = if a.pose == Pose::Hurt {
+        a.pose_t - REEL
+    } else {
+        a.pose_t
+    };
+    let step = if t.is_finite() {
+        floor(t.max(0.0) * fps)
     } else {
         0.0
     };
@@ -192,6 +201,14 @@ mod tests {
                 frame: 8
             }
         );
+    }
+
+    #[test]
+    fn a_struck_fighter_holds_its_furthest_reel_before_it_recovers() {
+        let at = |t| pick(&stand(Pose::Hurt, t), 10.0, NINE).frame;
+        assert_eq!(at(0.0), 0);
+        assert_eq!(at(REEL + 0.05), 0, "still reeling");
+        assert_eq!(at(REEL + 0.1), 1, "then it recovers");
     }
 
     #[test]
