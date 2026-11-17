@@ -3,6 +3,8 @@
 //!
 //! `cargo run -p arena-game --example vfx_sheet -- /tmp/vfx.png [id-filter ...] [--seed N] [--scale N] [--palette #hex,#hex,...]`
 
+#![allow(clippy::disallowed_methods)]
+
 use arena_game::raster::{Canvas, hex};
 use arena_game::vfx::{Paint, Spawn, recipes};
 
