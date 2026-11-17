@@ -16,16 +16,26 @@
 //! broadcast (`arena_link::moq`), its track a run of postcard `arena_link::Frame`s. A new group every
 //! `GROUP_TICKS` opens with a `Keyframe` (the whole match so far), so a page joining late rebuilds from the start.
 //!
+//! Ticks run on absolute deadlines (`arena_server::pace`). A match that ends finishes its track, so a viewer sees a
+//! clean end (`arena_server::publish`). SIGTERM (launchd stopping or restarting the job) or Ctrl-C stops the loop at a
+//! tick's edge: the match's track is aborted, its observer reports `match.end` as `server_stopped`, and the telemetry
+//! is flushed before the process exits.
+//!
+//! Run by launchd, the job needs `ProcessType` `Interactive`: launchd's default for a job without one throttles its
+//! timers, and a tick's wake then comes 40 ms late at the median and 200 ms at worst (`examples/tick_bench.rs`).
+//!
 //! Telemetry (`arena_telemetry`, `ops/observe/README.md`): with `ARENA_OTLP_ENDPOINT` set it exports each match
-//! through the duel observer, and its own health: a tick's publish time, how late it runs, the relay's subscription.
+//! through the duel observer, and its own health: a tick's publish time, how late it runs, ticks missed and schedule
+//! resyncs, the relay's subscription.
 
 use anyhow::{Context, Result};
-use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, TRACK, broadcast};
-use arena_link::{Frame, encode};
+use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, broadcast};
+use arena_link::Frame;
 use arena_server::match_run::Match;
-use moq_net::Timestamp;
-use std::time::Duration;
-use tokio::time::{Instant, sleep_until};
+use arena_server::pace::Pacer;
+use arena_server::publish::Publisher;
+use std::time::{Duration, Instant};
+use tokio::sync::watch;
 use url::Url;
 
 use arena_duel::duel::TICK;
@@ -33,9 +43,14 @@ use arena_duel::duel::TICK;
 /// The names the house corners fight under.
 const CORNERS: [&str; 2] = ["house-thunder", "house-frost"];
 
-#[tokio::main(flavor = "current_thread")]
+/// Why the server is stopping, sent to the match loop: `None` while it runs.
+type Stop = watch::Receiver<Option<&'static str>>;
+
+// The match loop runs on the main thread (a match is not Send); the relay connection's tasks run on the workers, so
+// QUIC's sends and receives never wait behind a tick, nor a tick behind them.
+#[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() -> Result<()> {
-    let _telemetry = arena_telemetry::init(
+    let telemetry = arena_telemetry::init(
         "arena-server",
         arena_telemetry::Options {
             version: env!("CARGO_PKG_VERSION"),
@@ -60,114 +75,174 @@ async fn main() -> Result<()> {
     // the token rides in the path, so only the host is logged
     tracing::info!(relay = url.host_str().unwrap_or("?"), "publishing to the relay");
 
+    // the match loop stops at a tick's edge when told why: it ends its match's track and observer, then returns
+    let (stop, stopped) = watch::channel(None);
+    let matches = run_matches(&origin, stopped);
+    tokio::pin!(matches);
     let res = tokio::select! {
-        res = connection.closed() => res.context("the relay connection closed"),
-        res = run_matches(&origin) => res,
+        res = &mut matches => res,
+        res = connection.closed() => {
+            let _ = stop.send(Some("connection_closed"));
+            let _ = (&mut matches).await;
+            res.context("the relay connection closed")
+        }
+        signal = shutdown_signal() => {
+            tracing::info!(signal, "stopping");
+            let _ = stop.send(Some("server_stopped"));
+            matches.await
+        }
     };
     if let Err(e) = &res {
         tracing::error!(error = %format!("{e:#}"), "server stopped");
     }
+    // send what is batched before the process goes (the guard's drop shuts the exporters down after)
+    telemetry.flush();
+    drop(telemetry);
     res
 }
 
-/// One match after another, each on a fresh seed, forever (until Ctrl-C or the connection drops).
-async fn run_matches(origin: &moq_net::origin::Producer) -> Result<()> {
+/// SIGTERM (launchd stopping or restarting the job) or Ctrl-C: the signal's name.
+async fn shutdown_signal() -> &'static str {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{SignalKind, signal};
+        match signal(SignalKind::terminate()) {
+            Ok(mut term) => tokio::select! {
+                _ = term.recv() => "SIGTERM",
+                _ = tokio::signal::ctrl_c() => "SIGINT",
+            },
+            Err(e) => {
+                tracing::warn!(error = %e, "no SIGTERM handler; Ctrl-C only");
+                let _ = tokio::signal::ctrl_c().await;
+                "SIGINT"
+            }
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+        "SIGINT"
+    }
+}
+
+/// One match after another, each on a fresh seed, until told to stop.
+async fn run_matches(origin: &moq_net::origin::Producer, mut stop: Stop) -> Result<()> {
     let mut n: u64 = 0;
     loop {
+        if stop.borrow().is_some() {
+            return Ok(());
+        }
         n += 1;
         // a seed from the wall clock and the match number: unpredictable enough for a demo, and in the match id so a
         // watcher can name the fight.
         let seed = (seed_now() ^ n.wrapping_mul(0x9E37_79B9)) as u32 | 1;
         let match_id = format!("m{n}-{seed}");
         tracing::info!(match_id, seed, "new match");
-        if let Err(e) = run_one(origin, &match_id, seed).await {
+        if let Err(e) = run_one(origin, &match_id, seed, &mut stop).await {
             tracing::warn!(match_id, error = %e, "match failed");
         }
     }
 }
 
-/// Fight and publish one match, paced to the wall clock.
-async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32) -> Result<()> {
+/// Fight and publish one match, paced to the wall clock, until it ends or the server stops.
+async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32, stop: &mut Stop) -> Result<()> {
     let bc = origin
         .create_broadcast(broadcast(match_id))
         .context("create broadcast")?;
-    let track = bc.create_track(TRACK, None).context("create track")?;
-    bc.announce(Default::default()).context("announce")?;
+    let mut publisher = Publisher::new(bc)?;
+    publisher
+        .broadcast()
+        .announce(Default::default())
+        .context("announce")?;
 
     let corners = [CORNERS[0].to_string(), CORNERS[1].to_string()];
     let mut m = Match::new(seed, corners);
     m.observe(match_id);
     let mut watched = false;
     let mut frames: u64 = 0;
-
-    let start = Instant::now();
-    let mut group_seq: u64 = 0;
     let mut in_group: u32 = 0;
     // open the first group with the (empty) keyframe
-    let mut group = track.create_group(group_seq.into()).context("group")?;
-    group_seq += 1;
-    group
-        .write_frame(Timestamp::now(), encode(&Frame::Keyframe(m.snapshot())))
-        .context("keyframe")?;
+    publisher.keyframe(&Frame::Keyframe(m.snapshot()))?;
 
+    let start = Instant::now();
+    let mut pacer = Pacer::new(start, Duration::from_secs_f64(TICK));
     loop {
+        // tick n is due n ticks after the start, reckoned from the start each time, so a late wake is made up by the
+        // ticks after it and never adds up; far behind, the pacer starts its schedule afresh instead of bursting
+        let wait = pacer.wait(Instant::now());
+        if wait.is_zero() {
+            // behind: step at once, but let the relay's tasks and the stop signal in between ticks
+            tokio::task::yield_now().await;
+        } else {
+            tokio::select! {
+                () = tokio::time::sleep(wait) => {}
+                _ = stop.changed() => {}
+            }
+        }
+        if let Some(why) = *stop.borrow() {
+            // the server is stopping mid-match: the observer ends it as `why`, the track is cut off (aborted)
+            m.stop(why);
+            publisher.abort();
+            tracing::info!(match_id, ticks = m.tick(), why, "match stopped");
+            return Ok(());
+        }
+
+        let began = Instant::now();
+        let at = pacer.begin(began);
+        if at.missed {
+            tracing::event!(target: "arena::metrics", tracing::Level::INFO, {
+                monotonic_counter.arena_server_missed_ticks_total = 1_u64,
+            });
+        }
+        if at.resynced {
+            tracing::event!(target: "arena::metrics", tracing::Level::INFO, {
+                monotonic_counter.arena_server_resyncs_total = 1_u64,
+            });
+            tracing::warn!(match_id, tick = m.tick(), late_ms = at.late.as_secs_f64() * 1e3, "tick schedule resynced");
+        }
         // roll the group before stepping, so its keyframe holds everything up to now and the tick's decisions follow it
         // once, as incremental frames
         if in_group >= GROUP_TICKS {
-            group.finish().ok();
-            group = track.create_group(group_seq.into()).context("group")?;
-            group_seq += 1;
-            group
-                .write_frame(Timestamp::now(), encode(&Frame::Keyframe(m.snapshot())))
-                .context("keyframe")?;
+            publisher.keyframe(&Frame::Keyframe(m.snapshot()))?;
             in_group = 0;
         }
-        let began = Instant::now();
         let Some(tick) = m.step() else { break };
         in_group += 1;
         frames += (tick.decisions.len() + tick.forfeits.len()) as u64;
         for d in tick.decisions {
-            group
-                .write_frame(Timestamp::now(), encode(&Frame::Decision(d)))
-                .context("decision")?;
+            publisher.write(&Frame::Decision(d))?;
         }
         for f in tick.forfeits {
-            group
-                .write_frame(Timestamp::now(), encode(&Frame::Forfeit(f)))
-                .context("forfeit")?;
+            publisher.write(&Frame::Forfeit(f))?;
         }
         if tick.ended.is_some() || m.tick().is_multiple_of(THROUGH_EVERY) {
-            group
-                .write_frame(Timestamp::now(), encode(&Frame::Through(arena_link::Through {
-                    tick: m.tick(),
-                    sent_ms: now_ms(),
-                })))
-                .context("through")?;
+            publisher.write(&Frame::Through(arena_link::Through {
+                tick: m.tick(),
+                sent_ms: now_ms(),
+            }))?;
         }
         if let Some(ended) = tick.ended {
-            group
-                .write_frame(Timestamp::now(), encode(&Frame::End(ended)))
-                .context("end")?;
+            publisher.write(&Frame::End(ended))?;
             break;
         }
-        // a tick's step and publish, how late it is on the wall clock, and whether the relay is taking the track
-        let due = start + Duration::from_secs_f64(m.tick() as f64 * TICK);
+        // a tick's step and publish, and how late it lands: the state at fight time n*TICK, written after the wall
+        // clock's n*TICK from the start, is late by the difference
         let now = Instant::now();
         tracing::event!(target: "arena::metrics", tracing::Level::INFO, {
             histogram.arena_server_publish_seconds = (now - began).as_secs_f64(),
-            histogram.arena_server_late_seconds = now.saturating_duration_since(due).as_secs_f64(),
+            histogram.arena_server_late_seconds = now.saturating_duration_since(pacer.due(at.index + 1)).as_secs_f64(),
         });
-        if track.is_used() != watched {
+        if publisher.is_used() != watched {
             watched = !watched;
             tracing::info!(match_id, tick = m.tick(), watched, "relay subscription");
         }
-        // pace to the wall clock: fighting tick n should land n*TICK seconds after the match began
-        sleep_until(due).await;
     }
-    group.finish().ok();
-    bc.close();
+    let groups = publisher.groups();
+    // the last group, then the track: a viewer reads to the end and sees the track end cleanly
+    publisher.finish()?;
     let wall_seconds = start.elapsed().as_secs_f64();
-    tracing::info!(match_id, ticks = m.tick(), groups = group_seq, frames, wall_seconds, "match done");
+    tracing::info!(match_id, ticks = m.tick(), groups, frames, wall_seconds, missed = pacer.missed(),
+        resyncs = pacer.resyncs(), "match done");
     Ok(())
 }
 

@@ -23,7 +23,7 @@ arena-duel = { path = "../arena-duel" }
 arena-mind = { path = "../arena-mind" }
 moq-net = "0.3.23"
 moq-tokio = "0.19.37"
-tokio = { version = "1.48", features = ["macros", "rt", "time", "signal"] }
+tokio = { version = "1.48", features = ["macros", "rt", "rt-multi-thread", "time", "signal", "sync"] }
 anyhow = "1"
 url = "2"
 tracing = "0.1"

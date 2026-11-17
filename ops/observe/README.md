@@ -49,12 +49,19 @@ arena-telemetry --example observe` fights brain matches through the observer, as
 
 ### The live server (io.aiocean.arena-live)
 
-Add to the plist's `EnvironmentVariables`, then reload it; the password stays in the file:
+Add to the plist's `EnvironmentVariables`, then reload it; the password stays in the file. The plist also sets
+`ProcessType` to `Interactive`: without it launchd throttles the job's timers and the ticks fall up to 200 ms behind
+(`arena_server_late_seconds`):
 
 ```xml
 <key>ARENA_OTLP_ENDPOINT</key><string>http://127.0.0.1:5080/api/default</string>
 <key>ARENA_OTLP_AUTH_FILE</key><string>/Users/firegroup/projects/game-factory/ops/arena/observe.env</string>
+<!-- beside EnvironmentVariables, not inside it -->
+<key>ProcessType</key><string>Interactive</string>
 ```
+
+A change to `ProcessType` needs the job reloaded (`launchctl bootout gui/$(id -u)/io.aiocean.arena-live`, then
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/io.aiocean.arena-live.plist`); `kickstart -k` only restarts it.
 
 ## Backend and frontend are separate
 
@@ -77,9 +84,9 @@ trace), and the event's own fields:
 
 | Stream | Events (`body`) and fields |
 |---|---|
-| `arena_match` | `match.start`, one per seat: `match_id`, `seed`, `seat`, `bot`, `foe`, `actives` (`skill[support+support],…`), `supports`, `keystones`, `root`, `life`, `qi` (the qi bar; null when `qi_uncapped`: Cổ Thần Quyết has no cap), `qi_uncapped`. `round.start`: `round`, `wins_0`, `wins_1`. `round.end`: `winner`, `winner_bot`, `seconds`, `life_0`, `life_1`. `forfeit`: `seat`, `bot`. `match.end`: `result` (seat0, seat1, draw, cut, abandoned), `winner_bot`, `cut`, `rounds`, `wins_0`, `wins_1`, `seconds` (fight time), `ticks`, `wall_seconds`, `bot_0`, `bot_1` |
+| `arena_match` | `match.start`, one per seat: `match_id`, `seed`, `seat`, `bot`, `foe`, `actives` (`skill[support+support],…`), `supports`, `keystones`, `root`, `life`, `qi` (the qi bar; null when `qi_uncapped`: Cổ Thần Quyết has no cap), `qi_uncapped`. `round.start`: `round`, `wins_0`, `wins_1`. `round.end`: `winner`, `winner_bot`, `seconds`, `life_0`, `life_1`. `forfeit`: `seat`, `bot`. `match.end`: `result` (seat0, seat1, draw, cut, abandoned, server_stopped, connection_closed), `winner_bot`, `cut`, `rounds`, `wins_0`, `wins_1`, `seconds` (fight time), `ticks`, `wall_seconds`, `bot_0`, `bot_1` |
 | `arena_duel_events` | each with `match_id`, `round`. `cast`: `who`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `basic`, `qi`. `hit`: `by`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `damage`, `share` (of full life), `how` (plain, counter, punish), `crit`, `launch`, `ranged`, `power`, `ailments` (laid this step), `foe_life`. `stopped`: `by`, `skill`, `how` (guard, barrier, ward, dodge, clash), `chip`. `broken`: `who`, `skill`. `dot` (damage over time, shown every half second (`DOT_SHOWN`), or a curse's strike): `by`, `damage`, `share`, `cause` (burn, bleed, burn+bleed, curse). `heal`, `ward`: `by`, `amount`. `barrier`, `unyielding`: `by`. `ko`: `winner`, `life_0`, `life_1`, `seconds`. `status`: `who`, `status` (guard, meditate, fly, sealed, rooted, no_guard, silenced, barrier, down), `on` (after holding a quarter second). `ailment`: `who`, `ailment`, `stacks`, `before`. `curse`: `who`, `curse`, `on`. `unit.spawn`: `unit`, `by`, `kind`, `skill`, `x`; `unit.act`, `unit.hurt`, `unit.die`. `snapshot` (each fighter, each second of fight time): `who`, `bot`, `time`, `life`, `life_max`, `shield`, `sense`, `qi`, `x`, `y`, `ailments` (`burn:2,soak:1`), `curses`, `units`, `act` |
-| `arena_server` | the server's own: `new match`, `match done` (`ticks`, `groups`, `frames`, `wall_seconds`), `relay subscription` (`watched`: the relay took or dropped the track; the server sees the relay, not each viewer), `server stopped` (`error`), `panic` (`reason`, `location`), moq warnings |
+| `arena_server` | the server's own: `new match`, `match done` (`ticks`, `groups`, `frames`, `wall_seconds`, `missed`, `resyncs`), `match stopped` (`why`: server_stopped, connection_closed), `stopping` (`signal`), `tick schedule resynced` (`late_ms`), `relay subscription` (`watched`: the relay took or dropped the track; the server sees the relay, not each viewer), `server stopped` (`error`), `panic` (`reason`, `location`), moq warnings |
 | `arena_bot` | `bot.fault`: `call` (start, round, decide), `kind` (trap, out_of_fuel), `fault`, `faults` (the first ten of an instance, then every thousandth). `bot.broken`: a module that will not instantiate. `bot.end` (an instance's totals): `decisions`, `faults`, `think_mean_ms`, `fuel_mean`, `fuel_most`, `fuel_cap` |
 | `arena_ladder` | each with `run_id` or `match_id`. `ladder.row`: `row`, `win`, `seat0`, `seat1`, `round_seconds`, `timeouts`, `top`, `attack_share`, `distance`. `ladder.skill`: `row`, `seat`, `skill`, `casts`, `landed`, `damage`, `damage_share`, `guarded`, `chip`, `barrier`, `ward`, `dodged`, `clashed`, `broken`, `punished`, `finals`. `ladder.seat`. `balance.run`; `balance.row`: `kind` (gem, support, keystone), `id`, `tier`, `picks`, `games`, `win`, `used_rate`, `damage_per_game`, `casts`, `hits`. `sim.match` (by seat: loadout, `won`, `damage`), `sim.round`, `sim.skill` |
 
@@ -89,7 +96,7 @@ span for each round; the events above carry its `trace_id`.
 Metrics (type `metrics`, one stream each; a histogram also has `_bucket`, `_count`, `_sum`, `_min`, `_max`):
 `arena_matches_total`, `arena_rounds_total`, `arena_casts_total` (`skill`), `arena_damage_total` (`skill`, `kind`),
 `arena_step_seconds` (a duel step's wall time), `arena_server_publish_seconds` (a tick stepped and written to the
-track), `arena_server_late_seconds` (how far a tick runs behind the wall clock), `arena_bot_think_seconds`,
+track), `arena_server_late_seconds` (how far a tick runs behind the wall clock), `arena_server_missed_ticks_total` (ticks begun a whole tick or more late, caught up back to back), `arena_server_resyncs_total` (times the server fell more than 250 ms behind and restarted its tick schedule from now), `arena_bot_think_seconds`,
 `arena_bot_fuel`, `arena_bot_faults_total` (`call`, `kind`).
 
 Metrics are sent as deltas (since 2026-11-18; `aggregation_temporality` = `AGGREGATION_TEMPORALITY_DELTA`): each point
