@@ -325,8 +325,10 @@ version = "0.1.0"
 dependencies = [
  "arena-duel",
  "arena-mind",
+ "arena-telemetry",
  "serde_json",
  "sha2",
+ "tracing",
  "tract-onnx",
  "wasm-encoder 0.263.0",
  "wasmparser 0.263.0",
@@ -419,8 +421,10 @@ name = "arena-sim"
 version = "0.1.0"
 dependencies = [
  "arena-calc",
+ "arena-telemetry",
  "libm",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]

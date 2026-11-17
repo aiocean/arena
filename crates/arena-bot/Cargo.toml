@@ -13,6 +13,8 @@ wasmparser = "0.263"
 arena-duel = { path = "../arena-duel", optional = true }
 arena-mind = { path = "../arena-mind", optional = true }
 wasmtime = { version = "40", optional = true, default-features = false, features = ["cranelift", "runtime", "std"] }
+# the host's think time, fuel and faults as events (arena-telemetry exports them when configured; nothing otherwise)
+tracing = { version = "0.1", optional = true }
 # an ONNX policy run natively (the house AI in the ladder and the tests, a trainer's opponents)
 tract-onnx = { version = "0.22", optional = true, default-features = false }
 
@@ -20,9 +22,12 @@ tract-onnx = { version = "0.22", optional = true, default-features = false }
 # the check: the fixed observations
 serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
 wat = "1"
+# the ladder's --telemetry-otlp: its rows and per-skill tables as events
+arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["otlp"] }
+tracing = "0.1"
 
 [features]
-host = ["dep:arena-duel", "dep:arena-mind", "dep:wasmtime"]
+host = ["dep:arena-duel", "dep:arena-mind", "dep:wasmtime", "dep:tracing"]
 onnx = ["dep:arena-duel", "dep:arena-mind", "dep:tract-onnx"]
 # the trace example: every tick as JSON, the rules' serde shapes
 trace = ["onnx", "arena-duel/serde"]

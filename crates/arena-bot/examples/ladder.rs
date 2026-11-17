@@ -2,11 +2,14 @@
 //! the "Done when" table of `docs/specs/2026-11-15-duel-rules-in-rust-design.md`.
 //!
 //! `cargo run --release -p arena-bot --features host,onnx --example ladder -- [--seeds 150] [--rounds 3] [--limit 120]
-//! [--onnx FILE | --bot FILE.wasm] [--telemetry]`
+//! [--onnx FILE | --bot FILE.wasm] [--telemetry] [--telemetry-otlp]`
 //!
 //! The bot is the house AI (`weights/policy.onnx`) unless `--onnx` names another ONNX policy or `--bot` a bot module.
 //!
 //! `--telemetry` adds, for each mirror, what each seat's skills did, seat 0 beside seat 1.
+//!
+//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends each row and each seat's skill table to the telemetry
+//! store as `arena_ladder` events under one `run_id`, as service `arena-ladder` (`ops/observe/README.md`).
 
 use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
@@ -35,6 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rounds: u32 = arg("--rounds").map_or(Ok(3), |s| s.parse())?;
     let limit: f64 = arg("--limit").map_or(Ok(120.0), |s| s.parse())?;
     let telemetry = args.iter().any(|a| a == "--telemetry");
+    let _export = arena_telemetry::requested(&args)?.then(|| {
+        arena_telemetry::init(
+            "arena-ladder",
+            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+        )
+    });
+    let run = arena_telemetry::run_id("ladder");
     let new: Rc<dyn Fn() -> SharedDecider> = match (arg("--bot"), arg("--onnx")) {
         (Some(path), _) => {
             let admitted =
@@ -123,6 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (name, a, b, mirror) in &rows {
         let r = match_up(a.as_ref(), b.as_ref(), &m);
         print_row(name, &r);
+        export_row(&run, name, &m, &r);
         if *mirror {
             mirrors.push((*name, r));
         }
@@ -135,6 +146,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     decision_cost(&*new, &effects);
     Ok(())
+}
+
+/// A row and each seat's skill table as `arena_ladder` events (nothing when telemetry is off).
+fn export_row(run: &str, name: &str, m: &Match, r: &Record) {
+    let top = r
+        .choices
+        .iter()
+        .max_by_key(|(_, n)| **n)
+        .map_or("-", |(k, _)| k.as_str());
+    tracing::info!(target: "arena::ladder", run_id = run, row = name, seeds = m.seeds.len(), rounds = m.rounds,
+        win = r.win_rate(), seat0 = r.as_seat(0), seat1 = r.as_seat(1), won_0 = r.won[0], won_1 = r.won[1],
+        lost_0 = r.lost[0], lost_1 = r.lost[1], round_seconds = r.mean_length(), timeouts = r.timeouts,
+        top = top, top_share = r.most_used(), attack_share = r.attack_share(), distance = r.mean_distance,
+        "ladder.row");
+    for (seat, log) in r.seats.iter().enumerate() {
+        let dealt = log.dealt();
+        for (skill, k) in &log.skills {
+            tracing::info!(target: "arena::ladder", run_id = run, row = name, seat = seat, skill = *skill,
+                casts = k.casts, landed = k.landed, damage = k.damage, damage_share = pct(k.damage, dealt),
+                guarded = k.guarded, chip = k.chip, barrier = k.barrier, ward = k.ward, dodged = k.dodged,
+                clashed = k.clashed, broken = k.broken, punished = k.punished,
+                finals = log.finals.get(skill).copied().unwrap_or(0), "ladder.skill");
+        }
+        tracing::info!(target: "arena::ladder", run_id = run, row = name, seat = seat, dealt = dealt,
+            lost = log.life_lost, healed = log.healed, qi_spent = log.qi_spent,
+            seconds = log.seconds, meditating = log.meditating, guarding = log.guarding, flying = log.flying,
+            "ladder.seat");
+    }
 }
 
 fn print_row(name: &str, r: &Record) {
