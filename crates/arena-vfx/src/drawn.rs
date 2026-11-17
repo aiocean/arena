@@ -75,10 +75,13 @@ fn one() -> f32 {
 
 /// How an effect moves, beside its frames. `px` is the world pixels one sheet pixel covers (the sheets are drawn
 /// finer than the world, smooth); `turns` a second, clockwise, from its first frame to its last; `exit`, the way it
-/// leaves once played out or stopped (`disappear/fade`: it swells and fades out).
+/// leaves once played out or stopped (`disappear/fade`: it swells and fades out); `ground`, a seal that lies on the
+/// floor, drawn there under the point it is played at even when that point is in the air.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Motion {
+    #[serde(default)]
+    pub ground: bool,
     #[serde(default)]
     pub px: Option<f32>,
     #[serde(default)]

@@ -191,6 +191,18 @@ struct Starting {
     at: Vec3,
 }
 
+/// Where a playing of effect `effect` stands for the rules' point (`x`, `y`): there, or on the floor under it for a
+/// seal that lies on the ground.
+fn spot(layout: &Layout, effect: usize, x: f64, y: f64) -> Vec3 {
+    let grounded = all().get(effect).is_some_and(|d| d.layout.motion.ground);
+    let y = if grounded {
+        layout.ground
+    } else {
+        Layout::world(y)
+    };
+    layout.at(Layout::world(x), y).extend(0.0)
+}
+
 /// The rules' commands for the drawn effects: play, move, stop.
 fn commands(
     mut commands: Commands,
@@ -234,17 +246,16 @@ fn commands(
                         trail: VecDeque::new(),
                         round: round_of(&shown),
                     },
-                    at: layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0),
+                    at: spot(&layout, effect, *x, *y),
                 });
             }
             Out::Move { key, x, y } => {
-                let at = layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0);
                 if let Some(s) = starting.iter_mut().find(|s| s.key == *key) {
-                    s.at = at;
+                    s.at = spot(&layout, s.drawing.effect, *x, *y);
                 }
                 for (k, mut d, mut transform) in &mut playing {
                     if k.0 == *key {
-                        transform.translation = at;
+                        transform.translation = spot(&layout, d.effect, *x, *y);
                         d.moved = d.t;
                     }
                 }
@@ -636,6 +647,22 @@ mod tests {
                 assert!(life <= most, "{} plays {life} s in {school}", d.fx);
             }
         }
+    }
+
+    /// A seal that lies on the ground is drawn on the floor under its caster, even one cast in the air; the rest
+    /// where the rules play them.
+    #[test]
+    fn a_ground_seal_lies_on_the_floor_under_a_caster_in_the_air() {
+        let layout = Layout::default();
+        let find = |fx: &str| all().iter().position(|d| d.fx == fx);
+        let (Some(seal), Some(bolt)) = (find("arcane/rune-circle"), find("projectiles/laser-bolt"))
+        else {
+            unreachable!("both are drawn")
+        };
+        let floor = layout.at(0.0, layout.ground).y;
+        let in_the_air = f64::from(layout.ground) * arena_duel::data::UNIT - 140.0;
+        assert_eq!(spot(&layout, seal, 400.0, in_the_air).y, floor);
+        assert!(spot(&layout, bolt, 400.0, in_the_air).y > floor);
     }
 
     #[test]
