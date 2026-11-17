@@ -2,6 +2,7 @@
 //! pixel font with a dark outline, the qi streaks (Thunder's a crooked bolt, Frost's a straight shimmer), the dust a
 //! body raises.
 
+use super::bubble::Place;
 use super::fight::{Dust, Number, NumberKind, Streak};
 use super::math::{hypot, js_round, sin, sqrt};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
@@ -66,7 +67,31 @@ const OUTLINE: &str = "#13101b";
 
 /// The numbers over the fighters, centred on their `x`, standing on row `ground - y`, each pixel drawn once (the
 /// outline under the face) so a fading number fades evenly.
-pub fn numbers(canvas: &mut Canvas, list: &[Number], ground: f64, looks: [Look; 2]) {
+/// A word's box (`left`, `top`, `w` x `h`, its outline a pixel round it) moved off every bubble it meets: under
+/// the bubble, so the shout over a head stays readable and the word still sits by the one it was dealt to.
+fn clear_of(left: i32, top: i32, w: i32, h: i32, bubbles: &[Place]) -> (i32, i32) {
+    let mut top = top;
+    // a word pushed under one bubble may meet the other: a few passes settle it
+    for _ in 0..=bubbles.len() {
+        let met = bubbles.iter().map(Place::area).find(|&(x0, y0, x1, y1)| {
+            left - 1 < x1 && x0 < left + w + 1 && top - 1 < y1 && y0 < top + h + 1
+        });
+        match met {
+            Some((_, _, _, bottom)) => top = bottom + 1,
+            None => break,
+        }
+    }
+    (left, top)
+}
+
+/// Each floating number and word, kept on the canvas and off the bubbles (`bubbles`, this frame's shouts).
+pub fn numbers(
+    canvas: &mut Canvas,
+    list: &[Number],
+    ground: f64,
+    looks: [Look; 2],
+    bubbles: &[Place],
+) {
     for n in list {
         let (s, color) = look(n.kind);
         let color = color.map(hex).unwrap_or_else(|| {
@@ -88,6 +113,7 @@ pub fn numbers(canvas: &mut Canvas, list: &[Number], ground: f64, looks: [Look; 
         // kept on the canvas, outline and all: a word over a fighter at the wall is not cut by the edge
         let left = (js_round(n.x) as i32 - w / 2).clamp(1, (canvas.w - w - 1).max(1));
         let top = js_round(ground - n.y) as i32 - h;
+        let (left, top) = clear_of(left, top, w, h, bubbles);
         // the face's dots in a grid with a pixel of room all round for the outline
         let (gw, gh) = (w + 2, h + 2);
         let mut face = vec![false; (gw * gh) as usize];
@@ -226,12 +252,64 @@ mod tests {
                 by: Some(0),
                 kind: NumberKind::Counter,
             };
-            numbers(&mut canvas, &[word], 100.0, [Look::Thunder, Look::Frost]);
+            numbers(
+                &mut canvas,
+                &[word],
+                100.0,
+                [Look::Thunder, Look::Frost],
+                &[],
+            );
             canvas.px.iter().filter(|p| p[3] > 0).count()
         };
         let whole = lit_at(100.0);
         assert!(whole > 0);
         assert_eq!(lit_at(199.0), whole, "cut by the right edge");
         assert_eq!(lit_at(0.0), whole, "cut by the left edge");
+    }
+
+    /// The seed 9 case (`review/visual-qa`, 3.5 s): "PUNISH!" dealt at the head of a fighter whose shout is up was
+    /// painted over the bubble. It goes under it, and nothing of the two shares a pixel.
+    #[test]
+    fn a_word_keeps_off_a_bubble() {
+        let (w, h, ground) = (320, 180, 158);
+        let (x, feet) = (95, 120);
+        let p = crate::feel::bubble::place(x, feet, 48, 11, w, 30);
+        let paint = |bubbles: &[Place]| {
+            let mut canvas = Canvas::new(w, h);
+            let word = Number {
+                x: f64::from(x),
+                // its foot on the bubble's middle
+                y: f64::from(ground - (p.y + p.h / 2)),
+                alpha: 1.0,
+                text: "PUNISH!".to_owned(),
+                by: Some(1),
+                kind: NumberKind::Punish,
+            };
+            numbers(
+                &mut canvas,
+                &[word],
+                f64::from(ground),
+                [Look::Thunder, Look::Frost],
+                bubbles,
+            );
+            canvas
+        };
+        let mut shout = Canvas::new(w, h);
+        crate::feel::bubble::bubble(&mut shout, &p, [255, 200, 80, 255], 1.0);
+        let shared = |c: &Canvas| {
+            c.px.iter()
+                .zip(&shout.px)
+                .filter(|(a, b)| a[3] > 0 && b[3] > 0)
+                .count()
+        };
+        assert!(
+            shared(&paint(&[])) > 0,
+            "the case does not overlap to begin with"
+        );
+        assert_eq!(
+            shared(&paint(&[p])),
+            0,
+            "the word is painted over the bubble"
+        );
     }
 }

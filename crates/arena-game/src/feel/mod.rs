@@ -106,12 +106,18 @@ pub fn looks(shown: &Shown) -> [Look; 2] {
         .unwrap_or([Look::Thunder, Look::Frost])
 }
 
-/// The dust, the streaks and the numbers over the fighters.
-fn marks(feel: Res<Feel>, shown: Res<Shown>, layout: Res<Layout>, mut canvases: ResMut<Canvases>) {
+/// The dust, the streaks and the numbers over the fighters, the numbers clear of the bubbles painted before them.
+fn marks(
+    feel: Res<Feel>,
+    shown: Res<Shown>,
+    layout: Res<Layout>,
+    shouting: Res<bubble::Shouting>,
+    mut canvases: ResMut<Canvases>,
+) {
     let ground = f64::from(layout.ground);
     let looks = looks(&shown);
     let front = &mut canvases.front;
     draw::dust(front, &feel.fight.dust(), ground);
     draw::streaks(front, &feel.fight.streaks(), ground, looks);
-    draw::numbers(front, &feel.fight.numbers(), ground, looks);
+    draw::numbers(front, &feel.fight.numbers(), ground, looks, &shouting.0);
 }

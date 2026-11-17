@@ -138,6 +138,7 @@ pub struct BubblePlugin;
 impl Plugin for BubblePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Bubbles>()
+            .init_resource::<Shouting>()
             .add_systems(Startup, spawn)
             .add_systems(
                 Update,
@@ -225,7 +226,16 @@ pub struct Place {
     pub tail: Option<(i32, i32)>,
 }
 
+/// The bubbles on screen this frame, in world pixels: the fight's numbers keep off them (`draw::numbers`).
+#[derive(Resource, Default, Clone, Debug)]
+pub struct Shouting(pub Vec<Place>);
+
 impl Place {
+    /// The pixels it covers, its tail and outline in: left, top, right, bottom (exclusive).
+    pub fn area(&self) -> (i32, i32, i32, i32) {
+        (self.x - 1, self.y - 1, self.right() + 1, self.bottom() + 1)
+    }
+
     fn right(&self) -> i32 {
         self.x + self.w
     }
@@ -353,6 +363,7 @@ fn paint(
     shown: Res<Shown>,
     layout: Res<Layout>,
     mut bubbles: ResMut<Bubbles>,
+    mut shouting: ResMut<Shouting>,
     mut canvases: ResMut<Canvases>,
     mut names: Query<(
         &ShoutText,
@@ -363,6 +374,7 @@ fn paint(
         &mut Transform,
     )>,
 ) {
+    shouting.0.clear();
     let Some(view) = &shown.view else {
         for (_, _, _, mut color, mut shadow, _) in &mut names {
             color.0 = Color::NONE;
@@ -416,6 +428,7 @@ fn paint(
             continue;
         };
         let alpha = ((LIFE - live.age) / FADE).clamp(0.0, 1.0);
+        shouting.0.push(p);
         let s = &live.shout;
         bubble(&mut canvases.front, &p, s.tint, alpha);
         let ink = mix([255, 255, 255, 255], s.tint, 0.3);
