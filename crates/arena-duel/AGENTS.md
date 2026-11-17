@@ -8,8 +8,9 @@ how much a blow deals is the damage system, `docs/specs/2026-11-17-damage-system
 
 The landing duel's rules: two seats with no class, each fighting with a loadout of the shared pool
 (`arena_calc::loadout`), drawn at random from the seed on dice of their own or given (`Duel::with_loadouts`). Thunder
-and Frost are only how the two seats look (`data::Look`, for the game's sprites and colours): the rules decide
-nothing by them.
+and Frost are how a fighter looks (`data::Look`): its sprites and colours, and so its hurtboxes and hitboxes, which are
+measured from its frames. Looks are drawn apart from the seats (`Duel::new_with_looks`, `ladder::looks_of`); the rules
+decide nothing else by them, and a bot is told its look, never its seat.
 
 - `data`: the motions a skill borrows (`data::motions`, how it moves and looks) and the pool's skills as the duel
   casts them (`data::spell`: a gem on its motion), the looks, the brain's one temperament (`MIND`), the constants.
@@ -22,6 +23,10 @@ nothing by them.
   the fighters (`Cultivator::tick_with`), spare lives.
 - `shot`: skills in flight; a bolt is `arena_calc::projectile::Flight` (pierce, fork, chain among every live target).
 - `unit`: traps, mines, totems and minions, entities of the rules' world (`Unit`) in id order.
+- `frames`: where a fighter can be hit and where its blow or bolt comes from, frame by frame (hurtboxes, hitboxes,
+  hands, each clip's active frame); `frames_data` is its table, generated from the sprite sheets by
+  `cargo run -p arena-game --example frame_boxes` (never edited by hand); `pick`: which frame a pose shows (`CLIPS`).
+- `out` (the commands and events a tick returns), `debug` (a fight's state for a person to read).
 - `bar` (the rotating bar drawn from the actives; its tiers, traits, luck and evolving pairs are off), `duel` (the
   schedule), `seat`, `first_mind`, `scripted`, `style`, `sense` (what a mind is told), `body`, `pose`, `js`,
   `effects`, `view`, `train`, `ladder`.
@@ -31,7 +36,14 @@ a single-threaded schedule of chained systems in the rules' order (`duel::tick_s
 order, the clock, the domains and intents, each seat's turn, the bodies kept apart, the shots, the blows due, the
 units, time wearing everyone, the knock-outs, the seats told, the units written back. `weights/policy.onnx` is the
 house AI; this crate never reads it (`arena-bot` does). A seed replays the same fight on every target. The game
-(`crates/arena-game`) plays the effect commands and feels the events the duel returns; it decides nothing.
+(`crates/arena-game`) plays the effect commands and feels the events the duel returns; it decides nothing. The
+server (`crates/arena-server`) fights the live matches with `seat::Recorder`s, and the live page steps the same duel
+with `seat::Replay` seats from the decisions it receives.
+
+Each tick the two fighters take their turns with who goes first alternating (`duel::turns`: seat 0 on even ticks, seat
+1 on odd ones), so neither seat strikes first or reacts second every tick; `tests/fair_seats.rs` holds a mirror to
+45-55% in either seat and either look. Examples: `seats` (a mind's mirror by seat and by look: `--seeds --rounds
+--mind first|brain|aggressive|turtle`) and `speed`.
 
 ## Belongs here
 
@@ -70,9 +82,13 @@ house AI; this crate never reads it (`arena-bot` does). A seed replays the same 
   drawing them must not move a fight. Units are worked on in id order, never query order.
 - Every skill of the pool borrows a motion (`Gem::spell`): a new motion goes in `data`'s motion table and its key in
   `tests/fixtures/js_numbers.json`; an effect a motion plays once through `cast` must be a one-shot effect (the duel
-  never stops a looping one), and a new effect id needs a painter in `arena-vfx`, its id in `effects::EFFECTS`, and a
-  re-bake.
+  never stops a looping one), and a new effect id needs a painter in `arena-vfx` and a re-bake, or a drawn sheet
+  (`art/vfx/`), and its id in `effects::EFFECTS`.
 - One extra or missing roll of the dice changes every fight after it.
+- A change to the rules, to a seat's `think` order or to what a bot sees or does bumps `arena_link::RULES_VERSION`
+  (root `AGENTS.md`, "Traps"): the live page and the server must run one rules build.
+- A redrawn fighter sheet changes the boxes: run `frame_boxes` again, re-pin the goldens and measure with the ladder;
+  it is a rule change.
 - JS maths: `Math.sign(0)` is 0 (never `f64::signum`), `Math.round` rounds half up (`js_round`), `**` is `powi`.
 
 ## Before you finish
