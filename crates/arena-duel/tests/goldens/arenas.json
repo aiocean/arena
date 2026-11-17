@@ -241,27 +241,24 @@
             "fuse": null
           },
           {
-            "skill": "summonwind",
+            "skill": "slaughterbolt",
             "supports": [
-              "soulburst",
-              "critcast"
+              "drain"
             ],
             "fuse": null
           },
           {
-            "skill": "umbrella",
-            "supports": [
-              "combustion"
-            ],
+            "skill": "heavenflip",
+            "supports": [],
             "fuse": null
           }
         ],
         "keystones": [],
         "root": null,
         "bar": [
-          "spiritsummon",
-          "umbrella",
-          "rebirth"
+          "rebirth",
+          "heavenflip",
+          "spiritsummon"
         ]
       }
     ]
@@ -430,7 +427,10 @@
           },
           {
             "skill": "libow",
-            "supports": [],
+            "supports": [
+              "addedthunder",
+              "selfdestruct"
+            ],
             "fuse": null
           },
           {
@@ -444,7 +444,7 @@
             "fuse": null
           },
           {
-            "skill": "fivearrows",
+            "skill": "silentfinger",
             "supports": [],
             "fuse": null
           },
@@ -467,63 +467,66 @@
       {
         "actives": [
           {
-            "skill": "earthescape",
-            "supports": [
-              "woodgrowth"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "arsenal",
-            "supports": [
-              "critdamage",
-              "efficacy"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "mirror",
-            "supports": [
-              "demonize",
-              "soulfeed"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "jithunder",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "jet",
-            "supports": [],
-            "fuse": null
-          },
-          {
             "skill": "karma",
+            "supports": [
+              "outburst",
+              "malignant"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "tigerflag",
+            "supports": [
+              "surehit",
+              "addedwater"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "silentfinger",
+            "supports": [
+              "fork",
+              "multishot"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "indestructible",
+            "supports": [
+              "lingering"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "soulvortex",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "timerestrict",
+            "skill": "banspear",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "slaughteraura",
+            "skill": "flameorigin",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "inchearth",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "twentyyears",
-          "fury"
+          "borncursed",
+          "daobody"
         ],
-        "root": "earth",
+        "root": "water",
         "bar": [
-          "earthescape",
-          "mirror",
-          "karma"
+          "karma",
+          "silentfinger",
+          "banspear"
         ]
       }
     ]
@@ -933,7 +936,7 @@
           {
             "skill": "inchearth",
             "supports": [
-              "critical"
+              "woodgrowth"
             ],
             "fuse": null
           },
@@ -948,17 +951,17 @@
             "fuse": null
           },
           {
-            "skill": "libow",
+            "skill": "fivearrows",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "bell",
+            "skill": "exposemark",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "yellowspring",
+            "skill": "soulsearch",
             "supports": [],
             "fuse": null
           },
@@ -975,7 +978,7 @@
         "root": null,
         "bar": [
           "inchearth",
-          "bell",
+          "exposemark",
           "demonfinger"
         ]
       },
@@ -1545,7 +1548,7 @@
             "fuse": null
           },
           {
-            "skill": "soularmour",
+            "skill": "ninedeaths",
             "supports": [],
             "fuse": null
           },
@@ -1555,7 +1558,7 @@
             "fuse": null
           },
           {
-            "skill": "starcompass",
+            "skill": "earthescape",
             "supports": [],
             "fuse": null
           }
@@ -1563,7 +1566,7 @@
         "keystones": [],
         "root": "earth",
         "bar": [
-          "starcompass",
+          "earthescape",
           "movemountain",
           "deathlessbreath"
         ]
@@ -2033,9 +2036,9 @@
             "skill": "truefalse",
             "supports": [
               "critcast",
-              "fuse"
+              "demonize"
             ],
-            "fuse": "soulsearch"
+            "fuse": null
           },
           {
             "skill": "libow",
@@ -2053,22 +2056,22 @@
             "fuse": null
           },
           {
-            "skill": "indestructible",
+            "skill": "meritspirit",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "warseal",
+            "skill": "fourforms",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "ancestorcurse",
+            "skill": "hex",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "soulsearch",
+            "skill": "kunjiwhip",
             "supports": [],
             "fuse": null
           }
@@ -2080,7 +2083,7 @@
         "root": "wood",
         "bar": [
           "daofusion",
-          "indestructible",
+          "meritspirit",
           "libow"
         ]
       }

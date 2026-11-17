@@ -33,8 +33,10 @@ element, within a budget of 50 points. `loadout::check` is the one judge of a le
   leaves 1 life) and Sát Ý (fury: +4% damage for each blow landed, 5 stacks a round).
 - **There is no ultimate** (owner, 2026-11-18): no ultimate slot, no rage. The former ultimates (Thiên Kiếp
   `tribulation`, Tàn Dạ `remnantdusk`, Tô Kiếp `sukiep`, Đạo Pháp Dung Hợp `daofusion`) are **top-tier skills (đỉnh
-  cấp)**: actives like any other, of tier S and rank Tín Niệm (Faith, the top of the ladder), paid in qi and cooled
-  like the tier's other skills, held by "a blow plays out" like any blow. A loadout takes them among its 8 actives.
+  cấp)**: actives like any other, of tier S and rank Tín Niệm (Faith, the top of the ladder: a Faith blow passes
+  every shield and wipes what stands on the field), held by "a blow plays out" like any blow. They are priced as the
+  top tier: a heavy blow, a 20 s cooldown and 60 qi, and **a loadout holds at most one skill of rank Tín Niệm**
+  (`loadout::FAITH_MAX`; `check` refuses a second, the draw never takes one).
 
 ## Skills
 

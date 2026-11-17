@@ -1,6 +1,7 @@
 //! Bộ đồ: what a player builds from the shared pool (design, 2). Exactly [`ACTIVES`] distinct skills (no basic),
-//! each with up to [`SUPPORTS_PER_SKILL`] supports and [`SUPPORTS_MAX`] in all, up to [`KEYSTONES_MAX`] keystones, and up to one root, within a [`BUDGET`] of points. [`check`] is the one judge
-//! of a legal loadout, for training, the ladder and admitting a bot; [`random`] draws a legal one for training.
+//! each with up to [`SUPPORTS_PER_SKILL`] supports and [`SUPPORTS_MAX`] in all, at most [`FAITH_MAX`] of rank Tín
+//! Niệm, up to [`KEYSTONES_MAX`] keystones, and up to one root, within a [`BUDGET`] of points. [`check`] is the one
+//! judge of a legal loadout, for training, the ladder and admitting a bot; [`random`] draws a legal one for training.
 
 use crate::build::{Skill, kinds};
 use crate::element::{Element, N, is_root};
@@ -11,6 +12,8 @@ use crate::support::{SUPPORTS, Support, excluded, support};
 
 /// Skills a loadout holds besides the basics.
 pub const ACTIVES: usize = 8;
+/// Skills of rank Tín Niệm (`Rank::Faith`, the top tier's đỉnh cấp skills) a loadout may hold at most.
+pub const FAITH_MAX: usize = 1;
 /// Supports on one skill, and in the whole loadout.
 pub const SUPPORTS_PER_SKILL: usize = 3;
 pub const SUPPORTS_MAX: usize = 12;
@@ -67,6 +70,8 @@ pub enum LoadoutError {
     UnknownSkill { skill: String },
     /// A basic among the actives.
     NotActive { skill: String },
+    /// More than [`FAITH_MAX`] skills of rank Tín Niệm.
+    Faith { count: usize },
     /// More than [`SUPPORTS_PER_SKILL`] on one skill.
     SlotSupports { skill: String, count: usize },
     /// More than [`SUPPORTS_MAX`] in all.
@@ -238,6 +243,14 @@ pub fn check_in(l: &Loadout, pool: &[Gem]) -> Result<(), Vec<LoadoutError>> {
         }
     }
 
+    let faith = l
+        .actives
+        .iter()
+        .filter(|s| find(&s.skill).is_some_and(|g| g.rank == Rank::Faith))
+        .count();
+    if faith > FAITH_MAX {
+        errs.push(E::Faith { count: faith });
+    }
     let p = points_in(l, pool);
     if p > BUDGET {
         errs.push(E::Budget { points: p });
@@ -323,6 +336,8 @@ fn draw(
         let fits = |g: &&Gem| {
             !BASICS.contains(&g.id)
                 && !chosen.iter().any(|c| c.id == g.id)
+                && !(g.rank == Rank::Faith
+                    && chosen.iter().filter(|c| c.rank == Rank::Faith).count() >= FAITH_MAX)
                 && allowed(g, g.rank)
                 && {
                     let mut k = kinds_so_far;

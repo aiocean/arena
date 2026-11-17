@@ -262,23 +262,21 @@ fn timings_and_costs_are_sane() {
         );
         assert!(g.windup + g.recover > 0.0, "{}", g.id);
         assert!(g.costs.iter().all(|(_, c)| *c > 0.0), "{}", g.id);
-        if let Some(s) = spell(g.id) {
-            // a data.rs skill keeps its numbers (the top tier's qi and cooldown are its own: they were ultimates)
+        // a data.rs skill keeps its numbers (the top tier's are its own: they were ultimates, priced anew)
+        if let Some(s) = spell(g.id).filter(|_| !PEAK.contains(&g.id)) {
             assert_eq!(
                 (g.windup, g.recover),
                 (s.windup, s.recover),
                 "{}: timings",
                 g.id
             );
-            if !PEAK.contains(&g.id) {
-                assert_eq!(g.cooldown, s.cooldown, "{}: cooldown", g.id);
-                let qi = g
-                    .costs
-                    .iter()
-                    .find(|(r, _)| *r == Resource::Qi)
-                    .map_or(0.0, |(_, c)| *c);
-                assert_eq!(qi, s.cost, "{}: qi", g.id);
-            }
+            assert_eq!(g.cooldown, s.cooldown, "{}: cooldown", g.id);
+            let qi = g
+                .costs
+                .iter()
+                .find(|(r, _)| *r == Resource::Qi)
+                .map_or(0.0, |(_, c)| *c);
+            assert_eq!(qi, s.cost, "{}: qi", g.id);
         }
     }
 }

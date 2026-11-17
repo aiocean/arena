@@ -546,6 +546,17 @@ fn counts_are_enforced() {
     // a top-tier skill is an active like any other
     l.actives[1] = slot("tribulation", &[]);
     assert!(!has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
+    // and a loadout holds one of rank Tín Niệm at most (the pool's ranks, not this table's)
+    let faith = |l: &Loadout| {
+        arena_calc::loadout::check(l)
+            .err()
+            .unwrap_or_default()
+            .into_iter()
+            .find(|e| matches!(e, LoadoutError::Faith { .. }))
+    };
+    assert_eq!(faith(&l), None);
+    l.actives[2] = slot("daofusion", &[]);
+    assert_eq!(faith(&l), Some(LoadoutError::Faith { count: 2 }));
     l.actives[1] = slot("nothing", &[]);
     assert!(has(&l, |e| matches!(e, LoadoutError::UnknownSkill { .. })));
 
