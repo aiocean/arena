@@ -1,0 +1,170 @@
+//! The shapes the rules test hits against, for a debug view: each fighter's body (where it can be hit), the area a
+//! cast under way will strike when its windup ends, and every shot, field and unit on the field. Read only: nothing
+//! here decides anything. Each shape mirrors the test that uses it, named beside it, so a change to a test changes
+//! the shape drawn here in the same change.
+//!
+//! Coordinates are the arena's pixels: `x` from the arena's left as the rules keep it, `y` up from the ground (the
+//! rules' `air`).
+
+use crate::data::Kind;
+use crate::fighter::{Phase, State};
+use crate::shot::{ShotKind, orb_at};
+
+/// What a shape is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mark {
+    /// A fighter's body, which a blow must touch (`shot::overlaps`, `unit::in_front`, `unit::enemies_near`).
+    Body,
+    /// A body that nothing can touch now (a dodge, a blink).
+    Untouchable,
+    /// Where a melee or blast cast will strike when its windup ends: a foe whose body reaches into it is hit.
+    Windup,
+    /// The same area while the cast recovers (it has struck; the recover is the opening a foe can punish).
+    Recover,
+    /// A shot in flight: a bolt or an orb hits a body it touches.
+    Shot,
+    /// An area that strikes where it stands or falls: a zone, a vortex.
+    Field,
+    /// A trap, mine, totem or minion standing on the field.
+    Unit,
+}
+
+/// A shape in the arena's pixels.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Shape {
+    /// From (`x0`, `y0`) to (`x1`, `y1`).
+    Rect { x0: f64, y0: f64, x1: f64, y1: f64 },
+    Circle { x: f64, y: f64, r: f64 },
+}
+
+/// One shape to draw, whose it is, and what it is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Drawn {
+    /// The seat it belongs to; `None` for nobody's.
+    pub owner: Option<usize>,
+    pub mark: Mark,
+    pub shape: Shape,
+    /// The skill it comes from, if any.
+    pub skill: &'static str,
+}
+
+/// Every shape the rules test hits against this tick.
+pub fn shapes(state: &State) -> Vec<Drawn> {
+    let mut out = Vec::new();
+    for (me, f) in state.fighters.iter().enumerate() {
+        let b = &f.body;
+        // shot::overlaps: |x - b.x| < half_width + r, and b.air - r < y < b.air + top + r
+        let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
+        out.push(Drawn {
+            owner: Some(me),
+            mark: if b.untouchable() {
+                Mark::Untouchable
+            } else {
+                Mark::Body
+            },
+            shape: Shape::Rect {
+                x0: b.x - b.spec.half_width,
+                y0: b.air,
+                x1: b.x + b.spec.half_width,
+                y1: b.air + top,
+            },
+            skill: "",
+        });
+
+        let Some(act) = f.act else { continue };
+        let Some(k) = f.kit.index(act.spell) else {
+            continue;
+        };
+        let sp = f.kit.skills[k].motion;
+        let foe = &state.fighters[1 - me].body.spec;
+        let mark = match act.phase {
+            Phase::Windup => Mark::Windup,
+            _ => Mark::Recover,
+        };
+        // the band a foe's feet must be in to be struck, round the caster's own
+        let (reach, level) = match sp.kind {
+            // act::strike, Melee: unit::in_front(x, air, range, chest + 16)
+            Kind::Melee => (sp.range.unwrap_or(0.0), b.spec.chest + 16.0),
+            // act::strike, Blast: unit::enemies_near(x, air, range, foe's body)
+            Kind::Blast => (sp.range.unwrap_or(0.0), foe.body),
+            _ => continue,
+        };
+        // a foe is struck when its middle is within reach + its half width: its body touching x ± reach
+        out.push(Drawn {
+            owner: Some(me),
+            mark,
+            shape: Shape::Rect {
+                x0: b.x - reach,
+                y0: (b.air - level).max(0.0),
+                x1: b.x + reach,
+                y1: b.air + level,
+            },
+            skill: act.spell,
+        });
+    }
+
+    for s in &state.shots {
+        let sp = s.spell;
+        let r = sp.radius.unwrap_or(0.0);
+        let drawn = match &s.kind {
+            // shot::run_bolt: shot::overlaps at the bolt's place, give or take its radius
+            ShotKind::Bolt { .. } => s.bolt_at(state).map(|(x, y, _)| (Mark::Shot, Shape::Circle { x, y, r })),
+            // shot::run, Orb: shot::overlaps(bx, -by, radius)
+            ShotKind::Orb { .. } => {
+                let (bx, by) = orb_at(s);
+                Some((Mark::Shot, Shape::Circle { x: bx, y: -by, r }))
+            }
+            // shot::run, Zone: unit::enemies_near(x, air, radius, 40 grounded or 88)
+            ShotKind::Zone { x, air, .. } => {
+                let level = if sp.grounded { 40.0 } else { 88.0 };
+                Some((
+                    Mark::Field,
+                    Shape::Rect {
+                        x0: x - r,
+                        y0: (air - level).max(0.0),
+                        x1: x + r,
+                        y1: air + level,
+                    },
+                ))
+            }
+            // shot::run, Void: unit::enemies_near(x, 0, under, any height)
+            ShotKind::Void { x, .. } => {
+                let under = sp.under.unwrap_or(0.0);
+                Some((
+                    Mark::Field,
+                    Shape::Rect {
+                        x0: x - under,
+                        y0: 0.0,
+                        x1: x + under,
+                        y1: state.ground - state.top,
+                    },
+                ))
+            }
+            ShotKind::Spray => None,
+        };
+        if let Some((mark, shape)) = drawn {
+            out.push(Drawn {
+                owner: Some(s.owner),
+                mark,
+                shape,
+                skill: s.name,
+            });
+        }
+    }
+
+    for u in &state.units {
+        let r = u.radius();
+        out.push(Drawn {
+            owner: Some(u.owner),
+            mark: Mark::Unit,
+            shape: Shape::Rect {
+                x0: u.x - r,
+                y0: 0.0,
+                x1: u.x + r,
+                y1: 2.0 * r,
+            },
+            skill: u.skill,
+        });
+    }
+    out
+}

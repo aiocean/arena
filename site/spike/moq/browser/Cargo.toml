@@ -1,0 +1,17 @@
+[package]
+name = "moqwasm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+getrandom = { version = "0.4.3", features = ["wasm_js"] }
+moq-net = "0.3.23"
+url = "2.5.8"
+wasm-bindgen = "0.2.130"
+wasm-bindgen-futures = "0.4.80"
+web-transport-wasm = "=0.6.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[workspace]

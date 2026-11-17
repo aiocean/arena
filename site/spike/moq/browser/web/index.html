@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><pre id="out"></pre>
+<script type="module">
+import init, { watch } from "./moqwasm.js";
+const out = document.getElementById("out");
+const log = (s) => { out.textContent += s + "\n"; };
+const orig = console.log; console.log = (...a) => { log(a.join(" ")); orig(...a); };
+await init();
+const q = new URLSearchParams(location.search);
+const t0 = performance.now();
+try {
+  const v = await watch(q.get("url") ?? "https://draft-14.cloudflare.mediaoverquic.com/", q.get("b") ?? "bbb", q.get("t") ?? "video");
+  log("watching on " + v);
+} catch (e) { log("error: " + (e?.message ?? e)); }
+</script>

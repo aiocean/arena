@@ -232,3 +232,135 @@ impl Seat for Script {
 
     fn hold(&mut self, _seconds: f64) {}
 }
+
+/// A corner's decisions over a match: each is the choice it made (`Some`) or nothing, at a fighting tick. A tick counts
+/// this seat's `think` calls from the match's first, which the rules make once per fighting tick, so the same count on
+/// a server that fights and a page that replays lines them up (`arena_link`, `docs/specs/2026-11-17-live-matches-design.md`).
+#[derive(Clone, Debug, Default)]
+pub struct Log {
+    /// `(tick, choice)` for every tick this corner decided something, in tick order.
+    pub decisions: Vec<(u32, Choice)>,
+    /// The first tick this corner gave up a round (a bot module's fault), if any.
+    pub forfeit: Option<u32>,
+}
+
+/// A shared handle on a [`Recorder`]'s log, drained by the thing driving the fight.
+pub type Recording = Rc<RefCell<Log>>;
+
+/// A seat that plays a real seat and writes down what it decided, so a match can be replayed from its seed and this log
+/// alone. It counts fighting ticks (one `think` a tick) and records each decision and the tick a forfeit began.
+pub struct Recorder {
+    inner: Box<dyn Seat>,
+    tick: u32,
+    forfeited: bool,
+    log: Recording,
+}
+
+impl Recorder {
+    /// Wrap `inner` (the corner `me`'s real seat); its log fills through the returned handle.
+    pub fn new(inner: Box<dyn Seat>) -> (Recorder, Recording) {
+        let log = Rc::new(RefCell::new(Log::default()));
+        let rec = Recorder {
+            inner,
+            tick: 0,
+            forfeited: false,
+            log: Rc::clone(&log),
+        };
+        (rec, log)
+    }
+}
+
+impl Seat for Recorder {
+    fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
+        let choice = self.inner.think(state, me, dt);
+        let t = self.tick;
+        self.tick += 1;
+        if let Some(c) = &choice {
+            self.log.borrow_mut().decisions.push((t, c.clone()));
+        }
+        // a forfeit shows the tick it first turns true; `think` runs every fighting tick, so this edge is not missed
+        if !self.forfeited && self.inner.forfeit() {
+            self.forfeited = true;
+            self.log.borrow_mut().forfeit = Some(t);
+        }
+        choice
+    }
+
+    fn tell(&mut self, outcome: &Outcome) {
+        self.inner.tell(outcome);
+    }
+
+    fn reset(&mut self) {
+        self.inner.reset();
+    }
+
+    fn hold(&mut self, seconds: f64) {
+        self.inner.hold(seconds);
+    }
+
+    fn posture(&self) -> Option<Posture> {
+        self.inner.posture()
+    }
+
+    fn forfeit(&self) -> bool {
+        self.inner.forfeit()
+    }
+}
+
+/// A seat that replays a corner's [`Log`]: no mind, no bot, it hands back the choice recorded for each fighting tick
+/// and forfeits from the tick the log says. Given the same seed, two of these step the fight the server fought.
+///
+/// The log is shared: a page watching a match live keeps appending to it as decisions arrive (`Replay::live`), and the
+/// seat reads on from where it left off. The page only steps the fight as far as the decisions it holds reach
+/// (`arena_link::Frame::Through`), so a decision is never asked for before it has come.
+pub struct Replay {
+    source: Recording,
+    next: usize,
+    tick: u32,
+    forfeited: bool,
+}
+
+impl Replay {
+    /// Replay a whole log known up front.
+    pub fn new(log: Log) -> Replay {
+        Replay::live(Rc::new(RefCell::new(log)))
+    }
+
+    /// Replay a log that keeps growing as the match comes in.
+    pub fn live(source: Recording) -> Replay {
+        Replay {
+            source,
+            next: 0,
+            tick: 0,
+            forfeited: false,
+        }
+    }
+}
+
+impl Seat for Replay {
+    fn think(&mut self, _state: &State, _me: usize, _dt: f64) -> Option<Choice> {
+        let t = self.tick;
+        self.tick += 1;
+        let log = self.source.borrow();
+        if log.forfeit.is_some_and(|at| t >= at) {
+            self.forfeited = true;
+        }
+        match log.decisions.get(self.next) {
+            Some((at, c)) if *at == t => {
+                self.next += 1;
+                Some(c.clone())
+            }
+            _ => None,
+        }
+    }
+
+    fn tell(&mut self, _outcome: &Outcome) {}
+
+    fn reset(&mut self) {}
+
+    fn hold(&mut self, _seconds: f64) {}
+
+    fn forfeit(&self) -> bool {
+        self.forfeited
+    }
+}

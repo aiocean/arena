@@ -14,6 +14,8 @@ path = "src/main.rs"
 
 [dependencies]
 arena-mind = { path = "../arena-mind" }
+# a live match on the wire (postcard frames), shared with the server that fights it
+arena-link = { path = "../arena-link" }
 # the damage system: the pool's skills (names, the motion each borrows) for the HUD
 arena-calc.workspace = true
 arena-vfx = { path = "../arena-vfx" }
@@ -40,6 +42,13 @@ wasm-bindgen = "=0.2.130"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["Window", "Location", "UrlSearchParams", "History", "Document", "Element", "HtmlElement", "Response", "console"] }
 getrandom = { version = "0.3", features = ["wasm_js"] }
+# watching live matches: MoQ over the browser's WebTransport (needs `--cfg=web_sys_unstable_apis`, .cargo/config.toml);
+# web-transport-wasm 0.6 is the last on the transport trait moq-net 0.3 takes
+moq-net = "0.3.23"
+web-transport-wasm = "=0.6.0"
+url = "2"
+# moq-net's rand draws on getrandom 0.4, which needs its browser backend named too
+getrandom04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
 
 [lints]
 workspace = true

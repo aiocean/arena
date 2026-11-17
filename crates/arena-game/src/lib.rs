@@ -13,12 +13,14 @@
 #![allow(clippy::disallowed_methods)]
 
 pub mod bots;
+pub mod debug;
 pub mod feel;
 pub mod fighters;
 pub mod hud;
 pub mod layers;
 pub mod layout;
 pub mod light;
+pub mod live;
 pub mod pick;
 pub use arena_vfx::raster;
 pub mod rules;
@@ -49,11 +51,13 @@ pub enum Frame {
     Upload,
 }
 
-/// How a game starts: its seed (a random one when `None`) and what sits in each corner.
+/// How a game starts: its seed (a random one when `None`) and what sits in each corner, or, with `live`, the relay to
+/// watch the server's matches from (a MoQ URL with a subscribe token in its path; `live`).
 #[derive(Resource, Clone, Debug)]
 pub struct Start {
     pub seed: Option<u32>,
     pub corners: [bots::Corner; 2],
+    pub live: Option<String>,
 }
 
 impl Default for Start {
@@ -61,6 +65,7 @@ impl Default for Start {
         Start {
             seed: None,
             corners: [bots::Corner::House, bots::Corner::House],
+            live: None,
         }
     }
 }
@@ -120,7 +125,9 @@ pub fn app(start: Start) -> App {
         layout::LayoutPlugin,
         layers::LayersPlugin,
         bots::BotsPlugin,
+        live::LivePlugin,
         rules::RulesPlugin,
+        debug::DebugPlugin,
         feel::FeelPlugin,
         scene::ScenePlugin,
         light::LightPlugin,

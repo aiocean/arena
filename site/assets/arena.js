@@ -1,7 +1,7 @@
 // The arena's home page: the duel is the Bevy game (crates/arena-game) on the hero's canvas; this page only starts
 // it, hands it the bot modules a player drops into a corner and the seed to fight on, and shows its status line.
 // It decides nothing about the fight.
-import init, { house, restart, run, setCorner, status } from "../game/arena_game.js";
+import init, { debug, house, live, restart, run, setCorner, status } from "../game/arena_game.js";
 
 const PAGES = { home: mountHome };
 try {
@@ -36,6 +36,18 @@ function askedSeed() {
   return Number.isSafeInteger(seed) && seed > 0 ? seed : undefined;
 }
 
+/** Where the server's live matches are published (`live.json`, written by site/build.sh), or nothing. */
+async function liveRelay() {
+  try {
+    const res = await fetch("live.json", { cache: "no-store" });
+    if (!res.ok) return undefined;
+    const { url } = await res.json();
+    return typeof url === "string" && url && "WebTransport" in globalThis ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** The page: the duel full-screen, and under it a slot for each corner. A `.wasm` dropped into a slot takes that corner
  *  at once, the fight starting over on the seed in the box; an empty slot plays the house bot. The page's address
  *  carries the seed (`?seed=`), so a fight can be shared: the same two bots and seed play it the same anywhere. */
@@ -47,10 +59,15 @@ async function mountHome() {
 
   loading("Loading the arena", 0.2);
   await init();
-  loading("Seating the bots", 0.6);
+  // the server's matches, watched live, unless the address asks for a seed (a shared fight, played here)
+  const relay = askedSeed() === undefined ? await liveRelay() : undefined;
+  loading(relay ? "Connecting to the arena" : "Seating the bots", 0.6);
   // the game runs on its own from here, frame by frame, on the canvas #scene
+  // `?debug` in the address opens the debug view (the backquote key or F3 flips it)
+  if (new URLSearchParams(location.search).has("debug")) debug(true);
   try {
-    run(askedSeed());
+    if (relay) live(relay);
+    else run(askedSeed());
   } catch (err) {
     // winit's event loop hands control back to the browser by throwing; the game keeps running
     if (!String(err?.message ?? err).includes("Using exceptions for control flow")) throw err;

@@ -1,0 +1,4 @@
+# The game for the browser watches live matches through the browser's WebTransport, whose web-sys bindings are
+# behind this cfg (crates/arena-game/src/live.rs). For CI's wasm clippy and site/build.sh alike.
+[target.wasm32-unknown-unknown]
+rustflags = ["--cfg=web_sys_unstable_apis"]

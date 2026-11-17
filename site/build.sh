@@ -11,6 +11,8 @@ root="$(cd "$here/.." && pwd)"
 out="$here/dist"
 target="${CARGO_TARGET_DIR:-$root/target}"
 
+# the browser's WebTransport bindings (watching live matches, crates/arena-game/src/live.rs) are behind this cfg
+export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="--cfg=web_sys_unstable_apis"
 (cd "$root" && cargo build --profile web -p arena-game --lib --target wasm32-unknown-unknown)
 
 rm -rf "$out"
@@ -25,6 +27,11 @@ cp "$root"/crates/arena-game/assets/fighters/*.png "$out/game/assets/fighters/"
 cp "$root"/crates/arena-game/assets/vfx/*.webp "$out/game/assets/vfx/"
 cp "$root"/crates/arena-game/assets/drawn/*.webp "$out/game/assets/drawn/"
 cp "$here"/*.html "$out/"
+# where the page watches the server's live matches (crates/arena-server): the relay's URL with a subscribe-only token,
+# from the environment, never from the repo. Without it the page fights on its own, as before.
+if [[ -n "${ARENA_LIVE_URL:-}" ]]; then
+  printf '{"url":"%s"}\n' "$ARENA_LIVE_URL" > "$out/live.json"
+fi
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
 # the big files gzipped beside themselves: the server sends a file's .gz to a browser that takes gzip
 gzip -9 -k "$out/game/arena_game_bg.wasm" "$out/game/arena_game.js" "$out/bots/policy.wasm"

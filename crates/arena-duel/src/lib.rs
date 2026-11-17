@@ -10,6 +10,7 @@ pub mod act;
 pub mod bar;
 pub mod body;
 pub mod data;
+pub mod debug;
 pub mod duel;
 pub mod effects;
 pub mod fighter;

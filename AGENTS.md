@@ -20,6 +20,10 @@ resolve it there.
 | is the training env, its reward, an opponent, the ladder | `crates/arena-duel` (`train`, `seat`, `scripted`, `ladder`) |
 | admits, meters or runs a bot module, or builds one from a model | `crates/arena-bot` (the duel's side is `seat::Decider` / `BotSeat` in `arena-duel`); templates in `bots/` |
 | hands the env to Python | `crates/arena-duel-py` (translation only) |
+| is a live match on the wire: the postcard frames a server publishes and a page folds, how they lie on MoQ | `crates/arena-link` (pure; `docs/specs/2026-11-17-live-matches-design.md`) |
+| fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`) |
+| records a corner's decisions or replays them (the server's side and the page's) | `crates/arena-duel` (`seat::Recorder`, `seat::Replay`) |
+| watches a live match in the game: the subscription, the replay seats, stepping only as far as the frames reach | `crates/arena-game` (`live.rs`, `rules.rs`) |
 | trains, exports or loads a model (ONNX) in Python | `train/` |
 | is how any trained policy sees, acts or keeps its timing, or how the rules' minds think | `crates/arena-mind` (`policy` for the trained policy) |
 | is how a body moves (gravity, flight, blows, getting up), JS number semantics, the effect ids the rules may play | `crates/arena-duel` (`body`, `pose`, `js`, `effects`) |
@@ -42,6 +46,10 @@ resolve it there.
 - A change to the inputs or the acts (`crates/arena-mind/src/policy`), or to the bot ABI (`crates/arena-bot`), changes every
   bot: it needs a retrain (`docs/tournament.md`: one test season for now, no tags). Update `docs/bot.md` in the same
   change. The model inside a bot is free: its size or shape is nobody's business.
+- The live page replays the server's matches from their decisions, so the page and `arena-server` must run one rules
+  build. A change to the rules (or to a seat's `think` order) bumps `arena_link::RULES_VERSION` and ships the server
+  with the page: build and restart `io.aiocean.arena-live` (game-factory `backend/arena/README.md`) in the same deploy.
+  A page on other rules is told to reload.
 - A change to a rule changes every bot's world: while the arena is in testing it goes in on `main`. Update `docs/rules.md`
   in the same change.
 - A new house AI: `train/export.py` (writes `crates/arena-duel/weights/policy.onnx` and its check), then

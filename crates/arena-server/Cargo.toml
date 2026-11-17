@@ -1,0 +1,33 @@
+[package]
+name = "arena-server"
+description = "Fights matches and publishes them live: the rules and two house brains on a fixed tick, each corner's decisions written as arena-link frames onto a MoQ track (a Cloudflare relay over WebTransport), so every watching page replays the same fight from its seed. The server opens no port and needs no fixed address."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "arena_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "arena-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "arena-watch"
+path = "src/bin/watch.rs"
+
+[dependencies]
+arena-link = { path = "../arena-link" }
+arena-duel = { path = "../arena-duel" }
+arena-mind = { path = "../arena-mind" }
+moq-net = "0.3.23"
+moq-tokio = "0.19.37"
+tokio = { version = "1.48", features = ["macros", "rt", "time", "signal"] }
+anyhow = "1"
+url = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[lints]
+workspace = true

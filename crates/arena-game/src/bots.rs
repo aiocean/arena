@@ -102,6 +102,10 @@ fn web_time_ms() -> f64 {
 }
 
 fn first_seating(start: Res<crate::Start>, mut ask: MessageWriter<Seat>) {
+    // watching the server's matches, nothing is seated here until a player asks for a corner
+    if start.live.is_some() {
+        return;
+    }
     ask.write(Seat {
         corners: start.corners.clone(),
         seed: start.seed.unwrap_or_else(any_seed),

@@ -45,6 +45,24 @@ pub fn run(seed: Option<u32>) {
     crate::app(start).run();
 }
 
+/// Watch the server's matches live, on the page's `#scene` canvas, from the MoQ relay at `url` (a subscribe token in
+/// its path). A bot dropped into a corner later turns watching off and fights on the page, as `run` does.
+#[wasm_bindgen]
+pub fn live(url: String) {
+    let start = crate::Start {
+        live: Some(url),
+        ..default()
+    };
+    crate::app(start).run();
+}
+
+/// The debug view on (`true`), off (`false`), or flipped (nothing): the shapes the hit tests use, the link, the frame
+/// rate (`debug.rs`; the backquote key and F3 flip it too).
+#[wasm_bindgen]
+pub fn debug(on: Option<bool>) {
+    crate::debug::ask(on);
+}
+
 /// Put bot module `bytes` (named `name`) into corner `corner` (0 Thunder, 1 Frost); the fight starts over.
 #[wasm_bindgen(js_name = setCorner)]
 pub fn set_corner(corner: usize, name: String, bytes: Vec<u8>) {
@@ -89,11 +107,18 @@ struct Wanted {
     seed: u32,
 }
 
-fn asked(mut wanted: ResMut<Wanted>, shown: Res<Shown>, mut seat: MessageWriter<Seat>) {
+fn asked(
+    mut wanted: ResMut<Wanted>,
+    shown: Res<Shown>,
+    mut live: NonSendMut<crate::live::Live>,
+    mut seat: MessageWriter<Seat>,
+) {
     let asks: Vec<Ask> = ASKED.with_borrow_mut(std::mem::take);
     if asks.is_empty() {
         return;
     }
+    // a player asking for corners or a seed fights on the page: watching stops
+    live.on = false;
     let mut corners = wanted
         .corners
         .clone()
@@ -162,7 +187,19 @@ fn made(mut seating: NonSendMut<Seating>) {
     }
 }
 
-fn say(shown: Res<Shown>, seating: NonSend<Seating>) {
+fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::Live>) {
+    if live.on {
+        let text = match (&live.stale, live.watching.current(), &shown.view) {
+            (Some(e), _, _) => e.clone(),
+            (None, Some(m), Some(v)) => format!(
+                "Seed {} · live · round {} · Thunder ({}) {} – {} Frost ({})",
+                m.seed, v.round, m.names[0], v.wins[0], v.wins[1], m.names[1]
+            ),
+            _ => live.status.clone(),
+        };
+        STATUS.with_borrow_mut(|s| *s = text);
+        return;
+    }
     let text = match (&seating.error, &shown.view) {
         (Some(e), _) => format!("Not a bot for this season: {e}"),
         (None, Some(v)) => format!(
