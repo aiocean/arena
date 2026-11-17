@@ -28,6 +28,8 @@ anyhow = "1"
 url = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# telemetry: init, and the duel observer on each match (ops/observe/README.md)
+arena-telemetry = { path = "../arena-telemetry" }
 
 [lints]
 workspace = true

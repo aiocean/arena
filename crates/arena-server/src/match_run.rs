@@ -9,6 +9,7 @@ use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::effects;
 use arena_duel::seat::{Brain, Log, MakeSeat, Recorder, Recording};
 use arena_duel::view::{DuelView, view};
+use arena_telemetry::duel::Observer;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -69,6 +70,8 @@ pub struct Match {
     /// Whether each corner's forfeit has been handed out.
     sent_forfeit: [bool; 2],
     ended: Option<Ended>,
+    /// The duel observer, when the match is watched for telemetry (`observe`): it only reads.
+    observer: Option<Observer>,
 }
 
 /// What stepping one tick produced: the new frames' payloads, in tick order, and whether the match is now over.
@@ -94,7 +97,15 @@ impl Match {
             sent: [0, 0],
             sent_forfeit: [false, false],
             ended: None,
+            observer: None,
         }
+    }
+
+    /// Report this match as `match_id` to telemetry (`arena_telemetry::duel::Observer`): its events, spans and
+    /// metrics, from now until it ends.
+    pub fn observe(&mut self, match_id: &str) {
+        let corners = [self.corners[0].as_str(), self.corners[1].as_str()];
+        self.observer = Some(Observer::start(&self.duel, match_id, corners));
     }
 
     /// Fighting ticks elapsed so far.
@@ -146,7 +157,10 @@ impl Match {
         if self.ended.is_some() {
             return None;
         }
-        self.duel.step(TICK);
+        match &mut self.observer {
+            Some(o) => drop(o.step(&mut self.duel, TICK)),
+            None => drop(self.duel.step(TICK)),
+        }
         self.tick += 1;
 
         let mut decisions = Vec::new();
@@ -184,6 +198,9 @@ impl Match {
             None
         };
         self.ended = ended;
+        if let (Some(e), Some(o)) = (ended, self.observer.take()) {
+            o.end(&self.duel, matches!(e, Ended::Draw));
+        }
         Some(Tick {
             decisions,
             forfeits,

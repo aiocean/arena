@@ -408,6 +408,7 @@ dependencies = [
  "arena-duel",
  "arena-link",
  "arena-mind",
+ "arena-telemetry",
  "moq-net",
  "moq-tokio",
  "tokio",

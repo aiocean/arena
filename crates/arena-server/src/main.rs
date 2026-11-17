@@ -15,6 +15,9 @@
 //! It loops: a fresh seed, a house-vs-house match published as it is fought, then the next. Each match is one MoQ
 //! broadcast (`arena_link::moq`), its track a run of postcard `arena_link::Frame`s. A new group every
 //! `GROUP_TICKS` opens with a `Keyframe` (the whole match so far), so a page joining late rebuilds from the start.
+//!
+//! Telemetry (`arena_telemetry`, `ops/observe/README.md`): with `ARENA_OTLP_ENDPOINT` set it exports each match
+//! through the duel observer, and its own health: a tick's publish time, how late it runs, the relay's subscription.
 
 use anyhow::{Context, Result};
 use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, TRACK, broadcast};
@@ -32,12 +35,15 @@ const CORNERS: [&str; 2] = ["house-thunder", "house-frost"];
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("arena_server=info,moq_tokio=warn")),
-        )
-        .init();
+    let _telemetry = arena_telemetry::init(
+        "arena-server",
+        arena_telemetry::Options {
+            version: env!("CARGO_PKG_VERSION"),
+            filter: "arena_server=info,moq_tokio=warn".to_string(),
+            export_filter: "info,moq_tokio=warn,moq_net=warn".to_string(),
+            ..Default::default()
+        },
+    );
 
     let url = connect_url()?;
 
@@ -54,13 +60,14 @@ async fn main() -> Result<()> {
     // the token rides in the path, so only the host is logged
     tracing::info!(relay = url.host_str().unwrap_or("?"), "publishing to the relay");
 
-    tokio::select! {
-        res = connection.closed() => {
-            res.context("the relay connection closed")?;
-            Ok(())
-        }
+    let res = tokio::select! {
+        res = connection.closed() => res.context("the relay connection closed"),
         res = run_matches(&origin) => res,
+    };
+    if let Err(e) = &res {
+        tracing::error!(error = %format!("{e:#}"), "server stopped");
     }
+    res
 }
 
 /// One match after another, each on a fresh seed, forever (until Ctrl-C or the connection drops).
@@ -89,6 +96,9 @@ async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32) 
 
     let corners = [CORNERS[0].to_string(), CORNERS[1].to_string()];
     let mut m = Match::new(seed, corners);
+    m.observe(match_id);
+    let mut watched = false;
+    let mut frames: u64 = 0;
 
     let start = Instant::now();
     let mut group_seq: u64 = 0;
@@ -112,8 +122,10 @@ async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32) 
                 .context("keyframe")?;
             in_group = 0;
         }
+        let began = Instant::now();
         let Some(tick) = m.step() else { break };
         in_group += 1;
+        frames += (tick.decisions.len() + tick.forfeits.len()) as u64;
         for d in tick.decisions {
             group
                 .write_frame(Timestamp::now(), encode(&Frame::Decision(d)))
@@ -138,12 +150,24 @@ async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32) 
                 .context("end")?;
             break;
         }
+        // a tick's step and publish, how late it is on the wall clock, and whether the relay is taking the track
+        let due = start + Duration::from_secs_f64(m.tick() as f64 * TICK);
+        let now = Instant::now();
+        tracing::event!(target: "arena::metrics", tracing::Level::INFO, {
+            histogram.arena_server_publish_seconds = (now - began).as_secs_f64(),
+            histogram.arena_server_late_seconds = now.saturating_duration_since(due).as_secs_f64(),
+        });
+        if track.is_used() != watched {
+            watched = !watched;
+            tracing::info!(match_id, tick = m.tick(), watched, "relay subscription");
+        }
         // pace to the wall clock: fighting tick n should land n*TICK seconds after the match began
-        sleep_until(start + Duration::from_secs_f64(m.tick() as f64 * TICK)).await;
+        sleep_until(due).await;
     }
     group.finish().ok();
     bc.close();
-    tracing::info!(match_id, "match done");
+    let wall_seconds = start.elapsed().as_secs_f64();
+    tracing::info!(match_id, ticks = m.tick(), groups = group_seq, frames, wall_seconds, "match done");
     Ok(())
 }
 
