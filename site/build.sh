@@ -17,10 +17,17 @@ target="${CARGO_TARGET_DIR:-$root/target}"
 sum() { if command -v sha256sum >/dev/null; then sha256sum "$@"; else shasum -a 256 "$@"; fi; }
 hash() { sum | cut -c1-12; }
 
-# the game's pictures (the fighters' and the effects' sheets, baked and drawn), in a folder named by their content,
+# the game's pictures as the page gets them (the fighters' and the effects' sheets, baked and drawn; the fighters'
+# as lossless WebP, the same pixels as their PNGs, 2.0 MB against 2.8 MB), in a folder named by the files shipped,
 # which the game's wasm is built to load from
-pictures=$(cd "$root/crates/arena-game/assets" && find fighters vfx drawn -type f \( -name '*.png' -o -name '*.webp' \) | LC_ALL=C sort)
-assets="assets-$(cd "$root/crates/arena-game/assets" && echo "$pictures" | xargs sum | hash)"
+pictures="$target/site-pictures"
+rm -rf "$pictures" && mkdir -p "$pictures/fighters" "$pictures/vfx" "$pictures/drawn"
+cp "$root"/crates/arena-game/assets/vfx/*.webp "$pictures/vfx/"
+cp "$root"/crates/arena-game/assets/drawn/*.webp "$pictures/drawn/"
+pairs=()
+for png in "$root"/crates/arena-game/assets/fighters/*.png; do pairs+=("$png" "$pictures/fighters/$(basename "${png%.png}").webp"); done
+(cd "$root" && cargo run -q --release -p arena-vfx --example webp -- "${pairs[@]}" >/dev/null)
+assets="assets-$(cd "$pictures" && find . -type f | LC_ALL=C sort | xargs sum | hash)"
 export ARENA_ASSETS="game/$assets"
 
 # the browser's WebTransport bindings (watching live matches, crates/arena-game/src/live.rs) are behind this cfg
@@ -37,12 +44,7 @@ wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-in
 # the game's wasm and its JS in a folder named by their content (the JS finds the wasm beside itself)
 game="$(cat "$staged/arena_game_bg.wasm" "$staged/arena_game.js" | hash)"
 mv "$staged" "$out/game/$game"
-(cd "$root/crates/arena-game/assets" && echo "$pictures" | while read -r f; do mkdir -p "$out/game/$assets/$(dirname "$f")"; cp "$f" "$out/game/$assets/$f"; done)
-# the fighters' sheets as lossless WebP (the same pixels, 2.0 MB against 2.8 MB of PNG), which the game loads on the page
-pairs=()
-for png in "$out/game/$assets"/fighters/*.png; do pairs+=("$png" "${png%.png}.webp"); done
-(cd "$root" && cargo run -q --release -p arena-vfx --example webp -- "${pairs[@]}" >/dev/null)
-rm "$out/game/$assets"/fighters/*.png
+cp -R "$pictures" "$out/game/$assets"
 printf '/*\n  Cache-Control: public, max-age=31536000, immutable\n' > "$out/game/_headers"
 cp "$here"/*.html "$out/"
 sed -i.bak "s#\"game/arena_game#\"game/$game/arena_game#g" "$out/index.html" && rm "$out/index.html.bak"
