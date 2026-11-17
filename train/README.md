@@ -19,11 +19,12 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --seed
 - `net.py`: the network (any size: `--width`, `--hidden`, `--blocks`), its export to ONNX and back; the HL-Gauss
   critic.
 - `league.py`: who the learner fights (latest self 35%, a past self 25%, brain 15%, first mind 10%, scripted 15%),
-  and in which seat (each fight draws both fighters' loadouts at random from the seed). The shipped policy was
-  trained on the old rules (two schools); it needs a retrain on the damage system (`docs/specs/2026-11-17-damage-system-design.md`, 13 and 16).
-- `ppo.py`: the trainer. CPU beats MPS for this network (10.2K vs 8.1K env steps/s on the M4).
+  and in which seat (each fight draws both fighters' loadouts at random from the seed, and their looks apart from the
+  seats). The shipped policy was trained on the old rules (two schools, and inputs that named its seat); it needs a
+  retrain on the damage system (`docs/specs/2026-11-17-damage-system-design.md`, 13 and 16).
+- `ppo.py`: the trainer. CPU beats MPS for this network (on an M4 laptop, 10.2K vs 8.1K env steps/s).
 - `export.py`: the shipped file and `crates/arena-duel/tests/fixtures/policy_check.json`, which
-  `cargo test -p arena-duel --test policy_export` checks against Rust's own forward pass.
+  `cargo test -p arena-bot --features onnx --test house` checks against the native ONNX run.
 
 `runs/` stays out of git; the shipped weights go in.
 
@@ -42,8 +43,8 @@ A full run trains on a desktop that stays on, not a laptop: a Mac mini runs abou
       -- /usr/bin/caffeinate -is $PWD/long-run.sh frames'
   ```
   `long-run.sh` builds the rules, runs pytest, trains, and resumes from `runs/<run>/last.pt` (saved every 25
-  updates) if the trainer dies. Its log ends in `TRAIN-DONE` or `FAIL`. launchd starts a submitted job again
-  whenever it exits, so once the log says `TRAIN-DONE`, run `launchctl remove arena.train.frames`.
+  updates) if the trainer dies, up to six tries. Its log ends in `TRAIN-DONE` or `FAIL`. launchd also starts a
+  submitted job again whenever it exits, so once the log says `TRAIN-DONE`, run `launchctl remove arena.train.frames`.
 - Progress is `runs/<run>/log.jsonl`, which syncs back with the rest of `runs/`; export and the ladder run on the
   laptop.
 - Check `pgrep -fl "ppo.py"` on the trainer before starting, since another session may be training. Two runs side by

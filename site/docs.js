@@ -73,7 +73,7 @@ ${body}
     <aside class="toc">${toc.length > 1 ? `<h4>On this page</h4><ul>${toc.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join("")}</ul>` : ""}</aside>
   </div>
   <footer class="footer arena-footer">
-    <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel on the <a href="https://github.com/aiocean/pixfx-rs">pixfx</a> engine · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
+    <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel made with <a href="https://bevy.org">Bevy</a> · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
   </footer>
   <script type="module" src="../assets/menu.js"></script>
 </body>

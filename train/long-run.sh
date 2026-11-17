@@ -7,7 +7,7 @@ RUN=${1:?usage: long-run.sh RUN [ppo.py arguments]}
 shift
 cd "$(dirname "$0")" || exit 1
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-export CARGO_BUILD_BUILD_DIR=${CARGO_BUILD_BUILD_DIR:-/tmp/pixfx-build-train} CARGO_INCREMENTAL=0
+export CARGO_BUILD_BUILD_DIR=${CARGO_BUILD_BUILD_DIR:-/tmp/arena-build-train} CARGO_INCREMENTAL=0
 echo "SETUP $(date)"
 uv sync -q || { echo "FAIL uv sync"; exit 1; }
 uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml 2>&1 | tail -2
