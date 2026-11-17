@@ -30,8 +30,11 @@ const FADE: f64 = 2.35;
 const PULSE1: f64 = BURST + 0.55;
 const PULSE2: f64 = BURST + 1.0;
 /// The box the body and its aura are measured in, the feet at its bottom middle: x, y, w, h.
-const BOX: (i32, i32, i32, i32) = (-32, -70, 64, 76);
-const MID_Y: f64 = -22.0;
+const BOX: (i32, i32, i32, i32) = (-46, -102, 92, 110);
+/// The engine's stand-in body is about 43 pixels tall; this game's fighter about 61: the body the aura grips is
+/// scaled up by this much, so the aura hugs the real fighter.
+const K: f64 = 1.45;
+const MID_Y: f64 = -22.0 * K;
 /// The source's world unit in art pixels.
 const PX: f64 = 2.0;
 /// Chamfer costs: a straight step, a diagonal one.
@@ -165,9 +168,12 @@ impl Body {
             .map(|k| {
                 let px = f64::from(bx + (k % w) as i32) + 0.5;
                 let py = f64::from(by + (k / w) as i32) + 0.5;
+                let (px, py) = (px / K, py / K);
+                // a robed figure the size of the fighter (head, shoulders, a robe widening to the hem), so the
+                // aura hugs the sprite drawn over it rather than a stick figure
                 let head = libm::hypot(px, py + 38.0) < 4.5;
-                let trunk = px.abs() < 2.2 && py > -34.0 && py < -14.0;
-                let legs = (-14.0..0.0).contains(&py) && (px.abs() - (py + 14.0) * 0.28).abs() < 1.4;
+                let trunk = px.abs() < 5.0 && py > -34.0 && py < -14.0;
+                let legs = (-14.0..0.0).contains(&py) && px.abs() < 5.0 + (py + 14.0) * 0.2;
                 head || trunk || legs
             })
             .collect();
@@ -706,12 +712,13 @@ impl Power {
         let c = &self.c;
         let colour = if e > 0.75 { c[0] } else { c[1] };
         let (mut n, mut sx, mut top, mut bot) = (0.0, 0.0, f64::INFINITY, -1.0);
+        // the beat lights the fighter's middle; the stand-in body itself is never drawn over the real one
+        let _ = colour;
         for (x, y) in self.body.cells() {
             n += 1.0;
             sx += x;
             top = js_min(top, y);
             bot = y;
-            dot(p, x, y, colour, e * 1.5);
         }
         if n > 0.0 {
             glow(p, sx / n, (top + bot) / 2.0, 26.0, self.c[3], 0.45 * e);
@@ -804,6 +811,10 @@ impl Show for Power {
     }
 
     fn draw(&self, p: &mut Painter, _t: f64, layer: Layer) {
+        // the rules play it at the top of the fighter's head; the body it grips stands on its feet
+        let (x, y, flip, angle) = p.placement();
+        let feet = pixfx_duel::data::body_spec().body / pixfx_duel::data::UNIT;
+        p.place(x, y + feet, flip, angle);
         let (a, fl, s, t) = (self.aura(), self.flare(), self.s, self.t);
         let c = &self.c;
         if layer == Layer::Back {
