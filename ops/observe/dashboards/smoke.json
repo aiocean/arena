@@ -1,0 +1,791 @@
+{
+  "created": "2026-11-18T00:00:00Z",
+  "dashboardId": "7528569054966054912",
+  "defaultDatetimeDuration": {
+    "endTime": 0,
+    "relativeTimePeriod": "7d",
+    "startTime": 0,
+    "type": "relative"
+  },
+  "description": "The smoke test of https://arena.aiocean.io/ after each deploy (arena-smoke --telemetry-otlp): how long the game took to start and to show its first live frame, the machine's load when it ran, and each run's result.",
+  "owner": "owner@aiocean.io",
+  "role": "",
+  "tabs": [
+    {
+      "name": "Default",
+      "panels": [
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_1",
+          "layout": {
+            "h": 6,
+            "i": 1,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Runs"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE body = 'smoke.run'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Runs",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "fail: a check failed (after the retry, if the game did not start); error: the browser could not run.",
+          "htmlContent": "",
+          "id": "Panel_2",
+          "layout": {
+            "h": 6,
+            "i": 2,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Failed"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE body = 'smoke.run' AND result != 'pass'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Failed runs",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "The game did not start in the fixed 30 s, so the whole run was tried once more.",
+          "htmlContent": "",
+          "id": "Panel_3",
+          "layout": {
+            "h": 6,
+            "i": 3,
+            "w": 12,
+            "x": 24,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Retried"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE body = 'smoke.run' AND retried = true",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Retried runs",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "unit": "seconds",
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_4",
+          "layout": {
+            "h": 6,
+            "i": 4,
+            "w": 12,
+            "x": 36,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Seconds"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT avg(game_start_seconds) AS y_axis_1 FROM arena_smoke WHERE body = 'smoke.run'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Mean time to game start",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "unit": "seconds",
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Seconds from the navigation: the game's status line set (wasm running), and the first live match frame (window.__arena.live.frames > 0). The wait is a fixed 30 s.",
+          "htmlContent": "",
+          "id": "Panel_5",
+          "layout": {
+            "h": 9,
+            "i": 5,
+            "w": 24,
+            "x": 0,
+            "y": 6
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Run"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "start",
+                    "color": null,
+                    "column": "start",
+                    "label": "Game start"
+                  },
+                  {
+                    "alias": "frame",
+                    "color": null,
+                    "column": "frame",
+                    "label": "First frame"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, max(game_start_seconds) AS start, max(first_frame_seconds) AS frame FROM arena_smoke WHERE body = 'smoke.run' GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Time to game start and to the first live frame",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "The kiosk's 1, 5 and 15-minute load averages: beside the timings, to tell a slow site from a busy machine.",
+          "htmlContent": "",
+          "id": "Panel_6",
+          "layout": {
+            "h": 9,
+            "i": 6,
+            "w": 24,
+            "x": 24,
+            "y": 6
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Run"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "l1",
+                    "color": null,
+                    "column": "l1",
+                    "label": "1 min"
+                  },
+                  {
+                    "alias": "l5",
+                    "color": null,
+                    "column": "l5",
+                    "label": "5 min"
+                  },
+                  {
+                    "alias": "l15",
+                    "color": null,
+                    "column": "l15",
+                    "label": "15 min"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, max(load_1) AS l1, max(load_5) AS l5, max(load_15) AS l15 FROM arena_smoke WHERE body = 'smoke.run' GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Machine load when the run began",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_7",
+          "layout": {
+            "h": 9,
+            "i": 7,
+            "w": 24,
+            "x": 0,
+            "y": 15
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [
+                  {
+                    "alias": "r",
+                    "color": null,
+                    "column": "r",
+                    "label": "Result"
+                  }
+                ],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Run"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Runs"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, result AS r, count(*) AS y_axis_1 FROM arena_smoke WHERE body = 'smoke.run' GROUP BY x_axis_1, r ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Pass and fail per run",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Runs whose game started within each bound, seconds (arena_smoke_game_start_seconds).",
+          "htmlContent": "",
+          "id": "Panel_8",
+          "layout": {
+            "h": 9,
+            "i": 8,
+            "w": 24,
+            "x": 24,
+            "y": 15
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke_game_start_seconds_bucket",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Seconds"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Runs"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT concat('≤ ', le) AS x_axis_1, c - coalesce(lag(c) OVER (ORDER BY CAST(le AS DOUBLE)), 0) AS y_axis_1 FROM (SELECT le, sum(value) AS c FROM arena_smoke_game_start_seconds_bucket WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY le) b ORDER BY CAST(le AS DOUBLE)",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Time to game start, buckets",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_9",
+          "layout": {
+            "h": 12,
+            "i": 9,
+            "w": 48,
+            "x": 0,
+            "y": 24
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_smoke",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "t",
+                    "color": null,
+                    "column": "t",
+                    "label": "Time"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "result",
+                    "color": null,
+                    "column": "result",
+                    "label": "Result"
+                  },
+                  {
+                    "alias": "attempt",
+                    "color": null,
+                    "column": "attempt",
+                    "label": "Attempt"
+                  },
+                  {
+                    "alias": "retried",
+                    "color": null,
+                    "column": "retried",
+                    "label": "Retried"
+                  },
+                  {
+                    "alias": "game_start_seconds",
+                    "color": null,
+                    "column": "game_start_seconds",
+                    "label": "Game start s"
+                  },
+                  {
+                    "alias": "first_frame_seconds",
+                    "color": null,
+                    "column": "first_frame_seconds",
+                    "label": "First frame s"
+                  },
+                  {
+                    "alias": "load_1",
+                    "color": null,
+                    "column": "load_1",
+                    "label": "Load 1"
+                  },
+                  {
+                    "alias": "load_5",
+                    "color": null,
+                    "column": "load_5",
+                    "label": "Load 5"
+                  },
+                  {
+                    "alias": "load_15",
+                    "color": null,
+                    "column": "load_15",
+                    "label": "Load 15"
+                  },
+                  {
+                    "alias": "check_page",
+                    "color": null,
+                    "column": "check_page",
+                    "label": "page"
+                  },
+                  {
+                    "alias": "check_errors",
+                    "color": null,
+                    "column": "check_errors",
+                    "label": "errors"
+                  },
+                  {
+                    "alias": "check_live_json",
+                    "color": null,
+                    "column": "check_live_json",
+                    "label": "live.json"
+                  },
+                  {
+                    "alias": "check_live",
+                    "color": null,
+                    "column": "check_live",
+                    "label": "live"
+                  },
+                  {
+                    "alias": "check_hud",
+                    "color": null,
+                    "column": "check_hud",
+                    "label": "hud"
+                  },
+                  {
+                    "alias": "check_advances",
+                    "color": null,
+                    "column": "check_advances",
+                    "label": "advances"
+                  },
+                  {
+                    "alias": "deployed_commit",
+                    "color": null,
+                    "column": "deployed_commit",
+                    "label": "Commit"
+                  },
+                  {
+                    "alias": "retry_reason",
+                    "color": null,
+                    "column": "retry_reason",
+                    "label": "Why retried"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT to_timestamp_micros(_timestamp) AS t, result, attempt, retried, game_start_seconds, first_frame_seconds, load_1, load_5, load_15, check_page, check_errors, check_live_json, check_live, check_hud, check_advances, deployed_commit, retry_reason FROM arena_smoke WHERE body = 'smoke.run' ORDER BY _timestamp DESC LIMIT 50",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Recent runs",
+          "type": "table"
+        }
+      ],
+      "tabId": "default"
+    }
+  ],
+  "title": "Arena: smoke",
+  "variables": {
+    "list": [],
+    "showDynamicFilters": true
+  },
+  "version": 5
+}

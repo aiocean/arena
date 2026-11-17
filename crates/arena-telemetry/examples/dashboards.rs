@@ -10,7 +10,7 @@
 //! `--push` creates each dashboard below, or updates the one of the same title, then writes what the store exports
 //! of it to `--out` (the files committed beside the README). `--from DIR` pushes those files as they are, to a fresh
 //! store. Backend only: game events come from the live server (`service_name = 'arena-server'`), balance from the
-//! ladder and sim runs, bots from the bot host. The few cumulative metric points from before the metrics went delta
+//! ladder and sim runs, bots from the bot host, the smoke test from arena-smoke. The few cumulative metric points from before the metrics went delta
 //! are left out (`DELTA`).
 
 use arena_telemetry::Endpoint;
@@ -533,6 +533,67 @@ fn bots() -> Value {
     )
 }
 
+fn smoke() -> Value {
+    let k = "arena_smoke";
+    let run = "body = 'smoke.run'";
+    dashboard(
+        "Arena: smoke",
+        "The smoke test of https://arena.aiocean.io/ after each deploy (arena-smoke --telemetry-otlp): how long the game \
+         took to start and to show its first live frame, the machine's load when it ran, and each run's result.",
+        "7d",
+        vec![
+            panel("metric", "Runs", k, format!("SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE {run}"))
+                .axes("", "Runs").size(COLS / 4, 6),
+            panel("metric", "Failed runs", k, format!(
+                "SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE {run} AND result != 'pass'"))
+                .about("fail: a check failed (after the retry, if the game did not start); error: the browser could \
+                        not run.")
+                .axes("", "Failed").size(COLS / 4, 6),
+            panel("metric", "Retried runs", k, format!(
+                "SELECT count(*) AS y_axis_1 FROM arena_smoke WHERE {run} AND retried = true"))
+                .about("The game did not start in the fixed 30 s, so the whole run was tried once more.")
+                .axes("", "Retried").size(COLS / 4, 6),
+            panel("metric", "Mean time to game start", k, format!(
+                "SELECT avg(game_start_seconds) AS y_axis_1 FROM arena_smoke WHERE {run}"))
+                .axes("", "Seconds").unit("seconds").size(COLS / 4, 6),
+            panel("line", "Time to game start and to the first live frame", k, format!(
+                "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, max(game_start_seconds) AS start, \
+                 max(first_frame_seconds) AS frame FROM arena_smoke WHERE {run} GROUP BY x_axis_1 ORDER BY x_axis_1"))
+                .about("Seconds from the navigation: the game's status line set (wasm running), and the first live \
+                        match frame (window.__arena.live.frames > 0). The wait is a fixed 30 s.")
+                .axes("Run", "").ys(&[("Game start", "start"), ("First frame", "frame")]).unit("seconds"),
+            panel("line", "Machine load when the run began", k, format!(
+                "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, max(load_1) AS l1, max(load_5) AS l5, \
+                 max(load_15) AS l15 FROM arena_smoke WHERE {run} GROUP BY x_axis_1 ORDER BY x_axis_1"))
+                .about("The kiosk's 1, 5 and 15-minute load averages: beside the timings, to tell a slow site from a \
+                        busy machine.")
+                .axes("Run", "").ys(&[("1 min", "l1"), ("5 min", "l5"), ("15 min", "l15")]),
+            panel("bar", "Pass and fail per run", k, format!(
+                "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, result AS r, count(*) AS y_axis_1 \
+                 FROM arena_smoke WHERE {run} GROUP BY x_axis_1, r ORDER BY x_axis_1"))
+                .axes("Run", "Runs").by("Result", "r"),
+            panel("bar", "Time to game start, buckets", "arena_smoke_game_start_seconds_bucket",
+                buckets("arena_smoke_game_start_seconds_bucket", ""))
+                .about("Runs whose game started within each bound, seconds (arena_smoke_game_start_seconds).")
+                .metrics().axes("Seconds", "Runs"),
+            panel("table", "Recent runs", k, format!(
+                "SELECT to_timestamp_micros(_timestamp) AS t, result, attempt, retried, game_start_seconds, \
+                 first_frame_seconds, load_1, load_5, load_15, check_page, check_errors, check_live_json, check_live, \
+                 check_hud, check_advances, deployed_commit, retry_reason FROM arena_smoke WHERE {run} \
+                 ORDER BY _timestamp DESC LIMIT 50"))
+                .columns(&[
+                    ("Time", "t"), ("Result", "result"), ("Attempt", "attempt"), ("Retried", "retried"),
+                    ("Game start s", "game_start_seconds"), ("First frame s", "first_frame_seconds"),
+                    ("Load 1", "load_1"), ("Load 5", "load_5"), ("Load 15", "load_15"), ("page", "check_page"),
+                    ("errors", "check_errors"), ("live.json", "check_live_json"), ("live", "check_live"),
+                    ("hud", "check_hud"), ("advances", "check_advances"), ("Commit", "deployed_commit"),
+                    ("Why retried", "retry_reason"),
+                ])
+                .size(COLS, 12),
+        ],
+    )
+}
+
 /// Every dashboard, with the file it is kept in.
 fn all() -> Vec<(&'static str, Value)> {
     vec![
@@ -541,6 +602,7 @@ fn all() -> Vec<(&'static str, Value)> {
         ("server-health", server_health()),
         ("balance", balance()),
         ("bots", bots()),
+        ("smoke", smoke()),
     ]
 }
 

@@ -44,7 +44,8 @@ batch (about a second of logs, ten seconds of metrics).
 
 The tools take `--telemetry-otlp` (or the same variables): `cargo run --release -p arena-sim --example duel -- 7
 --telemetry-otlp`, `--example balance -- --seeds 20 --pairs 200 --telemetry-otlp`, and `cargo run --release -p
-arena-bot --features host,onnx --example ladder -- --seeds 150 --telemetry-otlp`. `cargo run --release -p
+arena-bot --features host,onnx --example ladder -- --seeds 150 --telemetry-otlp`, and the smoke test after a deploy,
+`cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry-otlp`. `cargo run --release -p
 arena-telemetry --example observe` fights brain matches through the observer, as a live match is reported.
 
 ### The live server (io.aiocean.arena-live)
@@ -78,6 +79,7 @@ sides will be `match_id` and the viewer's session id.
 | `arena-bot` | a bot as the arena runs it, a module in the host (wasmtime, `runtime` wasm) or an ONNX policy natively (tract, `runtime` onnx: the house AI in the ladder): think time, fuel, faults (filed under this name whichever process runs the bot) |
 | `arena-ladder` | the sim, balance and ladder runs |
 | `arena-watchdog` | the watchdog's check results, stream `arena_alerts` (Alerts, below) |
+| `arena-smoke` | the smoke test of the live site after each deploy (`crates/arena-smoke`), stream `arena_smoke` |
 
 Log streams (OpenObserve type `logs`). Every row has `_timestamp`, `body` (the event's name), `severity`,
 `service_name`, `service_version`, `vcs_revision` (the commit), `host_name`, `trace_id` and `span_id` (the match's
@@ -89,6 +91,7 @@ trace), and the event's own fields:
 | `arena_duel_events` | each with `match_id`, `round`. `cast`: `who`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `basic`, `qi`. `hit`: `by`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `damage`, `share` (of full life), `how` (plain, counter, punish), `crit`, `launch`, `ranged`, `power`, `ailments` (laid this step), `foe_life`. `stopped`: `by`, `skill`, `how` (guard, barrier, ward, dodge, clash), `chip`. `broken`: `who`, `skill`. `dot` (damage over time, shown every half second (`DOT_SHOWN`), or a curse's strike): `by`, `damage`, `share`, `cause` (burn, bleed, burn+bleed, curse). `heal`, `ward`: `by`, `amount`. `barrier`, `unyielding`: `by`. `ko`: `winner`, `life_0`, `life_1`, `seconds`. `status`: `who`, `status` (guard, meditate, fly, sealed, rooted, no_guard, silenced, barrier, down), `on` (after holding a quarter second). `ailment`: `who`, `ailment`, `stacks`, `before`. `curse`: `who`, `curse`, `on`. `unit.spawn`: `unit`, `by`, `kind`, `skill`, `x`; `unit.act`, `unit.hurt`, `unit.die`. `snapshot` (each fighter, each second of fight time): `who`, `bot`, `time`, `life`, `life_max`, `shield`, `sense`, `qi`, `x`, `y`, `ailments` (`burn:2,soak:1`), `curses`, `units`, `act` |
 | `arena_server` | the server's own: `new match`, `match done` (`ticks`, `groups`, `frames`, `wall_seconds`, `missed`, `resyncs`), `match stopped` (`why`: server_stopped, connection_closed), `stopping` (`signal`), `tick schedule resynced` (`late_ms`), `relay subscription` (`watched`: the relay took or dropped the track; the server sees the relay, not each viewer), `server stopped` (`error`), `panic` (`reason`, `location`), moq warnings |
 | `arena_bot` | each with `runtime` (wasm, onnx) and `bot` (`house`, `onnx-<hash>`, `module-<hash>`, or the name the tool gives it: the ladder's `--bot` is `<file>-<hash>`). `bot.fault`: `call` (start, round, decide), `kind` (trap, out_of_fuel; error for ONNX), `fault`, `faults` (the first ten of an instance, then every thousandth). `bot.broken`: a module that will not instantiate. `bot.end` (an instance's totals, when it is dropped: one match in the tournament, one row in the ladder): `decisions`, `matches` (fights started on it), `faults`, `think_mean_ms`, `think_p50_ms`, `think_p95_ms`, `think_p99_ms`, `think_max_ms`, `fuel_mean`, `fuel_p50`, `fuel_p95`, `fuel_max`, `fuel_most` (= `fuel_max`, kept for older queries), `fuel_cap`; the fuel fields are null for ONNX. The percentiles come from a fixed log-linear histogram in the host (32 buckets to each power of two, `crates/arena-bot/src/meter.rs`): within 1/64 of the true sample, the max exact. Rows before 2026-11-18 have no `runtime` and only the means |
+| `arena_smoke` | `smoke.run`, one a run of the smoke test: `run_id`, `at` (the run's UTC stamp, its review page's name), `url`, `result` (pass, fail; error: the browser could not run), `check_page`, `check_errors`, `check_live_json`, `check_live`, `check_hud`, `check_advances` (each PASS, FAIL or none), `failed` (the failed checks' names), `game_start_seconds` (navigation to the game's status line; absent when it did not start), `first_frame_seconds` (to `window.__arena.live.frames` > 0; absent when none came), `load_1`, `load_5`, `load_15` (the machine's load averages when the attempt began), `attempt` (1, or 2 when retried), `retried`, `retry_reason` (empty unless retried: only a game that did not start in the fixed 30 s is), `deployed_commit` (`none`: neither the page nor `live.json` names one yet), `errors`, `seconds` (the whole run), `mbps` (the connection `--mbps` emulated; 0: the machine's own, whose timings follow its load), `status_line`. The fields are the final attempt's |
 | `arena_ladder` | each with `run_id` or `match_id`. `ladder.row`: `row`, `win`, `seat0`, `seat1`, `round_seconds`, `timeouts`, `top`, `attack_share`, `distance`. `ladder.skill`: `row`, `seat`, `skill`, `casts`, `landed`, `damage`, `damage_share`, `guarded`, `chip`, `barrier`, `ward`, `dodged`, `clashed`, `broken`, `punished`, `finals`. `ladder.seat`. `balance.run`; `balance.row`: `kind` (gem, support, keystone), `id`, `tier`, `picks`, `games`, `win`, `used_rate`, `damage_per_game`, `casts`, `hits`. `sim.match` (by seat: loadout, `won`, `damage`), `sim.round`, `sim.skill` |
 
 Traces (type `traces`, streams `arena_server`, `arena_ladder`): a `match` span (`match_id`, `seed`) with a `round`
@@ -99,6 +102,8 @@ Metrics (type `metrics`, one stream each; a histogram also has `_bucket`, `_coun
 `arena_step_seconds` (a duel step's wall time), `arena_server_publish_seconds` (a tick stepped and written to the
 track), `arena_server_late_seconds` (how far a tick runs behind the wall clock), `arena_server_missed_ticks_total` (ticks begun a whole tick or more late, caught up back to back), `arena_server_resyncs_total` (times the server fell more than 250 ms behind and restarted its tick schedule from now), `arena_bot_think_seconds`,
 `arena_bot_fuel` (both with `runtime` and `bot`; fuel for modules only), `arena_bot_faults_total` (`call`, `kind`, `runtime`, `bot`). The metric points are filed under the process's service (`arena-ladder` for the ladder), the `arena_bot` rows under `arena-bot`.
+From the smoke test (service `arena-smoke`): `arena_smoke_game_start_seconds` and `arena_smoke_first_frame_seconds`
+(buckets 0.5 s to 60 s) and `arena_smoke_runs_total` (`result`).
 
 Metrics are sent as deltas (since 2026-11-18; `aggregation_temporality` = `AGGREGATION_TEMPORALITY_DELTA`): each point
 is its ten seconds' own counts, so `sum(value)` over any range is what happened in it, and a histogram's `_max` is its
@@ -116,6 +121,7 @@ Open https://arena-obs.aiocean.io, log in with the root user's email and passwor
 | Arena: server health | step time (buckets; mean and most per minute), publish time, how far behind the wall clock, errors and warnings per hour, relay subscription changes, panics, server starts, the latest errors; the watchdog's alerts (each check's latest result, failures over time) |
 | Arena: balance | the latest balance run (keystones, gems, supports: win, damage a game) and ladder run (seat win rates), sim wins by seat |
 | Arena: bots | think time p50, p95, p99 and most by runtime and bot (a table, and p95 and p99 over time), decisions per match, fuel p95 and most against the cap, fuel by module, think time p50 and p95 over all decisions from the metric's buckets, think and fuel buckets, faults by kind and call, forfeits |
+| Arena: smoke | the smoke test's runs: how many, failed, retried, mean time to game start; time to game start and to the first live frame beside the machine's load averages, run by run; pass and fail per run; time-to-start buckets; the latest 50 runs with each check |
 
 The live and game-event panels read only the live server's rows (`service_name = 'arena-server'`); the metric panels
 only delta points. They are made in code, `crates/arena-telemetry/examples/dashboards.rs`, and what the store exports of
@@ -223,6 +229,9 @@ SELECT kind, call, count(*) AS n FROM arena_bot WHERE body = 'bot.fault' GROUP B
 SELECT runtime, bot, sum(decisions) AS decisions, sum(think_p95_ms * decisions) / sum(decisions) AS p95_ms,
   max(think_max_ms) AS most_ms, max(fuel_max) AS fuel_most FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL
   GROUP BY runtime, bot
+-- the smoke test's runs: timings beside the machine's load
+SELECT at, result, attempt, retry_reason, game_start_seconds, first_frame_seconds, load_1, load_5, load_15
+  FROM arena_smoke WHERE body = 'smoke.run' ORDER BY _timestamp DESC
 -- the server falling behind its clock (metrics)
 SELECT max(value) AS worst FROM arena_server_late_seconds_max
 ```
