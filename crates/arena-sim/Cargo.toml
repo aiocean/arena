@@ -1,0 +1,18 @@
+[package]
+name = "arena-sim"
+description = "A headless fight simulator over arena-calc: two scripted fighters on a 1D field, best-of-3 matches from a seed, and a balance tool that measures loadouts against each other without the real fight"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+arena-calc.workspace = true
+libm.workspace = true
+
+[dev-dependencies]
+# the examples read loadouts as JSON and write the balance table as JSON
+arena-calc = { workspace = true, features = ["serde"] }
+serde_json.workspace = true
+
+[lints]
+workspace = true

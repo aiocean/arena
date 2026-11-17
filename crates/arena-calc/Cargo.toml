@@ -1,0 +1,19 @@
+[package]
+name = "arena-calc"
+description = "The arena's damage system: ten kinds of damage, ailments, the five phases, fusion, ranks, daos, curses, intents, domains, supports, keystones, the shared skill pool and loadouts"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libm.workspace = true
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[features]
+serde = ["dep:serde"]
+
+[lints]
+workspace = true

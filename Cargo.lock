@@ -300,6 +300,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arena-calc"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "arena-game"
 version = "0.1.0"
 dependencies = [
@@ -324,6 +333,15 @@ version = "0.1.0"
 dependencies = [
  "libm",
  "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "arena-sim"
+version = "0.1.0"
+dependencies = [
+ "arena-calc",
+ "libm",
  "serde_json",
 ]
 
