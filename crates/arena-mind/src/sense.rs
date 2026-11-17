@@ -87,8 +87,11 @@ pub struct Me {
     pub face: f64,
     /// Life, 0 to 100.
     pub hp: f64,
-    /// Qi, 0 to 100.
+    /// Qi, 0 to 100: a share of the most it can hold.
     pub qi: f64,
+    /// The most qi it can hold, in the qi skills cost (100 for most loadouts; a keystone can raise it far).
+    #[cfg_attr(feature = "serde", serde(default = "full_qi"))]
+    pub qi_max: f64,
     pub flying: bool,
     pub hover: f64,
     pub vx: f64,
@@ -104,6 +107,26 @@ pub struct Me {
     /// The skill it is using, if any.
     #[cfg_attr(feature = "serde", serde(default))]
     pub act: Option<Acting>,
+}
+
+/// The most qi a fighter holds unless its loadout says otherwise, in the qi skills cost.
+pub const FULL_QI: f64 = 100.0;
+
+#[cfg(feature = "serde")]
+fn full_qi() -> f64 {
+    FULL_QI
+}
+
+impl Me {
+    /// How full of qi it is for fighting, 0 to 100: its share of what it can hold, but of `FULL_QI` at most, so a
+    /// fighter that can hold far more (a keystone's 10000) counts as full once it holds what a fighter usually does,
+    /// enough for its skills, instead of meditating toward a share it would take minutes to fill.
+    pub fn qi_level(&self) -> f64 {
+        if self.qi_max <= FULL_QI || self.qi_max <= 0.0 {
+            return self.qi;
+        }
+        (self.qi * self.qi_max / FULL_QI).min(100.0)
+    }
 }
 
 /// The foe.

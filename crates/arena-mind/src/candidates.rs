@@ -307,7 +307,7 @@ fn dangers(out: &mut Out) -> f64 {
                     );
                 }
                 // on the sword: rise over it, or sink under it
-                if me.qi > 12.0 && tti > 0.15 {
+                if me.qi_level() > 12.0 && tti > 0.15 {
                     if y + 4.0 < arena.top {
                         out.push(
                             Choice::Fly { height: y + 4.0 },
@@ -363,7 +363,7 @@ fn dangers(out: &mut Out) -> f64 {
                     sign(dx)
                 };
                 out.walk(way, Category::Evade, u * 1.3);
-                if low && me.qi > 12.0 {
+                if low && me.qi_level() > 12.0 {
                     out.push(
                         Choice::Fly { height: 24.0 },
                         Category::Evade,
@@ -628,13 +628,13 @@ fn positions(out: &mut Out) {
     }
     // the height I want: my own while I have the qi to cast from it, the foe's when I must close in
     let casts_from_afar = ctx.holds(|k| crate::reading::is_ranged(k) || crate::reading::is_area(k));
-    let mut want = if me.qi > 40.0 && casts_from_afar {
+    let mut want = if me.qi_level() > 40.0 && casts_from_afar {
         ctx.profile.sky
     } else {
         0.0
     };
-    if me.qi < 25.0 || d < 40.0 {
-        want = if foe.air > 16.0 && me.qi > 20.0 {
+    if me.qi_level() < 25.0 || d < 40.0 {
+        want = if foe.air > 16.0 && me.qi_level() > 20.0 {
             arena.top.min(foe.air)
         } else {
             want
@@ -654,11 +654,11 @@ fn positions(out: &mut Out) {
         out.push(Choice::Jump, Category::Approach, 1.3, None);
     }
     let quiet = ctx.threats.is_empty() && !matches!(foe.doing, Doing::Act { .. });
-    if me.qi < 45.0 && d > 70.0 && quiet && me.air == 0.0 && !me.flying {
+    if me.qi_level() < 45.0 && d > 70.0 && quiet && me.air == 0.0 && !me.flying {
         out.push(
             Choice::Meditate,
             Category::Meditate,
-            2.2 - me.qi / 40.0,
+            2.2 - me.qi_level() / 40.0,
             None,
         );
     }

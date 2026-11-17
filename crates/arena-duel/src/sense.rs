@@ -301,6 +301,7 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             face: b.face,
             hp: f.hp(),
             qi: f.qi(),
+            qi_max: f.c.qi_max,
             flying: f.fly,
             hover: seen(f.hover),
             vx: seen(b.vx),

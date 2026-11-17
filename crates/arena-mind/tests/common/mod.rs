@@ -87,6 +87,7 @@ pub fn me(x: f64) -> Me {
         face: 1.0,
         hp: 100.0,
         qi: 100.0,
+        qi_max: 100.0,
         flying: false,
         hover: 0.0,
         vx: 0.0,

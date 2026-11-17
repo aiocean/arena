@@ -274,7 +274,7 @@ impl Reading {
             .filter(|s| s.kind == SkillKind::Melee)
             .map(|s| s.reach)
             .fold(24.0, f64::min);
-        let want = if me.qi < 25.0 {
+        let want = if me.qi_level() < 25.0 {
             profile.dry
         } else if held(is_ranged) || held(is_area) {
             profile.range
@@ -307,7 +307,7 @@ impl Reading {
 
         let mut inputs = [0.0; 17];
         let mut set = |input: Input, v: f64| inputs[slot(input)] = unit(v);
-        set(Input::Qi, me.qi / 100.0);
+        set(Input::Qi, me.qi_level() / 100.0);
         set(Input::Hp, me.hp / 100.0);
         set(Input::FoeHpLow, 1.0 - foe.hp / 100.0);
         set(Input::Lead, (lead + 1.0) / 2.0);
