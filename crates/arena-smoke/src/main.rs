@@ -384,6 +384,7 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         .get("connected")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let stale = live.get("stale").and_then(Value::as_bool).unwrap_or(false);
 
     // the HUD, and the fight moving: two pictures of the canvas a few seconds apart, the frames counted between
     let rect = eval_json(
@@ -433,6 +434,8 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
                 },
                 if watching {
                     "watching the server's match"
+                } else if stale {
+                    "fighting on its own: the relay's matches are on other rules than this page (the page and arena-server must ship together)"
                 } else {
                     "fighting on its own (no live match)"
                 }

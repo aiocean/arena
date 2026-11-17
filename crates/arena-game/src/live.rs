@@ -205,10 +205,11 @@ fn pull(mut live: NonSendMut<Live>) {
     }
 }
 
-/// How watching stands: on, connected, frames, the ticks through, the match's id.
-type Standing = (bool, bool, u64, u32, u32);
+/// How watching stands: on, connected, frames, the ticks through, the match's id, and whether the relay's matches are
+/// on other rules than this build's (the page must reload).
+type Standing = (bool, bool, u64, u32, u32, bool);
 
-/// How watching stands, on the page as `window.__arena.live` (`on`, `connected`, `frames`, `through`, `match`), so a
+/// How watching stands, on the page as `window.__arena.live` (`on`, `connected`, `frames`, `through`, `match`, `stale`), so a
 /// smoke test can tell the relay is reached and the match moves. It is set only when it changes; nothing reads it.
 fn publish(live: NonSend<Live>) {
     let now: Standing = (
@@ -217,6 +218,7 @@ fn publish(live: NonSend<Live>) {
         live.frames,
         live.watching.current().map_or(0, |m| m.through),
         live.watching.current().map_or(0, |m| m.id),
+        live.stale.is_some(),
     );
     #[cfg(target_arch = "wasm32")]
     {
@@ -243,7 +245,7 @@ mod net {
     use wasm_bindgen_futures::spawn_local;
 
     /// Set `window.__arena.live` to how watching stands.
-    pub fn show((on, connected, frames, through, id): super::Standing) {
+    pub fn show((on, connected, frames, through, id, stale): super::Standing) {
         use js_sys::{Object, Reflect};
         use wasm_bindgen::JsValue;
         let Some(window) = web_sys::window() else {
@@ -258,6 +260,7 @@ mod net {
         set("frames", (frames as f64).into());
         set("through", through.into());
         set("match", id.into());
+        set("stale", stale.into());
         let arena = Object::new();
         let _ = Reflect::set(&arena, &JsValue::from_str("live"), &live);
         let _ = Reflect::set(&window, &JsValue::from_str("__arena"), &arena);
