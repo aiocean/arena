@@ -1,0 +1,108 @@
+//! The arena's duel as a Bevy game. The rules (`pixfx-duel`, themselves a bevy_ecs world stepped in whole ticks) run
+//! inside the game as a non-send resource; what a step hands back (effect commands and events, `Out`) becomes
+//! messages the rest of the game answers: the spells play as particles, the fight's feel shakes and stops the
+//! screen, the HUD shows the bars and skills. Natively each corner's bot runs in wasmtime (the house AI from its
+//! ONNX model); in the browser the page hands the game the modules and the game instantiates them.
+//!
+//! The world is measured in the page's pixels (a `UNIT`th of the rules'): one world pixel is a whole number of
+//! screen pixels, and a fighter's sprite, `UNIT` times finer, a whole number too.
+
+#![forbid(unsafe_code)]
+
+pub mod bots;
+pub mod feel;
+pub mod fighters;
+pub mod hud;
+pub mod layers;
+pub mod layout;
+pub mod light;
+pub mod pick;
+pub mod raster;
+pub mod rules;
+pub mod scene;
+pub mod sheet;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod shots;
+pub mod vfx;
+
+use bevy::prelude::*;
+
+/// The order of a frame: the feel decides how fast the fight runs, the rules step, then everything is drawn and the
+/// pictures go to the screen.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Frame {
+    /// The fight's pace this frame (hit-stop, slow motion) and the layout when the window changed.
+    Pace,
+    /// The rules step and their commands and events go out as messages.
+    Rules,
+    /// The feel, the effects, the fighters, the light and the HUD answer what the rules did.
+    React,
+    /// The world's pictures are painted (scene, effects, light, HUD).
+    Paint,
+    /// The painted pictures go to their textures.
+    Upload,
+}
+
+/// How a game starts: its seed (a random one when `None`) and what sits in each corner.
+#[derive(Resource, Clone, Debug)]
+pub struct Start {
+    pub seed: Option<u32>,
+    pub corners: [bots::Corner; 2],
+}
+
+impl Default for Start {
+    fn default() -> Start {
+        Start {
+            seed: None,
+            corners: [bots::Corner::House, bots::Corner::House],
+        }
+    }
+}
+
+/// The game, ready to run: a window over the canvas `#scene` in the browser, its own window natively.
+pub fn app(start: Start) -> App {
+    let mut app = App::new();
+    app.add_plugins(
+        DefaultPlugins
+            .set(ImagePlugin::default_nearest())
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Arena".into(),
+                    canvas: Some("#scene".into()),
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: false,
+                    resolution: bevy::window::WindowResolution::new(1280, 720),
+                    ..default()
+                }),
+                ..default()
+            }),
+    )
+    .insert_resource(ClearColor(Color::srgb_u8(8, 6, 18)))
+    .insert_resource(start)
+    .configure_sets(
+        Update,
+        (
+            Frame::Pace,
+            Frame::Rules,
+            Frame::React,
+            Frame::Paint,
+            Frame::Upload,
+        )
+            .chain(),
+    )
+    .add_plugins((
+        layout::LayoutPlugin,
+        layers::LayersPlugin,
+        bots::BotsPlugin,
+        rules::RulesPlugin,
+        feel::FeelPlugin,
+        scene::ScenePlugin,
+        light::LightPlugin,
+        vfx::VfxPlugin,
+        fighters::FightersPlugin,
+        hud::HudPlugin,
+    ));
+    #[cfg(not(target_arch = "wasm32"))]
+    app.add_plugins(shots::ShotsPlugin);
+    app
+}
