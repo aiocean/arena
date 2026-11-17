@@ -93,7 +93,7 @@ round: the runner's size depends on this number.
 | `BotSeat`: `PolicyMind`'s `begin` / `due` / `queue` around a `Decider`; `LogSeat`; recording the act log | `crates/pixfx-duel/src/seat.rs` (the `Decider` trait keeps wasmtime out of the rules) |
 | Playing an act log on the page | `crates/arena-wasm` (`Duel.fromLog`), `site/assets/duel.js` and the watch page |
 | An opponent bot in training | `crates/pixfx-duel-py`: `env.set_bot(id, bytes)`, opponent `"bot"` |
-| The arena's CLI: the submission checks, the ladder, a fight with its act log, checking a log | `crates/arena-bot` binary (`check`, `ladder`, `fight`, `verify`); `pixfx_duel.check(bytes)` in Python |
+| The arena's CLI: the submission checks, the ladder, a fight with its act log, checking a log | `crates/arena-bot` binary (`check`, `ladder`, `match`, `fight`, `verify`); `pixfx_duel.check(bytes)` in Python |
 | Templates a player starts from | `bots/`: `mlp` (Rust: the shipped network as a bot), `onnx` (Rust: tract runs an embedded ONNX file) |
 
 The engine (`pixfx-mind`) does not change: `PolicyMind` already exposes `begin`, `due` and `queue`. The house bot

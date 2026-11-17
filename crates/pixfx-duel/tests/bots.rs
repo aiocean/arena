@@ -1,7 +1,9 @@
-//! Contestants by name or weights file, a bout between two of them, and the entry bar.
+//! Contestants by name, weights file or decider, a bout between two of them, and the entry bar.
 
 use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar};
-use pixfx_duel::seat::shipped;
+use pixfx_duel::seat::{Decider, Fault, shipped};
+use pixfx_mind::policy::{ACTIONS, OBS};
+use std::rc::Rc;
 
 fn quick(seeds: u32) -> Match {
     Match {
@@ -66,7 +68,7 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
 #[test]
 fn the_shipped_policy_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>> {
     // 6 seeds: 2 are 12 rounds, too few to tell a 93% bot from the 80% bar (the full ladder is 150)
-    let bar = entry_bar(&shipped()?, &quick(6));
+    let bar = entry_bar(&Bot::Policy(shipped()?), &quick(6));
     assert!(
         bar.passed(),
         "vs brain {:.3} (thunder {:.3}, frost {:.3}), vs first {:.3}",
@@ -76,4 +78,43 @@ fn the_shipped_policy_clears_the_entry_bar() -> Result<(), Box<dyn std::error::E
         bar.vs_first.win_rate()
     );
     Ok(())
+}
+
+/// A decider that waits every decision, or traps on its first.
+struct Still {
+    traps: bool,
+}
+
+impl Decider for Still {
+    fn start(&mut self, _seed: u32) -> Result<(), Fault> {
+        Ok(())
+    }
+    fn round(&mut self) -> Result<(), Fault> {
+        Ok(())
+    }
+    fn decide(&mut self, _: &[f32; OBS], _: &[bool; ACTIONS], _: f32) -> Result<i32, Fault> {
+        if self.traps {
+            Err(Fault::Trap("still".to_string()))
+        } else {
+            Ok(-1)
+        }
+    }
+}
+
+fn still(traps: bool) -> Bot {
+    Bot::Decider(Rc::new(move || {
+        Box::new(Still { traps }) as Box<dyn Decider>
+    }))
+}
+
+#[test]
+fn a_decider_is_a_contestant_and_one_that_faults_loses_every_fight() {
+    let m = quick(2);
+    let r = bout(&still(false), &Bot::Brain, &m);
+    assert_eq!(r.faults, [0, 0], "{r:?}");
+    assert_eq!(r, bout(&still(false), &Bot::Brain, &m));
+    let r = bout(&still(true), &Bot::Brain, &m);
+    // 2 seeds x 2 corners, each lost to the fault
+    assert_eq!((r.faults, r.won), ([4, 0], [0, 0]), "{r:?}");
+    assert!(!entry_bar(&still(true), &m).passed());
 }

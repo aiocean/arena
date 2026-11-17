@@ -38,6 +38,9 @@ cargo run --release -p pixfx-duel --example match -- mine.bin brain --seeds 150
 cargo run --release -p pixfx-duel --example match -- mine.bin rival.bin
 cargo run --release -p pixfx-duel --example match -- mine.bin --bar   # PASS or FAIL (exit 1)
 cargo run --release -p pixfx-duel --example ladder -- --weights mine.bin --telemetry
+# a bot module (.wasm) fights through the arena's CLI, which also takes everything above
+cargo run --release -p arena-bot -- match mine.wasm brain --seeds 150
+cargo run --release -p arena-bot -- match mine.wasm --bar
 ```
 
 The same from Python:

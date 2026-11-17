@@ -10,7 +10,7 @@ use crate::fighter::State;
 use crate::first_mind::FirstMind;
 use crate::out::{Note, Out, Stop};
 use crate::scripted::Scripted;
-use crate::seat::{Brain, Fault, MakeSeat, PolicySeat, Seat};
+use crate::seat::{BotSeat, Brain, Decider, Fault, MakeSeat, PolicySeat, Seat};
 use crate::style::Style;
 use pixfx_mind::policy::Net;
 use pixfx_mind::{Choice, Outcome, Posture};
@@ -467,8 +467,8 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
     r
 }
 
-/// A contestant: a seat the rules ship (the brain, the first mind, the two scripted fighters) or a trained network
-/// from a weights file.
+/// A contestant: a seat the rules ship (the brain, the first mind, the two scripted fighters), a trained network
+/// from a weights file, or a network run by its host (a bot module).
 #[derive(Clone)]
 pub enum Bot {
     Brain,
@@ -477,6 +477,8 @@ pub enum Bot {
     Turtle,
     /// The network plays the style each fight draws for its fighter.
     Policy(Rc<Net>),
+    /// A fresh decider for each fight, seated through `BotSeat`; it plays the style each fight draws.
+    Decider(Rc<dyn Fn() -> Box<dyn Decider>>),
 }
 
 impl Bot {
@@ -502,7 +504,38 @@ impl Bot {
             Bot::Aggressive => Scripted::aggressive(),
             Bot::Turtle => Scripted::turtle(),
             Bot::Policy(net) => PolicySeat::make(Rc::clone(net)),
+            Bot::Decider(new) => BotSeat::make(Rc::clone(new), None),
         }
+    }
+
+    /// A fresh seat maker in the balanced style, the entry bar's: a network's; a built-in plays as it always does.
+    pub fn balanced(&self) -> MakeSeat {
+        match self {
+            Bot::Policy(net) => PolicySeat::with_style(Rc::clone(net), Style::Balanced),
+            Bot::Decider(new) => BotSeat::make(Rc::clone(new), Some(Style::Balanced)),
+            _ => self.maker(),
+        }
+    }
+
+    /// The contestant `spec` names: a built-in (`NAMES`), `shipped` for `weights/policy.bin`, or a weights file.
+    pub fn of(spec: &str) -> Result<Bot, String> {
+        if spec == "shipped" {
+            return crate::seat::shipped()
+                .map(Bot::Policy)
+                .map_err(|e| format!("shipped: {e}"));
+        }
+        if let Some(b) = Bot::named(spec) {
+            return Ok(b);
+        }
+        let bytes = std::fs::read(spec).map_err(|e| {
+            format!(
+                "{spec}: not a built-in bot ({}, shipped) nor a file: {e}",
+                Bot::NAMES.join(", ")
+            )
+        })?;
+        Net::load(&bytes)
+            .map(|n| Bot::Policy(Rc::new(n)))
+            .map_err(|e| format!("{spec}: {e}"))
     }
 }
 
@@ -512,7 +545,7 @@ pub fn bout(a: &Bot, b: &Bot, m: &Match) -> Record {
 }
 
 /// The tournament's entry bar (`docs/tournament.md`, "Checks on submission"), measured as the ladder does: the
-/// network in the balanced style against the brain and against the first mind.
+/// bot in the balanced style against the brain and against the first mind.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EntryBar {
     pub vs_brain: Record,
@@ -534,9 +567,9 @@ impl EntryBar {
     }
 }
 
-/// Measure `net` against the entry bar over `m`.
-pub fn entry_bar(net: &Rc<Net>, m: &Match) -> EntryBar {
-    let me = || PolicySeat::with_style(Rc::clone(net), Style::Balanced);
+/// Measure `bot` against the entry bar over `m`.
+pub fn entry_bar(bot: &Bot, m: &Match) -> EntryBar {
+    let me = || bot.balanced();
     EntryBar {
         vs_brain: match_up(&me, &Brain::make, m),
         vs_first: match_up(&me, &FirstMind::make, m),

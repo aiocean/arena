@@ -1,20 +1,21 @@
-//! `arena-bot check FILE [--known FILE]` | `ladder FILE [--vs FILE] [--seeds N]` | `fight A B --seed N [--out LOG]` | `verify LOG A B`:
-//! exit 0 on a pass, 1 with the reason on stderr otherwise.
+//! `arena-bot check FILE [--known FILE]` | `ladder FILE [--vs FILE] [--seeds N]` | `match A B [--seeds N] [--from N]` |
+//! `match A --bar [--seeds N] [--from N]` | `fight A B --seed N [--out LOG]` | `verify LOG A B`: exit 0 on a pass, 1 with the
+//! reason on stderr otherwise. A bot of `match` is a module (`.wasm`) or what `pixfx-duel`'s `match` example takes: a
+//! weights file, `shipped` or a built-in seat.
 
 use std::error::Error;
 use std::process::ExitCode;
 
-use arena_bot::run::{LIMIT, ROUNDS, Verdict, bot, effects, entry, fought, verify};
+use arena_bot::run::{LIMIT, ROUNDS, Verdict, bot, effects, entry, fought, rows, verify};
 use arena_bot::{check, engine};
 use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::ladder::{Match, Record, match_up};
+use pixfx_duel::ladder::{Bot, Match, Record, bout, entry_bar, match_up};
 use pixfx_duel::log::ActLog;
 use pixfx_duel::scripted::Scripted;
 use pixfx_duel::seat::Brain;
-use pixfx_duel::style::Style;
 use wasmtime::Engine;
 
-const USAGE: &str = "usage: arena-bot check FILE [--known FILE] | ladder FILE [--vs FILE] [--seeds N] | fight A B --seed N [--out LOG] | verify LOG A B";
+const USAGE: &str = "usage: arena-bot check FILE [--known FILE] | ladder FILE [--vs FILE] [--seeds N] | match A B [--seeds N] [--from N] | match A --bar [--seeds N] [--from N] | fight A B --seed N [--out LOG] | verify LOG A B";
 
 /// The seeds of the ladder and of the entry bar.
 const SEEDS: u32 = 150;
@@ -38,7 +39,7 @@ fn flag(args: &[String], name: &str) -> Option<String> {
         .cloned()
 }
 
-/// The arguments that are neither a flag nor a flag's value.
+/// The arguments that are neither a flag nor a flag's value (`--bar` has none).
 fn files(args: &[String]) -> Vec<&String> {
     let mut out = Vec::new();
     let mut skip = false;
@@ -46,7 +47,7 @@ fn files(args: &[String]) -> Vec<&String> {
         if skip {
             skip = false;
         } else if a.starts_with("--") {
-            skip = true;
+            skip = a != "--bar";
         } else {
             out.push(a);
         }
@@ -79,6 +80,43 @@ fn command(args: &[String]) -> Result<(), Box<dyn Error>> {
         }
         (Some("ladder"), [file]) => {
             ladder(&engine, file, flag(rest, "--vs"), flag(rest, "--seeds"))
+        }
+        (Some("match"), bots @ ([_] | [_, _])) => {
+            let seeds: u32 = flag(rest, "--seeds").map_or(Ok(SEEDS), |s| s.parse())?;
+            let from: u32 = flag(rest, "--from").map_or(Ok(1), |s| s.parse())?;
+            let m = Match {
+                seeds: from..from + seeds,
+                rounds: ROUNDS,
+                limit: LIMIT,
+                effects: effects(),
+            };
+            let bar = rest.iter().any(|a| a == "--bar");
+            match (bots, bar) {
+                ([a], true) => {
+                    let b = entry_bar(&contestant(&engine, a)?, &m);
+                    print_record("vs brain", &b.vs_brain);
+                    print_record("vs first mind", &b.vs_first);
+                    for (name, rate, min) in rows(&b) {
+                        println!(
+                            "{name:<28} {:>5.1}% (bar {:.0}%)",
+                            rate * 100.0,
+                            min * 100.0
+                        );
+                    }
+                    if b.passed() {
+                        println!("entry bar: PASS");
+                        Ok(())
+                    } else {
+                        Err("entry bar: FAIL".into())
+                    }
+                }
+                ([a, b], false) => {
+                    let r = bout(&contestant(&engine, a)?, &contestant(&engine, b)?, &m);
+                    print_record(&format!("{a} vs {b}"), &r);
+                    Ok(())
+                }
+                _ => Err(USAGE.into()),
+            }
         }
         (Some("fight"), [a, b]) => {
             let seed = flag(rest, "--seed")
@@ -118,6 +156,33 @@ fn command(args: &[String]) -> Result<(), Box<dyn Error>> {
     }
 }
 
+/// The bot `spec` names: a module (`.wasm`, checked), or a weights file, `shipped` or a built-in seat.
+fn contestant(engine: &Engine, spec: &str) -> Result<Bot, Box<dyn Error>> {
+    if spec.ends_with(".wasm") {
+        let module =
+            check(engine, &std::fs::read(spec)?).map_err(|why| format!("{spec}: {why}"))?;
+        return Ok(bot(engine, &module));
+    }
+    Ok(Bot::of(spec)?)
+}
+
+/// `r`, from the first bot's side, as `pixfx-duel`'s `match` example prints it, with the faults.
+fn print_record(name: &str, r: &Record) {
+    let pct = |x: f64| format!("{:.1}%", x * 100.0);
+    println!(
+        "{name}: won {} (as Thunder {}, as Frost {}), {} of {} rounds; mean round {:.1} s; {} fights cut; faults {}/{}",
+        pct(r.win_rate()),
+        pct(r.as_school(0)),
+        pct(r.as_school(1)),
+        r.won[0] + r.won[1],
+        r.won[0] + r.won[1] + r.lost[0] + r.lost[1],
+        r.mean_length(),
+        r.timeouts,
+        r.faults[0],
+        r.faults[1]
+    );
+}
+
 /// The module against the house opponents, itself and `--vs`, printed as the example ladder prints its rows.
 fn ladder(
     engine: &Engine,
@@ -127,8 +192,9 @@ fn ladder(
 ) -> Result<(), Box<dyn Error>> {
     let seeds: u32 = seeds.map_or(Ok(SEEDS), |s| s.parse())?;
     let module = check(engine, &std::fs::read(file)?)?;
-    let balanced = bot(engine, &module, Some(Style::Balanced));
-    let drawn = bot(engine, &module, None);
+    let me = bot(engine, &module);
+    let balanced = || me.balanced();
+    let drawn = || me.maker();
     let m = Match {
         seeds: 1..seeds + 1,
         rounds: ROUNDS,
@@ -168,14 +234,10 @@ fn ladder(
     );
     row("mirror, styles drawn", match_up(&drawn, &drawn, &m));
     if let Some(other) = vs {
-        let theirs = bot(
-            engine,
-            &check(engine, &std::fs::read(&other)?)?,
-            Some(Style::Balanced),
-        );
+        let theirs = bot(engine, &check(engine, &std::fs::read(&other)?)?);
         row(
             &format!("balanced vs {other}"),
-            match_up(&balanced, &theirs, &m),
+            match_up(&balanced, &|| theirs.balanced(), &m),
         );
     }
     Ok(())

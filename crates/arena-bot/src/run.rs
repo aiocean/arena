@@ -6,11 +6,9 @@ use std::ops::Range;
 use std::rc::Rc;
 
 use pixfx_duel::duel::{Duel, DuelConfig, TICK};
-use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::ladder::{Match, match_up};
+use pixfx_duel::ladder::{Bot, EntryBar, Match, entry_bar};
 use pixfx_duel::log::{ActLog, recorded};
-use pixfx_duel::seat::{BotSeat, Brain, Decider, Fault, MakeSeat};
-use pixfx_duel::style::Style;
+use pixfx_duel::seat::{Decider, Fault, MakeSeat};
 use pixfx_mind::policy::{ACTIONS, OBS};
 use wasmtime::{Engine, Module};
 
@@ -38,19 +36,13 @@ impl Decider for Broken {
     }
 }
 
-/// A maker of seats for a checked module, a fresh instance for each fight, in `style` (`None`: the fight's draw).
-pub fn bot(
-    engine: &Engine,
-    module: &Module,
-    style: Option<Style>,
-) -> impl Fn() -> MakeSeat + use<> {
+/// A checked module as a contestant: a fresh instance for each fight.
+pub fn bot(engine: &Engine, module: &Module) -> Bot {
     let (engine, module) = (engine.clone(), module.clone());
-    let new: Rc<dyn Fn() -> Box<dyn Decider>> =
-        Rc::new(move || match WasmBot::new(&engine, &module) {
-            Ok(bot) => Box::new(bot),
-            Err(fault) => Box::new(Broken(fault)),
-        });
-    move || BotSeat::make(new.clone(), style)
+    Bot::Decider(Rc::new(move || match WasmBot::new(&engine, &module) {
+        Ok(bot) => Box::new(bot),
+        Err(fault) => Box::new(Broken(fault)),
+    }))
 }
 
 pub fn effects() -> Vec<String> {
@@ -117,7 +109,7 @@ pub fn fought(
         bots: [hash(a), hash(b)],
         ..ActLog::default()
     }));
-    let seats = [bot(engine, &ma, None)(), bot(engine, &mb, None)()]
+    let seats = [bot(engine, &ma).maker(), bot(engine, &mb).maker()]
         .map(|make| recorded(make, log.clone()));
     let faults = play(seats, seed, rounds, limit);
     Ok((log.take(), faults))
@@ -196,27 +188,32 @@ pub fn verify(engine: &Engine, log: &ActLog, a: &[u8], b: &[u8]) -> Result<(), M
     Ok(())
 }
 
-/// One bar of the entry: what the module won against an opponent, and what it had to.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Row {
-    pub name: &'static str,
-    pub rate: f64,
-    pub bar: f64,
-}
-
-impl Row {
-    fn met(&self) -> bool {
-        self.rate >= self.bar
-    }
+/// The parts of the entry bar: each one's name, what the module won, and what it had to.
+pub fn rows(bar: &EntryBar) -> [(&'static str, f64, f64); 4] {
+    let brain = &bar.vs_brain;
+    [
+        ("vs brain", brain.win_rate(), EntryBar::BRAIN),
+        (
+            "vs brain as Thunder",
+            brain.as_school(0),
+            EntryBar::BRAIN_EACH_SCHOOL,
+        ),
+        (
+            "vs brain as Frost",
+            brain.as_school(1),
+            EntryBar::BRAIN_EACH_SCHOOL,
+        ),
+        ("vs first mind", bar.vs_first.win_rate(), EntryBar::FIRST),
+    ]
 }
 
 /// Whether a module enters the season.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Verdict {
-    /// Every check passed; the module's hash and the bar's rows.
+    /// Every check passed; the module's hash and what it won at the bar.
     Pass {
         hash: String,
-        rows: Vec<Row>,
+        bar: EntryBar,
     },
     Refused(Refusal),
     /// The arena has this module already.
@@ -227,23 +224,17 @@ pub enum Verdict {
     FaultedFights(u32),
     /// Two fresh instances answered the recorded decisions differently: the call where they first differ.
     Unstable(usize),
-    /// The first bar it missed.
-    Below(Row),
+    /// It won too little at the bar.
+    Below(EntryBar),
 }
 
 impl fmt::Display for Verdict {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let pct = |x: f64| x * 100.0;
         match self {
-            Verdict::Pass { hash, rows } => {
-                for r in rows {
-                    writeln!(
-                        f,
-                        "{:<28} {:>5.1}% (bar {:.0}%)",
-                        r.name,
-                        pct(r.rate),
-                        pct(r.bar)
-                    )?;
+            Verdict::Pass { hash, bar } => {
+                for (name, rate, min) in rows(bar) {
+                    writeln!(f, "{name:<28} {:>5.1}% (bar {:.0}%)", pct(rate), pct(min))?;
                 }
                 write!(f, "enters the season as {hash}")
             }
@@ -255,13 +246,16 @@ impl fmt::Display for Verdict {
                 f,
                 "two fresh instances differ at decision {at} (act or fuel left)"
             ),
-            Verdict::Below(r) => write!(
-                f,
-                "{}: {:.1}%, the bar is {:.0}%",
-                r.name,
-                pct(r.rate),
-                pct(r.bar)
-            ),
+            Verdict::Below(bar) => {
+                let missed: Vec<String> = rows(bar)
+                    .into_iter()
+                    .filter(|(_, rate, min)| rate < min)
+                    .map(|(name, rate, min)| {
+                        format!("{name}: {:.1}%, the bar is {:.0}%", pct(rate), pct(min))
+                    })
+                    .collect();
+                write!(f, "{}", missed.join("; "))
+            }
         }
     }
 }
@@ -347,7 +341,6 @@ pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>, known: &[String])
         Ok(module) => module,
         Err(why) => return Verdict::Refused(why),
     };
-    let balanced = bot(engine, &module, Some(Style::Balanced));
     let recorded = decisions(DECISIONS);
     let twice = [0, 1].map(|_| answers(engine, &module, &recorded));
     let [first, second] = twice;
@@ -364,37 +357,14 @@ pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>, known: &[String])
         limit: LIMIT,
         effects: effects(),
     };
-    let brain = match_up(&balanced, &Brain::make, &m);
-    let first = match_up(&balanced, &FirstMind::make, &m);
-    for r in [&brain, &first] {
-        if let Some(n) = r.faults.iter().find(|n| **n > 0) {
-            return Verdict::FaultedFights(*n);
-        }
+    let bar = entry_bar(&bot(engine, &module), &m);
+    let faulted = bar.vs_brain.faults[0] + bar.vs_first.faults[0];
+    if faulted > 0 {
+        return Verdict::FaultedFights(faulted);
     }
-    let rows = vec![
-        Row {
-            name: "vs brain",
-            rate: brain.win_rate(),
-            bar: 0.75,
-        },
-        Row {
-            name: "vs brain as Thunder",
-            rate: brain.as_school(0),
-            bar: 0.65,
-        },
-        Row {
-            name: "vs brain as Frost",
-            rate: brain.as_school(1),
-            bar: 0.65,
-        },
-        Row {
-            name: "vs first mind",
-            rate: first.win_rate(),
-            bar: 0.80,
-        },
-    ];
-    match rows.iter().find(|r| !r.met()) {
-        Some(row) => Verdict::Below(row.clone()),
-        None => Verdict::Pass { hash: id, rows },
+    if bar.passed() {
+        Verdict::Pass { hash: id, bar }
+    } else {
+        Verdict::Below(bar)
     }
 }

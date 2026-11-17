@@ -340,7 +340,7 @@ fn entry_bar<'py>(py: Python<'py>, weights: Vec<u8>, seeds: (u32, u32)) -> PyRes
     let m = fight_match(seeds, 3, 120.0)?;
     let bar = py.detach(move || -> Result<_, String> {
         let net = Rc::new(Net::load(&weights).map_err(|e| e.to_string())?);
-        Ok(measure_bar(&net, &m))
+        Ok(measure_bar(&Bot::Policy(net), &m))
     });
     let bar = bar.map_err(PyValueError::new_err)?;
     let d = PyDict::new(py);

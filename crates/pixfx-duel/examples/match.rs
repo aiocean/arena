@@ -1,32 +1,11 @@
 //! Two bots fight a match and the first one's record is printed: each a weights file or a built-in seat
 //! (`brain`, `first`, `aggressive`, `turtle`, or `shipped` for the trained policy in `weights/policy.bin`).
-//! Every seed is fought both ways, so neither school's edge decides it. With `--bar`, the first bot (a weights file)
-//! is measured against the tournament's entry bar instead.
+//! Every seed is fought both ways, so neither school's edge decides it. With `--bar`, the first bot is measured
+//! against the tournament's entry bar instead. A bot module (`.wasm`) runs in wasmtime: `arena-bot match`.
 //!
 //! `cargo run --release -p pixfx-duel --example match -- A [B] [--seeds 150] [--from 1] [--rounds 3] [--limit 120] [--bar]`
 
 use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar};
-use pixfx_duel::seat::shipped;
-use pixfx_mind::policy::Net;
-use std::rc::Rc;
-
-fn bot(spec: &str) -> Result<Bot, Box<dyn std::error::Error>> {
-    if spec == "shipped" {
-        return Ok(Bot::Policy(shipped()?));
-    }
-    if let Some(b) = Bot::named(spec) {
-        return Ok(b);
-    }
-    let bytes = std::fs::read(spec).map_err(|e| {
-        format!(
-            "{spec}: not a built-in bot ({}, shipped) nor a file: {e}",
-            Bot::NAMES.join(", ")
-        )
-    })?;
-    Ok(Bot::Policy(Rc::new(
-        Net::load(&bytes).map_err(|e| format!("{spec}: {e}"))?,
-    )))
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -68,10 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     match (bots.as_slice(), bar) {
         ([a], true) => {
-            let Bot::Policy(net) = bot(a)? else {
-                return Err(format!("{a}: the entry bar measures a weights file").into());
-            };
-            let b = entry_bar(&net, &m);
+            let b = entry_bar(&Bot::of(a)?, &m);
             print_record("vs brain", &b.vs_brain);
             print_record("vs first mind", &b.vs_first);
             println!(
@@ -85,7 +61,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 std::process::exit(1);
             }
         }
-        ([a, b], false) => print_record(&format!("{a} vs {b}"), &bout(&bot(a)?, &bot(b)?, &m)),
+        ([a, b], false) => print_record(
+            &format!("{a} vs {b}"),
+            &bout(&Bot::of(a)?, &Bot::of(b)?, &m),
+        ),
         _ => return Err("usage: match A B [flags] | match A --bar [flags]".into()),
     }
     Ok(())
