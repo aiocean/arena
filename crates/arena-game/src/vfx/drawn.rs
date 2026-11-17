@@ -72,6 +72,8 @@ pub struct Drawing {
     moved: f32,
     flip: bool,
     trail: VecDeque<(f32, Vec2)>,
+    /// The round it was played in: a new round stops it.
+    round: u32,
 }
 
 /// The fight a playing belongs to: swept away when the next begins.
@@ -230,6 +232,7 @@ fn commands(
                         moved: 0.0,
                         flip: opts.flip.unwrap_or(false),
                         trail: VecDeque::new(),
+                        round: round_of(&shown),
                     },
                     at: layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0),
                 });
@@ -287,11 +290,24 @@ fn commands(
     }
 }
 
-/// A new fight sweeps away what the last one played.
-fn sweep(mut commands: Commands, shown: Res<Shown>, playing: Query<(Entity, &DrawnFight)>) {
-    for (e, fight) in &playing {
+/// The round the rules are in.
+fn round_of(shown: &Shown) -> u32 {
+    shown.view.as_ref().map_or(0, |v| v.round)
+}
+
+/// A new fight sweeps away what the last one played; a new round stops what the last one played, so it plays out
+/// its exit instead of lingering over the fighters set back in their corners.
+fn sweep(
+    mut commands: Commands,
+    shown: Res<Shown>,
+    mut playing: Query<(Entity, &DrawnFight, &mut Drawing)>,
+) {
+    let round = round_of(&shown);
+    for (e, fight, mut d) in &mut playing {
         if fight.0 != shown.fight {
             commands.entity(e).despawn();
+        } else if d.round != round && d.stopped.is_none() {
+            d.stopped = Some(d.t);
         }
     }
 }
@@ -532,6 +548,62 @@ mod tests {
                 "seed {seed}: {most} drawn effects alive at once"
             );
         }
+    }
+
+    /// A new round stops what the last one played: once the next round has begun and an exit has had time to play,
+    /// no effect of an earlier round is left over the fighters set back in their corners.
+    #[test]
+    fn a_new_round_ends_the_last_rounds_effects() {
+        use arena_duel::duel::Duel;
+        use arena_duel::scripted::Scripted;
+        use arena_duel::view::view;
+        let layout = Layout::default();
+        let mut duel = Duel::new(
+            crate::rules::config(&layout, 7),
+            [Scripted::aggressive(), Scripted::aggressive()],
+        );
+        let mut app = App::new();
+        app.insert_resource(layout)
+            .insert_resource(Shown::default())
+            .insert_resource(Pace::default())
+            .add_message::<Fx>()
+            .add_systems(Update, (sweep, commands, animate).chain());
+        let dt = 1.0 / 60.0;
+        let (mut since, mut rounds) = (0.0, 0);
+        for _ in 0..60 * 240 {
+            for out in duel.step(dt) {
+                app.world_mut().write_message(Fx(out));
+            }
+            let round = duel.state().round;
+            if app
+                .world()
+                .resource::<Shown>()
+                .view
+                .as_ref()
+                .map(|v| v.round)
+                != Some(round)
+            {
+                since = 0.0;
+                rounds += 1;
+            }
+            app.world_mut().resource_mut::<Shown>().view = Some(view(duel.state()));
+            app.world_mut().resource_mut::<Pace>().run = dt;
+            app.update();
+            since += dt;
+            if since > f64::from(FADE_SECS) + 0.1 {
+                let old = app
+                    .world_mut()
+                    .query::<&Drawing>()
+                    .iter(app.world())
+                    .filter(|d| d.round != round)
+                    .count();
+                assert_eq!(
+                    old, 0,
+                    "{since:.2} s into round {round}: {old} of the last round's effects still play"
+                );
+            }
+        }
+        assert!(rounds > 2, "only {rounds} rounds");
     }
 
     #[test]
