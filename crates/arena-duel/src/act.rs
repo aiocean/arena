@@ -451,6 +451,7 @@ fn strikes(state: &mut State, me: usize, k: usize, built: &Built, p: Payload, ta
                 origin,
                 aim: target,
                 target: None,
+                retry: false,
             });
         }
     }
@@ -541,6 +542,7 @@ pub fn strike(
                         origin: o,
                         aim: target,
                         target: None,
+                        retry: true,
                     });
                 }
                 None => {}
@@ -1088,6 +1090,10 @@ pub fn break_act(state: &mut State, f: usize) {
         state.emit(Out::Stop { key });
     }
     state.fighters[f].act = None;
+    // its blade's retries go with the swing
+    state
+        .pending
+        .retain(|d| !(d.retry && d.payload.by == f && d.origin.unit.is_none()));
 }
 
 /// Between rounds: the loser falls and lies where it lands; the winner comes down and stands over it.
@@ -1139,6 +1145,10 @@ pub fn due(state: &mut State, d: Pending) {
                 },
                 None => {
                     if !state.fighters[d.payload.by].alive() {
+                        return;
+                    }
+                    // a missed blade's retry, its window shut (or its act broken) since: the swing is over
+                    if d.retry && !crate::frames::in_window(state, d.payload.by) {
                         return;
                     }
                     Origin::of(state, d.payload.by)

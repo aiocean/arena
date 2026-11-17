@@ -172,28 +172,48 @@ pub fn scatter(world: &mut World) {
     }
 }
 
+/// A hurtbox `[x0, y0, x1, y1]` (y up from the floor) as round bodies for a projectile: a line of circles as thick as
+/// the box's shorter side, laid along its longer one (a column for a fighter standing, a row for one lying or
+/// falling), each touching the box's ends, so a bolt strikes only near where the box is: (x, y, radius).
+pub fn circles(h: [f64; 4]) -> Vec<(f64, f64, f64)> {
+    let (w, tall) = (h[2] - h[0], h[3] - h[1]);
+    let r = (w.min(tall) / 2.0).max(1.0);
+    // along the longer side: from its start to its end, `r` apart, the last pulled back to touch the end
+    let line = |from: f64, to: f64| {
+        let mut at = Vec::new();
+        let mut c = from + r;
+        loop {
+            at.push(c.min(to - r).max(from + r.min((to - from) / 2.0)));
+            if c + r >= to {
+                break;
+            }
+            c += r;
+        }
+        at
+    };
+    if tall >= w {
+        let cx = (h[0] + h[2]) / 2.0;
+        line(h[1], h[3]).into_iter().map(|cy| (cx, cy, r)).collect()
+    } else {
+        let cy = (h[1] + h[3]) / 2.0;
+        line(h[0], h[2]).into_iter().map(|cx| (cx, cy, r)).collect()
+    }
+}
+
 /// Seat `me`'s enemies as projectile targets (in T): the foe (dead or not), then the foe's units in id order; with
 /// `floor`, traps and mines too.
 pub fn targets_of(state: &State, me: usize, floor: bool) -> Vec<Body> {
     let foe = 1 - me;
     let f = &state.fighters[foe];
     let alive = f.alive() && !f.body.untouchable();
-    // the foe's hurtboxes as the projectile's round bodies: each box a column of circles as wide as it, one target
-    // (the foe's id) however many, so a bolt strikes it once
+    // the foe's hurtboxes as the projectile's round bodies (`circles`), one target (the foe's id) however many, so a
+    // bolt strikes it once
     let mut out = Vec::new();
     for h in crate::frames::hurtboxes(state, foe) {
-        let r = ((h[2] - h[0]) / 2.0).max(1.0);
-        let cx = (h[0] + h[2]) / 2.0;
-        let mut y = h[1] + r;
-        loop {
-            let cy = y.min(h[3] - r).max(h[1] + r.min((h[3] - h[1]) / 2.0));
+        for (cx, cy, r) in circles(h) {
             let mut t = Body::new(foe as u32, state.to_t(cx), cy / T, r / T);
             t.alive = alive;
             out.push(t);
-            if y + r >= h[3] {
-                break;
-            }
-            y += r;
         }
     }
     for u in state.units.iter().filter(|u| u.owner == foe) {

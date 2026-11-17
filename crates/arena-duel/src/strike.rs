@@ -115,6 +115,9 @@ pub struct Pending {
     pub aim: Option<f64>,
     /// Lands on this, if it still stands (a stored force); `None`: the motion strikes again.
     pub target: Option<Target>,
+    /// A fighter's missed blade trying again next tick: it strikes only if the blade's clip is still in its active
+    /// window then (`frames::in_window`), and a broken act takes it away (`act::break_act`).
+    pub retry: bool,
 }
 
 /// Both fighters' cultivators, `me`'s first.
@@ -530,6 +533,7 @@ fn on_hit_behaviours(
                             },
                             motion,
                             origin,
+                            retry: false,
                             aim: None,
                             target: Some(Target::Fighter(on)),
                         });

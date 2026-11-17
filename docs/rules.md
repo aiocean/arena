@@ -119,7 +119,9 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
   The rules pick the frame a fighter shows as the game draws it (`pick`, from its pose, how long it has held it and
   the cast it gathers), so a fighter crouched is hit low, one in the air where its body is, one striking on its arm. A
   blow, a bolt or a shot touches a fighter when it touches one of those boxes (`shot::overlaps`; a bolt's flight sees
-  each box as a column of round bodies, one target however many).
+  each box as a line of round bodies as thick as its shorter side, laid along its longer one, `unit::circles`: a
+  column for a fighter standing, a row for one lying or falling, so a bolt over a fallen fighter's body passes over
+  it; one target however many).
 - **A strike's active window is where the picture strikes.** A blade or casting clip's active window starts on the
   frame whose blade or hand reaches farthest ahead (the generator finds it); the wind-up plays the clip up to it, so
   the rules strike, and a bolt leaves, on that frame. A blade's window runs on while its blade stays out ahead (the
@@ -128,7 +130,8 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
   the drawing or the skill's reach, whichever is farther, from the hilt in the striker's hand out (`unit::strike_box`):
   a foe pressed inside the hilt is not cut. It is tested on
   the tick the wind-up ends and, if it missed, again on each tick while the window lasts, **one hit a swing**: once it
-  lands it is done. A clip drawn with nothing held out ahead (the Frost slash, drawn striking behind) strikes its own
+  lands it is done. A retry strikes only if the window is still open on its tick, and a broken act (a fighter struck
+  out of its swing) takes its retries with it: a stunned fighter's blade never lands. A clip drawn with nothing held out ahead (the Frost slash, drawn striking behind) strikes its own
   box once: from the striker's middle to its reach ahead, from its feet to its shoulders and a little more. **A
   blast** strikes a box from the caster's middle to its reach ahead, as tall as the foe, once. Each is tested against
   the foe's hurtboxes (`unit::strike_hits`). A foe behind the striker is not struck.
