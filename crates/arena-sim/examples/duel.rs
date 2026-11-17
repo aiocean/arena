@@ -9,7 +9,7 @@
 //!
 //! A loadout not given is drawn at random (`loadout::random`) from the seed. A loadout is `arena_calc::loadout::
 //! Loadout` as JSON, inline or in a file: `{"actives":[{"skill":"fireball","supports":[],"fuse":null}, ...],
-//! "ultimate":"tribulation","keystones":[],"root":null}`.
+//! "keystones":[],"root":null}`.
 
 use arena_calc::loadout::{self, Loadout};
 use arena_sim::fight::{Fight, MatchResult};
