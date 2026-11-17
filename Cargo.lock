@@ -458,6 +458,7 @@ dependencies = [
  "png",
  "serde",
  "serde_json",
+ "sha2",
  "tokio",
  "tracing",
  "ureq",
@@ -6901,6 +6902,7 @@ dependencies = [
  "aws-lc-rs",
  "log",
  "once_cell",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -8201,10 +8203,13 @@ dependencies = [
  "cookie_store",
  "log",
  "percent-encoding",
+ "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "ureq-proto",
  "utf8-zero",
+ "webpki-roots",
 ]
 
 [[package]]

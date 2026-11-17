@@ -25,6 +25,10 @@
 //!   differ; other commits on one rules build (a docs-only site deploy) or a build not known is a `WARN` line.
 //! - `fps` (never fails the run): the page's frame rate over ten seconds of the match, from the gaps between painted
 //!   frames (`requestAnimationFrame`): the rate, the median, the 95th percentile and the longest gap.
+//! - `module`: the deployed house bot module (`bots/policy.wasm`, fetched beside the page) has the sha256 pinned at
+//!   the deployed commit (`crates/arena-bot/tests/goldens/house_module.sha256`, read with `git show` from the clone
+//!   this binary was built in, or from its working tree when its HEAD is that commit). Another hash fails; a pin not
+//!   found (a commit the clone does not have, or none named) is a `WARN` line.
 //!
 //! `--profile` plays the page as a device (`arena_smoke::Profile`): `phone` (390x844 CSS pixels at pixel ratio 3,
 //! touch, a CPU four times slower, 10 Mbit/s at 150 ms), `laptop` (1366x768, twice slower, 20 Mbit/s), `desktop`
@@ -282,6 +286,9 @@ fn run(a: &Args) -> ExitCode {
     if let Some(w) = &summary.build_warning {
         println!("WARN {w}");
     }
+    if let Some(w) = &summary.module_warning {
+        println!("WARN {w}");
+    }
     let json = serde_json::to_string_pretty(&summary).unwrap_or_default();
     let write = || -> Result<(), String> {
         std::fs::create_dir_all(&a.out).map_err(|e| format!("{}: {e}", a.out.display()))?;
@@ -343,6 +350,7 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         check_hud = s.check("hud"),
         check_advances = s.check("advances"),
         check_build = s.check("build"),
+        check_module = s.check("module"),
         failed = %failed.join(","),
         game_start_seconds = s.game_start_seconds,
         first_frame_seconds = s.first_frame_seconds,
@@ -359,6 +367,8 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         page_rules = s.page_rules,
         server_rules = s.server_rules,
         build_warning = s.build_warning.as_deref().unwrap_or(""),
+        module_hash = s.module_hash.as_deref().unwrap_or("unknown"),
+        module_warning = s.module_warning.as_deref().unwrap_or(""),
         errors = s.errors.len(),
         seconds = s.seconds,
         // the connection emulated (`--mbps`), 0 for the machine's own: the timings follow it
@@ -871,6 +881,22 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         server_rules,
     );
     checks.push(build);
+    let module_url = arena_smoke::module_url(&a.url);
+    let commit = deployed_commit.clone();
+    let (module_hash, pinned) = tokio::task::spawn_blocking(move || {
+        (
+            deployed_module(&module_url),
+            commit.as_deref().and_then(pinned_module),
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    let (module, module_warning) = arena_smoke::compare_module(
+        module_hash.as_deref().map_err(String::as_str),
+        pinned.as_ref().map(|(h, from)| (h.as_str(), from.as_str())),
+        deployed_dirty,
+    );
+    checks.push(module);
     let summary = Summary {
         checks,
         status_line: redact(&status),
@@ -888,6 +914,8 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         build_warning,
         profile: a.profile.name.to_string(),
         fps,
+        module_hash: module_hash.ok(),
+        module_warning,
         ..Summary::default()
     };
     Ok((summary, full))
@@ -918,6 +946,53 @@ fn server_build() -> Option<String> {
         .as_str()
         .map(str::to_string)
         .filter(|b| !b.is_empty())
+}
+
+/// The deployed house bot module's sha256: fetched as a visitor's browser would, uncompressed.
+fn deployed_module(url: &str) -> Result<String, String> {
+    let mut res = ureq::get(url)
+        .config()
+        .timeout_global(Some(Duration::from_secs(60)))
+        .build()
+        .call()
+        .map_err(|e| format!("{url}: {e}"))?;
+    let bytes = res
+        .body_mut()
+        .with_config()
+        .limit(256 << 20)
+        .read_to_vec()
+        .map_err(|e| format!("{url}: {e}"))?;
+    Ok(arena_smoke::sha256_hex(&bytes))
+}
+
+/// The house module's hash pinned at `commit`, and where it was read: `git show` in the clone this binary was built
+/// in, else its working tree's golden when the clone's HEAD is that commit; `None` when neither has it.
+fn pinned_module(commit: &str) -> Option<(String, String)> {
+    const GOLDEN: &str = "crates/arena-bot/tests/goldens/house_module.sha256";
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let git = |args: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&repo)
+            .args(args)
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    };
+    if !commit.is_empty()
+        && commit.chars().all(|c| c.is_ascii_hexdigit())
+        && let Some(h) = git(&["show", &format!("{commit}:{GOLDEN}")]).filter(|h| !h.is_empty())
+    {
+        return Some((h, format!("{GOLDEN} at {commit}")));
+    }
+    let head = git(&["rev-parse", "HEAD"])?;
+    if !arena_smoke::same_commit(&head, commit) {
+        return None;
+    }
+    let h = std::fs::read_to_string(repo.join(GOLDEN)).ok()?;
+    let h = h.trim().to_string();
+    (!h.is_empty()).then(|| (h, format!("{GOLDEN} in the clone at {commit}")))
 }
 
 fn lock(seen: &Arc<Mutex<Seen>>) -> std::sync::MutexGuard<'_, Seen> {

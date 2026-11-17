@@ -115,6 +115,10 @@ pub struct Summary {
     pub profile: String,
     /// The page's frame rate over ten seconds of the match, as the browser paints it (`requestAnimationFrame`).
     pub fps: Option<Fps>,
+    /// The deployed house bot module's sha256 (`bots/policy.wasm`), when it could be fetched.
+    pub module_hash: Option<String>,
+    /// A warning that does not fail the run: the deployed commit's pinned module hash could not be found.
+    pub module_warning: Option<String>,
     /// Why the run was retried, when it was.
     pub retry_reason: Option<String>,
     /// The first attempt, when the run was retried (this summary is the second's).
@@ -449,6 +453,85 @@ pub fn compare_builds(
     (Check::new("build", true, detail), warning)
 }
 
+/// Where the house bot module is beside the page: `bots/policy.wasm` resolved against the page's URL.
+pub fn module_url(page: &str) -> String {
+    let base = page.split(['?', '#']).next().unwrap_or(page);
+    let dir = match base.rfind('/') {
+        Some(i) if i + 1 > base.find("://").map_or(0, |s| s + 3) => &base[..=i],
+        _ => return format!("{base}/bots/policy.wasm"),
+    };
+    format!("{dir}bots/policy.wasm")
+}
+
+/// The SHA-256 of `bytes`, lowercase hex, as `crates/arena-bot/tests/goldens/house_module.sha256` holds it.
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+/// The deployed house module against the hash pinned at the deployed commit: the `module` check and, when it passes
+/// with a doubt, a warning.
+///
+/// `got` is the deployed module's sha256, or why it could not be fetched; `pinned` is the golden's hash and where it
+/// was read from, `None` when it could not be found (a commit this clone does not have, or none named): a warning.
+pub fn compare_module(
+    got: Result<&str, &str>,
+    pinned: Option<(&str, &str)>,
+    dirty: bool,
+) -> (Check, Option<String>) {
+    let got = match got {
+        Ok(h) => h.trim().to_ascii_lowercase(),
+        Err(e) => {
+            return (
+                Check::new("module", false, format!("not fetched: {e}")),
+                None,
+            );
+        }
+    };
+    let short = |h: &str| h.chars().take(12).collect::<String>();
+    let dirty = if dirty {
+        " (the page was built dirty)"
+    } else {
+        ""
+    };
+    match pinned {
+        None => (
+            Check::new(
+                "module",
+                true,
+                format!("{} (no pin to compare)", short(&got)),
+            ),
+            Some(format!(
+                "the deployed house module {} could not be compared: the pinned hash at the deployed commit was not found{dirty}",
+                short(&got)
+            )),
+        ),
+        Some((want, from)) if want.trim().eq_ignore_ascii_case(&got) => (
+            Check::new(
+                "module",
+                true,
+                format!("{} as pinned ({from})", short(&got)),
+            ),
+            None,
+        ),
+        Some((want, from)) => (
+            Check::new(
+                "module",
+                false,
+                format!(
+                    "{} deployed, {} pinned ({from}){dirty}: the site was not rebuilt from the pinned module",
+                    short(&got),
+                    short(want.trim())
+                ),
+            ),
+            None,
+        ),
+    }
+}
+
 /// A request the run lets fail, and why: other sites' (the page's fonts) and the icon the browser asks for unasked.
 /// Every request to the page's own origin that fails or answers 4xx/5xx fails the run.
 pub fn ignored_request(url: &str, origin: &str) -> Option<&'static str> {
@@ -695,7 +778,7 @@ pub fn run_page(s: &Summary) -> String {
 <p><a href=\"../\">all runs</a></p>
 <h1>Arena smoke test, {at}: {v}</h1>
 <p>{url} · {secs:.1} s · status line: <code>{status}</code></p>
-<p>{timings} · deployed commit: {commit} · server build: {server}</p>
+<p>{timings} · deployed commit: {commit} · server build: {server} · house module: {module}</p>
 {retry}
 <table><tr><th></th><th>check</th><th>what was seen</th></tr>{rows}</table>
 <h2>Errors</h2>{errors}
@@ -712,6 +795,7 @@ pub fn run_page(s: &Summary) -> String {
         timings = esc(&s.timings()),
         commit = s.deployed_commit.as_deref().map_or("<span class=\"muted\">none named</span>".to_string(), |c| format!("<code>{}</code>", esc(c))),
         server = s.server_build.as_deref().map_or("<span class=\"muted\">unknown</span>".to_string(), |c| format!("<code>{}</code>", esc(c))),
+        module = s.module_hash.as_deref().map_or("<span class=\"muted\">unknown</span>".to_string(), |c| format!("<code>{}</code>", esc(&c[..c.len().min(12)]))),
         retry = match (&s.retry_reason, &s.first_attempt) {
             (Some(why), Some(first)) => format!(
                 "<p class=\"fail\">Retried: {}</p><p class=\"muted\">The first attempt: {} · {} · its checks: {} · <a href=\"attempt-1.png\">its screenshot</a></p>",
@@ -1098,6 +1182,47 @@ mod tests {
         // the server's build unknown (no telemetry store): pass with a warning
         let (c, w) = compare_builds(Some("1a2b3c4d5e6f"), None, Some(9), None);
         assert!(c.pass && w.is_some(), "{c:?} {w:?}");
+    }
+
+    #[test]
+    fn the_module_is_beside_the_page() {
+        assert_eq!(
+            module_url("https://arena.aiocean.io/"),
+            "https://arena.aiocean.io/bots/policy.wasm"
+        );
+        assert_eq!(
+            module_url("https://arena.aiocean.io/index.html?seed=3"),
+            "https://arena.aiocean.io/bots/policy.wasm"
+        );
+        assert_eq!(
+            module_url("http://127.0.0.1:8771"),
+            "http://127.0.0.1:8771/bots/policy.wasm"
+        );
+        assert_eq!(
+            sha256_hex(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn the_module_fails_only_against_its_pin() {
+        let pin = "1ff2619199b1175c096b88a1232e882f1090b25a79281b9248778530cb763b2d";
+        let (c, w) = compare_module(Ok(pin), Some((pin, "golden at 1a2b3c4d5e6f")), false);
+        assert!(c.pass && w.is_none(), "{c:?} {w:?}");
+        let (c, w) = compare_module(
+            Ok(&pin.to_uppercase()),
+            Some((&format!("{pin}\n"), "x")),
+            false,
+        );
+        assert!(c.pass && w.is_none(), "{c:?} {w:?}");
+        let (c, _) = compare_module(Ok("00ff"), Some((pin, "x")), false);
+        assert!(!c.pass, "{c:?}");
+        let (c, _) = compare_module(Ok("00ff"), Some((pin, "x")), true);
+        assert!(!c.pass && c.detail.contains("dirty"), "{c:?}");
+        let (c, w) = compare_module(Ok(pin), None, false);
+        assert!(c.pass && w.is_some(), "{c:?} {w:?}");
+        let (c, _) = compare_module(Err("404"), Some((pin, "x")), false);
+        assert!(!c.pass, "{c:?}");
     }
 
     #[test]
