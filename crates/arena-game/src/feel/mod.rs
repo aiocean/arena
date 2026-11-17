@@ -68,7 +68,11 @@ impl Plugin for FeelPlugin {
 fn pace(time: Res<Time>, mut pace: ResMut<Pace>, mut feel: ResMut<Feel>) {
     let dt = time.delta_secs_f64();
     let run = feel.fight.advance(dt);
-    *pace = Pace { dt, run };
+    *pace = Pace {
+        dt,
+        run,
+        ruled: run,
+    };
 }
 
 /// The step's events: the feel answers, the one struck is jolted, the camera shakes.

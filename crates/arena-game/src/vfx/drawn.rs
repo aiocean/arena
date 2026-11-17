@@ -375,7 +375,9 @@ fn animate(
     mut playing: Query<(Entity, &mut Drawing, &Transform, &Children)>,
     mut sprites: Query<(&Part, &mut Sprite, &mut Transform, &mut Visibility), Without<Drawing>>,
 ) {
-    let dt = pace.run as f32;
+    // the rules' clock: an effect waits with the fight while a live match's frames stall, or one flying would be
+    // taken for forgotten (`UNMOVED`) and gone when they come
+    let dt = pace.ruled as f32;
     for (e, mut d, origin, children) in &mut playing {
         d.t += dt;
         let Some(fx) = all().get(d.effect) else {
@@ -539,7 +541,9 @@ mod tests {
                         app.world_mut().write_message(Fx(out));
                     }
                 }
-                app.world_mut().resource_mut::<Pace>().run = dt * f64::from(ticks);
+                let mut pace = app.world_mut().resource_mut::<Pace>();
+                pace.run = dt * f64::from(ticks);
+                pace.ruled = pace.run;
                 app.update();
                 let alive = app
                     .world_mut()
@@ -596,7 +600,9 @@ mod tests {
                 rounds += 1;
             }
             app.world_mut().resource_mut::<Shown>().view = Some(view(duel.state()));
-            app.world_mut().resource_mut::<Pace>().run = dt;
+            let mut pace = app.world_mut().resource_mut::<Pace>();
+            pace.run = dt;
+            pace.ruled = dt;
             app.update();
             since += dt;
             if since > f64::from(FADE_SECS) + 0.1 {
@@ -696,6 +702,39 @@ mod tests {
         );
         d.stopped = Some(life / 2.0);
         assert_eq!(end_of(fx, &d), life / 2.0);
+    }
+
+    /// A live match's frames stall for two seconds while a bolt flies: the rules stand still and so does the bolt,
+    /// still there to be moved on when the frames come (it was taken for forgotten and gone after one).
+    #[test]
+    fn a_flying_bolt_waits_out_a_stall_in_the_frames() {
+        let layout = Layout::default();
+        let mut app = App::new();
+        app.insert_resource(layout)
+            .insert_resource(Shown::default())
+            .insert_resource(Pace::default())
+            .add_message::<Fx>()
+            .add_systems(Update, (sweep, commands, animate).chain());
+        app.world_mut().write_message(Fx(Out::Play {
+            key: 7,
+            fx: "projectiles/laser-bolt",
+            x: 300.0,
+            y: 400.0,
+            opts: Default::default(),
+        }));
+        let frame = 1.0 / 60.0;
+        for _ in 0..120 {
+            let mut pace = app.world_mut().resource_mut::<Pace>();
+            pace.run = frame;
+            pace.ruled = 0.0;
+            app.update();
+        }
+        let alive = app
+            .world_mut()
+            .query::<&Drawing>()
+            .iter(app.world())
+            .count();
+        assert_eq!(alive, 1, "the bolt went in the stall");
     }
 
     #[test]

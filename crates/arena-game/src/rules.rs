@@ -36,6 +36,9 @@ pub struct Pace {
     pub dt: f64,
     /// The fight's.
     pub run: f64,
+    /// How far the rules were stepped this frame (`step`): the fight's time, or less while a live match's frames
+    /// have not come (none while they stall). What plays to the rules' clock (the drawn effects) ages by this.
+    pub ruled: f64,
 }
 
 /// The duel as it stands after this frame's step, for everything that draws it.
@@ -165,13 +168,14 @@ pub fn lift(out: &mut Out, dy: f64) {
 }
 
 fn step(
-    pace: Res<Pace>,
+    mut pace: ResMut<Pace>,
     layout: Res<Layout>,
     live: NonSend<Live>,
     mut fight: NonSendMut<Fight>,
     mut shown: ResMut<Shown>,
     mut fx: MessageWriter<Fx>,
 ) {
+    pace.ruled = 0.0;
     let Some(duel) = fight.duel.as_mut() else {
         return;
     };
@@ -207,6 +211,7 @@ fn step(
     } else {
         pace.run
     };
+    pace.ruled = run;
     let dy = f64::from(layout.ground) * UNIT - duel.state().ground;
     for mut out in duel.step(run) {
         lift(&mut out, dy);
