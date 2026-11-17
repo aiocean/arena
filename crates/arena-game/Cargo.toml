@@ -50,5 +50,9 @@ url = "2"
 # moq-net's rand draws on getrandom 0.4, which needs its browser backend named too
 getrandom04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
 
+# the offline review shots draw their labels (examples/hitbox_review.rs)
+[dev-dependencies]
+ab_glyph = "0.2"
+
 [lints]
 workspace = true
