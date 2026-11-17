@@ -51,9 +51,10 @@ resolve it there.
   bot: it needs a retrain (`docs/tournament.md`: one test season for now, no tags). Update `docs/bot.md` in the same
   change. The model inside a bot is free: its size or shape is nobody's business.
 - The live page replays the server's matches from their decisions, so the page and `arena-server` must run one rules
-  build. A change to the rules (or to a seat's `think` order) bumps `arena_link::RULES_VERSION` and ships the server
-  with the page: build and restart `io.aiocean.arena-live` (game-factory `backend/arena/README.md`) in the same deploy.
-  A page on other rules is told to reload.
+  build. A change to the rules, to a seat's `think` order or to a bot's inputs or acts bumps
+  `arena_link::RULES_VERSION` to origin's number plus one at push time (`git pull --rebase` first: another change may
+  have taken the next number) and ships the server with the page in one deploy ("Deploy", below). A page on other
+  rules refuses the match and is told to reload; the smoke test fails it as stale.
 - A change to a rule changes every bot's world: while the arena is in testing it goes in on `main`. Update `docs/rules.md`
   in the same change.
 - A new house AI: `train/export.py` (writes `crates/arena-duel/weights/policy.onnx` and its check), then
@@ -67,10 +68,22 @@ resolve it there.
   tall, the 20 clips of `pick::CLIPS` facing east, checked beside the reference before any animation is paid for
   (about 170 generations a character with its master).
 - An effect is a sprite sheet unless it reads the fighter it plays on (its body, its outline: `SPRITE_AWARE`) or
-  fills the scene (`AMBIENT`), as the pixfx engine keeps only sprite-aware effects. A change to an effect's painter,
-  or to the colours and sizes the rules play it with, needs a re-bake (the bake writes `assets/vfx`;
-  `every_played_effect_is_baked` fails on an effect with no sheet). The sheets are loaded through Bevy's asset
-  server, beside the game's wasm on the page (`game/assets`).
+  fills the scene (`AMBIENT`). A drawn sheet (`assets/drawn`, from `art/vfx/`) plays in place of the baked one; the
+  rest are baked from their recipes. A change to an effect's painter, or to the colours and sizes the rules play it
+  with, needs a re-bake (the bake writes `assets/vfx`; `every_played_effect_is_baked` fails on an effect with no
+  sheet); a change to a drawn effect's frames or `motion.json` needs `art/vfx/tools/vfx.rs --all`. The sheets are
+  loaded through Bevy's asset server, beside the game's wasm on the page (`game/assets`).
+- An effect is a hybrid of code and sprite (owner, 2026-11-17). What can be reused, computed, or would make the
+  sheet smaller is done in code: a spin or swirl, a flight, a scale in or out, a fade, a tail, an appear or a
+  disappear. The sprite keeps only what code cannot make: the drawn shape itself, a few frames of it, with the
+  motion, timing and transforms laid on by code (`motion.json`, `arena_vfx::drawn`).
+- A playing effect ends: a one-shot when it has played out, a loop when the rules stop it. The game must never lose
+  a stop (a play and its stop can land in one frame) and sweeps every effect when a fight begins; a drawn loop the
+  rules forget still ends (`vfx/drawn.rs`).
+- Work on `main` only, no side branches (owner, 2026-11-18): small commits, `cargo fmt --all`, `git pull --rebase`
+  before each push, never force. Turn the hooks on once a clone (`git config core.hooksPath .githooks`: the pre-push
+  hook refuses an unformatted push, CI's first check). A push cancels the CI run before it, so read the last push's
+  run (`gh run watch`) before calling main green.
 - Rule and balance changes are the owner's call; measure them with the ladder (`--seeds 150 --telemetry`) before and
   after.
 
@@ -87,24 +100,53 @@ or `.go` unless a tool forces it (a hook that must be a shell one-liner). `train
 - `std::process::Command` for external commands, `serde_json` instead of `jq`, `ureq` instead of `curl`. When a
   script grows or is needed a third time, move its logic into a crate with tests.
 
+## Showing the owner
+
+The agents run on the kiosk machine, not the owner's computer: a browser, `open` or a file path here shows them
+nothing. Anything the owner should see is built and handed over as a link (owner, 2026-11-17):
+
+- A change to the page: deployed ("Deploy", below), then https://arena.aiocean.io/ and where to look.
+- Art, an effect, anything to review: a review page (a heading, what changed, every doubt, the pictures) in
+  `~/services/arena/site/review/<name>/index.html` with its pictures, checked with `curl`, then the link
+  https://arena.aiocean.io/review/<name>/. Deploys leave `review/` alone (`--exclude /review/`).
+- Never paths to PNGs or GIFs in chat as the result.
+
 ## Before you finish
 
 ```
+cargo fmt --all
 cargo test -p arena-calc && cargo test -p arena-sim
 cargo test -p arena-duel --all-targets
 cargo clippy -p arena-duel --all-targets -- -D warnings
 (cd train && uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml && uv run pytest)
 cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --exclude arena-game --all-targets   # CI's rules job; the arena-bot features run locally (Traps)
 cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
 site/build.sh --serve                            # after a change the page sees: then look at it in a browser
 ARENA_SHOTS=/tmp/arena:4,8 cargo run -p arena-game -- --seed 7   # natively, screenshots to look at
 ```
 
-After a deploy (the owner deploys: game-factory `backend/arena/README.md`), the smoke test of the live site: a headless
+## Deploy
+
+One session deploys (the deployer; ask it, never rsync the site yourself), from `projects/arena-deploy`, a clone used
+for nothing else, after the commit is on `origin/main`. The steps (game-factory `backend/arena/README.md`, "Deploy"):
+
+1. `git pull --rebase` in the deploy clone; the commit asked for is an ancestor of its `HEAD`.
+2. `ARENA_LIVE_URL` set from `ops/arena/moq-relay.env` (the relay's subscribe token, never echoed): without it the
+   page fights on its own instead of watching the live matches.
+3. Build both from that checkout, the server first: `cargo build --release -p arena-server --bin arena-server -p
+   arena-smoke`, then `site/build.sh` (it must exit 0, and `site/dist/live.json` must not be empty).
+4. Only once both built, swap them back to back: `rsync -a --delete --exclude /review/ site/dist/
+   ~/services/arena/site/`, then the server binary into `~/services/arena/live/` and `launchctl kickstart -k
+   gui/$(id -u)/io.aiocean.arena-live` (keep the old binary to roll back).
+5. Check `/` and `/live.json` answer 200 and the server's log says it publishes and a new match began; then the
+   smoke test (below), which must pass.
+
+The smoke test of the live site: a headless
 Chrome (a system one, else Chrome for Testing fetched once into `~/.cache/arena-smoke`) loads https://arena.aiocean.io/
 and checks the page and the game's wasm load with no console errors, page errors or failed requests for its own
-assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come, the HUD is painted and
-the match moves. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
+assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come (a page on other rules than the
+server's fails here as stale), the HUD is painted and the match moves. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
 exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs):
 
 ```
