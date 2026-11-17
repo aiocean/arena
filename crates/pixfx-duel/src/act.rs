@@ -36,10 +36,16 @@ fn roll_seed(state: &mut State) -> u32 {
 
 /// Start effect `fx` at (`x`, `y`); returns its key.
 pub fn play(state: &mut State, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
+    play_by(state, None, fx, x, y, opts)
+}
+
+/// As [`play`], for fighter `by`'s spell.
+pub fn play_by(state: &mut State, by: Option<usize>, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
     state.key += 1;
     let key = state.key;
     state.emit(Out::Play {
         key,
+        by,
         fx,
         x,
         y,
@@ -64,7 +70,7 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
         seed: opts.seed.or(Some(seed)),
         power: opts.power,
     };
-    play(state, fx, x, y, merged)
+    play_by(state, Some(me), fx, x, y, merged)
 }
 
 /// A streak of `me`'s qi from where it casts to (`x`, `y` up from the ground).

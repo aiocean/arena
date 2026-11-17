@@ -8,7 +8,7 @@ What the player kit and the tournament still need, most important first. Each it
    changes it only by editing Rust. `step` should also hand back the facts of each decision (damage dealt and taken,
    blows landed, guarded and punished, statuses, the round's end), so a trainer computes any reward in Python; the
    Rust reward stays the default.
-2. **Install from PyPI.** Today a season's release carries prebuilt wheels (`CONTRIBUTING.md`, "Releasing a season"),
+2. **Install from PyPI.** A release would carry prebuilt wheels (`CONTRIBUTING.md`, "Releasing"),
    installed with `--find-links`. Publishing them to PyPI makes `pip install pixfx-duel` enough.
 3. **Every submission check from Python.** The checks run today as `arena-bot`'s `check` example (admitted, answers,
    the entry bar) and the bar alone as `pixfx_duel.entry_bar`; add one `pixfx_duel.check(module)` that runs them all.
@@ -28,7 +28,8 @@ What the player kit and the tournament still need, most important first. Each it
 
 ## The tournament
 
-10. **Seasons.** The first season tag, and a module's ABI version checked against the season's.
+10. **Seasons.** Today there is one test season on `main`. Later: season tags that freeze the rules, and a module's ABI
+    version checked against the season's.
 11. **Rules of entry.** Who may enter, one account each, how many files are active at once, the season's dates, what
     happens to the files after the season (published, so replays can be checked), and what counts as cheating.
 12. **The runner.** Plays every match of a season from the submitted files, both ways, on a pool of machines, and

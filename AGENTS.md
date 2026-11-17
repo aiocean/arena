@@ -32,9 +32,9 @@ on the arena; the pixfx site embeds the arena's duel through `site/embed.sh`.
 
 - The rules are deterministic from a seed; `crates/pixfx-duel/AGENTS.md` lists the goldens a change re-pins.
 - A change to the inputs or the acts (`pixfx-mind/src/policy`), or to the bot ABI (`crates/arena-bot`), changes every
-  bot: it needs a retrain and a new season (`docs/tournament.md`). Update `docs/bot.md` in the same change. The model
-  inside a bot is free: its size or shape is no season's business.
-- A change to a rule changes every bot's world: it waits for a new season once one has started. Update `docs/rules.md`
+  bot: it needs a retrain (`docs/tournament.md`: one test season for now, no tags). Update `docs/bot.md` in the same
+  change. The model inside a bot is free: its size or shape is nobody's business.
+- A change to a rule changes every bot's world: while the arena is in testing it goes in on `main`. Update `docs/rules.md`
   in the same change.
 - A new house AI: `train/export.py` (writes `crates/pixfx-duel/weights/policy.onnx` and its check), then
   `cargo test -p arena-bot --features onnx --test house`, `site/build.sh` (builds the house module), and re-pin

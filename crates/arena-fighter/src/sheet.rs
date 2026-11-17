@@ -29,7 +29,10 @@ pub struct Layout {
     pub pages: Vec<[u32; 2]>,
     pub fps: f64,
     pub clips: BTreeMap<String, Vec<Cell>>,
-    pub portrait: Cell,
+    /// A fighter's face; an effect's sheet has none.
+    pub portrait: Option<Cell>,
+    /// Whether each animation plays round and round (an effect held until it is stopped) or once.
+    pub looping: bool,
 }
 
 /// The layout as written: `pages`, or the `size` of its one page.
@@ -42,7 +45,10 @@ struct RawLayout {
     pages: Vec<[u32; 2]>,
     fps: f64,
     clips: BTreeMap<String, Vec<Cell>>,
-    portrait: Cell,
+    #[serde(default)]
+    portrait: Option<Cell>,
+    #[serde(default)]
+    looping: bool,
 }
 
 impl From<RawLayout> for Layout {
@@ -57,6 +63,7 @@ impl From<RawLayout> for Layout {
             fps: r.fps,
             clips: r.clips,
             portrait: r.portrait,
+            looping: r.looping,
         }
     }
 }
@@ -132,9 +139,24 @@ impl Sheet {
         Ok(sheet)
     }
 
-    /// The sheet from its layout's JSON and every page's RGBA bytes one after another, in the layout's order. Every
-    /// animation [`crate::pick`] can ask for must be there.
+    /// A fighter's sheet from its layout's JSON and every page's RGBA bytes one after another, in the layout's order.
+    /// Every animation [`crate::pick`] can ask for must be there, and the face.
     pub fn paged(layout_json: &str, rgba: &[u8]) -> Result<Sheet, LayoutError> {
+        let sheet = Sheet::any(layout_json, rgba)?;
+        if sheet.layout.portrait.is_none() {
+            return Err(LayoutError::Missing("portrait".into()));
+        }
+        for clip in crate::pick::CLIPS {
+            if sheet.layout.clips.get(*clip).is_none_or(Vec::is_empty) {
+                return Err(LayoutError::Missing((*clip).into()));
+            }
+        }
+        Ok(sheet)
+    }
+
+    /// Any sheet (an effect's: its animations are what it has) from its layout's JSON and every page's RGBA bytes one
+    /// after another, in the layout's order.
+    pub fn any(layout_json: &str, rgba: &[u8]) -> Result<Sheet, LayoutError> {
         let layout: Layout =
             serde_json::from_str(layout_json).map_err(|e| LayoutError::Json(e.to_string()))?;
         if layout.pages.is_empty() || rgba.len() != layout.bytes() {
@@ -159,16 +181,11 @@ impl Sheet {
                 });
             }
         }
-        if !inside(&layout.portrait) {
+        if layout.portrait.is_some_and(|p| !inside(&p)) {
             return Err(LayoutError::Outside {
                 clip: "portrait".into(),
                 frame: 0,
             });
-        }
-        for clip in crate::pick::CLIPS {
-            if layout.clips.get(*clip).is_none_or(Vec::is_empty) {
-                return Err(LayoutError::Missing((*clip).into()));
-            }
         }
         let (chunks, _) = rgba.as_chunks::<4>();
         let mut pages = Vec::with_capacity(layout.pages.len());

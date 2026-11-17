@@ -3,18 +3,15 @@
 Players train bots, submit them as bot modules (most built from an ONNX model), and the arena plays them against each other to find the strongest.
 This is the design; what is not built yet is listed in `docs/roadmap.md`.
 
-## Seasons
+## One season, while we test
 
-A season freezes everything a bot depends on:
+The arena runs a single season for now, the test one, on this repo's `main`. Nothing is frozen yet: the rules (every
+number in `crates/pixfx-duel/src/data.rs`, the frame data, the bar), what a bot sees and does (`docs/bot.md`) and the
+house AI may still change, and a change may mean a bot needs retraining. There are no season tags.
 
-- the rules: every number in `crates/pixfx-duel/src/data.rs`, the frame data, the bar;
-- what a bot sees and does: the 354 inputs, the 30 acts, the legality rules, the timing (`docs/bot.md`);
-- the bot ABI (`arena-bot-1`), the module features it accepts and its budgets (`docs/bot.md`, "The bot module").
-
-The model inside a bot is not part of a season: any size, any shape, retrained at will.
-
-A season is a tag on this repo (`arena-s1`, ...). A balance change or a new input waits for the next season, because
-it would make every submitted bot stale. A bot from one season does not play in another.
+What a bot depends on, and what a later season would freeze: the rules; the 354 inputs, the 30 acts, the legality
+rules and the timing; the bot ABI (`arena-bot-1`), the module features it accepts and its budgets (`docs/bot.md`,
+"The bot module"). The model inside a bot is never part of it: any size, any shape, retrained at will.
 
 ## What a player submits
 
@@ -73,7 +70,7 @@ The season's winner is the final's winner.
 
 ## Replays anyone can check
 
-A fight is three things: a seed, two bot modules and a season tag. Anyone with the repo at that tag can play it
+A fight is three things: a seed, two bot modules and a commit of this repo. Anyone with the repo at that commit can play it
 again and get the same fight, frame for frame, natively or in the browser. The arena publishes, for each match, the
 seeds and the hashes of both files; the results are checkable without trusting the arena.
 

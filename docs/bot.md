@@ -116,7 +116,7 @@ A WebAssembly module of the ABI `arena-bot-1` (`crates/arena-bot`; the design an
   bot may learn its foe; it is thrown away after the match.
 - **It picks its own act**: sampling with `u`, argmax, a search, rules. An act outside 0..30 is a wait, and an act
   that is not legal is dropped.
-- **Budgets** (the season's): the module at most 32 MiB; memory at most 256 MiB (the arena caps the declared maximum);
+- **Budgets**: the module at most 32 MiB; memory at most 256 MiB (the arena caps the declared maximum);
   20M fuel a decision, 200M for each `arena_start`, `arena_round` and the module's own start function. Fuel is about
   one unit a WebAssembly instruction, counted by code the arena writes into the module, so it runs out on the same
   decision on every machine and in the browser. The house AI as a module uses about 3M a decision; a network some 6

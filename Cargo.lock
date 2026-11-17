@@ -106,11 +106,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "arena-vfx"
+version = "0.1.0"
+dependencies = [
+ "arena-fighter",
+ "libm",
+ "pixfx-draw",
+]
+
+[[package]]
 name = "arena-wasm"
 version = "0.1.0"
 dependencies = [
  "arena-bot",
  "arena-fighter",
+ "arena-vfx",
  "js-sys",
  "pixfx-core",
  "pixfx-draw",

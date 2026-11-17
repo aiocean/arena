@@ -55,9 +55,12 @@ pub enum How {
     )
 )]
 pub enum Out {
-    /// Start effect `fx` at (`x`, `y`) under `key`.
+    /// Start effect `fx` at (`x`, `y`) under `key`; `by` is the fighter whose spell it is (none for the arena's own,
+    /// such as a clash), so a page can draw it in that fighter's school.
     Play {
         key: u32,
+        #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+        by: Option<usize>,
         fx: &'static str,
         x: f64,
         y: f64,

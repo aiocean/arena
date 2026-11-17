@@ -202,6 +202,22 @@ export function createFighters(w, h, sheets) {
   return fighters;
 }
 
+/**
+ * The spell effects' painter for a world `w` x `h` of the page's pixels, drawing them in the rules' (`UNIT` times
+ * finer), with each effect's sprite sheet (`sheets`: `[{ fx, layout, rgba }, ...]`, from `loadVfxSheets` in
+ * duel-hero.js). Free it with `.free()`.
+ */
+export function createVfx(w, h, sheets) {
+  const vfx = new (loaded().Vfx)(w, h, UNIT);
+  try {
+    for (const s of sheets) vfx.add(s.fx, s.layout, s.rgba);
+  } catch (e) {
+    vfx.free();
+    throw e;
+  }
+  return vfx;
+}
+
 /** Fighter f's skill bar: three bar slots, then the ultimate. */
 export const skillBar = (f) => f.skillBar;
 

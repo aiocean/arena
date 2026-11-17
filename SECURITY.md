@@ -5,8 +5,8 @@ another machine, a bot module that escapes its sandbox or its fuel, or crashes o
 [a security advisory](https://github.com/aiocean/arena/security/advisories/new), not an issue, so no bot is trained on
 them before they are fixed.
 
-Say what is needed to see it happen: the season tag (or commit), the seed, the two bots (bot modules or built-in
+Say what is needed to see it happen: the commit, the seed, the two bots (bot modules or built-in
 names), and what happens against what you expected.
 
-A fix that changes the rules waits for the next season once a season has started (`docs/tournament.md`); the
-maintainers decide whether a bug is serious enough to stop a season.
+While the arena is in testing (one season, `docs/tournament.md`), a fix that changes the rules goes in when it is
+ready.

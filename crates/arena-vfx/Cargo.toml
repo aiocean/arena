@@ -1,0 +1,14 @@
+[package]
+name = "arena-vfx"
+description = "The arena's spell effects drawn from sprite sheets: which frame an effect shows at a time, drawn in the school of the fighter who cast it"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+arena-fighter = { path = "../arena-fighter" }
+libm.workspace = true
+pixfx-draw.workspace = true
+
+[lints]
+workspace = true

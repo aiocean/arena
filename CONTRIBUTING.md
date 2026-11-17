@@ -9,7 +9,7 @@ The arena runs on the pixfx engine ([aiocean/pixfx-rs](https://github.com/aiocea
 - the site and its tests take it from `.pixfx/`, which `site/pixfx.sh` checks out at that same rev (`site/build.sh`
   runs it).
 
-A season's rules are this repo's tag plus that rev, so a fight replays the same anywhere. A fresh clone needs nothing
+A fight's rules are this repo's commit plus that rev, so a fight replays the same anywhere. A fresh clone needs nothing
 else: `cargo test --workspace`, then `site/build.sh` and `(cd site && bun test tests)`.
 
 ## The checks a change passes
@@ -24,9 +24,12 @@ cargo test --workspace --all-targets            # the goldens pin seeded fights:
 site/build.sh && (cd site && bun test tests)
 ```
 
-## Releasing a season
+## Releasing
 
-1. Set the season's version in `crates/pixfx-duel-py/pyproject.toml`.
+While the arena is in testing there is one season on `main` and no release: players build from a clone. When a
+release is wanted:
+
+1. Set the version in `crates/pixfx-duel-py/pyproject.toml`.
 2. Tag the commit `arena-s<N>` and push the tag. `.github/workflows/release.yml` builds the wheels (Linux x86_64,
    macOS arm64 and x86_64; Python 3.12 and 3.13) and makes the release: the wheels, `policy.onnx` (the house AI) and `SHA256SUMS`.
 3. Players install the env without Rust:
@@ -39,7 +42,7 @@ Running the release workflow by hand only builds the wheels, as a check.
 1. Put the new pixfx commit's full hash in every `rev = "..."` of `Cargo.toml` and `crates/pixfx-duel-py/Cargo.toml`.
 2. `cargo test --workspace --all-targets`, then `site/build.sh` (it checks `.pixfx/` out at the new rev) and
    `(cd site && bun test tests)`.
-3. A change in what a bot sees or does is a new season (`AGENTS.md`).
+3. A change in what a bot sees or does means bots need retraining (`AGENTS.md`).
 
 ## Working on the engine beside the arena
 

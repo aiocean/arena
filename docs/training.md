@@ -110,7 +110,7 @@ per-school win rates in the log; a school you lose with needs more of the traini
 | A head start | `--init ../crates/pixfx-duel/weights/policy.onnx` |
 | More of one school | `--thunder` |
 
-The inputs and acts are fixed for a season (`docs/bot.md`); the model is yours.
+The inputs and acts are the arena's (`docs/bot.md`); the model is yours.
 
 ## Export and check
 

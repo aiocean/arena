@@ -8,7 +8,7 @@ Seven-Colored Daoist), and a trained AI decides for each corner. Players train A
 submit them as bot modules built from ONNX, and the arena runs a tournament between them to find the strongest. Watch it
 at [arena.aiocean.io](https://arena.aiocean.io).
 
-Every fight is decided by a seed, the two bot modules and the season's rules, so anyone can replay any fight, frame
+Every fight is decided by a seed, the two bot modules and the rules at a commit, so anyone can replay any fight, frame
 for frame, on Linux, macOS or in the browser.
 
 ## Make a bot
@@ -63,7 +63,7 @@ above.
 | [docs/rules.md](docs/rules.md) | How a fight works: schools, skills, the bar, qi and rage, statuses, frame data, rounds. |
 | [docs/bot.md](docs/bot.md) | What a bot sees (354 numbers), what it can do (30 acts), when it decides, the bot module. |
 | [docs/training.md](docs/training.md) | How to train a bot: setup, the environment, reward, opponents, export, measuring it. |
-| [docs/tournament.md](docs/tournament.md) | Seasons, what a player submits, how it is checked, how matches are played and ranked. |
+| [docs/tournament.md](docs/tournament.md) | The test season, what a player submits, how it is checked, how matches are played and ranked. |
 | [docs/roadmap.md](docs/roadmap.md) | What the player kit and the tournament still need, in order. |
 
 ## What is here
@@ -90,7 +90,7 @@ engine at `.pixfx/`) and the arena's own (`crates/arena-wasm`). The pixfx site e
 ## Contributing
 
 [CONTRIBUTING.md](CONTRIBUTING.md): the engine pin, working on the engine beside the arena, the checks a change passes
-and how a season is released. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
+and how a release is made. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
 
 ## License
 
