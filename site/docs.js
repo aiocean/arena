@@ -56,7 +56,7 @@ export function docPage(name, markdown) {
   <header class="topbar">
     <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
-      <a href="../watch.html">Watch</a>
+      <a href="../#insert">Your bot</a>
       <a href="rules.html"${name === "rules" ? ' aria-current="page"' : ""}>Rules</a>
       <a href="training.html"${name === "training" ? ' aria-current="page"' : ""}>Train a bot</a>
       <a href="tournament.html"${name === "tournament" ? ' aria-current="page"' : ""}>Tournament</a>
@@ -65,7 +65,7 @@ export function docPage(name, markdown) {
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar">Menu</button>
   </header>
   <div class="docs-shell">
-    <nav class="sidebar" id="sidebar" aria-label="Docs"><h4>For bot authors</h4><ul>${menu}</ul><a class="sidebar-watch" href="../watch.html">Watch two bots</a></nav>
+    <nav class="sidebar" id="sidebar" aria-label="Docs"><h4>For bot authors</h4><ul>${menu}</ul><a class="sidebar-watch" href="../#insert">Put your bot in</a></nav>
     <main class="doc">
 ${body}
 <nav class="pager" aria-label="Pages">${pager(DOCS[i - 1], "Previous")}${pager(DOCS[i + 1], "Next")}</nav>

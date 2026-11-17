@@ -52,8 +52,9 @@ pd.bout(mine, "brain", seeds=(1, 151))   # {'win_rate': ..., 'as_thunder': ..., 
 pd.entry_bar(mine)                       # {'passed': True, 'vs_brain': {...}, 'vs_first': {...}}
 ```
 
-To watch two bots fight, load their modules on [the watch page](https://arena.aiocean.io/watch.html) with a seed: the
-fight runs in your browser, and the same modules and seed give the same fight as the commands above.
+To watch your bot fight, drop its module into a corner on [arena.aiocean.io](https://arena.aiocean.io/#insert): it
+takes the corner at once and runs in your browser, and the same modules and seed give the same fight as the commands
+above.
 
 ## Docs
 
@@ -78,7 +79,7 @@ fight runs in your browser, and the same modules and seed give the same fight as
 | `train/` | The PPO trainer that made the house AI: the network (any size), the opponents it trains against, export to ONNX. |
 | `art/` | How the fighters are drawn (`art/README.md`, the art direction) and each character's PixelLab export and tools. |
 | `docs/` | The docs above, and the design history (`docs/specs`, `docs/plans`). |
-| `site/` | The arena's site: the duel full-screen, a page to watch two bots from their modules and a seed, and the docs as pages. `site/build.sh` builds it into `site/dist`. |
+| `site/` | The arena's site: the duel full-screen with a slot in each corner for a player's bot module, and the docs as pages. `site/build.sh` builds it into `site/dist`. |
 
 The game runs on the [pixfx engine](https://github.com/aiocean/pixfx-rs), pinned to one commit: the engine draws,
 moves the bodies and plays the effects; the arena holds the rules, the training environment and the trainer. The duel

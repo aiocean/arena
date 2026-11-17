@@ -143,4 +143,4 @@ cargo run -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx p
 
 The pages admit a module the way a submission is admitted, then run it with the browser's own WebAssembly, on the same
 fuel, and play the same fights bit for bit as the tournament's native host (`site/tests/policy.test.js` against
-`crates/arena-bot/tests/goldens/house_fight.json`). The watch page takes a `.wasm` for each corner.
+`crates/arena-bot/tests/goldens/house_fight.json`). The home page takes a `.wasm` in each corner: drop one in and it fights at once.

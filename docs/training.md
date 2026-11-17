@@ -176,7 +176,8 @@ final blows.
 
 ## Watch it
 
-Build the site and open the watch page (`site/build.sh --serve`, then http://127.0.0.1:8771/watch.html): choose your
-module for one corner, the house bot or another module for the other, and a seed. The same two modules and seed play
-the same fight anywhere. To make your model the bot the home page plays, export it over the house AI
-(`crates/pixfx-duel/weights/policy.onnx`) and build the site: `site/embed.sh` builds the house module from it.
+Drop your module into a corner on [arena.aiocean.io](https://arena.aiocean.io/#insert), or on your own build
+(`site/build.sh --serve`, then http://127.0.0.1:8771/): it takes the corner at once, the other corner keeps the house
+bot or another module, and the seed box replays a fight. The same two modules and seed play the same fight anywhere.
+To make your model the bot the home page plays, export it over the house AI (`crates/pixfx-duel/weights/policy.onnx`)
+and build the site: `site/embed.sh` builds the house module from it.

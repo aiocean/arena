@@ -1,5 +1,5 @@
-// The arena's duel pages load this script (docs pages load only `menu.js`). It mounts the page's own part, picked by
-// the body's data-page: the duel full-screen on the home page, two bots chosen from files on the watch page. The duel itself
+// The arena's home page loads this script (docs pages load only `menu.js`): the duel full-screen, and a slot for each
+// corner where a player drops in their bot. The duel itself
 // is `duel-hero.js`, which the pixfx site embeds too; this file decides nothing about it.
 import { loadPixfx } from "../pkg/pixfx-canvas2d.js";
 import loadRules, * as rules from "./wasm/arena_wasm.js";
@@ -10,7 +10,7 @@ import { createHero, loadBots, loadIcons } from "./duel-hero.js";
  *  bot module built from its ONNX model (`bots/onnx`), run the way a player's module is. */
 const HOUSE = "policy.wasm";
 
-const PAGES = { home: mountHome, watch: mountWatch };
+const PAGES = { home: mountHome };
 try {
   await PAGES[document.body.dataset.page]?.();
 } catch (err) {
@@ -70,69 +70,87 @@ function run(hero, onFrame) {
   requestAnimationFrame(frame);
 }
 
+/** The page: the duel full-screen, and under it a slot for each corner. A `.wasm` dropped into a slot takes that corner
+ *  at once, the fight starting over on the seed in the box; an empty slot plays the house bot. The page's address
+ *  carries the seed (`?seed=`), so a fight can be shared: the same two bots and seed play it the same anywhere. */
 async function mountHome() {
-  const { engine, icons, house } = await start();
-  await useBots([house, house]);
-  const hero = createHero(document.getElementById("scene"), new AbortController().signal, icons, engine);
-  run(hero);
-}
-
-/** The watch page: a bot module (`.wasm`) for each corner (the house bot where none is chosen), and a seed. The same two files and the same seed play the same fight on every machine. */
-async function mountWatch() {
   const form = document.getElementById("match");
   const status = document.getElementById("status");
   const seedInput = form.elements.seed;
-  const params = new URLSearchParams(location.search);
-  const asked = Number.parseInt(params.get("seed") ?? "", 10);
+  const asked = Number.parseInt(new URLSearchParams(location.search).get("seed") ?? "", 10);
   const { engine, icons, house } = await start();
   await useBots([house, house]);
   const hero = createHero(document.getElementById("scene"), new AbortController().signal, icons, engine, {
     seed: Number.isSafeInteger(asked) && asked > 0 ? asked : undefined,
-    replay: true,
+    replay: Number.isSafeInteger(asked) && asked > 0,
   });
   seedInput.value = String(hero.seed());
-  const names = ["house bot", "house bot"];
+  // what each corner seats now: its bytes and the name shown for it
+  const corners = [
+    { bytes: house, name: "house bot" },
+    { bytes: house, name: "house bot" },
+  ];
+  const inputs = [form.elements.left, form.elements.right];
   const say = (text, error = false) => {
     status.textContent = text;
     status.classList.toggle("error", error);
   };
+  const shown = (i) => {
+    const seat = inputs[i].closest(".seat");
+    seat.querySelector(".seat-file").textContent = corners[i].name;
+    seat.classList.toggle("chosen", corners[i].bytes !== house);
+  };
+  /** Seat `next` (what each corner should hold; `corners` until then) and start the fight over on `seed`. A bot the
+   *  arena refuses throws before anything changes. */
+  const fight = async (seed, next = corners) => {
+    await useBots(next.map((c) => c.bytes));
+    next.forEach((c, i) => (corners[i] = c));
+    hero.restart(seed);
+    seedInput.value = String(seed);
+    history.replaceState(null, "", `?seed=${seed}`);
+    say("");
+  };
+  const seedNow = () => {
+    const seed = Number.parseInt(seedInput.value, 10);
+    return Number.isSafeInteger(seed) && seed > 0 ? seed : hero.seed();
+  };
 
+  inputs.forEach((input, i) => {
+    input.addEventListener("change", async () => {
+      const file = input.files[0];
+      if (!file) return;
+      const next = [...corners];
+      next[i] = { bytes: new Uint8Array(await file.arrayBuffer()), name: file.name };
+      try {
+        await fight(seedNow(), next);
+        shown(i);
+      } catch (err) {
+        input.value = "";
+        say(`${file.name} is not a bot for this season: ${err?.message ?? err}`, true);
+      }
+    });
+  });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const seed = Number.parseInt(seedInput.value, 10);
     if (!Number.isSafeInteger(seed) || seed < 1) return say("The seed is a whole number from 1 up.", true);
-    try {
-      const files = [form.elements.left.files[0], form.elements.right.files[0]];
-      const bytes = await Promise.all(files.map(async (f) => (f ? new Uint8Array(await f.arrayBuffer()) : house)));
-      await useBots(bytes);
-      files.forEach((f, i) => (names[i] = f ? f.name : "house bot"));
-    } catch (err) {
-      return say(`That file is not a bot for this season: ${err?.message ?? err}`, true);
-    }
-    hero.restart(seed);
-    history.replaceState(null, "", `?seed=${seed}`);
-    // the new fight plays up in the hero: bring it into view
-    hero.canvas.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-    say("");
+    await fight(seed);
   });
-  for (const seat of form.querySelectorAll(".seat")) {
-    const input = seat.querySelector("input[type=file]");
-    const shown = seat.querySelector(".seat-file");
-    input.addEventListener("change", () => {
-      const file = input.files[0];
-      shown.textContent = file ? file.name : shown.dataset.empty;
-      seat.classList.toggle("chosen", Boolean(file));
+  form.querySelector("[data-random]").addEventListener("click", async () => {
+    await fight(1 + Math.floor(Math.random() * 1e6));
+  });
+  form.querySelector("[data-house]").addEventListener("click", async () => {
+    await fight(seedNow(), corners.map(() => ({ bytes: house, name: "house bot" })));
+    inputs.forEach((input, i) => {
+      input.value = "";
+      shown(i);
     });
-  }
-  form.querySelector("[data-random]").addEventListener("click", () => {
-    seedInput.value = String(1 + Math.floor(Math.random() * 1e6));
   });
 
   run(hero, () => {
     const d = hero.duel;
     if (!d || status.classList.contains("error")) return;
-    const text = `Seed ${hero.seed()} · round ${d.round} · Thunder (${names[0]}) ${d.wins[0]} – ${d.wins[1]} Frost (${names[1]})`;
+    const text = `Seed ${hero.seed()} · round ${d.round} · Thunder (${corners[0].name}) ${d.wins[0]} – ${d.wins[1]} Frost (${corners[1].name})`;
     if (status.textContent !== text) status.textContent = text;
   });
 }
-

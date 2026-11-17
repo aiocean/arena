@@ -14,7 +14,7 @@ What the player kit and the tournament still need, most important first. Each it
    the entry bar) and the bar alone as `pixfx_duel.entry_bar`; add one `pixfx_duel.check(module)` that runs them all.
 4. **Data to learn from.** A recorder that writes a fight's decisions (observation, legal acts, the act taken, the
    outcome) from a seed and two files, and a published set of the shipped AI's fights, for imitation learning.
-5. **See why a bot acts.** On the watch page, pause on a frame and see each act's probability, which acts are legal and
+5. **See why a bot acts.** On the home page, pause on a frame and see each act's probability, which acts are legal and
    what the bot saw.
 6. **A local league.** Many files of one's own play each other and are ranked the way a season ranks them, to choose
    which to submit.

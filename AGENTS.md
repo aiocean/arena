@@ -25,7 +25,7 @@ on the arena; the pixfx site embeds the arena's duel through `site/embed.sh`.
 | decides how a fighter is drawn: canvas, height, outline, colours, clips, the checks before it ships | `art/README.md` (the art direction; not a player doc) |
 | is the duel for JS | `crates/arena-wasm` (translation only; the page loads it beside the engine's wasm) |
 | draws or plays the duel on the page | `site/assets/duel*.js` (a shell: it decides nothing); `site/embed.sh` lists what the pixfx site embeds |
-| is a page of the arena site (arena.aiocean.io): home, watch, the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
+| is a page of the arena site (arena.aiocean.io): home (the duel and the bot slots), the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
 | explains the game to a player | `docs/` |
 
 ## Traps

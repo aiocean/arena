@@ -24,7 +24,7 @@
   <header class="topbar">
     <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
-      <a href="watch.html">Watch</a>
+      <a href="#insert">Your bot</a>
       <a href="docs/rules.html">Rules</a>
       <a href="docs/training.html">Train a bot</a>
       <a href="docs/tournament.html">Tournament</a>
@@ -33,14 +33,41 @@
   </header>
 
   <main>
+    <section class="insert frame" id="insert" aria-labelledby="insert-title">
+      <p class="eyebrow" id="insert-title">Put your bot in · it takes its corner at once</p>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <form id="match" class="match">
+        <label class="seat" data-school="thunder">
+          <span class="seat-side">Thunder · Vương Lâm</span>
+          <input type="file" name="left" accept=".wasm">
+          <span class="seat-file" data-empty="house bot">house bot</span>
+          <span class="seat-pick">Drop in a .wasm</span>
+        </label>
+        <div class="vs" aria-hidden="true">VS</div>
+        <label class="seat" data-school="frost">
+          <span class="seat-side">Frost · Thất Thải Đạo Tôn</span>
+          <input type="file" name="right" accept=".wasm">
+          <span class="seat-file" data-empty="house bot">house bot</span>
+          <span class="seat-pick">Drop in a .wasm</span>
+        </label>
+        <div class="seed-row">
+          <label for="seed">Seed</label>
+          <span class="seed"><input id="seed" type="number" name="seed" min="1" step="1" required><button type="button" data-random>Random</button></span>
+          <button class="button" type="submit">Replay this seed</button>
+          <button class="button quiet" type="button" data-house>House bots</button>
+        </div>
+      </form>
+      <p class="muted note">A bot is a <code>.wasm</code> bot module (<a href="docs/bot.html">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). It runs here, in your browser, and nothing is uploaded. The same two bots and the same seed play the same fight on every machine, so a seed is a replay: share the page's address.</p>
+    </section>
+
     <section class="intro-panel frame" aria-labelledby="hero-title">
       <div class="pitch">
-        <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above · the house bot against itself, every frame decided by the network</p>
+        <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above · the house bot in both corners until you put yours in, every frame decided by a network</p>
         <h1 id="hero-title">Train a bot.<br><span class="thunder">Thunder</span> or <span class="frost">Frost</span>, it fights for you.</h1>
         <p class="lede">Two cultivators fight round after round. Neither is played by a person: each corner is a neural network trained to win. Train your own, any size, hand it in as ONNX, and it fights everyone else's.</p>      </div>
       <div class="actions">
         <a class="button" href="docs/training.html">Train a bot</a>
-        <a class="button quiet" href="watch.html">Watch two bots</a>
+        <a class="button quiet" href="#insert">Put your bot in</a>
         <a class="button quiet" href="https://github.com/aiocean/arena">Get the code on GitHub</a>
       </div>
     </section>
@@ -113,7 +140,7 @@ cargo run --release -p arena-bot --features host \
         </li>
         <li class="frame">
           <h3>Watch &amp; submit</h3>
-          <p>Load two files on the watch page with a seed. A seed is a replay: same files, same fight, every machine.</p>
+          <p>Drop your module into a corner on this page and it fights at once. A seed is a replay: same bots, same fight, every machine.</p>
           <pre><code>mine.wasm  vs  rival.wasm
 seed 201521</code></pre>
           <a href="docs/tournament.html">Tournament</a>
