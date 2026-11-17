@@ -35,3 +35,6 @@ arena-telemetry = { path = "../arena-telemetry" }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tokio = { version = "1.48", features = ["test-util"] }

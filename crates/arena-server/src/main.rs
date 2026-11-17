@@ -172,7 +172,24 @@ async fn run_matches(
         );
         if let Err(e) = run_one(origin, &match_id, seed, pairing, seats, &mut stop).await {
             tracing::warn!(match_id, error = %e, "match failed");
+            // a match that fails before its first wait (the relay refusing the broadcast) would otherwise loop hot,
+            // never yielding to the stop signals
+            pause_or_stop(&mut stop, RETRY).await;
         }
+    }
+}
+
+/// How long the server waits after a failed match before the next.
+const RETRY: Duration = Duration::from_secs(1);
+
+/// Waits `pause`, or less if told to stop.
+async fn pause_or_stop(stop: &mut Stop, pause: Duration) {
+    if stop.borrow().is_some() {
+        return;
+    }
+    tokio::select! {
+        _ = tokio::time::sleep(pause) => {}
+        _ = stop.changed() => {}
     }
 }
 
@@ -356,4 +373,25 @@ fn seed_now() -> u64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos() as u64)
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test(start_paused = true)]
+    async fn a_failed_match_pauses_before_the_next_and_a_stop_cuts_the_pause() {
+        let (tell, mut stop) = watch::channel(None);
+        let from = tokio::time::Instant::now();
+        pause_or_stop(&mut stop, RETRY).await;
+        assert_eq!(from.elapsed(), RETRY);
+        let from = tokio::time::Instant::now();
+        let waiting = tokio::spawn(async move {
+            pause_or_stop(&mut stop, RETRY).await;
+        });
+        tokio::task::yield_now().await;
+        let _ = tell.send(Some("server_stopped"));
+        let _ = waiting.await;
+        assert!(from.elapsed() < RETRY);
+    }
 }
