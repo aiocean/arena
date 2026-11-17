@@ -19,6 +19,16 @@ cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
 site/build.sh
 ```
 
+Run `cargo fmt --all` before you push. A clone refuses a push that is not formatted once its hooks are on, which
+every clone should do once:
+
+```sh
+git config core.hooksPath .githooks              # .githooks/pre-push runs cargo fmt --all --check
+```
+
+CI cancels a run when the next push lands, so a red check can hide behind the pushes after it: look at the run of the
+last push (`gh run watch`) before calling main green.
+
 ## Releasing
 
 While the arena is in testing there is one season on `main` and no release: players build from a clone. When a
