@@ -327,17 +327,15 @@ fn sweep(
 /// rules forgot is ended all the same: one that flies (it has a tail) once it is no longer moved for `UNMOVED`
 /// seconds, any loop after `LONGEST`.
 fn end_of(fx: &Drawn, d: &Drawing) -> f32 {
-    if let Some(s) = d.stopped {
-        return s;
-    }
-    if let Some(life) = fx.life(d.school) {
-        return life;
-    }
-    let mut end = LONGEST;
-    if fx.layout.motion.tail.is_some() {
-        end = end.min(d.moved + UNMOVED);
-    }
-    end
+    let end = if let Some(life) = fx.life(d.school) {
+        life
+    } else if fx.layout.motion.tail.is_some() {
+        LONGEST.min(d.moved + UNMOVED)
+    } else {
+        LONGEST
+    };
+    // a stop cuts it short, never longer: one stopped while it already leaves goes on leaving
+    d.stopped.map_or(end, |s| s.min(end))
 }
 
 /// Where a shot's cell sits from the effect's origin, and how it is turned and scaled, facing `flip`: (translation,
@@ -663,6 +661,41 @@ mod tests {
         let in_the_air = f64::from(layout.ground) * arena_duel::data::UNIT - 140.0;
         assert_eq!(spot(&layout, seal, 400.0, in_the_air).y, floor);
         assert!(spot(&layout, bolt, 400.0, in_the_air).y > floor);
+    }
+
+    /// A one-shot stopped while it is already leaving (a new round over its fade) goes on leaving: it never comes
+    /// back to full sight to fade again.
+    #[test]
+    fn a_stop_in_the_exit_does_not_bring_it_back() {
+        let Some(effect) = all()
+            .iter()
+            .position(|d| d.fx == "explosions/small-explosion")
+        else {
+            unreachable!("small-explosion is drawn")
+        };
+        let fx = &all()[effect];
+        let Some(life) = fx.life("thunder") else {
+            unreachable!("a one-shot")
+        };
+        let mut d = Drawing {
+            effect,
+            school: "thunder",
+            t: life + 0.2,
+            stopped: None,
+            moved: 0.0,
+            flip: false,
+            trail: VecDeque::new(),
+            round: 0,
+        };
+        assert_eq!(end_of(fx, &d), life);
+        d.stopped = Some(d.t);
+        assert_eq!(
+            end_of(fx, &d),
+            life,
+            "a stop in the fade moved its end later"
+        );
+        d.stopped = Some(life / 2.0);
+        assert_eq!(end_of(fx, &d), life / 2.0);
     }
 
     #[test]
