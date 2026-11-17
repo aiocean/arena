@@ -3,7 +3,7 @@
 //! then it shatters into falling shards and rising motes (the engine's `holy/golden-bell`). The back wall goes
 //! behind the fighter, the front over it.
 
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, clamp, fract, libm, rand, smooth};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, clamp, fract, libm, rand, smooth};
 
 pub const D: f64 = 3.6;
 

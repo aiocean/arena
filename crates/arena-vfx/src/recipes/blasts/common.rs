@@ -1,8 +1,8 @@
 //! What the blasts share: the engine's explosions `lib.rs` (stones, dirt in flight, the crater, the white-hot dome,
 //! culling) and its tone painting (`tone.rs`: strokes painted as tones through a ramp, keyed poses).
 
-use crate::vfx::kit::sim::{Bit, Kind, Particles};
-use crate::vfx::kit::{
+use crate::kit::sim::{Bit, Kind, Particles};
+use crate::kit::{
     Layer, Painter, Rgba, TAU, WHITE, clamp, js_max, js_min, js_round, libm, rand, scale, step_at,
 };
 use core::f64::consts::PI;

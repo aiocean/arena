@@ -5,7 +5,7 @@
 //! The engine takes the light back off the orb at the end (`unlight`); this kit has no way to take light back, so
 //! every light drawn over the layer the orb is on skips the orb's disc instead (`lit`, `lit_px`).
 
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Recipe, Rgba, Rng, Show, TAU, WHITE, clamp, cycle, ease, fbm, js_max,
     js_min, js_sign, libm, ramp, smooth,
 };

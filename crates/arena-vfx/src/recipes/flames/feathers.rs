@@ -1,8 +1,8 @@
 //! `holy/feather-burst`: a white puff pops and throws feathers that brake hard, then rock from side to side as they
 //! sink and fade, with down drifting after them (the engine's `holy/feather-burst`, with the holy kit's feathers).
 
-use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, sparkle};
-use crate::vfx::kit::{
+use crate::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, sparkle};
+use crate::kit::{
     Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round,
     libm, mix, ramp, smooth,
 };

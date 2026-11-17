@@ -7,7 +7,7 @@
 //! top, so the flurry reads as a squall rather than a dark box, and the patch opens over 0.2 s.
 
 use super::sky::{Cv, clip, count, pass, sized, trips};
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Show, TAU, WHITE, clamp, js_min, js_round, libm, mix, ramp, rand,
     smooth, wrap,
 };

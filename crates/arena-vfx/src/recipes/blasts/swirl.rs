@@ -3,7 +3,7 @@
 //! in tones through a ramp: the rules' palette, else the engine's ember colourway.
 
 use super::common::{DEG, EMBER, Ink, Knot, curve, pose};
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show};
 
 /// Seconds a moment of the sheet lasts.
 const MOMENT: f64 = 0.06;

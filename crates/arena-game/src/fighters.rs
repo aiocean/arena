@@ -30,20 +30,21 @@ pub struct Looks(pub Vec<Look>);
 #[derive(Component)]
 pub struct FighterSprite(pub usize);
 
-/// What is in each school's sheet, built into the game.
-const SHEETS: [(&str, &[&[u8]]); 2] = [
+/// Each school's sheet: its layout, built into the game, and its pages, loaded from the game's assets (a fighter
+/// shows once they have arrived).
+const SHEETS: [(&str, &[&str]); 2] = [
     (
         include_str!("../assets/fighters/cultivator.json"),
         &[
-            include_bytes!("../assets/fighters/cultivator-thunder.png"),
-            include_bytes!("../assets/fighters/cultivator-thunder-1.png"),
+            "fighters/cultivator-thunder.png",
+            "fighters/cultivator-thunder-1.png",
         ],
     ),
     (
         include_str!("../assets/fighters/seven-colored-daoist.json"),
         &[
-            include_bytes!("../assets/fighters/seven-colored-daoist-frost.png"),
-            include_bytes!("../assets/fighters/seven-colored-daoist-frost-1.png"),
+            "fighters/seven-colored-daoist-frost.png",
+            "fighters/seven-colored-daoist-frost-1.png",
         ],
     ),
 ];
@@ -59,7 +60,7 @@ impl Plugin for FightersPlugin {
     }
 }
 
-/// A page of a sheet as a texture the GPU keeps (the game never reads its pixels).
+/// A picture built into the game as a texture the GPU keeps (the game never reads its pixels).
 pub fn page(png: &[u8]) -> Option<Image> {
     Image::from_buffer(
         png,
@@ -73,7 +74,7 @@ pub fn page(png: &[u8]) -> Option<Image> {
     .ok()
 }
 
-fn load(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+fn load(mut commands: Commands, assets: Res<AssetServer>) {
     let mut looks = Vec::new();
     for (json, pngs) in SHEETS {
         let layout = match sheet::parse(json) {
@@ -83,10 +84,7 @@ fn load(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                 return;
             }
         };
-        let pages = pngs
-            .iter()
-            .map(|png| page(png).map(|i| images.add(i)).unwrap_or_default())
-            .collect();
+        let pages = pngs.iter().map(|path| assets.load(*path)).collect();
         looks.push(Look { layout, pages });
     }
     commands.insert_resource(Looks(looks));

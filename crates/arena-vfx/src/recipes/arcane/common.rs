@@ -1,7 +1,7 @@
 //! What the arcane effects share (the engine's `arcane/lib.rs`): a drifting mote, a ring lying on the floor, and an
 //! original rune alphabet.
 
-use crate::vfx::kit::{Painter, Rgba, js_max, js_min, js_round, libm, or_one, scale};
+use crate::kit::{Painter, Rgba, js_max, js_min, js_round, libm, or_one, scale};
 
 /// The engine's arcane palette, dark to bright.
 pub const ARCANE: [Rgba; 8] = [

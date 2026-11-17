@@ -2,8 +2,8 @@
 //! onto a crushed white point; a beat of stillness (the rules pull until 0.8 s), then a sharp pop at 1.02 s.
 
 use super::common::{cull, draw_both, seed_of};
-use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, sparkle};
-use crate::vfx::kit::{
+use crate::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, sparkle};
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, libm, mix, ramp,
 };
 use core::f64::consts::PI;

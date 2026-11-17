@@ -9,8 +9,8 @@
 
 use core::f64::consts::{PI, TAU};
 
-use crate::vfx::kit::halo::Halo;
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, clamp, libm, rand};
+use crate::kit::halo::Halo;
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, clamp, libm, rand};
 
 /// The glow's steps, from its faint dithered edge to the white core.
 const RAMP: [Rgba; 5] = [

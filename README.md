@@ -72,6 +72,7 @@ above.
 |---|---|
 | `crates/pixfx-duel` | The rules: the two schools, their stats and skills, the rotating bar, statuses, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
 | `crates/arena-mind` | The minds: what a trained policy sees and may do and its timing (`policy`), and the rules' own utility brain. |
+| `crates/arena-vfx` | The spells' effects painted on the CPU, and the tool that bakes them into the sprite sheets the game plays (`examples/bake.rs`). |
 | `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell particles, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm). |
 | `crates/pixfx-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
 | `crates/pixfx-duel-py` | The rules as a Python module (`import pixfx_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |

@@ -1,0 +1,16 @@
+[package]
+name = "arena-vfx"
+description = "The arena's spell effects as pixel particles painted on the CPU, and the tool that bakes them into the sprite sheets the game plays"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
+pixfx-duel = { path = "../pixfx-duel" }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["preserve_order"] }
+
+[lints]
+workspace = true

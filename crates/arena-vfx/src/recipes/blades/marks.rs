@@ -2,7 +2,7 @@
 //! "Free pack, Part 1" sheets): `arcane/twin-shuriken` (two arms), `impacts/star-converge` (four drops) and
 //! `impacts/twin-converge` (two drops). Each is one tone ramp: the school's palette, or the ember colourway.
 
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show};
 
 use super::tone::{EMBER, Ink, Knot, curve, pose};
 

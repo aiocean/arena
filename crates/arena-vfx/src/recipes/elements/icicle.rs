@@ -5,10 +5,10 @@
 
 use core::f64::consts::{FRAC_PI_2, PI};
 
-use crate::vfx::kit::sim::{
+use crate::kit::sim::{
     Bit, BitKind, Bits, GRAVITY, Kind, Lights, Particles, ParticlesOpts, Spawn, band, sparkle,
 };
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Recipe, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min,
     js_round, js_sign, libm, ramp, rand, seg, smooth, step_at,
 };

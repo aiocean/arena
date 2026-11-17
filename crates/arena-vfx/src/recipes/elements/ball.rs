@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
-use crate::vfx::kit::sim::GRAVITY;
-use crate::vfx::kit::{
+use crate::kit::sim::GRAVITY;
+use crate::kit::{
     Layer, Opts, Painter, Recipe, Rgba, Rng, Show, TAU, WHITE, clamp, cycle, js_max, js_min,
     js_round, libm, or_one, ramp, rng,
 };

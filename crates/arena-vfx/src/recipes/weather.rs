@@ -8,7 +8,7 @@ mod snow;
 mod splash;
 mod water_jet;
 
-use crate::vfx::kit::Recipe;
+use crate::kit::Recipe;
 
 pub static ALL: &[Recipe] = &[
     Recipe::new("nature/poison-cloud", true, 4.0, poison_cloud::make),

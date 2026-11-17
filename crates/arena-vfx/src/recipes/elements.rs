@@ -7,7 +7,7 @@ mod icicle;
 mod void;
 mod winter;
 
-use crate::vfx::kit::Recipe;
+use crate::kit::Recipe;
 
 pub static ALL: &[Recipe] = &[
     icicle::RECIPE,

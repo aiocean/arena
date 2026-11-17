@@ -3,7 +3,7 @@
 //! flash and throws out pollen; then the bud opens and its petals drift away, fading, the pad last (the engine's
 //! `holy/lotus`). The back petals go behind the fighter, the front ones over it.
 
-use crate::vfx::kit::{Layer, Opts, PI, Painter, Rgba, Show, clamp, libm, rand, smooth};
+use crate::kit::{Layer, Opts, PI, Painter, Rgba, Show, clamp, libm, rand, smooth};
 
 pub const D: f64 = 4.2;
 

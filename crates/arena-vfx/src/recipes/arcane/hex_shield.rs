@@ -5,8 +5,8 @@
 
 use core::f64::consts::{FRAC_PI_2, PI};
 
-use crate::vfx::kit::sim::{Kind, Lights, Particle, Particles, ParticlesOpts, Spawn};
-use crate::vfx::kit::{
+use crate::kit::sim::{Kind, Lights, Particle, Particles, ParticlesOpts, Spawn};
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, fract, js_max, js_min, js_round,
     libm, scale, smooth, to_int32,
 };

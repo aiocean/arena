@@ -4,7 +4,7 @@
 //! breaks into chunks, beads, spray and mist. It flies, so it is drawn over the fighters.
 
 use super::splash::{WATER, bead};
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Show, TAU, WHITE, cycle, js_max, js_min, libm, ramp, smooth,
     tile_noise,
 };

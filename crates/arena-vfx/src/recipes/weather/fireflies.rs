@@ -8,7 +8,7 @@
 //! which can carry it once instead of blending every pixel of the stage every frame.
 
 use super::sky::{Cv, clip, count, sized};
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Show, TAU, WHITE, js_max, js_min, js_round, libm, loop_noise, mix,
     ramp, rand,
 };

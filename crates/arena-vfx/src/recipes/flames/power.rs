@@ -6,7 +6,7 @@
 //! it grips the engine's stand-in body (head, trunk and legs), as the engine does without an actor. The shake and
 //! flash cues are left out.
 
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, js_max, js_min, js_round, libm, rgb,
     scale, smooth, to_int32,
 };

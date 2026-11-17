@@ -5,7 +5,7 @@
 //! 0.06 s long at 50 fps, 96 px square round its origin, all over the fighters.
 
 use super::tone::{self, Ink, Knot, curve, pose};
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, libm};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, libm};
 
 /// Seconds a moment of the sheet lasts.
 pub const MOMENT: f64 = 0.06;

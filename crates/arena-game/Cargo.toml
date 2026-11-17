@@ -14,6 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 arena-mind = { path = "../arena-mind" }
+arena-vfx = { path = "../arena-vfx" }
 # only what the game uses (no 3D, scenes, picking, gizmos, post-processing, audio): the page loads less
 bevy = { version = "0.20", default-features = false, features = [
     "std", "async_executor", "multi_threaded", "bevy_asset", "bevy_log", "bevy_window", "bevy_winit", "x11",

@@ -3,8 +3,8 @@
 //! is the fighter's feet. The rules give it a palette (6) and `stars` (3).
 
 use super::common::seed_of;
-use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, flare};
-use crate::vfx::kit::{
+use crate::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, flare};
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, libm, ramp,
     smooth,
 };

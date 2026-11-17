@@ -4,8 +4,8 @@
 //! open-source fire (https://www.spritefusion.com/pixel-art-vfx/fire), MIT License, Copyright (c) 2026 Hugo Duprez.
 //! What the duel never uses is left out: a carried fire's bend and wind (`carried`) is always at rest here.
 
-use crate::vfx::kit::sim::SMOKE_RAMP;
-use crate::vfx::kit::{
+use crate::kit::sim::SMOKE_RAMP;
+use crate::kit::{
     Life, Painter, Rgba, WHITE, clamp, drift, js_max, js_min, js_round, libm, looped, mix, noise,
     rand, rng, step_at, wrap,
 };

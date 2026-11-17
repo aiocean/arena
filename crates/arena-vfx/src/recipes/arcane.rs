@@ -11,7 +11,7 @@ mod rune_circle;
 mod seals;
 mod tone;
 
-use crate::vfx::kit::Recipe;
+use crate::kit::Recipe;
 
 pub static ALL: &[Recipe] = &[
     Recipe::new(

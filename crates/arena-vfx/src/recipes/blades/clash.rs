@@ -3,8 +3,8 @@
 //! white-hot star stretched along the blow, a cut flashing across, sparks thrown the way it pushes, a breaking ring).
 //! With the engine's hit star and broken ring (impacts `lib`).
 
-use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn};
-use crate::vfx::kit::{
+use crate::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn};
+use crate::kit::{
     Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, libm,
     smooth,
 };

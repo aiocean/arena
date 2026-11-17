@@ -2,8 +2,8 @@
 //! flame tail licking up and streaming behind, shedding puffs and sparks (the engine's `critters/wisp`, with the
 //! critters kit's tongue and puff, adapted from Sprite Fusion's open-source fire, MIT License, (c) 2026 Hugo Duprez).
 
-use crate::vfx::kit::sim::{Flags, Kind, Particle, Particles, ParticlesOpts};
-use crate::vfx::kit::{
+use crate::kit::sim::{Flags, Kind, Particle, Particles, ParticlesOpts};
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Show, TAU, clamp, cycle, fly, js_max, js_min, js_round, libm, ramp,
     tile_noise, wrap,
 };

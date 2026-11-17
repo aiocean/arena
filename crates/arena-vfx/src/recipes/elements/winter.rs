@@ -10,8 +10,8 @@
 //! cracks the one-pixel seams between slabs, each cracking open at a time that runs outward from the keystone. The
 //! foe it falls on is this game's fighter (61 px tall), not the engine's ruler figure.
 
-use crate::vfx::kit::halo::Halo;
-use crate::vfx::kit::{
+use crate::kit::halo::Halo;
+use crate::kit::{
     Layer, Opts, Painter, Recipe, Rgba, Show, TAU, clamp, fbm, libm, rand, smooth, wrap,
 };
 

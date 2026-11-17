@@ -1,7 +1,7 @@
 //! Tone painting (the engine's `tone.rs`): an effect paints each pixel as a tone, 0 (its darkest edge) to 15 (its
 //! white core), and a ramp turns the tone into colour. The seals draw with it.
 
-use crate::vfx::kit::{Opts, Painter, Rgba, TAU, clamp, js_round, libm, rand, step_at};
+use crate::kit::{Opts, Painter, Rgba, TAU, clamp, js_round, libm, rand, step_at};
 
 /// The brightest step, as a tone.
 pub const LAST: f64 = 15.0;

@@ -3,7 +3,7 @@
 //! rim is left. Painted in tones through a ramp: the rules' palette, else the engine's ember colourway.
 
 use super::common::{EMBER, Knot, LAST, color, curve, pose};
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, libm};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, libm};
 
 /// Seconds a moment of the sheet lasts.
 const MOMENT: f64 = 0.06;

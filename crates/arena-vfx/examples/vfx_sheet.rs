@@ -1,12 +1,12 @@
 //! A contact sheet of the spell effects: each effect a row, six moments of it across, painted as the game paints them
 //! (behind and over the fighters, over a dark stage with a floor), scaled up. To look at them by eye.
 //!
-//! `cargo run -p arena-game --example vfx_sheet -- /tmp/vfx.png [id-filter ...] [--seed N] [--scale N] [--palette #hex,#hex,...]`
+//! `cargo run -p arena-vfx --example vfx_sheet -- /tmp/vfx.png [id-filter ...] [--seed N] [--scale N] [--palette #hex,#hex,...]`
 
 #![allow(clippy::disallowed_methods)]
 
-use arena_game::raster::{Canvas, hex};
-use arena_game::vfx::{Paint, Spawn, recipes};
+use arena_vfx::raster::{Canvas, hex};
+use arena_vfx::{Paint, Spawn, recipes};
 
 const CW: i32 = 200;
 const CH: i32 = 160;
@@ -89,7 +89,7 @@ fn main() {
                     if x == 0 || y == 0 {
                         p = [60, 60, 80, 255];
                     }
-                    sheet.put(x0 + x, y0 + y, p, arena_game::raster::Blend::Set);
+                    sheet.put(x0 + x, y0 + y, p, arena_vfx::raster::Blend::Set);
                 }
             }
         }
@@ -116,17 +116,12 @@ fn stage() -> Canvas {
             } else {
                 [v, v + 2, v + 12, 255]
             };
-            c.put(x, y, p, arena_game::raster::Blend::Set);
+            c.put(x, y, p, arena_vfx::raster::Blend::Set);
         }
     }
     // a figure's height for scale: a dim post as tall as a fighter (61 px)
     for y in (GROUND as i32 - 61)..GROUND as i32 {
-        c.put(
-            CW - 12,
-            y,
-            [50, 50, 64, 255],
-            arena_game::raster::Blend::Set,
-        );
+        c.put(CW - 12, y, [50, 50, 64, 255], arena_vfx::raster::Blend::Set);
     }
     c
 }

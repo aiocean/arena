@@ -40,7 +40,7 @@ pub fn find(id: &str) -> Option<&'static dyn Effect> {
 mod tests {
     use super::*;
     use crate::raster::Canvas;
-    use crate::vfx::{Paint, Spawn};
+    use crate::{Paint, Spawn};
 
     /// The effects the duel plays (and a plain hit): each must be here.
     const WANTED: [&str; 41] = [

@@ -5,10 +5,10 @@
 use super::common::{
     OUTLINE, Stone, crater, cull, dome, draw_dirt, fade_edges, pool, rock, seed_of,
 };
-use crate::vfx::kit::sim::{
+use crate::kit::sim::{
     Bit, BitKind, Bits, Flags, Kind, Lights, Particles, ParticlesOpts, Spawn, band,
 };
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, ease, js_max, js_min, js_round, libm, mix,
     ramp, rgb, smooth,
 };

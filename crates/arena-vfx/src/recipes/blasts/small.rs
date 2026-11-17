@@ -4,10 +4,10 @@
 //! the fire.
 
 use super::common::{OUTLINE, Stone, seed_of};
-use crate::vfx::kit::sim::{
+use crate::kit::sim::{
     Bit, BitKind, Bits, Blazes, Flags, Kind, Lights, Particles, ParticlesOpts, Spawn, band,
 };
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round, libm,
     mix, ramp, rand, rgb, scale, smooth,
 };

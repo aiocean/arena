@@ -3,7 +3,7 @@
 //! plays one at each end, its seed its x, looping, never stopped. All of it stands behind the fighters.
 
 use super::firelib::{Burn, Hot, LoopNoise, Tongue, burn, ember, hot_first, spark};
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Life, Opts, PI, Painter, Rgba, Show, WHITE, drift, js_max, js_min, js_round, libm,
     looped, mix, ramp, rand,
 };

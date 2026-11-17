@@ -1,7 +1,7 @@
 //! Tone painting (the engine's `tone`, the parts the stroke marks use): each pixel a tone, 0 (its darkest edge) to
 //! 15 (its white core), turned to colour by a ramp; strokes keyed at whole moments on smooth curves.
 
-use crate::vfx::kit::{Painter, Rgba, TAU, clamp, js_round, libm, rand, step_at};
+use crate::kit::{Painter, Rgba, TAU, clamp, js_round, libm, rand, step_at};
 
 /// The brightest step, as a tone (a ramp of 16 steps).
 const LAST: f64 = 15.0;

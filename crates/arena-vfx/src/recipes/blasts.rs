@@ -4,7 +4,7 @@
 //! `common` holds what several share (the engine's explosions `lib.rs` and its tone painting); each effect is its own
 //! module.
 
-use crate::vfx::kit::Recipe;
+use crate::kit::Recipe;
 
 mod common;
 mod dirt;

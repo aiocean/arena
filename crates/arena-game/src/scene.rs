@@ -13,7 +13,7 @@ use crate::layers::{Canvases, Cleared};
 use crate::layout::{BARS_TALL, Layout};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
 use crate::rules::Shown;
-use crate::vfx::{Playing, Spawn};
+use crate::vfx::{PlayEffect, Playing, Spawn};
 use bevy::prelude::*;
 
 const SKY: [&str; 7] = [
@@ -361,6 +361,7 @@ fn decor(
     shown: Res<Shown>,
     mut backdrop: ResMut<Backdrop>,
     mut playing: ResMut<Playing>,
+    mut lamps: MessageWriter<PlayEffect>,
 ) {
     if shown.view.is_none() || backdrop.decor_for == shown.fight {
         return;
@@ -384,14 +385,12 @@ fn decor(
     }
     if has(BRAZIER) {
         for x in layout.lamps {
-            let lamp = Spawn {
+            lamps.write(PlayEffect {
+                fx: BRAZIER,
                 x,
                 y: layout.ground,
-                ground: layout.ground,
-                seed: x as u32,
-                ..default()
-            };
-            playing.play(None, BRAZIER, &lamp);
+                opts: default(),
+            });
         }
     }
 }

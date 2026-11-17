@@ -3,9 +3,9 @@
 //! seals and blasts, each through its own palette (7 steps, dark to white) and accent (5).
 
 use super::common::{cull, draw_both, seed_of};
-use crate::vfx::kit::shapes::{bolt, forks};
-use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, band, flare};
-use crate::vfx::kit::{
+use crate::kit::shapes::{bolt, forks};
+use crate::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, band, flare};
+use crate::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round, libm,
     noise, ramp, rng, smooth,
 };

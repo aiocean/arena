@@ -23,7 +23,8 @@ ad1612b.
 | runs a model natively (ONNX) or as a bot module | `crates/arena-bot` (`onnx`, `host`) |
 | is the game: the window or canvas, the camera, the fight stepped each frame, a corner's bot | `crates/arena-game` (`lib`, `layout`, `rules`, `bots`; `web` for the page's side) |
 | is how a fighter looks: which frame of its sprite sheet a pose shows, how that frame is drawn | `crates/arena-game` (`pick`, `sheet`, `fighters`) |
-| is how a spell looks: its particles and light | `crates/arena-game/src/vfx` (`recipes`, on the `kit`) |
+| is how a spell's effect looks: a bolt, a blast, a seal, a fire (painted frame by frame on the CPU) | `crates/arena-vfx` (`recipes`, on the `kit`); baked into the sheets the game plays by `cargo run --release -p arena-vfx --example bake -- crates/arena-game/assets/vfx` |
+| plays a spell's effect in the game: a baked sheet as sprites, an effect that reads the fighter painted live | `crates/arena-game/src/vfx` (`sprites`; `arena_vfx::SPRITE_AWARE` and `AMBIENT` are the live ones) |
 | is the backdrop, the light, the fight's feel (hit-stop, shake, numbers), the HUD | `crates/arena-game` (`scene`, `light`, `feel`, `hud`) |
 | makes a fighter's sprite sheets from its PixelLab export | `art/<character>/tools/sheet.rs`, writing `crates/arena-game/assets/fighters/` |
 | decides how a fighter is drawn: canvas, height, outline, colours, clips, the checks before it ships | `art/README.md` (the art direction; not a player doc) |
@@ -49,6 +50,11 @@ ad1612b.
 - A new fighter is made to `art/README.md`: HD pixel art, a 256 px PixelLab canvas (v3), side view, about 240 px
   tall, the 20 clips of `pick::CLIPS` facing east, checked beside the reference before any animation is paid for
   (about 170 generations a character with its master).
+- An effect is a sprite sheet unless it reads the fighter it plays on (its body, its outline: `SPRITE_AWARE`) or
+  fills the scene (`AMBIENT`), as the pixfx engine keeps only sprite-aware effects. A change to an effect's painter,
+  or to the colours and sizes the rules play it with, needs a re-bake (the bake writes `assets/vfx`;
+  `every_played_effect_is_baked` fails on an effect with no sheet). The sheets are loaded through Bevy's asset
+  server, beside the game's wasm on the page (`game/assets`).
 - Rule and balance changes are the owner's call; measure them with the ladder (`--seeds 150 --telemetry`) before and
   after.
 

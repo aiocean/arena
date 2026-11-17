@@ -2,7 +2,7 @@
 //! ask for, its origin mid-width and 10 px above the canvas's foot (the ground at the foot, a taller canvas more sky),
 //! and draws only inside it.
 
-use crate::vfx::kit::{Opts, Painter, Rgba, js_round, libm, rand};
+use crate::kit::{Opts, Painter, Rgba, js_round, libm, rand};
 
 /// The canvas around the origin, local px: `x0 <= x < x1`, `y0 <= y < y1`.
 #[derive(Clone, Copy, Debug)]

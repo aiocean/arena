@@ -12,8 +12,8 @@
 
 use core::f64::consts::{FRAC_1_SQRT_2, FRAC_PI_4, PI, TAU};
 
-use crate::vfx::kit::halo::Halo;
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, clamp, libm, rand, smooth};
+use crate::kit::halo::Halo;
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, clamp, libm, rand, smooth};
 
 const DARK: Rgba = Rgba::hex24(0x1d1e16);
 const BAND: Rgba = Rgba::hex24(0x2e3124);

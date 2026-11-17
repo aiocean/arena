@@ -1,83 +1,28 @@
-//! The spells and the arena's lamps as pixel particles: each effect id the rules play (`Out::Play`) is an `Effect`
-//! (`recipes`) that starts an `Instance` at its place; the rules move it (`Out::Move`) and stop it (`Out::Stop`), and
-//! one that does not loop ends on its own. Every instance paints itself each frame on the world's pictures, behind the
-//! fighters or over them, its colour and its light (added).
+//! The spells' effects. Nearly all of them are sprite sheets baked from the effect painters of `arena-vfx`
+//! (`sprites`): the rules play one (`Out::Play`), move it (`Out::Move`) and stop it (`Out::Stop`), and each playing is
+//! an entity whose sprites show its frame behind and over the fighters. An effect that reads the fighter it plays on,
+//! or that fills the whole scene, is painted live on the world's pictures instead (`Playing`).
 
-pub mod kit;
-pub mod recipes;
+pub mod sprites;
 
 use crate::layers::{Canvases, Cleared};
 use crate::layout::Layout;
-use crate::raster::{Canvas, Rgba, hex};
-use crate::rules::{Fx, Pace};
+use crate::rules::{Fx, Pace, Shown};
+pub use arena_vfx::{Effect, Instance, Paint, Spawn, kit, recipes};
 use bevy::prelude::*;
 use pixfx_duel::out::{Out, PlayOpts};
 use std::collections::BTreeMap;
 
-/// How an effect is played, in world pixels: where, its school's colours (from the rules), its size, which way it
-/// faces, its seed.
-#[derive(Clone, Debug, Default)]
-pub struct Spawn {
+/// An effect played by the game itself rather than the rules (the scene's braziers): at world pixel (`x`, `y`).
+#[derive(Message, Clone, Debug)]
+pub struct PlayEffect {
+    pub fx: &'static str,
     pub x: f32,
     pub y: f32,
-    /// The ground's row (an effect that falls or splashes stops there).
-    pub ground: f32,
-    pub palette: Option<Vec<Rgba>>,
-    pub accent: Option<Vec<Rgba>>,
-    pub stars: Option<Vec<Rgba>>,
-    pub fire: Option<Vec<Rgba>>,
-    pub glow: Option<Rgba>,
-    pub width: Option<f32>,
-    pub height: Option<f32>,
-    /// Faces left.
-    pub flip: bool,
-    pub seed: u32,
+    pub opts: PlayOpts,
 }
 
-impl Spawn {
-    /// The effect's palette, or `default` when the rules gave none.
-    pub fn palette_or(&self, default: &[&str]) -> Vec<Rgba> {
-        self.palette
-            .clone()
-            .unwrap_or_else(|| default.iter().map(|c| hex(c)).collect())
-    }
-
-    /// Which way it faces: 1 right, -1 left.
-    pub fn dir(&self) -> f32 {
-        if self.flip { -1.0 } else { 1.0 }
-    }
-}
-
-/// The two pictures an instance paints: behind the fighters (`back`) and over them (`front`). Light is added (`Blend::Add`)
-/// on the same pictures.
-pub struct Paint<'a> {
-    pub back: &'a mut Canvas,
-    pub front: &'a mut Canvas,
-}
-
-/// An effect: what starts when the rules play its id.
-pub trait Effect: Send + Sync {
-    /// Its id, as the rules name it (`"fire/brazier"`).
-    fn id(&self) -> &'static str;
-    /// Whether it plays until stopped (the rules stop it) rather than ending by itself.
-    fn looping(&self) -> bool;
-    /// One playing of it.
-    fn spawn(&self, at: &Spawn) -> Box<dyn Instance>;
-}
-
-/// One playing effect.
-pub trait Instance: Send + Sync {
-    /// Moves on by `dt` seconds of the fight; false once it is over (a stopped effect fades out first).
-    fn update(&mut self, dt: f32) -> bool;
-    /// Where it is now (the rules move bolts and orbs each tick).
-    fn set_position(&mut self, x: f32, y: f32);
-    /// Asked to end: a looping effect fades out and then is over.
-    fn stop(&mut self);
-    /// Paints this frame.
-    fn paint(&self, paint: &mut Paint);
-}
-
-/// The effects playing, by the rules' key, and those the rules left (stopped or keyless, ending by themselves).
+/// The effects painted live, by the rules' key, and those the rules left (stopped or keyless, ending by themselves).
 #[derive(Resource, Default)]
 pub struct Playing {
     pub keyed: BTreeMap<u32, Box<dyn Instance>>,
@@ -87,7 +32,7 @@ pub struct Playing {
 }
 
 impl Playing {
-    /// Start effect `fx` at `at`; an id with no recipe plays nothing.
+    /// Paint effect `fx` live from `at` on; an id with no painter plays nothing.
     pub fn play(&mut self, key: Option<u32>, fx: &str, at: &Spawn) {
         let Some(effect) = recipes::find(fx) else {
             return;
@@ -104,44 +49,34 @@ impl Playing {
     }
 }
 
+/// The effects: their commands handled, then each played on by the fight's time.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Played;
+
 pub struct VfxPlugin;
 
 impl Plugin for VfxPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Playing>()
-            .add_systems(Update, (play, advance).chain().in_set(crate::Frame::React))
+            .add_message::<PlayEffect>()
+            .add_plugins(sprites::SpritesPlugin)
+            .add_systems(
+                Update,
+                (live, advance)
+                    .chain()
+                    .in_set(Played)
+                    .in_set(crate::Frame::React),
+            )
             .add_systems(Update, paint.in_set(crate::Frame::Paint).after(Cleared));
     }
 }
 
-fn colors(c: Option<&'static [&'static str]>) -> Option<Vec<Rgba>> {
-    c.map(|cs| cs.iter().map(|s| hex(s)).collect())
-}
-
-/// How an effect's play options read in world pixels.
-pub fn spawn_of(x: f64, y: f64, opts: &PlayOpts, ground: f32) -> Spawn {
-    Spawn {
-        x: Layout::world(x),
-        y: Layout::world(y),
-        ground,
-        palette: colors(opts.palette),
-        accent: colors(opts.accent),
-        stars: colors(opts.stars),
-        fire: colors(opts.fire),
-        glow: opts.glow.map(hex),
-        width: opts.width.map(Layout::world),
-        height: opts.height.map(Layout::world),
-        flip: opts.flip.unwrap_or(false),
-        seed: opts.seed.unwrap_or(1),
-    }
-}
-
-/// The rules' effect commands: play, move, stop.
-fn play(
+/// The rules' commands for the effects painted live: play, move, stop.
+fn live(
     mut fx: MessageReader<Fx>,
     mut playing: ResMut<Playing>,
     layout: Res<Layout>,
-    shown: Res<crate::rules::Shown>,
+    shown: Res<Shown>,
 ) {
     if playing.fight != shown.fight {
         *playing = Playing {
@@ -157,8 +92,8 @@ fn play(
                 x,
                 y,
                 opts,
-            } => {
-                let at = spawn_of(*x, *y, opts, layout.ground);
+            } if !arena_vfx::baked(fx) => {
+                let at = Spawn::of(Layout::world(*x), Layout::world(*y), layout.ground, opts);
                 playing.play(Some(*key), fx, &at);
             }
             Out::Move { key, x, y } => {
@@ -177,7 +112,7 @@ fn play(
     }
 }
 
-/// Every effect moves on by the fight's time; those over are dropped.
+/// Every live effect moves on by the fight's time; those over are dropped.
 fn advance(mut playing: ResMut<Playing>, pace: Res<Pace>) {
     let dt = pace.run as f32;
     let p = playing.as_mut();

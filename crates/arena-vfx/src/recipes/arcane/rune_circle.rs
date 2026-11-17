@@ -4,8 +4,8 @@
 //! the fighter, its near half in front, as the engine splits it.
 
 use super::common::{ARCANE, floor_ring, glyph, mote};
-use crate::vfx::kit::sim::sparkle;
-use crate::vfx::kit::{
+use crate::kit::sim::sparkle;
+use crate::kit::{
     Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, cycle, ease, js_min, libm, ramp, smooth,
 };
 

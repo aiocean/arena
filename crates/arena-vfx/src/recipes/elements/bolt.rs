@@ -3,8 +3,8 @@
 //! schools: it comes in the school's `bolt` palette (8 colours, dark to white), flipped when it flies left, and the
 //! rules move it every tick and stop it on a hit.
 
-use crate::vfx::kit::sim::sparkle;
-use crate::vfx::kit::{
+use crate::kit::sim::sparkle;
+use crate::kit::{
     Layer, Opts, Painter, Recipe, Rgba, Rng, Show, TAU, WHITE, js_max, js_min, js_round, libm,
     ramp, rand, rng, wrap,
 };

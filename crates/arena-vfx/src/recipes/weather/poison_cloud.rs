@@ -3,7 +3,7 @@
 //! specks drift out through it. The back sheets and the light under it go behind the fighters, the front sheet, the
 //! plumes and the specks over them.
 
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Opts, PI, Painter, Rgba, Show, TAU, clamp, cycle, js_max, js_min, js_round, js_sign,
     libm, ramp, rng, smooth, tile_noise,
 };

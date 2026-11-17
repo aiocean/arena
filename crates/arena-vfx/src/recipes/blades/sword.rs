@@ -6,8 +6,8 @@
 //! The engine's formation also launches its swords as a volley when the game orders a strike; the duel never orders
 //! one (it plays `arcane/sword-strike` itself when the spell ends), so only the gathering and the ring are here.
 
-use crate::vfx::kit::sweep::{Brush, Cell, Look, Pose as SweepPose, Turn, sweep};
-use crate::vfx::kit::{Layer, Opts, PI, Painter, Rgba, Show, TAU, clamp, libm, rand, smooth};
+use crate::kit::sweep::{Brush, Cell, Look, Pose as SweepPose, Turn, sweep};
+use crate::kit::{Layer, Opts, PI, Painter, Rgba, Show, TAU, clamp, libm, rand, smooth};
 
 /// The sword pointing up, tip first, a row a pixel. The guard's middle (`PIVOT_ROW`, column 2) is where it turns.
 const SPRITE: [&[u8; 5]; 18] = [

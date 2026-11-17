@@ -3,7 +3,7 @@
 //! tongue and its torn edges are adapted from Sprite Fusion's open-source fire, MIT License, (c) 2026 Hugo Duprez.
 
 use super::firelib::{Hot, LoopNoise, Noise, hot_first, soft};
-use crate::vfx::kit::{
+use crate::kit::{
     Layer, Life, Opts, PI, Painter, Rgba, Show, TAU, WHITE, drift, js_max, js_min, js_round, libm,
     looped, mix, ramp,
 };

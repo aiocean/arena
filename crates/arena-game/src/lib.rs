@@ -20,7 +20,7 @@ pub mod layers;
 pub mod layout;
 pub mod light;
 pub mod pick;
-pub mod raster;
+pub use arena_vfx::raster;
 pub mod rules;
 pub mod scene;
 pub mod sheet;
@@ -64,12 +64,32 @@ impl Default for Start {
     }
 }
 
+/// Where the game's assets are: beside the game's wasm on the page (`site/build.sh` copies them to `game/assets`),
+/// and natively in the crate's `assets` (or `assets` beside the executable, when the crate is not where it was built).
+fn assets_path() -> String {
+    if cfg!(target_arch = "wasm32") {
+        return "game/assets".into();
+    }
+    let built = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
+    if std::path::Path::new(built).is_dir() {
+        built.into()
+    } else {
+        "assets".into()
+    }
+}
+
 /// The game, ready to run: a window over the canvas `#scene` in the browser, its own window natively.
 pub fn app(start: Start) -> App {
     let mut app = App::new();
     app.add_plugins(
         DefaultPlugins
             .set(ImagePlugin::default_nearest())
+            .set(AssetPlugin {
+                file_path: assets_path(),
+                // the page serves no .meta files: asking for each would be a 404 a texture
+                meta_check: bevy::asset::AssetMetaCheck::Never,
+                ..default()
+            })
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Arena".into(),

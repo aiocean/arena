@@ -12,8 +12,8 @@
 //! Also the water ramp and the droplet sprite the water jet shares (the engine's `water/lib.rs`, after Sprite Fusion's
 //! open-source blood, https://www.spritefusion.com/pixel-art-vfx/blood, MIT, Copyright (c) 2026 Hugo Duprez).
 
-use crate::vfx::kit::blob::{Blob, BlobLook};
-use crate::vfx::kit::{Layer, Opts, Painter, Rgba, Show, WHITE, js_min, libm, or_one, rand};
+use crate::kit::blob::{Blob, BlobLook};
+use crate::kit::{Layer, Opts, Painter, Rgba, Show, WHITE, js_min, libm, or_one, rand};
 
 /// Water, deep to white: deep colour only in shadow, tinted middles, white crests.
 pub const WATER: [Rgba; 8] = [
