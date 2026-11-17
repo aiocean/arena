@@ -7,7 +7,6 @@
 //! An effect with a drawn sheet plays from here; the rest play from their baked recipes (`sprites`) or live.
 
 use super::Played;
-use super::sprites::FightScoped;
 use crate::layers::Z_FIGHTERS;
 use crate::layout::Layout;
 use crate::rules::{Fx, Pace, Shown};
@@ -28,6 +27,9 @@ const TAIL: usize = 8;
 const TAIL_ALPHA: f32 = 0.55;
 /// How long a stopped loop with no exit takes to fade out.
 const FADE: f32 = 0.3;
+/// The longest a loop plays unstopped, and how long a flying one goes unmoved, before it is taken for forgotten.
+const LONGEST: f32 = 10.0;
+const UNMOVED: f32 = 1.0;
 
 /// The drawn effects, read once.
 fn all() -> &'static [Drawn] {
@@ -63,9 +65,15 @@ pub struct Drawing {
     school: &'static str,
     t: f32,
     stopped: Option<f32>,
+    /// When the rules last moved it.
+    moved: f32,
     flip: bool,
     trail: VecDeque<(f32, Vec2)>,
 }
+
+/// The fight a playing belongs to: swept away when the next begins.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct DrawnFight(pub u32);
 
 /// The rules' key for a playing.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,7 +89,7 @@ impl Plugin for DrawnPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, load).add_systems(
             Update,
-            (commands, animate)
+            (sweep, commands, animate)
                 .chain()
                 .in_set(Played)
                 .in_set(crate::Frame::React),
@@ -143,6 +151,16 @@ fn load(
     });
 }
 
+/// A playing the rules started this frame, spawned once the frame's commands are read: a move or a stop for it in
+/// the same frame (a bolt that lands at once, a page catching up) must reach it, and a spawned entity is only there
+/// once the frame's commands are applied.
+struct Starting {
+    key: u32,
+    fx: &'static str,
+    drawing: Drawing,
+    at: Vec3,
+}
+
 /// The rules' commands for the drawn effects: play, move, stop.
 fn commands(
     mut commands: Commands,
@@ -151,6 +169,7 @@ fn commands(
     shown: Res<Shown>,
     mut playing: Query<(&DrawingKey, &mut Drawing, &mut Transform)>,
 ) {
+    let mut starting: Vec<Starting> = Vec::new();
     for Fx(out) in fx.read() {
         match out {
             Out::Play {
@@ -163,51 +182,46 @@ fn commands(
                 let Some(effect) = all().iter().position(|d| d.fx == *fx) else {
                     continue;
                 };
-                let at = layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0);
-                debug!(
-                    "drawn {fx} at ({x:.0}, {y:.0}) in {}",
-                    drawn::school_of(opts.palette)
-                );
-                let sprite = |part: Part| {
-                    let z = if part.0.is_some() { Z_TAIL } else { Z_OVER };
-                    (
-                        Sprite::default(),
-                        Transform::from_xyz(0.0, 0.0, z),
-                        Visibility::Hidden,
-                        part,
-                    )
-                };
-                let mut e = commands.spawn((
-                    Name::new(format!("drawn {fx}")),
-                    FightScoped(shown.fight),
-                    Drawing {
+                // a key played again: the old playing goes
+                for (k, mut d, _) in &mut playing {
+                    if k.0 == *key && d.stopped.is_none() {
+                        d.stopped = Some(d.t);
+                    }
+                }
+                starting.retain(|s| s.key != *key);
+                let school = drawn::school_of(opts.palette);
+                debug!("drawn {fx} at ({x:.0}, {y:.0}) in {school}");
+                starting.push(Starting {
+                    key: *key,
+                    fx,
+                    drawing: Drawing {
                         effect,
-                        school: drawn::school_of(opts.palette),
+                        school,
                         t: 0.0,
                         stopped: None,
+                        moved: 0.0,
                         flip: opts.flip.unwrap_or(false),
                         trail: VecDeque::new(),
                     },
-                    DrawingKey(*key),
-                    Transform::from_translation(at),
-                    Visibility::Visible,
-                ));
-                e.with_children(|c| {
-                    c.spawn(sprite(Part(None)));
-                    for i in 0..TAIL {
-                        c.spawn(sprite(Part(Some(i))));
-                    }
+                    at: layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0),
                 });
             }
             Out::Move { key, x, y } => {
-                for (k, _, mut transform) in &mut playing {
+                let at = layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0);
+                if let Some(s) = starting.iter_mut().find(|s| s.key == *key) {
+                    s.at = at;
+                }
+                for (k, mut d, mut transform) in &mut playing {
                     if k.0 == *key {
-                        transform.translation =
-                            layout.at(Layout::world(*x), Layout::world(*y)).extend(0.0);
+                        transform.translation = at;
+                        d.moved = d.t;
                     }
                 }
             }
             Out::Stop { key } => {
+                if let Some(s) = starting.iter_mut().find(|s| s.key == *key) {
+                    s.drawing.stopped = Some(0.0);
+                }
                 for (k, mut d, _) in &mut playing {
                     if k.0 == *key && d.stopped.is_none() {
                         d.stopped = Some(d.t);
@@ -217,6 +231,58 @@ fn commands(
             _ => {}
         }
     }
+    for s in starting {
+        let sprite = |part: Part| {
+            let z = if part.0.is_some() { Z_TAIL } else { Z_OVER };
+            (
+                Sprite::default(),
+                Transform::from_xyz(0.0, 0.0, z),
+                Visibility::Hidden,
+                part,
+            )
+        };
+        commands
+            .spawn((
+                Name::new(format!("drawn {}", s.fx)),
+                DrawnFight(shown.fight),
+                s.drawing,
+                DrawingKey(s.key),
+                Transform::from_translation(s.at),
+                Visibility::Visible,
+            ))
+            .with_children(|c| {
+                c.spawn(sprite(Part(None)));
+                for i in 0..TAIL {
+                    c.spawn(sprite(Part(Some(i))));
+                }
+            });
+    }
+}
+
+/// A new fight sweeps away what the last one played.
+fn sweep(mut commands: Commands, shown: Res<Shown>, playing: Query<(Entity, &DrawnFight)>) {
+    for (e, fight) in &playing {
+        if fight.0 != shown.fight {
+            commands.entity(e).despawn();
+        }
+    }
+}
+
+/// When a playing ends of itself, or the rules' stop: a one-shot once played out, a loop when stopped. A loop the
+/// rules forgot is ended all the same: one that flies (it has a tail) once it is no longer moved for `UNMOVED`
+/// seconds, any loop after `LONGEST`.
+fn end_of(fx: &Drawn, d: &Drawing) -> f32 {
+    if let Some(s) = d.stopped {
+        return s;
+    }
+    if let Some(life) = fx.life(d.school) {
+        return life;
+    }
+    let mut end = LONGEST;
+    if fx.layout.motion.tail.is_some() {
+        end = end.min(d.moved + UNMOVED);
+    }
+    end
 }
 
 /// Where a shot's cell sits from the effect's origin, and how it is turned and scaled, facing `flip`: (translation,
@@ -256,7 +322,6 @@ fn animate(
     mut playing: Query<(Entity, &mut Drawing, &Transform, &Children)>,
     mut sprites: Query<(&Part, &mut Sprite, &mut Transform, &mut Visibility), Without<Drawing>>,
 ) {
-    let Some(drawings) = drawings else { return };
     let dt = pace.run as f32;
     for (e, mut d, origin, children) in &mut playing {
         d.t += dt;
@@ -265,10 +330,7 @@ fn animate(
             continue;
         };
         let t = d.t;
-        let end = d
-            .stopped
-            .or_else(|| fx.life(d.school))
-            .unwrap_or(f32::INFINITY);
+        let end = end_of(fx, &d);
         // its shape now, how much it is still seen and how far it has swelled as it goes
         let (shot, seen, swell) = if t < end {
             (fx.shot(d.school, t), 1.0, 1.0)
@@ -276,7 +338,7 @@ fn animate(
             let u = (t - end) / FADE_SECS;
             let ease = 1.0 - (1.0 - u.min(1.0)) * (1.0 - u.min(1.0));
             (fx.last(d.school, t), 1.0 - u, 1.0 + FADE_GROW * ease)
-        } else if d.stopped.is_some() {
+        } else if fx.layout.looping {
             (fx.last(d.school, t), 1.0 - (t - end) / FADE, 1.0)
         } else {
             (None, 0.0, 1.0)
@@ -296,6 +358,9 @@ fn animate(
         while d.trail.front().is_some_and(|(s, _)| *s < t - keep - 0.05) {
             d.trail.pop_front();
         }
+        let Some(drawings) = drawings.as_ref() else {
+            continue;
+        };
         let atlas_cell = drawings
             .cells
             .get(d.effect)
@@ -389,6 +454,56 @@ mod tests {
             }
         }
         Ok(())
+    }
+
+    /// A long fight, played as the game plays it and, now and then, caught up several ticks in one frame (as a page
+    /// does after a pause): the drawn effects alive at once never pile up, and none outlives what started it.
+    #[test]
+    fn drawn_effects_do_not_pile_up_over_a_long_fight() {
+        use arena_duel::duel::Duel;
+        use arena_duel::seat::Brain;
+        for seed in [7, 11, 23] {
+            let layout = Layout::default();
+            let mut duel = Duel::new(
+                crate::rules::config(&layout, seed),
+                [Brain::make(), Brain::make()],
+            );
+            let mut app = App::new();
+            app.insert_resource(layout)
+                .insert_resource(Shown::default())
+                .insert_resource(Pace::default())
+                .add_message::<Fx>()
+                .add_systems(Update, (sweep, commands, animate).chain());
+            let (dt, mut most, mut played) = (1.0 / 60.0, 0, 0);
+            for frame in 0..60 * 240 {
+                // every ten seconds, half a second caught up in one frame
+                let ticks = if frame % 600 == 599 { 30 } else { 1 };
+                for _ in 0..ticks {
+                    for out in duel.step(dt) {
+                        if matches!(&out, Out::Play { fx, .. } if plays(fx)) {
+                            played += 1;
+                        }
+                        app.world_mut().write_message(Fx(out));
+                    }
+                }
+                app.world_mut().resource_mut::<Pace>().run = dt * f64::from(ticks);
+                app.update();
+                let alive = app
+                    .world_mut()
+                    .query::<&Drawing>()
+                    .iter(app.world())
+                    .count();
+                most = most.max(alive);
+            }
+            assert!(
+                played > 20,
+                "seed {seed}: only {played} drawn effects played"
+            );
+            assert!(
+                most <= 16,
+                "seed {seed}: {most} drawn effects alive at once"
+            );
+        }
     }
 
     #[test]
