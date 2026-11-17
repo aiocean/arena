@@ -36,6 +36,9 @@ struct Start<'a> {
 #[derive(Resource)]
 pub struct Sheets {
     pub index: Index,
+    /// The pages' files, fetched once the fighters' sheets are in (`fetch`); until then `pages` is empty and an
+    /// effect shows nothing, as one whose page has not arrived.
+    files: Vec<String>,
     pages: Vec<Handle<Image>>,
     atlases: Vec<Handle<TextureAtlasLayout>>,
     /// For each variant, each frame's atlas cells.
@@ -72,19 +75,18 @@ impl Plugin for SpritesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, load).add_systems(
             Update,
-            (sweep, commands, play_own, animate)
-                .chain()
-                .in_set(Played)
-                .in_set(crate::Frame::React),
+            (
+                fetch,
+                (sweep, commands, play_own, animate)
+                    .chain()
+                    .in_set(Played)
+                    .in_set(crate::Frame::React),
+            ),
         );
     }
 }
 
-fn load(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
+fn load(mut commands: Commands, mut layouts: ResMut<Assets<TextureAtlasLayout>>) {
     let index = match Index::read(INDEX) {
         Ok(i) => i,
         Err(e) => {
@@ -92,10 +94,10 @@ fn load(
             return;
         }
     };
-    let pages: Vec<Handle<Image>> = index
+    let files = index
         .pages
         .iter()
-        .map(|(file, _)| assets.load(format!("vfx/{file}")))
+        .map(|(file, _)| format!("vfx/{file}"))
         .collect();
     let mut atlas: Vec<TextureAtlasLayout> = index
         .pages
@@ -122,10 +124,28 @@ fn load(
     let atlases = atlas.into_iter().map(|a| layouts.add(a)).collect();
     commands.insert_resource(Sheets {
         index,
-        pages,
+        files,
+        pages: Vec::new(),
         atlases,
         frames,
     });
+}
+
+/// Fetch the pages once the fighters' sheets are in (at once in an app with no fighters).
+fn fetch(
+    assets: Res<AssetServer>,
+    sheets_in: Option<Res<crate::fighters::SheetsIn>>,
+    sheets: Option<ResMut<Sheets>>,
+) {
+    let Some(mut sheets) = sheets else { return };
+    if !sheets.pages.is_empty() || sheets_in.is_some_and(|s| !s.0) {
+        return;
+    }
+    sheets.pages = sheets
+        .files
+        .iter()
+        .map(|f| assets.load(f.clone()))
+        .collect();
 }
 
 /// A new fight sweeps away what the last one played.

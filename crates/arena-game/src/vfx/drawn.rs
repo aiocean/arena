@@ -51,6 +51,9 @@ pub fn plays(fx: &str) -> bool {
 /// The sheets' pages and atlases, and each effect's frames' places in them, by school.
 #[derive(Resource)]
 pub struct Drawings {
+    /// Each effect's pages' files, fetched once the fighters' sheets are in (`fetch`); until then `pages` is empty
+    /// and an effect shows nothing, as one whose page has not arrived.
+    files: Vec<Vec<String>>,
     pages: Vec<Vec<Handle<Image>>>,
     atlases: Vec<Vec<Handle<TextureAtlasLayout>>>,
     /// For each effect, each school's frames: (page, atlas index).
@@ -89,34 +92,29 @@ impl Plugin for DrawnPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, load).add_systems(
             Update,
-            (sweep, commands, animate)
-                .chain()
-                .in_set(Played)
-                .in_set(crate::Frame::React),
+            (
+                fetch,
+                (sweep, commands, animate)
+                    .chain()
+                    .in_set(Played)
+                    .in_set(crate::Frame::React),
+            ),
         );
     }
 }
 
-fn load(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let mut pages = Vec::new();
+fn load(mut commands: Commands, mut layouts: ResMut<Assets<TextureAtlasLayout>>) {
+    let mut files = Vec::new();
     let mut atlases = Vec::new();
     let mut cells = Vec::new();
     for d in all() {
-        let handles: Vec<Handle<Image>> = (0..d.layout.pages.len())
+        let names: Vec<String> = (0..d.layout.pages.len())
             .map(|i| {
-                let name = if i == 0 {
-                    format!("{}.webp", d.file)
+                if i == 0 {
+                    format!("drawn/{}.webp", d.file)
                 } else {
-                    format!("{}-{i}.webp", d.file)
-                };
-                assets
-                    .load_builder()
-                    .with_settings(|s: &mut ImageLoaderSettings| s.sampler = ImageSampler::linear())
-                    .load(format!("drawn/{name}"))
+                    format!("drawn/{}-{i}.webp", d.file)
+                }
             })
             .collect();
         let mut atlas: Vec<TextureAtlasLayout> = d
@@ -140,15 +138,45 @@ fn load(
                 .collect();
             by_school.insert(school.clone(), placed);
         }
-        pages.push(handles);
+        files.push(names);
         atlases.push(atlas.into_iter().map(|a| layouts.add(a)).collect());
         cells.push(by_school);
     }
     commands.insert_resource(Drawings {
-        pages,
+        files,
+        pages: Vec::new(),
         atlases,
         cells,
     });
+}
+
+/// Fetch the pages once the fighters' sheets are in (at once in an app with no fighters), drawn smooth (linear).
+fn fetch(
+    assets: Res<AssetServer>,
+    sheets_in: Option<Res<crate::fighters::SheetsIn>>,
+    drawings: Option<ResMut<Drawings>>,
+) {
+    let Some(mut drawings) = drawings else { return };
+    if !drawings.pages.is_empty() || sheets_in.is_some_and(|s| !s.0) {
+        return;
+    }
+    drawings.pages = drawings
+        .files
+        .iter()
+        .map(|names| {
+            names
+                .iter()
+                .map(|name| {
+                    assets
+                        .load_builder()
+                        .with_settings(|s: &mut ImageLoaderSettings| {
+                            s.sampler = ImageSampler::linear()
+                        })
+                        .load(name.clone())
+                })
+                .collect()
+        })
+        .collect();
 }
 
 /// A playing the rules started this frame, spawned once the frame's commands are read: a move or a stop for it in

@@ -25,6 +25,12 @@ pub struct Look {
 #[derive(Resource)]
 pub struct Looks(pub Vec<Look>);
 
+/// Whether the fighters' sheets are in (loaded, or failed): what the fight needs to be seen. The effects' sheets are
+/// fetched only then (`vfx::sprites`, `vfx::drawn`), so on the page the fighters' pictures do not share the
+/// connection with seven megabytes of effects.
+#[derive(Resource, Default)]
+pub struct SheetsIn(pub bool);
+
 /// The sprite of fighter `0` (Thunder) or `1` (Frost).
 #[derive(Component)]
 pub struct FighterSprite(pub usize);
@@ -52,11 +58,31 @@ pub struct FightersPlugin;
 
 impl Plugin for FightersPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, load).add_systems(
-            Update,
-            show.in_set(crate::Frame::React).after(crate::feel::Felt),
-        );
+        app.init_resource::<SheetsIn>()
+            .add_systems(Startup, load)
+            .add_systems(
+                Update,
+                (
+                    arrived,
+                    show.in_set(crate::Frame::React).after(crate::feel::Felt),
+                ),
+            );
     }
+}
+
+/// Mark the fighters' sheets in once every page has loaded or failed (or there are no sheets to wait for).
+fn arrived(assets: Res<AssetServer>, looks: Option<Res<Looks>>, mut sheets_in: ResMut<SheetsIn>) {
+    if sheets_in.0 {
+        return;
+    }
+    sheets_in.0 = looks.is_none_or(|looks| {
+        looks.0.iter().flat_map(|l| &l.pages).all(|h| {
+            matches!(
+                assets.load_state(h),
+                bevy::asset::LoadState::Loaded | bevy::asset::LoadState::Failed(_)
+            )
+        })
+    });
 }
 
 /// A picture built into the game as a texture the GPU keeps (the game never reads its pixels).
