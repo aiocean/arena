@@ -20,7 +20,7 @@ fn styles_are_drawn_from_the_seed() {
 
 #[test]
 fn a_style_lasts_the_whole_fight_and_shows_in_the_view() {
-    let mut duel = fight(9);
+    let mut duel = fight(4);
     let before = duel.state().fighters.clone().map(|f| f.style);
     for _ in 0..(90 * 60) {
         duel.step(1.0 / 60.0);

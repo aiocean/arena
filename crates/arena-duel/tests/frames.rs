@@ -1,7 +1,6 @@
 //! Frame data (`data::FRAMES`): a blow that catches a fighter gathering a cast is a COUNTER, one that catches it
 //! recovering is a PUNISH (the damage system's step 10, `hit::Frame`), an unsafe skill whose blow is guarded recovers
-//! longer, a fighter casting is not guarding, and an ultimate's opening cannot be hit. None of it draws a die of its
-//! own.
+//! longer, and a fighter casting is not guarding. None of it draws a die of its own.
 
 mod common;
 
@@ -30,8 +29,8 @@ fn still(seed: u32) -> State {
         384.0,
         common::all_effects(),
         [
-            Fighter::new(0, common::loadout(&kit, "tribulation")),
-            Fighter::new(1, common::loadout(&kit, "tribulation")),
+            Fighter::new(0, common::loadout(&kit)),
+            Fighter::new(1, common::loadout(&kit)),
         ],
     );
     for (i, at) in [(0, 0.22), (1, 0.78)] {
@@ -198,8 +197,6 @@ fn a_fields_strike_is_never_a_counter_or_a_punish() {
             control: 1.0,
             knockback: 0.0,
             depth: 0,
-            ultimate: false,
-            rage: false,
             unit: None,
             power: 1.0,
             powers: arena_calc::projectile::Powers::NONE,
@@ -221,31 +218,16 @@ fn a_golden_bells_answer_counters_the_striker_still_in_its_windup() {
 }
 
 #[test]
-fn an_ultimates_opening_cannot_be_hit_and_shows_as_a_dodge() {
+fn a_top_tier_skill_gathering_is_countered_like_any_other() {
     let mut s = still(4);
-    s.fighters[1].act = Some(act("tribulation", Phase::Windup, 0.29));
-    let rng = s.rng.clone();
-    let life = s.fighters[1].c.life;
-    let out = strike(&mut s, 0, "slash");
-    assert!(hit(&out, "slash").is_none(), "{out:?}");
-    let (x, y) = (s.fighters[1].body.x, s.fighters[1].chest());
-    assert!(out.contains(&Out::Dodge { x, y }), "{out:?}");
-    assert_eq!(s.fighters[1].c.life, life);
-    assert_eq!(s.rng, rng, "the blow that passes through draws no dice");
-    assert_eq!(s.fighters[1].act.map(|a| a.spell), Some("tribulation"));
-}
-
-#[test]
-fn past_its_opening_an_ultimate_gathering_is_countered() {
-    let mut s = still(4);
-    s.fighters[1].act = Some(act("tribulation", Phase::Windup, 0.31));
+    s.fighters[1].act = Some(act("tribulation", Phase::Windup, 0.05));
     let out = strike(&mut s, 0, "slash");
     assert_eq!(hit(&out, "slash").map(|h| h.1), Some(How::Counter));
     assert!(s.fighters[1].act.is_none());
 }
 
 #[test]
-fn close_heavies_dive_dash_heal_and_ultimates_recover_slowly_and_pokes_stay_safe() {
+fn close_heavies_dive_dash_heal_and_the_top_tier_recover_slowly_and_pokes_stay_safe() {
     let recover = |name: &str| spell(name).map_or(0.0, |sp| sp.recover);
     for (name, want) in [
         ("slash", 0.32),

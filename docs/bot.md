@@ -18,10 +18,10 @@ moment it shows (`arena-mind/src/view.rs`).
 
 | Range | Count | What |
 |---|---|---|
-| 0..18 | 18 | **Me.** Distance to the wall behind and the wall ahead (over the arena's width), height (over the ceiling), facing the foe, hp / 100 (hp is a percentage of full life, so this reads 0..1), qi / 100, rage (over a full ultimate), flying, hover (over the ceiling), speed toward the foe / 200, then flags: can act, silenced, sealed, barrier up, ward up (indexes 0..15). Winding up, recovering, seconds left in that phase (15..18). |
-| 18..56 | 38 | **Foe.** Distance (over the width), height, flying, hp / 100, qi / 100 (18..23). What it does: idle, moving toward me, moving away, guarding, meditating, flying (23..29). Winding up, recovering (29..31). The kind of skill it uses, one-hot over 12 kinds (31..43). How far into its phase as a share (43), seconds left (44), the phase's span (45), the skill's reach / 100 (46), damage / 50 (47), whether it is an ultimate (48); 29..49 are zero when it uses no skill. Out for, open in, frozen, shocked, barrier, the share of its skills ready, my seeker out (49..56). |
+| 0..18 | 18 | **Me.** Distance to the wall behind and the wall ahead (over the arena's width), height (over the ceiling), facing the foe, hp / 100 (hp is a percentage of full life, so this reads 0..1), qi / 100, 0 (the old rage), flying, hover (over the ceiling), speed toward the foe / 200, then flags: can act, silenced, sealed, barrier up, ward up (indexes 0..15). Winding up, recovering, seconds left in that phase (15..18). |
+| 18..56 | 38 | **Foe.** Distance (over the width), height, flying, hp / 100, qi / 100 (18..23). What it does: idle, moving toward me, moving away, guarding, meditating, flying (23..29). Winding up, recovering (29..31). The kind of skill it uses, one-hot over 12 kinds (31..43). How far into its phase as a share (43), seconds left (44), the phase's span (45), the skill's reach / 100 (46), damage / 50 (47), 0 (48, the old ultimate flag); 29..49 are zero when it uses no skill. Out for, open in, frozen, shocked, barrier, the share of its skills ready, my seeker out (49..56). |
 | 56..104 | 4 x 12 | **Threats** in flight, nearest first, zero when absent: present, shape (projectile, area, seeker, field, barrage), distance ahead / 100, height / 50, speed toward me / 200, lands in, size / 50, damage / 50. |
-| 104..349 | 7 x 35 | **Slots**, zero when empty: the three basics, the three bar slots, the ultimate. Each: present, ready, kind (12), cost / 50, damage x power / 50, reach / 100, windup, recover, radius / 50, ultimate (+0..+21); then what it inflicts (+21..+35): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3, burn's share of attack a second x 5, chill stacks a hit adds now over the most it holds, slow per chill stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4, share of attack per shock twitch x 10, pull / 100, rage stolen over a full ultimate. |
+| 104..349 | 7 x 35 | **Slots**, zero when empty: the three basics, the three bar slots, and a seventh always empty (the old ultimate's). Each: present, ready, kind (12), cost / 50, damage x power / 50, reach / 100, windup, recover, radius / 50, 0 (the old ultimate flag) (+0..+21); then what it inflicts (+21..+35): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3, burn's share of attack a second x 5, chill stacks a hit adds now over the most it holds, slow per chill stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4, share of attack per shock twitch x 10, pull / 100, 0 (the old rage stolen). |
 | 349..354 | 5 | **Tag.** Its seat (0 left, 1 right: the slots that held the old schools) and its style (aggressive, balanced, defensive), one-hot. |
 
 The 12 skill kinds, in order: melee, dive, dash, blast, bolt, seeker, area, field, heal, ward, barrier, blink.
@@ -36,14 +36,16 @@ the rest reads 0 (design `docs/specs/2026-11-17-damage-system-design.md`, 16, li
 - What a slot inflicts, by the share of each kind of damage in the skill: freeze s is a hold (Định thân), stun s a
   stun, knockdown or jolt, silence s a lost soul; defence-down s and defence lost are sunder (metal); burn s and burn's
   rate are the burn (fire); the chill slots are soak (water) and the slow is bind (wood); the shock slots are jolt
-  (thunder); rage stolen is 0.
+  (thunder).
+- There is no ultimate and no rage any more (`docs/rules.md`, "Loadouts"): their places above are always 0, and the
+  seventh slot always empty, until the next ABI drops them.
 
 A skill is known by its kind and its numbers, never its name, so a bot reads a skill the bar has just drawn the same
 way as one it has seen a thousand times.
 
 What it does not see: a skill's cooldown left and its stored uses (only whether it is ready), its supports (a slot
 shows the skill's base cost and expected damage before them), the loadouts' keystones and roots, the energy shield,
-the sense, the resources besides qi and rage, the ailments stacked on either fighter, and the foe's minions, totems,
+the sense, the resources besides qi, the ailments stacked on either fighter, and the foe's minions, totems,
 traps and mines. The two corners
 see the same kinds of numbers, so neither side knows more.
 
@@ -77,7 +79,7 @@ Where an aim lands:
 - wait is always legal;
 - while the fighter cannot act (in its own cast, or held by a status), nothing else is;
 - jump and fly high whenever not flying (a jump in mid-air does nothing), land only when flying;
-- a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay, full rage for the ultimate,
+- a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay,
   and, for a skill that deals damage, none of its last blows still playing out (`docs/rules.md`, "Skills");
   a silenced fighter casts only its blade (slash and dive), a sealed one cannot blink;
 - aiming ahead or short only for areas and blinks.

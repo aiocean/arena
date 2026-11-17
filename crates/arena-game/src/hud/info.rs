@@ -3,7 +3,7 @@
 //! bar or a buff under its bars.
 
 use arena_duel::bar::{Buff, SlotView};
-use arena_duel::data::{RAGE, spell};
+use arena_duel::data::spell;
 
 /// Skill `name`'s English name, where the page named it.
 pub fn spell_name(name: &str) -> Option<&'static str> {
@@ -144,10 +144,6 @@ pub fn buff_info(id: &str) -> Option<(&'static str, &'static str)> {
             "Unyielding",
             "Once a round, gets back up from a killing blow with 1 life.",
         ),
-        "attune" => (
-            "Attuned",
-            "Every second spell paid in qi gives 1 rage; its attacks give none.",
-        ),
         "ward" => ("Ward", "Each charge stops a whole blow."),
         "barrier" => (
             "Barrier",
@@ -196,12 +192,11 @@ pub fn buff_info(id: &str) -> Option<(&'static str, &'static str)> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tone {
     Plain,
-    Ultimate,
     Good,
     Bad,
 }
 
-/// A tooltip, in a game tooltip's sections: its title, the line under it (the tier, "Ultimate", "Buff"), what
+/// A tooltip, in a game tooltip's sections: its title, the line under it (the tier, "Skill", "Buff"), what
 /// colours its header, `[label, value]` pairs, what it does, and what modifies it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tip {
@@ -213,7 +208,7 @@ pub struct Tip {
     pub mods: Vec<String>,
 }
 
-/// The tooltip for a slot of a skill bar (the bar skills, then the ultimate).
+/// The tooltip for a slot of a skill bar.
 pub fn skill_tip(slot: &SlotView) -> Tip {
     let Some(((title, text), s)) = slot.spell.and_then(|n| Some((spell_info(n)?, spell(n)?)))
     else {
@@ -241,18 +236,10 @@ pub fn skill_tip(slot: &SlotView) -> Tip {
     if slot.max_uses > 1 {
         props.push(("Uses".into(), format!("{}/{}", slot.uses, slot.max_uses)));
     }
-    if slot.ultimate {
-        let rage = ((slot.charge * RAGE + 0.5) as i64).min(RAGE as i64);
-        props.push(("Rage".into(), format!("{rage}/{}", RAGE as i64)));
-    }
     Tip {
         title,
-        kind: Some(if slot.ultimate { "Ultimate" } else { "Skill" }.into()),
-        tone: if slot.ultimate {
-            Tone::Ultimate
-        } else {
-            Tone::Plain
-        },
+        kind: Some("Skill".into()),
+        tone: Tone::Plain,
         props,
         text,
         mods: Vec::new(),
@@ -288,7 +275,6 @@ mod tests {
         for id in [
             "fury",
             "unyielding",
-            "attune",
             "ward",
             "barrier",
             "grit",

@@ -1,11 +1,11 @@
 //! The rotating bar: three slots drawn from the loadout's actives cast by hand, spent by a cast, refilled after a
-//! wait, never a skill twice; the basics and the ultimate always at hand. No tiers, traits, luck or evolving pairs.
+//! wait, never a skill twice; the basics always at hand. No tiers, traits, luck or evolving pairs.
 
 mod common;
 
 use common::{arena, common as held, on_bar, pinned};
 use arena_duel::bar::{draw, skill_bar, spend};
-use arena_duel::data::{BAR, RAGE};
+use arena_duel::data::BAR;
 use arena_duel::fighter::Slot;
 use arena_duel::kit::Place;
 use serde_json::json;
@@ -84,16 +84,12 @@ fn with_no_skill_left_to_draw_a_slot_waits() {
 }
 
 #[test]
-fn the_skill_bar_shows_the_ultimate_last_charged_by_rage_and_uses_stored() {
-    let mut s = arena(3);
-    let f = &mut s.fighters[0];
+fn the_skill_bar_shows_its_three_slots_and_their_uses_stored() {
+    let s = arena(3);
+    let f = &s.fighters[0];
     let bar = skill_bar(f);
-    assert_eq!(bar.len(), 4);
-    assert!(bar[3].ultimate);
-    assert_eq!(bar[3].spell, Some(f.loadout.ultimate.as_str()));
-    f.rage = RAGE / 2.0;
-    assert_eq!(skill_bar(f)[3].charge, 0.5);
-    for v in &skill_bar(f)[..3] {
+    assert_eq!(bar.len(), 3);
+    for v in &bar {
         assert!(v.max_uses >= 1 && v.uses == v.max_uses, "{v:?}");
         assert!(v.left.is_finite() && v.full.is_finite());
     }
@@ -110,7 +106,6 @@ fn loadouts_and_opening_bars_are_pinned_for_each_seed() {
                     "actives": f.loadout.actives.iter().map(|a| json!({
                         "skill": a.skill, "supports": a.supports, "fuse": a.fuse,
                     })).collect::<Vec<_>>(),
-                    "ultimate": f.loadout.ultimate,
                     "keystones": f.loadout.keystones.iter().map(|k| k.id()).collect::<Vec<_>>(),
                     "root": f.loadout.root.map(|r| r.name()),
                     "bar": on_bar(f),

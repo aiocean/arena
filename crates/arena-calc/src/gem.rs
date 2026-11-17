@@ -125,10 +125,6 @@ impl Gem {
         self.tags().has(Tag::Attack)
     }
 
-    pub fn is_ultimate(&self) -> bool {
-        self.tags().has(Tag::Ultimate)
-    }
-
     /// Whether a cast of it holds its caster until it plays out: it deals damage and is no curse, aura, blessing,
     /// movement, guard, recovery or stance (`UNBOUND`). The duel casts no other such skill meanwhile.
     pub fn binds(&self) -> bool {
@@ -349,7 +345,7 @@ pub fn starting_tier(g: &Gem) -> Tier {
     }
 }
 
-/// Every skill in the pool, basics and ultimates included (design, 11, with the research's techniques that section
+/// Every skill in the pool, basics and the top-tier (đỉnh cấp) ones included (design, 11, with the research's techniques that section
 /// leaves out). The removed ice skills (`icicle`, `shard`, `shatter`, `frostfire`, `flurry`, `prison`) are not here,
 /// and nothing chills or freezes: what chilled deals Water (Soak); a freeze became nothing, or a Hold only where the
 /// novel holds the body (Định Thân, Đạo Cổ Tứ Thức's stone).
@@ -691,13 +687,14 @@ mod pool {
         // Auras hold sense until put out or soulless.
         body("slaughteraura", "Sát Lục Ý Cảnh", &[Body, Intent, Near, Aura, Slaughter], &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.5, 0.3, 8.0], "heal", "TN505", A),
         body("timeaura", "Tuế Nguyệt Ý Cảnh", &[Body, Intent, Mid, Aura, Time], &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.5, 0.3, 8.0], "flowingmoon", "TN252", A),
-        // ---- 11.8 ultimates (full rage, no qi) ----
-        with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area, Tag::Ultimate], &[(E::Thunder, 1.0)], 14.0, &[], [0.7, 0.8, 0.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]),
+        // ---- 11.8 đỉnh cấp: the former ultimates, skills like any other at the top tier and the top rank, paid in
+        // qi and cooled like the tier's other areas ----
+        rank(with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 14.0, &[(R::Qi, 44.0)], [0.7, 0.8, 6.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]), FAITH),
         // Night over the arena; the sunrise strikes light no one dodges.
-        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area, Tag::Ultimate], &[(E::Fire, 0.5), (E::Light, 0.5)], 16.0, &[], [0.7, 0.8, 0.0], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area], &[(E::Fire, 0.5), (E::Light, 0.5)], 16.0, &[(R::Qi, 48.0)], [0.7, 0.8, 6.5], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
         // A ring drawn, tribulations 1 to 8 called, each a different kind.
-        rank(with(magic("sukiep", "Tô Kiếp", &[Spell, Tribulation, Far, Area, Tag::Ultimate], &[(E::Metal, 0.125), (E::Wood, 0.125), (E::Water, 0.125), (E::Fire, 0.125), (E::Earth, 0.125), (E::Thunder, 0.125), (E::Light, 0.125), (E::Yin, 0.125)], 6.0, &[], [0.7, 0.8, 0.0], "tribulation", "CM1303", S), &[Effect::Hits(8.0)]), ORIGIN),
-        magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged, Tag::Ultimate], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 36.0, &[], [0.8, 0.5, 0.0], "daofusion", "TN", A),
+        rank(with(magic("sukiep", "Tô Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Metal, 0.125), (E::Wood, 0.125), (E::Water, 0.125), (E::Fire, 0.125), (E::Earth, 0.125), (E::Thunder, 0.125), (E::Light, 0.125), (E::Yin, 0.125)], 6.0, &[(R::Qi, 48.0)], [0.7, 0.8, 6.5], "tribulation", "CM1303", S), &[Effect::Hits(8.0)]), FAITH),
+        rank(magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 60.0, &[(R::Qi, 40.0)], [0.8, 0.5, 4.0], "daofusion", "TN", S), FAITH),
         // ---- research techniques the design's section 11 leaves out ----
         // Tens of restriction qi made one spear; it grows as it gathers the restriction qi on the ground.
         attack("banspear", "Cấm Khí Trường Thương", &[Attack, Sword, Mid, Line, Strike, Ban], &[(E::Force, 1.0)], 24.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN309", B),

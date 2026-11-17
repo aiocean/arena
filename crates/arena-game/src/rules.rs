@@ -154,7 +154,6 @@ pub fn lift(out: &mut Out, dy: f64) {
         | Out::Barrier { y, .. }
         | Out::Ko { y, .. }
         | Out::Bump { y, .. }
-        | Out::Ultimate { y, .. }
         | Out::Unyielding { y, .. } => *y += dy,
         Out::Streak { y0, y1, .. } => {
             *y0 += dy;

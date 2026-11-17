@@ -6,10 +6,8 @@
 
 use crate::act::{break_act, clash, set_meditating};
 use crate::body::Blow as BodyBlow;
-use crate::data::{FRAMES, Kind, POWER, RAGE, Spell, T, body_spec};
+use crate::data::{FRAMES, Kind, POWER, Spell, T, body_spec};
 use crate::fighter::{Phase, State, Told};
-use crate::js::js_min;
-use crate::kit::Place;
 use crate::out::{How, Note, Out, Stop};
 use arena_calc::ailment::{Ailment, Control};
 use arena_calc::build::{Built, Situation, build_skill};
@@ -57,10 +55,7 @@ pub struct Payload {
     pub knockback: f64,
     /// The trigger chain's depth: 0 for a cast by hand.
     pub depth: u8,
-    pub ultimate: bool,
-    /// The cast's first blow to land fills rage (one point a cast).
-    pub rage: bool,
-    /// Struck by a unit (a totem's cast, a trap, a mine, a minion's blow): no striker's cultivator, no gains, no rage.
+    /// Struck by a unit (a totem's cast, a trap, a mine, a minion's blow): no striker's cultivator, no gains.
     pub unit: Option<u32>,
     /// Its size in the old power (`data::POWER`s): what a guard's chance and the minds read.
     pub power: f64,
@@ -188,8 +183,6 @@ pub fn payload(state: &State, me: usize, k: usize, built: &Built, depth: u8) -> 
         control: built.control,
         knockback: motion::knockback_distance(0.0, &built.table),
         depth,
-        ultimate: ks.place == Place::Ultimate,
-        rage: true,
         unit: None,
         power: ks.motion.damage.unwrap_or(0.0),
         powers: Powers::of_built(built),
@@ -251,16 +244,7 @@ fn life_share(c: &Cultivator, amount: f64) -> f64 {
     }
 }
 
-/// Is fighter `f` in its ultimate's opening, where nothing touches it?
-pub fn opening(state: &State, f: usize) -> bool {
-    state.fighters[f].act.is_some_and(|a| {
-        a.phase == Phase::Windup
-            && a.t < FRAMES.ultimate_invincible
-            && crate::data::spell(a.spell).is_some_and(|s| s.ultimate)
-    })
-}
-
-/// Fighter `f` takes blow `p`, pushed toward `dir`: through its ultimate's opening, a barrier, a ward's charge, a
+/// Fighter `f` takes blow `p`, pushed toward `dir`: through a barrier, a ward's charge, a
 /// dodge, then the damage system. Caught gathering a cast it is a COUNTER, caught recovering a PUNISH (never from a
 /// field's strike): the blow says so (`Hit::frame`), and the body is staggered longer. Returns whether it landed.
 pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
@@ -268,12 +252,6 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         return false;
     }
     let by = p.by;
-    if opening(state, f) {
-        let me = &state.fighters[f];
-        let (x, y) = (me.body.x, me.chest());
-        state.emit(Out::Dodge { x, y });
-        return false;
-    }
     if crate::act::turns_aside(state, f, dir, p) {
         return false;
     }
@@ -377,14 +355,6 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         on_hit_behaviours(state, by, f, p, &out.dealt, killed);
     }
     let attacker = &mut state.fighters[by];
-    if !unit
-        && p.rage
-        && !p.ultimate
-        && p.depth == 0
-        && !(attacker.has(Keystone::Attuned) && hit.tags.has(Tag::Attack))
-    {
-        attacker.rage = js_min(RAGE, attacker.rage + 1.0);
-    }
     if !unit && attacker.has(Keystone::Fury) {
         attacker.fury = (attacker.fury + 1).min(keystone::FURY_STACKS);
     }
@@ -553,7 +523,6 @@ fn on_hit_behaviours(
                             at,
                             payload: Payload {
                                 hit,
-                                rage: false,
                                 depth: p.depth + 1,
                                 ..p.clone()
                             },

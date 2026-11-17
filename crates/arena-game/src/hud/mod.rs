@@ -1,5 +1,5 @@
 //! The HUD, as the page drew it (`duel-art.js`): the bars at the top (each fighter's medallion with its face, life,
-//! qi, rage and buffs, and the plaque of rounds won) and each fighter's skill bar on the floor under its side, painted
+//! qi and buffs, and the plaque of rounds won) and each fighter's skill bar on the floor under its side, painted
 //! in world pixels on the CPU (`Canvases.hud` under the icons, a picture of the HUD's own over them), with the faces
 //! and the skill icons as sprites from their sheets, finer than the world. Hovering a skill or a buff shows what it
 //! is in a panel by the pointer (`duel-info.js`). The screen's shake leaves all of it still.
@@ -296,7 +296,6 @@ fn place(
 fn tone_color(t: Tone) -> Color {
     let c = match t {
         Tone::Plain => (0xf0, 0xcf, 0x7a),
-        Tone::Ultimate => (0xff, 0xd8, 0x4a),
         Tone::Good => (0x6f, 0xdc, 0x8a),
         Tone::Bad => (0xff, 0x6a, 0x5a),
     };

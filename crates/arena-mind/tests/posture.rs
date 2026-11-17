@@ -152,7 +152,7 @@ fn a_hair_better_posture_does_not_flicker() {
 
 #[test]
 fn finish_is_vetoed_at_full_foe_life() {
-    let r = with(quiet(), &[(Input::FoeHpLow, 0.0), (Input::RageFull, 0.0)]);
+    let r = with(quiet(), &[(Input::FoeHpLow, 0.0)]);
     let (_, scores) = choose_posture(&fresh(10.0), 10.0, &r, &profile());
     assert_eq!(scores[Posture::Finish as usize], 0.0);
 }

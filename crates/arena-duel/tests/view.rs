@@ -24,8 +24,8 @@ fn the_view_shows_each_fighter_as_the_rules_hold_it() {
         );
         for (f, s) in v.fighters.iter().zip(&duel.state().fighters) {
             assert_eq!(
-                (f.index, f.hp, f.qi, f.rage),
-                (s.index, s.hp(), s.qi(), s.rage)
+                (f.index, f.hp, f.qi),
+                (s.index, s.hp(), s.qi())
             );
             assert_eq!(
                 (f.x, f.air, f.face, f.pose, f.pose_t),
@@ -58,8 +58,8 @@ fn the_view_shows_the_units_in_id_order() {
         5,
         [common::always("beans"), common::idle()],
         [
-            common::loadout(&["beans"], "tribulation"),
-            common::loadout(&[], "tribulation"),
+            common::loadout(&["beans"]),
+            common::loadout(&[]),
         ],
     );
     duel.state_mut().fighters[0].c.souls = 30.0;

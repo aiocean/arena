@@ -29,7 +29,7 @@ mod serde_shapes {
 
     const SENSE: &str = r#"{
         "time": 1.5,
-        "me": {"x": 40, "air": 0, "face": 1, "hp": 80, "qi": 60, "rage": 1, "rageFull": 4, "flying": false,
+        "me": {"x": 40, "air": 0, "face": 1, "hp": 80, "qi": 60, "flying": false,
                "hover": 0, "vx": 0, "canAct": true, "silenced": false, "sealed": false, "barrier": false,
                "shield": false, "seekerOut": false},
         "foe": {"x": 60, "air": 0, "flying": false, "hp": 70, "qi": 50,
@@ -54,7 +54,6 @@ mod serde_shapes {
                 recover: 0.32,
                 reach: 24.0,
                 damage: 5.0,
-                ultimate: false
             }
         );
         assert_eq!(sense.ready, vec![true, false]);

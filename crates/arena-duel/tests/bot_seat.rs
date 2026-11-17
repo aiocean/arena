@@ -64,8 +64,8 @@ fn trace(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> Vec<([f64; 2], [u32; 
 
 #[test]
 fn a_bot_seat_replays_the_same_fight_from_a_seed() {
-    // seeds where the random bot lands something on the brain (on a few, 3 among them, every pick it makes misses)
-    for seed in [4, 18] {
+    // seeds where the random bot lands something on the brain (on a few, 18 among them, every pick it makes misses)
+    for seed in [4, 19] {
         let fight = || trace([BotSeat::make(pick(), None), Brain::make()], seed, 60.0);
         let first = fight();
         assert_eq!(first, fight(), "seed {seed}");
@@ -79,7 +79,7 @@ fn a_bot_seat_replays_the_same_fight_from_a_seed() {
 /// The ticks until each of the first `rounds` rounds was won, and by whom.
 fn rounds(bot: Faulty, rounds: u32) -> Vec<usize> {
     let mut duel = Duel::new(
-        config(5, all_effects()),
+        config(18, all_effects()),
         [BotSeat::make(shared(bot), None), Brain::make()],
     );
     let mut winners = Vec::new();
@@ -97,7 +97,7 @@ fn rounds(bot: Faulty, rounds: u32) -> Vec<usize> {
 #[test]
 fn a_bot_that_faults_every_decision_loses_every_round_at_once() {
     let mut duel = Duel::new(
-        config(5, all_effects()),
+        config(18, all_effects()),
         [
             BotSeat::make(
                 shared(Faulty {
@@ -132,7 +132,7 @@ fn a_fault_in_start_gives_up_only_the_first_round() {
     );
     assert_eq!(winners, [1]);
     let mut duel = Duel::new(
-        config(5, all_effects()),
+        config(18, all_effects()),
         [
             BotSeat::make(
                 shared(Faulty {
@@ -155,7 +155,7 @@ fn a_fault_in_start_gives_up_only_the_first_round() {
 #[test]
 fn a_fault_in_round_gives_up_that_round() {
     let mut duel = Duel::new(
-        config(5, all_effects()),
+        config(18, all_effects()),
         [
             BotSeat::make(
                 shared(Faulty {

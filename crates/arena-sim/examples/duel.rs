@@ -78,9 +78,8 @@ fn main() -> Result<(), String> {
             })
             .collect();
         println!(
-            "{name}: {} | ult {} | keystones {:?} | root {:?}",
+            "{name}: {} | keystones {:?} | root {:?}",
             skills.join(", "),
-            l.ultimate,
             l.keystones,
             l.root
         );

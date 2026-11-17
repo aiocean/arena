@@ -1,6 +1,6 @@
 //! A fighter shouts the name of its technique: when it starts a cast, a speech bubble over its head says the skill's
 //! name as the novel gives it (`arena_calc::gem::Gem::name`, "Hỏa Cầu!"), tinted by the skill's main kind of damage,
-//! for about a second. The ultimate shouts bigger, in gold.
+//! for about a second.
 //!
 //! The cast is read from the rules' state each frame (the fighter's act: its skill and phase), never from an event,
 //! so nothing in the rules changes. The act names the skill as cast (the gem's id), not the motion it borrows, so a
@@ -30,9 +30,8 @@ const FADE: f32 = 0.35;
 /// pixels tall, `UNIT` to a world pixel), and the gap the tail leaves over it.
 const HEAD: i32 = 61;
 const GAP: i32 = 2;
-/// The name's size in world pixels, a skill's and the ultimate's.
+/// The name's size in world pixels.
 const TEXT: f32 = 7.0;
-const TEXT_ULTIMATE: f32 = 9.0;
 /// Room round the name inside the box, and the tail's height.
 const PAD_X: i32 = 4;
 const PAD_Y: i32 = 2;
@@ -43,16 +42,14 @@ const EDGE: i32 = 2;
 
 const INK: &str = "#120d1c";
 const OUTLINE: &str = "#05040a";
-const GOLD: &str = "#ffd24a";
 
 /// The font that writes the names (Vietnamese).
 const FONT: &[u8] = include_bytes!("../../assets/fonts/BeVietnamPro-Bold-vi.ttf");
 
-/// What a fighter shouts for a skill: its name, whether it is the ultimate, and its colour.
+/// What a fighter shouts for a skill: its name and its colour.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shout {
     pub name: String,
-    pub ultimate: bool,
     pub tint: Rgba,
 }
 
@@ -87,7 +84,6 @@ pub fn shout(id: &str) -> Option<Shout> {
         .map(|(e, _)| e);
     Some(Shout {
         name: format!("{}!", g.name),
-        ultimate: g.is_ultimate(),
         tint: tint(main),
     })
 }
@@ -302,9 +298,9 @@ pub fn part(a: &mut Place, b: &mut Place, screen_w: i32, top: i32) {
     b.settle_tail();
 }
 
-/// Paints bubble `p` on `canvas`: an ink box with rounded corners, a rim of `tint` (gold and a glow for the
-/// ultimate), a dark outline and a tail down to the head, `alpha` faded.
-pub fn bubble(canvas: &mut Canvas, p: &Place, tint: Rgba, ultimate: bool, alpha: f32) {
+/// Paints bubble `p` on `canvas`: an ink box with rounded corners, a rim of `tint`, a dark outline and a tail down
+/// to the head, `alpha` faded.
+pub fn bubble(canvas: &mut Canvas, p: &Place, tint: Rgba, alpha: f32) {
     let tail = p.tail.map(|(tx, _)| tx - p.x);
     let (w, h) = (p.w, p.h + if tail.is_some() { TAIL } else { 0 });
     let inside = |x: i32, y: i32| -> bool {
@@ -320,22 +316,18 @@ pub fn bubble(canvas: &mut Canvas, p: &Place, tint: Rgba, ultimate: bool, alpha:
         tail.is_some_and(|t| (x - t).abs() <= TAIL - 1 - (y - p.h))
     };
     let ink = mix(hex(INK), tint, 0.12);
-    let rim = if ultimate { hex(GOLD) } else { tint };
     let line = hex(OUTLINE);
-    let glow = if ultimate { 2 } else { 1 };
-    for y in -glow - 1..h + glow + 1 {
-        for x in -glow - 1..w + glow + 1 {
+    for y in -1..h + 1 {
+        for x in -1..w + 1 {
             let near = |r: i32| {
                 (-r..=r).any(|dy| (-r..=r).any(|dx| (dx != 0 || dy != 0) && inside(x + dx, y + dy)))
             };
             let c = if inside(x, y) {
                 let edge =
                     !(inside(x - 1, y) && inside(x + 1, y) && inside(x, y - 1) && inside(x, y + 1));
-                if edge { rim } else { fade(ink, 0.92) }
+                if edge { tint } else { fade(ink, 0.92) }
             } else if near(1) {
                 fade(line, 0.9)
-            } else if ultimate && near(2) {
-                fade(rim, 0.35)
             } else {
                 continue;
             };
@@ -388,14 +380,7 @@ fn paint(
         let Some(live) = bubbles.live[*i].as_mut() else {
             continue;
         };
-        let size = FontSize::Px(
-            (if live.shout.ultimate {
-                TEXT_ULTIMATE
-            } else {
-                TEXT
-            } * ratio)
-                .round(),
-        );
+        let size = FontSize::Px((TEXT * ratio).round());
         if font.font_size != size {
             font.font_size = size;
             live.frames = 0;
@@ -432,12 +417,8 @@ fn paint(
         };
         let alpha = ((LIFE - live.age) / FADE).clamp(0.0, 1.0);
         let s = &live.shout;
-        bubble(&mut canvases.front, &p, s.tint, s.ultimate, alpha);
-        let ink = if s.ultimate {
-            mix([255, 255, 255, 255], hex(GOLD), 0.45)
-        } else {
-            mix([255, 255, 255, 255], s.tint, 0.3)
-        };
+        bubble(&mut canvases.front, &p, s.tint, alpha);
+        let ink = mix([255, 255, 255, 255], s.tint, 0.3);
         color.0 = Color::srgba_u8(ink[0], ink[1], ink[2], (alpha * 255.0) as u8);
         shadow.color = Color::srgba(0.0, 0.0, 0.0, alpha * 0.9);
         // half a world pixel down
@@ -499,7 +480,6 @@ mod tests {
             shout("fireball"),
             Some(Shout {
                 name: "Hỏa Cầu!".into(),
-                ultimate: false,
                 tint: tint(Some(Element::Fire)),
             })
         );
@@ -509,11 +489,8 @@ mod tests {
             Some("slash")
         );
         assert_eq!(name("hundredfist").as_deref(), Some("Trăm Quyền Sinh Cơ!"));
-        // an ultimate borrowing the tribulation's motion
-        assert_eq!(
-            shout("remnantdusk").map(|s| (s.name, s.ultimate)),
-            Some(("Tàn Dạ!".to_string(), true))
-        );
+        // a top-tier skill borrowing the tribulation's motion
+        assert_eq!(name("remnantdusk").as_deref(), Some("Tàn Dạ!"));
         // the basics shout too
         assert_eq!(name("slash").as_deref(), Some("Chém!"));
         assert_eq!(name("dive").as_deref(), Some("Lao Kiếm!"));

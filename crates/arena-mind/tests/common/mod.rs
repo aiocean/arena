@@ -24,13 +24,12 @@ pub fn skill(
         speed: 0.0,
         lands: 0.0,
         strikes: 1,
-        ultimate: false,
         grounded: false,
         inflicts: Inflicts::default(),
     }
 }
 
-/// Blade, bolt, blink, a falling area, a barrier, a palm blast and an ultimate.
+/// Blade, bolt, blink, a falling area, a barrier, a palm blast and a top-tier area.
 pub fn kit() -> Vec<Skill> {
     let mut bolt = skill("bolt", SkillKind::Bolt, 18.0, 0.28, 0.22, 13.0, 0.0);
     bolt.speed = 230.0;
@@ -41,7 +40,6 @@ pub fn kit() -> Vec<Skill> {
     let mut prison = skill("prison", SkillKind::Area, 0.0, 0.7, 0.5, 31.0, 110.0);
     prison.radius = 26.0;
     prison.lands = 1.02;
-    prison.ultimate = true;
     vec![
         skill("slash", SkillKind::Melee, 0.0, 0.2, 0.32, 5.0, 24.0),
         bolt,
@@ -89,8 +87,6 @@ pub fn me(x: f64) -> Me {
         face: 1.0,
         hp: 100.0,
         qi: 100.0,
-        rage: 0.0,
-        rage_full: 4.0,
         flying: false,
         hover: 0.0,
         vx: 0.0,
@@ -158,7 +154,6 @@ pub fn blade_windup(t: f64) -> Doing {
         recover: 0.32,
         reach: 24.0,
         damage: 5.0,
-        ultimate: false,
     }
 }
 
@@ -178,7 +173,7 @@ pub fn reading(me: &Me, foe: &Foe, threats: &[Threat]) -> Reading {
     )
 }
 
-/// A reading of a quiet moment: every input 0.5 but nothing open, nothing coming, no rage, no breath to take;
+/// A reading of a quiet moment: every input 0.5 but nothing open, nothing coming, no breath to take;
 /// the foe 60 px off.
 pub fn quiet() -> Reading {
     let r = Reading {
@@ -193,14 +188,13 @@ pub fn quiet() -> Reading {
         urgency: 0.0,
         foe_posture: Posture::Neutral,
         want: 100.0,
-        inputs: [0.5; 18],
+        inputs: [0.5; 17],
     };
     with(
         r,
         &[
             (Input::Opening, 0.0),
             (Input::Threat, 0.0),
-            (Input::RageFull, 0.0),
             (Input::Calm, 0.0),
         ],
     )

@@ -55,9 +55,6 @@ pub enum Doing {
         recover: f64,
         reach: f64,
         damage: f64,
-        /// The skill is an ultimate.
-        #[cfg_attr(feature = "serde", serde(default))]
-        ultimate: bool,
     },
 }
 
@@ -92,9 +89,6 @@ pub struct Me {
     pub hp: f64,
     /// Qi, 0 to 100.
     pub qi: f64,
-    pub rage: f64,
-    /// Rage an ultimate needs.
-    pub rage_full: f64,
     pub flying: bool,
     pub hover: f64,
     pub vx: f64,

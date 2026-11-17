@@ -13,7 +13,7 @@ nothing by them.
 
 - `data`: the motions a skill borrows (`data::motions`, how it moves and looks) and the pool's skills as the duel
   casts them (`data::spell`: a gem on its motion), the looks, the brain's one temperament (`MIND`), the constants.
-- `kit`: a loadout made into skills (basics, actives with their supports, the ultimate, linked skills), each with its
+- `kit`: a loadout made into skills (basics, actives with their supports, linked skills), each with its
   stored uses (`charge::Uses`) and how it works (`Way`: intent, domain, curse, buff, device, or its motion).
 - `fighter`: a fighter (its cultivator, sheet, kit, bar, body, intents, curses) and the duel's `State`.
 - `act`: casting (`begin`, `release`, `deliver`), each motion's blow (`strike`), guards, barriers, wards, clashes.

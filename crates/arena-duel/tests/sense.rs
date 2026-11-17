@@ -1,16 +1,15 @@
-//! What a mind and a policy are told: the slots (the basics, the bar, the ultimate, as indexes into its skills), and
+//! What a mind and a policy are told: the slots (the basics and the bar, as indexes into its skills), and
 //! each skill's effects mapped onto the minds' fixed slots (design 16).
 
 mod common;
 
 use common::{all_effects, config};
 use arena_duel::duel::Duel;
-use arena_duel::kit::Place;
 use arena_duel::seat::Brain;
 use arena_duel::sense::sense_of;
 
 #[test]
-fn slots_are_the_basics_the_bar_and_the_ultimate() {
+fn slots_are_the_basics_and_the_bar() {
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     for _ in 0..120 {
         duel.step(1.0 / 60.0);
@@ -18,7 +17,7 @@ fn slots_are_the_basics_the_bar_and_the_ultimate() {
     for me in 0..2 {
         let f = &duel.state().fighters[me];
         let s = sense_of(duel.state(), me);
-        assert_eq!(s.slots.len(), 7);
+        assert_eq!(s.slots.len(), 6);
         let name = |i: usize| s.slots[i].map(|k| f.spells[k]);
         for (i, b) in arena_calc::loadout::BASICS.iter().enumerate() {
             assert_eq!(name(i), Some(*b));
@@ -27,9 +26,6 @@ fn slots_are_the_basics_the_bar_and_the_ultimate() {
             assert_eq!(name(3 + i), slot.spell(), "bar slot {i}");
         }
         assert_eq!(f.bar.len(), 3);
-        let ult = f.kit.skills.iter().find(|k| k.place == Place::Ultimate);
-        assert_eq!(name(6), ult.map(|k| k.gem.id));
-        assert_eq!(Some(f.loadout.ultimate.as_str()), name(6));
     }
 }
 
@@ -62,19 +58,13 @@ fn a_skill_says_what_it_inflicts_by_its_kinds_of_damage_and_its_controls() {
 }
 
 #[test]
-fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
+fn a_fighter_senses_its_own_act_and_the_foes() {
     use arena_mind::{ActPhase, Doing};
     use arena_duel::fighter::{Act, Phase};
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
-    let ultimate = duel.state().fighters[1]
-        .kit
-        .skills
-        .iter()
-        .find(|k| k.place == Place::Ultimate)
-        .map_or("tribulation", |k| k.gem.id);
     duel.state_mut().fighters[1].act = Some(Act {
-        spell: ultimate,
+        spell: "tribulation",
         phase: Phase::Recover,
         t: 0.1,
         windup: 0.5,
@@ -89,10 +79,10 @@ fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
     assert_eq!(a.t, 0.1);
     assert_eq!(a.recover, 0.4);
     assert_eq!(sense_of(duel.state(), 0).me.act, None);
-    let Doing::Act { ultimate, .. } = sense_of(duel.state(), 0).foe.doing else {
+    let Doing::Act { phase, .. } = sense_of(duel.state(), 0).foe.doing else {
         unreachable!("the foe is acting")
     };
-    assert!(ultimate);
+    assert_eq!(phase, ActPhase::Recover);
 }
 
 #[test]

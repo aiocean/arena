@@ -13,7 +13,7 @@ use crate::out::{Note, Out, PlayOpts, Stop};
 use crate::strike::{Origin, Payload, Target, hurt};
 use crate::unit::{UNIT_ID, enemies_near, hurt_unit, targets_of};
 use arena_calc::play::Point;
-use arena_calc::projectile::{Flight, Shot as Fired, Via};
+use arena_calc::projectile::{Flight, Shot as Fired};
 
 /// What kind of shot, and its own state.
 #[derive(Clone, Debug, PartialEq)]
@@ -84,11 +84,9 @@ pub fn launch_bolt(state: &mut State, sp: &'static Spell, p: Payload, o: Origin)
         speed: sp.speed.unwrap_or(0.0) / T,
         range: (state.right - state.left) / T + 1.0,
     };
-    for (i, flight) in Flight::launch(&fired, &p.powers).into_iter().enumerate() {
-        let mut q = p.clone();
-        q.rage = p.rage && i == 0;
+    for flight in Flight::launch(&fired, &p.powers) {
         let key = bolt_effect(state, sp, me, &flight);
-        crate::act::push(state, sp, q, Some(key), ShotKind::Bolt { flight });
+        crate::act::push(state, sp, p.clone(), Some(key), ShotKind::Bolt { flight });
     }
 }
 
@@ -196,7 +194,6 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
     for k in &step.strikes {
         let mut p = s.payload.clone();
         p.hit = k.blow(&p.hit);
-        p.rage = p.rage && k.via == Via::Direct;
         let dir = or_one(js_sign(flight.dir.x));
         if k.target >= UNIT_ID {
             hurt_unit(state, k.target - UNIT_ID, &p);
@@ -216,8 +213,7 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
     }
     for fork in step.forks {
         let key = bolt_effect(state, sp, s.owner, &fork);
-        let mut p = s.payload.clone();
-        p.rage = false;
+        let p = s.payload.clone();
         crate::act::push(state, sp, p, Some(key), ShotKind::Bolt { flight: fork });
     }
     let off = nx < state.left - 160.0 || nx > state.right + 160.0;
@@ -381,7 +377,6 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 if s.tick > 0.0 {
                     let mut p = s.payload.clone();
                     crate::strike::scale_hit(&mut p.hit, s.tick);
-                    p.rage = false;
                     for t in enemies_near(state, s.owner, x, 0.0, under, f64::INFINITY) {
                         match t {
                             Target::Unit(u) => {

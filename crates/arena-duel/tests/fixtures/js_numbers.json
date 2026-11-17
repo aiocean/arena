@@ -557,7 +557,6 @@
     "tribulation": {
       "kind": "zone",
       "fx": "explosions/plasma-explosion",
-      "ultimate": true,
       "cost": 0,
       "windup": 0.7,
       "recover": 0.8,
@@ -1984,7 +1983,6 @@
     "sky": 35
   },
   "constants": {
-    "RAGE": 4,
     "STALE": 6,
     "POOL_SIZE": 8,
     "FRAMES": {
@@ -2012,8 +2010,7 @@
         "fireescape",
         "warprint",
         "daofusion"
-      ],
-      "ultimateInvincible": 0.3
+      ]
     },
     "DECOR": {
       "lamp": "fire/brazier",

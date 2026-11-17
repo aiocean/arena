@@ -84,9 +84,8 @@ pub struct SeatLog {
     /// The share of its own life it healed, and the share it lost, as its life shows.
     pub healed: f64,
     pub life_lost: f64,
-    /// Qi paid for its casts, and rage spent on ultimates.
+    /// Qi paid for its casts.
     pub qi_spent: f64,
-    pub rage_spent: f64,
     /// Seconds of rounds in play, and of those, seconds spent meditating, guarding and flying.
     pub seconds: f64,
     pub meditating: f64,
@@ -226,9 +225,6 @@ impl Seat for Watched {
             let log = &mut logs[me];
             log.skill(sp.name).casts += 1;
             log.qi_spent += f.kit.get(sp.name).map_or(0.0, |k| k.qi());
-            if sp.ultimate {
-                log.rage_spent += f.rage;
-            }
         }
         c
     }

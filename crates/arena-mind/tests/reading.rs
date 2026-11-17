@@ -15,7 +15,6 @@ fn opening_counts_recovery() {
         recover: 0.32,
         reach: 24.0,
         damage: 5.0,
-        ultimate: false,
     };
     let r = reading(&me(40.0), &f, &[]);
     assert!((r.opening - 0.22).abs() < 1e-9, "{}", r.opening);
@@ -40,7 +39,6 @@ fn a_long_cast_is_an_opening() {
         recover: 0.3,
         reach: 0.0,
         damage: 25.0,
-        ultimate: false,
     };
     let r = reading(&me(40.0), &f, &[]);
     assert!((r.opening - 0.7).abs() < 1e-9);
@@ -113,7 +111,7 @@ fn cornered_reads_my_back_to_the_wall() {
     assert!(reading(&me(110.0), &foe(140.0), &[]).input(Input::Cornered) < 0.1);
 }
 
-const ALL: [Input; 18] = [
+const ALL: [Input; 17] = [
     Input::Qi,
     Input::Hp,
     Input::FoeHpLow,
@@ -130,7 +128,6 @@ const ALL: [Input; 18] = [
     Input::FoePressing,
     Input::FoeZoning,
     Input::FoeRecovering,
-    Input::RageFull,
     Input::Calm,
 ];
 
@@ -165,7 +162,6 @@ fn inputs_stay_in_unit_range() {
             recover: rng.next(),
             reach: rng.next() * 50.0,
             damage: rng.next() * 30.0,
-            ultimate: false,
         };
         let threats: Vec<Threat> = (0..i % 7)
             .map(|k| Threat {

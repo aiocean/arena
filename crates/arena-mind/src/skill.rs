@@ -69,8 +69,6 @@ pub struct Inflicts {
     pub shock_rate: f64,
     /// How hard it drags the foe in, game pixels a second.
     pub pull: f64,
-    /// Rage taken from it (and given to the caster).
-    pub steal_rage: f64,
 }
 
 /// One skill a fighter holds. Times in seconds, lengths in game pixels.
@@ -96,7 +94,6 @@ pub struct Skill {
     pub lands: f64,
     /// Blows it lands one after another (a barrage), at least 1.
     pub strikes: u32,
-    pub ultimate: bool,
     /// Hits only a foe on the floor.
     pub grounded: bool,
     #[cfg_attr(feature = "serde", serde(default))]

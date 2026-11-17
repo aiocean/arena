@@ -74,8 +74,6 @@ pub enum Input {
     FoeZoning,
     /// How sure I am the foe is out of qi, or getting it back.
     FoeRecovering,
-    /// My ultimate is ready.
-    RageFull,
     /// How much of my breath after an attack is left.
     Calm,
 }

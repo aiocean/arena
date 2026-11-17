@@ -73,7 +73,7 @@ pub struct Fighter {
     /// Its damage-system state: life, shield, sense, qi and every resource, ailments, grit, effects.
     pub c: Cultivator,
     pub kit: Kit,
-    /// Every skill its mind may name, the kit's ids in order (basics, actives, ultimate).
+    /// Every skill its mind may name, the kit's ids in order (basics, actives).
     pub spells: Vec<&'static str>,
     /// The actives its bar draws from: those cast by hand.
     pub pool: Vec<&'static str>,
@@ -83,7 +83,6 @@ pub struct Fighter {
     pub medit: bool,
     pub fly: bool,
     pub hover: f64,
-    pub rage: f64,
     /// Blinking locked (Không Khóa, Chặn Lui).
     pub sealed: f64,
     /// Rooted (Triền full): no walking, no blinking.
@@ -109,12 +108,10 @@ pub struct Fighter {
     pub auras: Auras,
     /// The curses on this fighter.
     pub curses: Curses,
-    /// Sát Ý stacks this round; spare lives used this match (Tam Mệnh, Ngọn Đèn Hồn); Bất Khuất used this round;
-    /// Tâm Pháp's qi-paid spells toward the next rage point.
+    /// Sát Ý stacks this round; spare lives used this match (Tam Mệnh, Ngọn Đèn Hồn); Bất Khuất used this round.
     pub fury: u8,
     pub lives_used: u8,
     pub unyielding_used: bool,
-    pub attuned: u8,
     /// What it did lately, for `stat::Counts`: (time, kills, hits, qi spent, kinds dealt).
     pub history: Vec<(f64, u32, u32, f64, u16)>,
     /// Damage over time taken since it was last shown, its share of life, and the seconds since (`strike::DOT_SHOWN`).
@@ -153,7 +150,6 @@ impl Fighter {
             medit: false,
             fly: false,
             hover: 0.0,
-            rage: 0.0,
             sealed: 0.0,
             root: 0.0,
             no_guard: 0.0,
@@ -172,7 +168,6 @@ impl Fighter {
             fury: 0,
             lives_used: 0,
             unyielding_used: false,
-            attuned: 0,
             history: Vec::new(),
             dots: (0.0, 0.0, 0.0),
             body: Body::with_spec(0.0, body_spec()),
@@ -193,7 +188,6 @@ impl Fighter {
         self.medit = false;
         self.fly = false;
         self.hover = 0.0;
-        self.rage = 0.0;
         self.sealed = 0.0;
         self.root = 0.0;
         self.no_guard = 0.0;
@@ -211,7 +205,6 @@ impl Fighter {
         self.curses = Curses::new(self.index as u32, witch);
         self.fury = 0;
         self.unyielding_used = false;
-        self.attuned = 0;
         self.history.clear();
         self.dots = (0.0, 0.0, 0.0);
     }

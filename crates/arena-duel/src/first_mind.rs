@@ -203,8 +203,8 @@ impl FirstMind {
                 return 0.0;
             }
             let mut chance = chance;
-            // a raised barrier turns everything but an ultimate aside: wait it out
-            if foe.barrier > 0.0 && !s.ultimate {
+            // a raised barrier turns everything aside: wait it out
+            if foe.barrier > 0.0 {
                 chance *= 0.05;
             }
             // what it has seen this attack do against this foe
@@ -306,7 +306,7 @@ impl FirstMind {
         }
         for &name in &me.spells {
             let Some(s) = sp(name) else { continue };
-            if s.kind != Kind::Zone || s.ultimate || !ready(me, name) {
+            if s.kind != Kind::Zone || !ready(me, name) {
                 continue;
             }
             // aim where the foe will be when it lands
@@ -755,7 +755,7 @@ fn punisher(foe: &Fighter, me: &Fighter, time: f64) -> f64 {
     for &name in &foe.spells {
         let Some(s) = spell(name) else { continue };
         let damage = s.damage.unwrap_or(0.0);
-        if damage == 0.0 || s.ultimate || !ready(foe, name) {
+        if damage == 0.0 || !ready(foe, name) {
             continue;
         }
         let range = s.range.unwrap_or(f64::NAN);

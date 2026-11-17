@@ -9,8 +9,6 @@ pub enum Place {
     Basic,
     /// One of the loadout's actives, by its index in `Loadout::actives`.
     Active(usize),
-    /// The ultimate.
-    Ultimate,
     /// A skill a trigger casts that the loadout does not carry (a linked attack, `event::Scale::Event`).
     Linked,
 }
@@ -64,7 +62,7 @@ impl SkillLine {
 }
 
 /// One side's numbers over a match: a line per skill in the fighter's slot order (the three basics, the actives
-/// in loadout order, the ultimate).
+/// in loadout order).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SideReport {
     pub skills: Vec<SkillLine>,

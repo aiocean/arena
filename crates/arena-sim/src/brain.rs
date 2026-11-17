@@ -1,6 +1,5 @@
 //! The scripted brain that plays every loadout, reasonably and not perfectly. Each tick it is free to act it:
 //!
-//! - casts the ultimate when rage is full and the foe stands within its reach;
 //! - at low life (`LOW_LIFE`), heals if it can, and raises a ward when the foe is gathering a blow nearby;
 //! - otherwise casts the ready skill it can afford with the highest value: a striking skill's expected damage
 //!   against the foe now (`Fight::expected`, refreshed every second), an intent, a stance, a blessing, a domain or a
@@ -17,7 +16,6 @@ use arena_calc::gem::Effect;
 
 use crate::delivery::{BLINK_LENGTH, Delivery};
 use crate::fight::{Fight, Order};
-use crate::report::Place;
 use crate::rng::Rng;
 
 /// Life share under which the brain heals and wards.
@@ -124,7 +122,7 @@ pub fn decide(fight: &Fight, me: usize, rng: &mut Rng) -> Order {
                 )
             }
             _ => {
-                let v = s.estimate * if s.place == Place::Ultimate { 3.0 } else { 1.0 };
+                let v = s.estimate;
                 if !in_reach {
                     if want.is_none_or(|w| v > w.0) {
                         want = Some((v, s.range));
@@ -176,7 +174,7 @@ pub fn preferred(fight: &Fight, me: usize) -> f64 {
     fight.f[me]
         .slots
         .iter()
-        .filter(|s| s.delivery.strikes() && s.place != Place::Ultimate && s.range.is_finite())
+        .filter(|s| s.delivery.strikes() && s.range.is_finite())
         .max_by(|a, b| a.estimate.total_cmp(&b.estimate))
         .map_or(3.0, |s| (s.range * RANGE_SHARE).max(MIN_RANGE))
 }

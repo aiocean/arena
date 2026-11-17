@@ -118,7 +118,6 @@ fn spell_json(s: &data::Spell) -> Value {
     for (k, v) in [
         ("dive", s.dive),
         ("grounded", s.grounded),
-        ("ultimate", s.ultimate),
         ("reflect", s.reflect),
         ("feet", s.feet),
         ("swap", s.swap),
@@ -209,7 +208,6 @@ fn every_skill_is_its_gem_on_its_motion() {
             "{}",
             g.id
         );
-        assert_eq!(s.ultimate, g.is_ultimate(), "{}", g.id);
         assert_eq!(s.damage.is_some(), g.deals_damage(), "{}", g.id);
     }
     assert_eq!(data::spells().len(), GEMS.len());
@@ -268,7 +266,6 @@ fn each_look_is_ported() -> Result<(), String> {
 #[test]
 fn the_constants_are_ported() {
     let f = fixture();
-    assert_eq!(data::RAGE, num(&f["constants"]["RAGE"]));
     assert_eq!(data::STALE, num(&f["constants"]["STALE"]));
     assert_eq!(data::POOL_SIZE as f64, num(&f["constants"]["POOL_SIZE"]));
     assert_eq!(
@@ -282,7 +279,6 @@ fn the_constants_are_ported() {
         "punish": { "power": fr.punish.power, "stagger": fr.punish.stagger },
         "blockedRecover": fr.blocked_recover,
         "unsafeOnBlock": fr.unsafe_on_block,
-        "ultimateInvincible": fr.ultimate_invincible,
     });
     assert_eq!(norm(&frames), norm(&f["constants"]["FRAMES"]));
     assert_eq!(

@@ -678,16 +678,14 @@ const DEVICE_NONE: &[Tag] = &[
     Tag::Totem,
     Tag::Minion,
     Tag::Aura,
-    Tag::Ultimate,
     Tag::Movement,
     Tag::Guard,
     Tag::Field,
     Tag::Domain,
 ];
-/// What a triggered spell cannot be: channelled, an ultimate, a device, a minion, an intent.
+/// What a triggered spell cannot be: channelled, a device, a minion, an intent.
 const TRIGGER_NONE: &[Tag] = &[
     Tag::Channel,
-    Tag::Ultimate,
     Tag::Trap,
     Tag::Mine,
     Tag::Totem,
@@ -1607,7 +1605,7 @@ pub const SUPPORTS: &[Support] = &[
         id: "spellecho",
         name: "Hồi Âm",
         all_of: &[Tag::Spell],
-        none_of: &[Tag::Channel, Tag::Instant, Tag::Charged, Tag::Ultimate],
+        none_of: &[Tag::Channel, Tag::Instant, Tag::Charged],
         cost: 1.4,
         points: 3,
         stats: &[
@@ -1813,7 +1811,7 @@ pub const SUPPORTS: &[Support] = &[
         id: "unleash",
         name: "Phong Ấn",
         all_of: &[Tag::Spell],
-        none_of: &[Tag::Channel, Tag::Instant, Tag::Ultimate],
+        none_of: &[Tag::Channel, Tag::Instant],
         cost: 1.3,
         points: 2,
         stats: &[Mod::more(Stat::Damage, UNLEASH_MORE, by("unleash"))],

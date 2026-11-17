@@ -166,14 +166,14 @@ const POOL: &[Gem] = &[
     gem("blink", &[Tag::Body, Tag::Movement], &[], 0.0, Tier::C),
     gem(
         "tribulation",
-        &[Tag::Spell, Tag::Area, Tag::Ultimate],
+        &[Tag::Spell, Tag::Area],
         &[(Element::Thunder, 1.0)],
         400.0,
         Tier::S,
     ),
     gem(
         "daofusion",
-        &[Tag::Attack, Tag::Nova, Tag::Ultimate, Tag::Aura],
+        &[Tag::Attack, Tag::Nova, Tag::Aura],
         FORCE,
         3.0,
         Tier::S,
@@ -233,7 +233,6 @@ fn legal() -> Loadout {
         .iter()
         .map(|s| slot(s, &[]))
         .collect(),
-        ultimate: "tribulation".to_string(),
         keystones: Vec::new(),
         root: None,
     }
@@ -544,14 +543,11 @@ fn counts_are_enforced() {
     let mut l = legal();
     l.actives[1] = slot("slash", &[]);
     assert!(has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
+    // a top-tier skill is an active like any other
     l.actives[1] = slot("tribulation", &[]);
-    assert!(has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
+    assert!(!has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
     l.actives[1] = slot("nothing", &[]);
     assert!(has(&l, |e| matches!(e, LoadoutError::UnknownSkill { .. })));
-
-    let mut l = legal();
-    l.ultimate = "bolt".to_string();
-    assert!(has(&l, |e| matches!(e, LoadoutError::NotUltimate { .. })));
 
     let mut l = legal();
     l.actives[0] = slot("palm", &["focus", "heavy", "malignant", "critical"]);
@@ -584,7 +580,7 @@ fn counts_are_enforced() {
     )));
 
     let mut l = legal();
-    l.keystones = vec![Keystone::Fury, Keystone::Attuned, Keystone::Unyielding];
+    l.keystones = vec![Keystone::Fury, Keystone::Witch, Keystone::Unyielding];
     assert!(has(&l, |e| *e == LoadoutError::Keystones { count: 3 }));
     l.keystones = vec![
         Keystone::Extreme(Element::Fire),
@@ -652,10 +648,10 @@ fn keystones_forbid_skills() {
             "{k:?}"
         );
     }
-    // the ultimate is judged too: daofusion carries an aura tag here
+    // a top-tier skill is judged like any: daofusion carries an aura tag here
     let mut l = legal();
     l.keystones = vec![Keystone::ImmortalPool];
-    l.ultimate = "daofusion".to_string();
+    l.actives[7] = slot("daofusion", &[]);
     assert!(has(
         &l,
         |e| matches!(e, LoadoutError::KeystoneSkill { skill, .. } if skill == "daofusion")
@@ -1205,7 +1201,7 @@ fn every_keystone_has_its_own_name_and_none_is_frozen() {
             "{k:?}"
         );
     }
-    assert_eq!(Keystone::ALL.len(), 21);
+    assert_eq!(Keystone::ALL.len(), 20);
 }
 
 // ---- random loadouts ----
@@ -1285,8 +1281,7 @@ fn base_of(gem: &str) -> f64 {
 fn every_support_fits_some_skill_of_the_pool() {
     for s in SUPPORTS {
         assert!(
-            GEMS.iter().any(|g| !g.is_ultimate()
-                && !arena_calc::loadout::BASICS.contains(&g.id)
+            GEMS.iter().any(|g| !arena_calc::loadout::BASICS.contains(&g.id)
                 && s.fits(g.all_tags())),
             "{} fits no skill a loadout can take",
             s.id
@@ -1299,7 +1294,7 @@ fn every_support_changes_the_built_skill() {
     for s in SUPPORTS {
         let Some(g) = GEMS
             .iter()
-            .find(|g| g.deals_damage() && !g.is_ultimate() && s.fits(g.all_tags()))
+            .find(|g| g.deals_damage() && s.fits(g.all_tags()))
             .or_else(|| GEMS.iter().find(|g| s.fits(g.all_tags())))
         else {
             continue;
@@ -1329,7 +1324,7 @@ fn every_exclusion_is_refused_both_ways_by_the_loadout() {
             assert!(excluded(s, o) && excluded(o, s));
             let g = GEMS
                 .iter()
-                .find(|g| !g.is_ultimate() && s.fits(g.all_tags()) && o.fits(g.all_tags()));
+                .find(|g| s.fits(g.all_tags()) && o.fits(g.all_tags()));
             let Some(g) = g else {
                 // the two never fit one skill: nothing to refuse
                 continue;

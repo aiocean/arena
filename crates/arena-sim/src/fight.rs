@@ -35,7 +35,7 @@ use arena_calc::keystone::Keystone;
 use arena_calc::loadout::Loadout;
 use arena_calc::motion;
 use arena_calc::play::{self, Point, Shape, Target};
-use arena_calc::projectile::{Flight, Powers, Shot as ProjectileShot, Via};
+use arena_calc::projectile::{Flight, Powers, Shot as ProjectileShot};
 use arena_calc::stat::{Counts, Happened, Mod, RECENT, Source, Stat};
 use arena_calc::support::Behaviour;
 use arena_calc::tag::Tag;
@@ -46,11 +46,11 @@ use crate::delivery::{
     WARD_SECONDS,
 };
 use crate::fighter::{Act, Fighter};
-use crate::report::{Place, SideReport};
+use crate::report::SideReport;
 use crate::rng::Rng;
 use crate::units::{Group, Unit};
 use crate::{
-    BODY, COUNTER_STAGGER, DT, FIELD, HITSTUN, MAX_ROUNDS, PUNISH_STAGGER, RAGE_MAX, ROUND_TIME,
+    BODY, COUNTER_STAGGER, DT, FIELD, HITSTUN, MAX_ROUNDS, PUNISH_STAGGER, ROUND_TIME,
     ROUNDS_TO_WIN, RUN_SPEED, WALL, brain,
 };
 
@@ -87,11 +87,8 @@ pub(crate) struct Payload {
     /// T the blow pushes the foe.
     pub(crate) knockback: f64,
     pub(crate) depth: u8,
-    pub(crate) ultimate: bool,
-    /// The cast's first blow: only it fills rage (one point a cast, however many blows it lands).
-    pub(crate) rage: bool,
     /// Struck by a unit (a totem's cast, a trap, a mine, a minion's blow): no striker's cultivator, no gains, no
-    /// rage, no striker events.
+    /// no striker events.
     pub(crate) from_unit: Option<u32>,
 }
 
@@ -541,8 +538,7 @@ impl Fight {
     }
 
     /// Whether seat `me` may start `slot` now (the brain reads this): free, a use stored, a card left, its costs
-    /// payable with what it built last, a spell not while silenced, nothing barring it, the ultimate only on full
-    /// rage, an intent not already on, never a triggered skill, a skill that binds not while its last blow plays out.
+    /// payable with what it built last, a spell not while silenced, nothing barring it, an intent not already on, never a triggered skill, a skill that binds not while its last blow plays out.
     pub fn can_cast(&self, me: usize, slot: usize, costs: &[(Resource, f64)]) -> bool {
         let f = &self.f[me];
         let c = &self.c[me];
@@ -553,7 +549,6 @@ impl Fight {
             && !s.triggered
             && s.charges.ready()
             && s.card != Some(0)
-            && (s.place != Place::Ultimate || f.rage >= RAGE_MAX)
             && !(Fighter::is_spell(s.tags) && c.soul_lost > 0.0)
             && !f.curses.barred(s.tags)
             && !(s.delivery == Delivery::Aura
@@ -649,7 +644,6 @@ impl Fight {
         if let Some(n) = &mut s.card {
             *n = n.saturating_sub(1);
         }
-        let place = s.place;
         let gem = s.gem;
         let rejection = s.supports.iter().find_map(|x| {
             x.behaviours.iter().find_map(|b| match b {
@@ -658,16 +652,6 @@ impl Fight {
             })
         });
         let estimate = s.estimate;
-        if place == Place::Ultimate {
-            f.rage = 0;
-        }
-        if f.has(Keystone::Attuned) && tags.has(Tag::Spell) && qi_paid > 0.0 {
-            f.attuned += 1;
-            if f.attuned >= arena_calc::keystone::ATTUNED_SPELLS {
-                f.attuned = 0;
-                f.rage = (f.rage + 1).min(RAGE_MAX);
-            }
-        }
         f.history.push((now, 0, 0, qi_paid, 0));
         f.report.skills[slot].casts += 1;
         f.report.skills[slot].dist_cast += d;
@@ -789,7 +773,7 @@ impl Fight {
     fn deliver(&mut self, me: usize, slot: usize, built: Built, aim: f64, dir: f64, depth: u8) {
         let foe = 1 - me;
         let s = &self.f[me].slots[slot];
-        let (g, delivery, place) = (s.gem, s.delivery, s.place);
+        let (g, delivery) = (s.gem, s.delivery);
         let d = self.distance();
         let toward = (self.f[foe].x - self.f[me].x).signum();
         let toward = if toward == 0.0 { 1.0 } else { toward };
@@ -846,7 +830,7 @@ impl Fight {
                         .raise(me, k, built.rank, centre, pos, FIELD / 2.0);
                 }
                 if damaging {
-                    self.emit(me, slot, &built, delivery, self.f[foe].x, depth, place);
+                    self.emit(me, slot, &built, delivery, self.f[foe].x, depth);
                 }
             }
             Delivery::Device(_) => {
@@ -874,7 +858,7 @@ impl Fight {
                 if gem::curse_of(g).is_some() && d <= s.range {
                     self.lay_curse(me, slot, &built, depth);
                 }
-                self.emit(me, slot, &built, delivery, aim, depth, place);
+                self.emit(me, slot, &built, delivery, aim, depth);
             }
         }
     }
@@ -890,7 +874,6 @@ impl Fight {
         delivery: Delivery,
         aim: f64,
         depth: u8,
-        place: Place,
     ) {
         let g = self.f[me].slots[slot].gem;
         // extra projectiles fan out in `projectile::Flight::launch`
@@ -933,8 +916,6 @@ impl Fight {
                     control: built.control,
                     knockback,
                     depth,
-                    ultimate: place == Place::Ultimate,
-                    rage: i == 0,
                     from_unit: None,
                 },
             });
@@ -980,7 +961,6 @@ impl Fight {
                         if let Some(&(t, _)) = ens.iter().find(|e| e.1.id == k.target) {
                             let mut p = s.payload.clone();
                             p.hit = k.blow(&p.hit);
-                            p.rage = p.rage && k.via == Via::Direct;
                             landing.push((p, t));
                         }
                     }
@@ -1114,7 +1094,7 @@ impl Fight {
         let gem = self.f[by].slots[p.slot].gem;
         let d = self.distance();
         let unit = p.from_unit.is_some();
-        if self.f[on].in_opening() || (!unit && self.c[by].life <= 0.0) {
+        if !unit && self.c[by].life <= 0.0 {
             self.f[by].report.skills[p.slot].missed += 1;
             return;
         }
@@ -1202,14 +1182,6 @@ impl Fight {
             self.c[by].gain_souls(soul / RES.souls_per_damage);
         }
         let f = &mut self.f[by];
-        if !unit
-            && p.rage
-            && !p.ultimate
-            && p.depth == 0
-            && !(f.has(Keystone::Attuned) && hit.tags.has(Tag::Attack))
-        {
-            f.rage = (f.rage + 1).min(RAGE_MAX);
-        }
         if !unit && f.has(Keystone::Fury) {
             f.fury = (f.fury + 1).min(arena_calc::keystone::FURY_STACKS);
         }

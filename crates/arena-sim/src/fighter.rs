@@ -1,5 +1,4 @@
-//! A fighter in the simulator: its loadout made into castable skills (the three basics, the eight actives, the
-//! ultimate), its sheet (the loadout's keystones; no gear, no tree), the triggers its supports carry, and its place
+//! A fighter in the simulator: its loadout made into castable skills (the three basics, the eight actives), its sheet (the loadout's keystones; no gear, no tree), the triggers its supports carry, and its place
 //! and timers on the field. Its damage-system state (`arena_calc::cultivator::Cultivator`) lives beside it in the
 //! fight, so the event queue can take both fighters' as one slice.
 
@@ -79,7 +78,6 @@ pub struct Fighter {
     pub stun: f64,
     pub root: f64,
     pub moving: bool,
-    pub rage: u8,
     /// A guard skill's ward: blows it erases, and seconds left.
     pub ward: u8,
     pub ward_left: f64,
@@ -91,12 +89,10 @@ pub struct Fighter {
     /// Which of its slots last laid a burn and a bleed on the foe, for the report.
     pub last_burn: Option<usize>,
     pub last_bleed: Option<usize>,
-    /// Sát Ý stacks this round; spare lives used (Tam Mệnh, Ngọn Đèn Hồn) this match; Bất Khuất used this round;
-    /// Tâm Pháp's qi-paid spells toward the next rage point.
+    /// Sát Ý stacks this round; spare lives used (Tam Mệnh, Ngọn Đèn Hồn) this match; Bất Khuất used this round.
     pub fury: u8,
     pub lives_used: u8,
     pub unyielding_used: bool,
-    pub attuned: u8,
     /// What it did lately, for `stat::Counts`: (time, kill, hit, qi spent, kinds dealt).
     pub history: Vec<(f64, u32, u32, f64, u16)>,
     pub report: SideReport,
@@ -178,9 +174,6 @@ impl Fighter {
                 add(g, Place::Active(i), supports, slot.fuse.as_deref());
             }
         }
-        if let Some(g) = gem::gem(&loadout.ultimate) {
-            add(g, Place::Ultimate, Vec::new(), None);
-        }
         let report = SideReport {
             skills: slots
                 .iter()
@@ -199,7 +192,6 @@ impl Fighter {
             stun: 0.0,
             root: 0.0,
             moving: false,
-            rage: 0,
             ward: 0,
             ward_left: 0.0,
             auras: Auras::default(),
@@ -210,7 +202,6 @@ impl Fighter {
             fury: 0,
             lives_used: 0,
             unyielding_used: false,
-            attuned: 0,
             history: Vec::new(),
             report,
         };
@@ -265,28 +256,13 @@ impl Fighter {
         matches!(self.act, Act::Windup { .. })
     }
 
-    /// Whether it is gathering its ultimate's first `ULTIMATE_OPENING` seconds (blows pass through).
-    pub fn in_opening(&self) -> bool {
-        match self.act {
-            Act::Windup { slot, gone, .. } => {
-                gone < crate::ULTIMATE_OPENING
-                    && self
-                        .slots
-                        .get(slot)
-                        .is_some_and(|s| s.place == Place::Ultimate)
-            }
-            _ => false,
-        }
-    }
-
-    /// Its kit is fresh for a new round: cooldowns, uses, rage, timers and its place.
+    /// Its kit is fresh for a new round: cooldowns, uses, timers and its place.
     pub fn new_round(&mut self, seat: usize) {
         self.x = crate::START[seat.min(1)];
         self.act = Act::Idle;
         self.stun = 0.0;
         self.root = 0.0;
         self.moving = false;
-        self.rage = 0;
         self.ward = 0;
         self.ward_left = 0.0;
         self.auras = Auras::default();
@@ -297,7 +273,6 @@ impl Fighter {
         self.last_bleed = None;
         self.fury = 0;
         self.unyielding_used = false;
-        self.attuned = 0;
         self.history.clear();
         for s in &mut self.slots {
             s.charges.stored = s.charges.max;

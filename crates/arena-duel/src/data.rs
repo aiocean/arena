@@ -20,10 +20,6 @@ pub const FLY: Fly = Fly {
     cost: 3.0,
 };
 
-/// Rage is a small whole-number pool: a point for each cast whose blow lands (design 10); when full, the loadout's
-/// ultimate.
-pub const RAGE: f64 = 4.0;
-
 /// A ward holds 1 to `charges` charges for `time` seconds; each erases one whole blow.
 pub struct Ward {
     pub charges: f64,
@@ -211,15 +207,13 @@ pub struct Bonus {
 
 /// Frame data, the way Street Fighter has it: a fighter struck while it gathers a cast takes a COUNTER, one struck
 /// while it recovers takes a PUNISH (a field's strike gives neither); the skills in `unsafe_on_block` recover
-/// `blocked_recover` seconds longer when their blow is guarded; an ultimate cannot be hit for its windup's first
-/// `ultimate_invincible` seconds. The feel answers a counter and a punish with its own longer hit-stop.
+/// `blocked_recover` seconds longer when their blow is guarded. The feel answers a counter and a punish with its own longer hit-stop.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Frames {
     pub counter: Bonus,
     pub punish: Bonus,
     pub blocked_recover: f64,
     pub unsafe_on_block: &'static [&'static str],
-    pub ultimate_invincible: f64,
 }
 pub const FRAMES: Frames = Frames {
     counter: Bonus {
@@ -231,7 +225,7 @@ pub const FRAMES: Frames = Frames {
         stagger: 0.2,
     },
     blocked_recover: 0.15,
-    // dive, dash and the close blasts; an ultimate falls as a zone, which no guard stops
+    // dive, dash and the close blasts
     unsafe_on_block: &[
         "dive",
         "step",
@@ -248,7 +242,6 @@ pub const FRAMES: Frames = Frames {
         "warprint",
         "daofusion",
     ],
-    ultimate_invincible: 0.3,
 };
 
 /// What a spell does when it lands.
@@ -363,8 +356,6 @@ pub struct Spell {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub grounded: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub ultimate: bool,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub reflect: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub feet: bool,
@@ -409,7 +400,6 @@ const BASE: Spell = Spell {
     spray: None,
     dive: false,
     grounded: false,
-    ultimate: false,
     reflect: false,
     feet: false,
     swap: false,
@@ -545,12 +535,12 @@ static SPELLS: [Spell; 93] = [
         damage: Some(20.0),
         ..BASE
     },
-    // ultimates, cast with full rage. Thunder: three thunderclaps fall one after another where the foe will be.
+    // the top tier's motion (đỉnh cấp; the gem sets its cost and cooldown). Thunder: three thunderclaps fall one after
+    // another where the foe will be.
     Spell {
         name: "tribulation",
         kind: Kind::Zone,
         fx: Some("explosions/plasma-explosion"),
-        ultimate: true,
         cost: 0.0,
         windup: 0.7,
         recover: 0.8,
@@ -1030,7 +1020,7 @@ static SPELLS: [Spell; 93] = [
         notice: Some(0.15),
         ..BASE
     },
-    // Frost: Soul Searching Technique: Pulls at the foe's soul at close range: silences it and steals a point of rage.
+    // Frost: Soul Searching Technique: Pulls at the foe's soul at close range: silences it.
     Spell {
         name: "soulsearch",
         kind: Kind::Blast,
@@ -1245,7 +1235,7 @@ static SPELLS: [Spell; 93] = [
         notice: Some(0.0),
         ..BASE
     },
-    // Frost: Spirit-Devouring Body-Consuming Heaven-Severing Great Art / Devouring: Devours the foe at close range: steals a point of rage.
+    // Frost: Spirit-Devouring Body-Consuming Heaven-Severing Great Art / Devouring: Devours the foe at close range.
     Spell {
         name: "devour",
         kind: Kind::Blast,
@@ -1277,7 +1267,7 @@ static SPELLS: [Spell; 93] = [
         aim_ahead: Some(0.3),
         ..BASE
     },
-    // Frost: Foundation Seizing Great Art: A dart that takes a point of the foe's rage.
+    // Frost: Foundation Seizing Great Art: A dart.
     Spell {
         name: "seize",
         kind: Kind::Bolt,
@@ -1726,7 +1716,7 @@ static SPELLS: [Spell; 93] = [
         speed: Some(680.0),
         ..BASE
     },
-    // Frost: Star Soul Extraction: Pulls the soul out of the foe at close range: steals a point of rage.
+    // Frost: Star Soul Extraction: Pulls the soul out of the foe at close range.
     Spell {
         name: "starsoul",
         kind: Kind::Blast,
@@ -1772,8 +1762,8 @@ static SPELLS: [Spell; 93] = [
 ];
 
 /// Every skill of the shared pool as the duel casts it: the motion it borrows (`Gem::spell`: how it moves and looks),
-/// with its own name, qi cost, timings, power (`POWER`s of what it is expected to deal) and whether it is the
-/// ultimate. Built once, in the pool's order.
+/// with its own name, qi cost, timings and power (`POWER`s of what it is expected to deal). Built once, in the pool's
+/// order.
 fn skills() -> &'static [Spell] {
     static SKILLS: OnceLock<Vec<Spell>> = OnceLock::new();
     SKILLS.get_or_init(|| {
@@ -1800,7 +1790,6 @@ fn skills() -> &'static [Spell] {
                     cooldown: g.cooldown,
                     damage: g.deals_damage().then(|| gem::expected_damage(g) / POWER),
                     amount: heal.or(m.amount),
-                    ultimate: g.is_ultimate(),
                     ..*m
                 })
             })

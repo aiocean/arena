@@ -2,7 +2,7 @@
 //! a fighter can cast now, and what the HUD shows of the bar and of a fighter's buffs. The bar's tiers, traits,
 //! luck and evolving pairs are off while the damage system is balanced (design 2): every draw is a plain skill.
 
-use crate::data::{BAR, Kind, RAGE, STALE};
+use crate::data::{BAR, Kind, STALE};
 use crate::fighter::{Fighter, Slot, State};
 use crate::js::js_min;
 use crate::kit::Place;
@@ -23,7 +23,7 @@ pub fn slot_of<'a>(f: &'a Fighter, name: &str) -> Option<&'a Slot> {
 }
 
 /// Can `f` cast `name` now: in its kit and not cast by a trigger, its effect in the registry, on its bar if it is a
-/// bar skill, a use stored, a card left, payable, the ultimate only on full rage, a spell not while its soul is lost,
+/// bar skill, a use stored, a card left, payable, a spell not while its soul is lost,
 /// a blink not while sealed or rooted, a guard skill not while barred, nothing its curses bar, an intent not on
 /// already, a skill that binds not while its last blow plays out.
 pub fn ready(f: &Fighter, name: &str) -> bool {
@@ -36,7 +36,6 @@ pub fn ready(f: &Fighter, name: &str) -> bool {
         && (!matches!(k.place, Place::Active(_)) || slot_of(f, name).is_some())
         && k.uses.ready()
         && k.card != Some(0)
-        && (k.place != Place::Ultimate || f.rage >= RAGE)
         && !(f.silenced() && k.tags.has(Tag::Spell))
         && !((s.kind == Kind::Blink || k.tags.has(Tag::Movement))
             && (f.sealed > 0.0 || f.root > 0.0))
@@ -106,13 +105,10 @@ pub fn spend(state: &mut State, f: usize, i: usize) {
 pub struct SlotView {
     pub spell: Option<&'static str>,
     pub empty: bool,
-    pub ultimate: bool,
     pub ready: bool,
     /// The cooldown (or the empty slot's wait) left, out of `full`.
     pub left: f64,
     pub full: f64,
-    /// How charged it is: an ultimate charges with rage.
-    pub charge: f64,
     /// Its uses stored, of its most (`arena_calc::charge::Uses`).
     pub uses: u8,
     pub max_uses: u8,
@@ -123,11 +119,9 @@ pub struct SlotView {
 const NO_SLOT: SlotView = SlotView {
     spell: None,
     empty: true,
-    ultimate: false,
     ready: false,
     left: 0.0,
     full: 0.0,
-    charge: 1.0,
     uses: 0,
     max_uses: 0,
     stale: 0.0,
@@ -143,7 +137,7 @@ fn cooling(f: &Fighter, name: &str) -> (f64, f64, u8, u8) {
     })
 }
 
-/// What fighter `f`'s skill bar shows, slot by slot (1, 2, 3, then the ultimate).
+/// What fighter `f`'s skill bar shows, slot by slot.
 pub fn skill_bar(f: &Fighter) -> Vec<SlotView> {
     let mut slots: Vec<SlotView> = f
         .bar
@@ -165,7 +159,6 @@ pub fn skill_bar(f: &Fighter) -> Vec<SlotView> {
                     uses,
                     max_uses,
                     stale: js_min(1.0, idle / STALE),
-                    ..NO_SLOT
                 }
             }
         })
@@ -173,25 +166,6 @@ pub fn skill_bar(f: &Fighter) -> Vec<SlotView> {
     while slots.len() < BAR.slots {
         slots.push(NO_SLOT);
     }
-    let ult = f
-        .kit
-        .skills
-        .iter()
-        .find(|k| k.place == Place::Ultimate)
-        .map(|k| k.gem.id);
-    let (left, full, uses, max_uses) = ult.map_or((0.0, 0.0, 0, 0), |u| cooling(f, u));
-    slots.push(SlotView {
-        spell: ult,
-        empty: ult.is_none(),
-        ultimate: true,
-        ready: ult.is_some_and(|u| f.alive() && ready(f, u)),
-        left,
-        full,
-        uses,
-        max_uses,
-        charge: f.rage / RAGE,
-        ..NO_SLOT
-    });
     slots
 }
 
@@ -222,7 +196,6 @@ pub fn buffs_of(f: &Fighter) -> Vec<Buff> {
             f.has(Keystone::Unyielding) && !f.unyielding_used,
             0.0,
         ),
-        ("attune", f.has(Keystone::Attuned), f64::from(f.attuned)),
         ("ward", f.charges > 0.0, f.charges),
         ("barrier", f.barrier > 0.0, 0.0),
         ("grit", f.c.grit >= 1.0, libm::floor(f.c.grit)),

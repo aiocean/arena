@@ -10,7 +10,7 @@ use crate::data::{
 };
 use crate::fighter::{Act, Phase, State};
 use crate::js::{js_max, js_min, js_sign, or_one};
-use crate::kit::{Place, Way};
+use crate::kit::Way;
 use crate::out::{Note, Out, PlayOpts, Stop};
 use crate::shot::{Shot, ShotKind, launch_bolt};
 use crate::strike::{
@@ -23,10 +23,8 @@ use arena_calc::domain;
 use arena_calc::event::{Event, EventKind};
 use arena_calc::gem;
 use arena_calc::hit::{Defence, Rolls, resolve_with};
-use arena_calc::keystone::Keystone;
 use arena_calc::motion as calc_motion;
 use arena_calc::support::Behaviour;
-use arena_calc::tag::Tag;
 
 /// JS `clamp(v, lo, hi)`: `Math.max(lo, Math.min(hi, v))`.
 pub fn clamp(v: f64, lo: f64, hi: f64) -> f64 {
@@ -161,7 +159,7 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
     }
     let now = state.time;
     let tags = built.hit.tags;
-    let (qi, place, rejection) = {
+    let (qi, rejection) = {
         let f = &mut state.fighters[me];
         let qi = pay(&mut f.c, &built);
         f.c.on_cast();
@@ -182,25 +180,9 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
                 _ => None,
             })
         });
-        (qi, ks.place, rejection)
+        (qi, rejection)
     };
-    if place == Place::Ultimate {
-        let f = &mut state.fighters[me];
-        f.rage = 0.0;
-        let (x, y) = (f.body.x, f.chest());
-        state.emit(Out::Ultimate { by: me, x, y });
-    }
-    {
-        let f = &mut state.fighters[me];
-        if f.has(Keystone::Attuned) && tags.has(Tag::Spell) && qi > 0.0 {
-            f.attuned += 1;
-            if f.attuned >= arena_calc::keystone::ATTUNED_SPELLS {
-                f.attuned = 0;
-                f.rage = js_min(crate::data::RAGE, f.rage + 1.0);
-            }
-        }
-        f.history.push((now, 0, 0, qi, 0));
-    }
+    state.fighters[me].history.push((now, 0, 0, qi, 0));
     // a bar skill's cast empties its slot
     if let Some(at) = state.fighters[me]
         .bar
@@ -442,7 +424,6 @@ fn strikes(state: &mut State, me: usize, k: usize, built: &Built, p: Payload, ta
         if i + 1 == count && frac < 1.0 - 1e-9 {
             scale_hit(&mut p.hit, frac.max(0.0));
         }
-        p.rage = i == 0;
         if i == 0 {
             strike(state, sp, p, origin, target, true);
         } else {
@@ -599,9 +580,7 @@ pub fn strike(
                     fell: false,
                 };
                 let key = if n == 0.0 { mark } else { None };
-                let mut q = p.clone();
-                q.rage = p.rage && n == 0.0;
-                let id = push(state, sp, q, key, kind);
+                let id = push(state, sp, p.clone(), key, kind);
                 if let Some(s) = state.shots.iter_mut().find(|s| s.id == id) {
                     s.t = -n * sp.every.unwrap_or(0.0) - sigil;
                 }
@@ -787,7 +766,7 @@ fn ward(state: &mut State, me: usize, sp: &'static Spell) {
     );
 }
 
-/// A barrier: it turns blows aside for its time (an ultimate breaks through).
+/// A barrier: it turns blows aside for its time.
 fn barrier(state: &mut State, me: usize, k: usize) {
     let g = state.ground;
     let (id, sp) = {
@@ -928,12 +907,12 @@ pub fn blocks(state: &mut State, f: usize, from_x: f64, p: &Payload) -> bool {
     true
 }
 
-/// Does fighter `f`'s barrier turn blow `p` aside? An ultimate breaks through it. A golden bell rings back at a blade,
+/// Does fighter `f`'s barrier turn blow `p` aside? A golden bell rings back at a blade,
 /// blast or dash that struck it from close by: the striker takes the bell's own blow, is stunned and thrown off.
 pub fn turns_aside(state: &mut State, f: usize, dir: f64, p: &Payload) -> bool {
     let s = spell(p.skill);
     let me = &state.fighters[f];
-    if me.barrier == 0.0 || p.ultimate {
+    if me.barrier == 0.0 {
         return false;
     }
     let (x, air, spec) = (me.body.x, me.body.air, me.body.spec);
@@ -982,8 +961,6 @@ pub fn turns_aside(state: &mut State, f: usize, dir: f64, p: &Payload) -> bool {
             control: 1.0,
             knockback: 0.0,
             depth: 1,
-            ultimate: false,
-            rage: false,
             unit: None,
             power: counter.damage,
             powers: arena_calc::projectile::Powers::NONE,

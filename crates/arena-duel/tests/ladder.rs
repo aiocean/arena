@@ -9,7 +9,7 @@ use arena_duel::seat::Brain;
 #[test]
 fn every_seed_is_fought_both_ways_and_counted() {
     let m = Match {
-        seeds: 1..3,
+        seeds: 6..8,
         rounds: 1,
         limit: 300.0,
         effects: all_effects(),

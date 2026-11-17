@@ -6,7 +6,8 @@ use crate::choice::Choice;
 use crate::sense::{Foe, Sense};
 use crate::skill::{Skill, SkillKind};
 
-/// The castable slots a game lays out (the duel: three basics, three bar slots, the ultimate).
+/// The castable slots a game lays out (the duel: three basics, three bar slots, and a seventh, always empty since the
+/// ultimate went, until the next ABI drops it).
 pub const SLOTS: usize = 7;
 const PLAIN: usize = 9;
 const AIMS: usize = 3;

@@ -22,16 +22,19 @@ numbers only where they explain a mechanic. When a number here and the code disa
 ## Loadouts
 
 Each fighter fights with a **loadout** (design 2, `arena_calc::loadout`): exactly 8 actives from the shared pool of
-168 skills, up to 3 supports on each (12 in all, matching their tags), one ultimate, up to 2 keystones and an
-optional root element, within a budget of 50 points. `loadout::check` is the one judge of a legal loadout.
+168 skills, up to 3 supports on each (12 in all, matching their tags), up to 2 keystones and an optional root
+element, within a budget of 50 points. `loadout::check` is the one judge of a legal loadout.
 
 - A fight draws a legal loadout for each seat at random from its seed, on dice of their own (they never move the
   fight's rolls). A tool can give both loadouts instead (`Duel::with_loadouts`). A bot does not choose its loadout
   yet (design 13, 16).
 - The three basics are always at hand: slash, dive and blink.
 - The old schools' traits are keystones any loadout may take: Bất Khuất (unyielding: once a round a killing blow
-  leaves 1 life), Sát Ý (fury: +4% damage for each blow landed, 5 stacks a round) and Tâm Pháp (attuned: every second
-  spell paid in qi gives a rage point; its attacks give none).
+  leaves 1 life) and Sát Ý (fury: +4% damage for each blow landed, 5 stacks a round).
+- **There is no ultimate** (owner, 2026-11-18): no ultimate slot, no rage. The former ultimates (Thiên Kiếp
+  `tribulation`, Tàn Dạ `remnantdusk`, Tô Kiếp `sukiep`, Đạo Pháp Dung Hợp `daofusion`) are **top-tier skills (đỉnh
+  cấp)**: actives like any other, of tier S and rank Tín Niệm (Faith, the top of the ladder), paid in qi and cooled
+  like the tier's other skills, held by "a blow plays out" like any blow. A loadout takes them among its 8 actives.
 
 ## Skills
 
@@ -51,7 +54,7 @@ pours, its area's strikes still fall or its skill's repeats are still due, it ca
 show not ready). It can still move, guard, jump, fly and meditate, and a skill with a role that tends it or works on
 its foe (curse, aura, blessing, movement, guard, recovery, stance: `arena_calc::gem::UNBOUND`, `Gem::binds`) it casts
 whenever it is free, even one that deals damage. What it did not cast by hand never holds it: a trap's, mine's,
-totem's or minion's blows, a triggered cast, a stored force; nor does a bolt a mirror sent back. An ultimate that deals damage waits too. It strikes again
+totem's or minion's blows, a triggered cast, a stored force; nor does a bolt a mirror sent back. It strikes again
 the tick after its last blow ends.
 
 Reaches and places are in the arena's pixels (`UNIT` = 4 of them to one of the world's); the damage system's unit,
@@ -62,7 +65,8 @@ T, is a fighter's height, 240 of the arena's pixels.
 A fighter's three bar slots show one of its loadout's actives each (only those cast by hand: a skill a trigger
 casts never shows). A cast empties its slot, which refills from the other actives after 1.5 to 2.5 s; a skill ready
 and uncast for 6 s leaves for another (`STALE`). The bar's old tiers, traits, lucky casts and evolving pairs are off
-(design 2). So a bot has seven castable slots: the three basics, the three bar slots and the ultimate.
+(design 2). So a bot has six castable slots: the three basics and the three bar slots (the policy's seventh slot,
+the old ultimate's, is always empty until the next bot ABI drops it).
 
 A skill's cooldown is its **stored uses** (`arena_calc::charge`): one, or more with a support that stores them; a
 cast spends one and they come back one at a time.
@@ -73,8 +77,6 @@ cast spends one and they come back one at a time.
   while meditating. **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
   skills (design 1, 10). Souls come from soul damage dealt (one each 100), from kills, and from each minion that dies
   within 4 T.
-- **Rage**: a point for each cast whose blow lands (the ultimate earns none). When it holds 4, the ultimate is
-  castable, and casting it spends it.
 
 ## A blow
 
@@ -113,7 +115,7 @@ All lengths are the arena's pixels (the page's world pixels times 4).
 - **Guard** stops only melee, blasts, dashes, bolts and orbs, and only facing the blow; zones and fields fall past
   it. Each held blow costs 8 qi (below 8 qi the guard breaks) and lets 20% through, through the damage system; a
   heavier blow is likelier to break through whole. Casting drops the guard.
-- **Barriers** (bell, mirror) turn every blow aside for a moment (not an ultimate); the bell answers a close blow, the
+- **Barriers** (bell, mirror) turn every blow aside for a moment; the bell answers a close blow, the
   mirror sends a bolt back. **Wards** hold 1-3 charges for 6 s, each erasing one whole blow; a ward and a heal wash
   off the ailments.
 - **Evasion** is the damage system's roll; it never evades an instant skill.
@@ -137,7 +139,6 @@ The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `da
 - **Punish:** a blow on a fighter in its recover does 1.2x and staggers 0.20 s longer.
 - **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts recover 0.15 s longer when their
   blow is guarded.
-- **Ultimate opening:** an ultimate cannot be hit in the first 0.3 s of its windup; a blow passes through as a dodge.
 - A field's strike (void) gives neither a counter nor a punish.
 
 ## Styles

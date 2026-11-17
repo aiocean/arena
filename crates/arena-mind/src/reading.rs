@@ -35,7 +35,7 @@ pub struct Reading {
     pub foe_posture: Posture,
     /// The range I want to fight at now.
     pub want: f64,
-    pub inputs: [f64; 18],
+    pub inputs: [f64; 17],
 }
 
 fn unit(x: f64) -> f64 {
@@ -60,8 +60,7 @@ const fn slot(input: Input) -> usize {
         Input::FoePressing => 13,
         Input::FoeZoning => 14,
         Input::FoeRecovering => 15,
-        Input::RageFull => 16,
-        Input::Calm => 17,
+        Input::Calm => 16,
     }
 }
 
@@ -108,7 +107,7 @@ pub fn punisher(
     let level = (foe.air - me.air).abs();
     let mut most: f64 = 0.0;
     for (s, ready) in foe_skills.iter().zip(&foe.ready) {
-        if !ready || s.damage <= 0.0 || s.ultimate {
+        if !ready || s.damage <= 0.0 {
             continue;
         }
         let lands = match s.kind {
@@ -300,14 +299,13 @@ impl Reading {
         };
         let wall = |x: f64| (x - arena.left).min(arena.right - x);
         let posture = read_posture(me, foe);
-        let rage_full = me.rage >= me.rage_full && has_ready(&|s: &Skill| s.ultimate);
         let foe_recovering = if matches!(foe.doing, Doing::Meditate) {
             1.0
         } else {
             (30.0 - foe.qi) / 30.0
         };
 
-        let mut inputs = [0.0; 18];
+        let mut inputs = [0.0; 17];
         let mut set = |input: Input, v: f64| inputs[slot(input)] = unit(v);
         set(Input::Qi, me.qi / 100.0);
         set(Input::Hp, me.hp / 100.0);
@@ -319,9 +317,7 @@ impl Reading {
         set(Input::Close, 1.0 - (d - 20.0) / 60.0);
         set(
             Input::CloseReady,
-            f64::from(u8::from(has_ready(&|s: &Skill| {
-                is_close(s.kind) && !s.ultimate
-            }))),
+            f64::from(u8::from(has_ready(&|s: &Skill| is_close(s.kind)))),
         );
         set(
             Input::RangedReady,
@@ -329,9 +325,7 @@ impl Reading {
         );
         set(
             Input::AreaReady,
-            f64::from(u8::from(has_ready(&|s: &Skill| {
-                is_area(s.kind) && !s.ultimate
-            }))),
+            f64::from(u8::from(has_ready(&|s: &Skill| is_area(s.kind)))),
         );
         set(Input::Cornered, 1.0 - wall(me.x) / CORNER);
         set(Input::FoeCornered, 1.0 - wall(foe.x) / CORNER);
@@ -344,7 +338,6 @@ impl Reading {
             f64::from(u8::from(posture == Posture::Zone)),
         );
         set(Input::FoeRecovering, foe_recovering);
-        set(Input::RageFull, f64::from(u8::from(rage_full)));
         set(
             Input::Calm,
             if profile.tempo > 0.0 {

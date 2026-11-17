@@ -15,7 +15,7 @@ pub enum Rank {
     Rule = 3,
     /// Bản nguyên: origin skills.
     Origin = 4,
-    /// Tín niệm: one ultimate a fighter.
+    /// Tín niệm: the top rank, the đỉnh cấp skills (the former ultimates).
     Faith = 5,
 }
 

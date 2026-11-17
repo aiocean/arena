@@ -31,8 +31,8 @@ pub fn arena(seed: u32) -> State {
     state
 }
 
-/// A loadout of `actives` (with no supports; padded from a fixed list to eight) and `ultimate`, with `keystones`.
-pub fn loadout(actives: &[&str], ultimate: &str) -> Loadout {
+/// A loadout of `actives` (with no supports; padded from a fixed list to eight), with no keystones.
+pub fn loadout(actives: &[&str]) -> Loadout {
     let pad = [
         "bolt", "palm", "fireball", "quake", "heal", "ward", "spark", "seal", "jet", "orb",
     ];
@@ -54,7 +54,6 @@ pub fn loadout(actives: &[&str], ultimate: &str) -> Loadout {
                 fuse: None,
             })
             .collect(),
-        ultimate: ultimate.to_string(),
         keystones: Vec::new(),
         root: None,
     }

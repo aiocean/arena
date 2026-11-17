@@ -145,11 +145,6 @@ pub enum Out {
         x1: f64,
         y1: f64,
     },
-    Ultimate {
-        by: usize,
-        x: f64,
-        y: f64,
-    },
     /// Fighter `by` rose from a killing blow on a spare life (Bất Khuất, Tam Mệnh, Ngọn Đèn Hồn).
     Unyielding {
         by: usize,

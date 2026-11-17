@@ -1,5 +1,5 @@
 //! A fighter's loadout (`arena_calc::loadout::Loadout`) made into the skills it casts: the three basics, the eight
-//! actives with their supports, the ultimate, and any linked skill a trigger casts that the loadout does not carry.
+//! actives with their supports, and any linked skill a trigger casts that the loadout does not carry.
 //! Each skill keeps its stored uses (`arena_calc::charge::Uses`), how often it was cast this round, a one-use card's
 //! uses left, and how it does what it does in the duel (`Way`). Its sheet holds the loadout's keystones; no gear, no
 //! passive tree (design 17.4).
@@ -24,8 +24,6 @@ pub enum Place {
     Basic,
     /// One of the loadout's actives, by its index in `Loadout::actives`: the bar draws from these.
     Active(usize),
-    /// The ultimate, cast on full rage.
-    Ultimate,
     /// A skill a trigger casts that the loadout does not carry (Liên Hoàn Suy Yếu's linked attack).
     Linked,
 }
@@ -213,8 +211,7 @@ pub struct Kit {
 }
 
 impl Kit {
-    /// The kit of `loadout` for a fighter of cultivator `c` wearing `sheet`: the basics, the actives, the ultimate,
-    /// in that order. Skills the pool or the duel does not know are left out.
+    /// The kit of `loadout` for a fighter of cultivator `c` wearing `sheet`: the basics, then the actives. Skills the pool or the duel does not know are left out.
     pub fn of(loadout: &Loadout, c: &Cultivator, sheet: &Sheet) -> Kit {
         let mut kit = Kit::default();
         let add = |kit: &mut Kit, g: &'static Gem, place, supports: Vec<&'static Support>, fuse| {
@@ -247,9 +244,6 @@ impl Kit {
                     slot.fuse.as_deref(),
                 );
             }
-        }
-        if let Some(g) = gem::gem(&loadout.ultimate) {
-            add(&mut kit, g, Place::Ultimate, Vec::new(), None);
         }
         kit
     }

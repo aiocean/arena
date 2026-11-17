@@ -1,9 +1,9 @@
 //! What the feel draws over the fight (the page's `duel-art.js` and `duel-hero.js`): the floating numbers in a tiny
 //! pixel font with a dark outline, the qi streaks (Thunder's a crooked bolt, Frost's a straight shimmer), the dust a
-//! body raises, an ultimate's dusk over the world behind the fighters and its film bars.
+//! body raises.
 
 use super::fight::{Dust, Number, NumberKind, Streak};
-use super::math::{floor, hypot, js_round, sin, sqrt};
+use super::math::{hypot, js_round, sin, sqrt};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
 use arena_duel::data::Look;
 
@@ -206,29 +206,4 @@ pub fn dust(canvas: &mut Canvas, list: &[Dust], ground: f64) {
             i += 1.0;
         }
     }
-}
-
-/// An ultimate's dusk over the world behind the fighters.
-pub fn dusk(canvas: &mut Canvas, dark: f64) {
-    if dark > 0.0 {
-        let (w, h) = (canvas.w, canvas.h);
-        canvas.rect(0, 0, w, h, fade([4, 2, 10, 255], dark as f32), Blend::Over);
-    }
-}
-
-/// An ultimate frames the screen like a film for as long as the sky is dark: black bands `band` pixels tall.
-pub fn letterbox(canvas: &mut Canvas, band: i32) {
-    if band > 0 {
-        let (w, h) = (canvas.w, canvas.h);
-        canvas.rect(0, 0, w, band, [0, 0, 0, 255], Blend::Set);
-        canvas.rect(0, h - band, w, band, [0, 0, 0, 255], Blend::Set);
-    }
-}
-
-/// How tall the film bars are at the sky's darkest.
-pub const LETTERBOX: f64 = 12.0;
-
-/// The film bars' height for a sky `dark` of `depth`.
-pub fn band(dark: f64, depth: f64) -> i32 {
-    floor(js_round(dark / depth * LETTERBOX)) as i32
 }

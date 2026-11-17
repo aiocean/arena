@@ -225,7 +225,6 @@ impl Fight {
         target: Option<Tgt>,
     ) {
         let unit = &self.units[u];
-        let place = self.f[unit.owner].slots[unit.slot].place;
         // an area lands no farther than the unit reaches
         let aim = unit.x + (aim - unit.x).clamp(-unit.reach, unit.reach);
         self.pending.push(Emission {
@@ -246,8 +245,6 @@ impl Fight {
                 control: unit.control,
                 knockback: 0.0,
                 depth: 0,
-                ultimate: place == crate::report::Place::Ultimate,
-                rage: false,
                 from_unit: Some(unit.uid),
             },
         });

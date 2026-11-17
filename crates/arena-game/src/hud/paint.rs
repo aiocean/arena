@@ -1,6 +1,5 @@
 //! The HUD painted in world pixels (from the page's `duel-art.js`, `drawBars` and `drawSkills`): for each fighter a
-//! bronze medallion with its face, its life with a draining trail, its qi, its rage in segments and its buffs in
-//! tiles, the plaque of rounds won between the two, and each fighter's skill bar on the floor under its side. What
+//! bronze medallion with its face, its life with a draining trail, its qi and its buffs in tiles, the plaque of rounds won between the two, and each fighter's skill bar on the floor under its side. What
 //! lies under the skill icons goes on `base`, what lies over them on `over`; the faces and icons themselves are
 //! sprites (finer than the world), placed from what is painted here.
 
@@ -8,7 +7,7 @@ use super::glyphs::{DIGIT, buff, icon_cell};
 use crate::layout::{BARS_TALL, Layout};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
 use bevy::math::ops;
-use arena_duel::data::{Look, RAGE};
+use arena_duel::data::Look;
 use arena_duel::view::{DuelView, FighterView};
 
 const BRONZE_LIGHT: &str = "#f0cf7a";
@@ -20,8 +19,6 @@ const BAR_LOST: &str = "#5a1a14";
 const BAR_TRAIL: &str = "#fff0d0";
 const BAR_QI: &str = "#7fb4ff";
 const BAR_QI_LIGHT: &str = "#c8e0ff";
-const BAR_RAGE: &str = "#ff5a32";
-const BAR_RAGE_LIGHT: &str = "#ffb070";
 const WHITE: &str = "#ffffff";
 const TILE: &str = "#120d18";
 /// A buff tile's rim: green for a good one, red for a bad one.
@@ -249,7 +246,7 @@ fn ring2(pen: &mut Pen, x: i32, y: i32, n: i32, share: f32, c: Rgba) {
     }
 }
 
-/// The fight's bars: each fighter's medallion, life, qi, rage and buffs, and the plaque of rounds won between them.
+/// The fight's bars: each fighter's medallion, life, qi and buffs, and the plaque of rounds won between them.
 /// `frames` is this frame's length in sixtieths of a second (the trail drains by the frame, as the page's did).
 pub fn bars(
     pen: &mut Pen,
@@ -261,11 +258,10 @@ pub fn bars(
 ) {
     let span = g.right - g.left;
     let medal = BARS_TALL as i32;
-    // a narrow arena hangs the plaque under the bars, between the rage beads, so the bars get its room
+    // a narrow arena hangs the plaque under the bars, between them, so the bars get its room
     let narrow = span < 260;
     let width = (span.div_euclid(2) - medal - if narrow { 5 } else { 26 }).clamp(30, 120);
     let top = g.top;
-    let time = view.time as f32;
     let (light, mid, deep, back) = (
         hex(BRONZE_LIGHT),
         hex(BRONZE_MID),
@@ -276,7 +272,7 @@ pub fn bars(
         let right = f.index == 1;
         let c = colors(f.look);
         let mx = if right { g.right - medal } else { g.left };
-        medallion(pen, f, mx, top, medal, &c);
+        medallion(pen, mx, top, medal);
         faces.push(Face {
             school: f.index.min(1),
             x: mx + 3,
@@ -327,47 +323,6 @@ pub fn bars(
         let qi = round(width as f32 * f.qi as f32 / 100.0).max(0);
         pen.hex(from(qi), top + 13, qi, 2, BAR_QI);
         pen.hex(from(qi), top + 13, qi, 1, BAR_QI_LIGHT);
-        // rage: a red bar of its own under the qi, a segment per point, blazing once full
-        let full = f.rage >= RAGE;
-        let blaze = full && ops::sin(time * 12.0) > 0.0;
-        let points = RAGE as i32;
-        let seg = ((width - if narrow { 20 } else { 0 } + 1).div_euclid(points)).clamp(3, 9);
-        let rage_w = points * seg - 1;
-        let rx = if right { left + width - rage_w } else { left };
-        if full {
-            pen.rect(
-                rx - 2,
-                top + 16,
-                rage_w + 4,
-                8,
-                hex(BAR_RAGE),
-                if blaze { 0.35 } else { 0.15 },
-            );
-        }
-        pen.rect(rx - 1, top + 17, rage_w + 2, 6, deep, 1.0);
-        for i in 0..points {
-            let x = if right {
-                rx + rage_w - seg + 1 - i * seg
-            } else {
-                rx + i * seg
-            };
-            let on = (i as f64) < f.rage;
-            let fill = match (on, blaze) {
-                (false, _) => back,
-                (true, true) => hex(WHITE),
-                (true, false) => hex(BAR_RAGE),
-            };
-            pen.rect(x, top + 18, seg - 1, 4, fill, 1.0);
-            if on {
-                pen.hex(
-                    x,
-                    top + 18,
-                    seg - 1,
-                    1,
-                    if blaze { WHITE } else { BAR_RAGE_LIGHT },
-                );
-            }
-        }
         buffs(pen, g, f);
     }
     // the plaque in the middle: the rounds each fighter has won, as a number in its own colour on its own half
@@ -401,8 +356,8 @@ pub fn bars(
     }
 }
 
-/// A bronze medallion at (`x`, `top`), `size` across, lit in the fighter's colour once its rage is full.
-fn medallion(pen: &mut Pen, f: &FighterView, x: i32, top: i32, size: i32, c: &Colors) {
+/// A bronze medallion at (`x`, `top`), `size` across, its face's dark field in the middle.
+fn medallion(pen: &mut Pen, x: i32, top: i32, size: i32) {
     // an octagon: a dark rim, bronze lit from above, a dark field
     let inset = 3;
     for y in 0..size {
@@ -420,15 +375,7 @@ fn medallion(pen: &mut Pen, f: &FighterView, x: i32, top: i32, size: i32, c: &Co
             pen.hex(x + cut + 2, top + y, size - 2 * cut - 4, 1, "#1a1424");
         }
     }
-    let full = f.rage >= RAGE;
-    pen.rect(
-        x + 4,
-        top + 4,
-        size - 8,
-        size - 8,
-        if full { c.glow } else { hex("#241a30") },
-        if full { 0.35 } else { 1.0 },
-    );
+    pen.hex(x + 4, top + 4, size - 8, size - 8, "#241a30");
 }
 
 /// Fighter `f`'s buffs as 9 by 9 tiles in a row under its bars: an icon on a dark field, a rim green for a good one
@@ -451,10 +398,10 @@ fn buffs(pen: &mut Pen, g: &Geo, f: &FighterView) {
     }
 }
 
-/// Each fighter's skill bar on the floor under its own side: slots 1, 2 and 3 and the ultimate, the ultimate nearest
-/// the middle. A slot's frame is bronze (the bar's tiers are off); the icon (a sprite, listed in `icons`) shows full while it can be
-/// cast and dimmer while it cannot; a cooldown sweeps back clockwise over it; an empty slot counts down to its next
-/// skill; the ultimate's frame fills with rage; a skill with uses stored shows how many.
+/// Each fighter's skill bar on the floor under its own side, slot 1 at the screen's edge. A slot's frame is bronze
+/// (the bar's tiers are off); the icon (a sprite, listed in `icons`) shows full while it can be cast and dimmer while
+/// it cannot; a cooldown sweeps back clockwise over it; an empty slot counts down to its next skill; a skill with
+/// uses stored shows how many.
 pub fn skills(
     base: &mut Pen,
     over: &mut Pen,
@@ -515,23 +462,6 @@ pub fn skills(
                 }
                 continue;
             };
-            if slot.ultimate {
-                // rage fills the frame from the foot up, and blazes once full
-                let blaze = slot.ready && ops::sin(time * 12.0) > 0.0;
-                let col = if blaze { white } else { c.glow };
-                let lit = round(size as f32 * slot.charge as f32).clamp(0, size);
-                for py in size - lit..size {
-                    base.rect(x, top + py, 2, 1, col, 1.0);
-                    base.rect(x + size - 2, top + py, 2, 1, col, 1.0);
-                }
-                if lit >= size {
-                    base.rect(x, top, size, 2, col, 1.0);
-                }
-                if lit > size - 2 {
-                    base.rect(x, top + size - 2, size, 2, col, 1.0);
-                }
-                base.rect(x + 2, top + 2, n, n, field, 1.0);
-            }
             // an icon that cannot be cast now (short of qi, silenced) is dimmer; a skill about to leave the bar
             // unused flickers through its last stretch
             let leaving = slot.stale > STALE_FLICKER && (ops::floor(time * 6.0) as i64) % 2 == 1;
@@ -547,9 +477,6 @@ pub fn skills(
                 n,
                 alpha,
             });
-            if slot.ultimate && !slot.ready && slot.left == 0.0 {
-                over.rect(x + 2, top + 2, n, n, shade, 0.35);
-            }
             // uses stored beyond one: their count in the top corner
             if slot.max_uses > 1 {
                 let d = usize::from(slot.uses).min(9);

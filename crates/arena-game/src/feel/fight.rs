@@ -2,7 +2,7 @@
 //! `feel.rs`, with the screen's part from `pixfx-core`'s `feel.rs`: trauma, shake, freeze and slow motion) as the page
 //! plays it, fed the duel's `Out` events in the world's pixels. A blow freezes the fight a few frames while the one
 //! struck shudders and the screen shakes; its damage floats up; a body hitting the floor kicks up dust; a knockout
-//! lingers in slow motion; an ultimate darkens the sky. Heights (`y`) are up from the ground.
+//! lingers in slow motion. Heights (`y`) are up from the ground.
 
 use super::math::{floor, js_max, js_min, js_round, perlin, sqrt};
 use crate::layout::Layout;
@@ -43,10 +43,6 @@ const KO_TRAUMA: f64 = 0.8;
 const NUMBER_RISE: f64 = 14.0;
 const NUMBER_LIFE: f64 = 0.8;
 const STREAK: f64 = 0.28;
-const DUSK_STOP: f64 = 0.1;
-/// How dark an ultimate's sky gets at its darkest, and how long it lasts.
-pub const DUSK_DEPTH: f64 = 0.55;
-const DUSK_TIME: f64 = 0.9;
 /// A counter's or a punish's word floats this far above its damage.
 const WORD_ABOVE: f64 = 10.0;
 
@@ -133,7 +129,6 @@ pub struct FightFeel {
     stop: f64,
     slow: f64,
     slow_speed: f64,
-    dusk: f64,
     numbers: Vec<Floating>,
     streaks: Vec<(Streak, f64)>,
     dust: Vec<(f64, f64, f64)>,
@@ -280,10 +275,6 @@ impl FightFeel {
                 },
                 0.0,
             )),
-            Out::Ultimate { .. } => {
-                self.freeze(DUSK_STOP);
-                self.dusk = DUSK_TIME;
-            }
             _ => {}
         }
     }
@@ -321,7 +312,6 @@ impl FightFeel {
         } else {
             dt
         };
-        self.dusk = js_max(0.0, self.dusk - dt);
         for n in &mut self.numbers {
             n.t += dt;
         }
@@ -366,12 +356,6 @@ impl FightFeel {
             *slot = if j.air { [0, a as i32] } else { [a as i32, 0] };
         }
         out
-    }
-
-    /// How dark the sky is, 0 to `DUSK_DEPTH`: in fast, out slow.
-    pub fn dusk(&self) -> f64 {
-        let k = self.dusk / DUSK_TIME;
-        DUSK_DEPTH * js_min(1.0, k * 4.0) * js_min(1.0, k * 1.6)
     }
 
     /// Each floating number.
@@ -452,15 +436,9 @@ mod tests {
     }
 
     #[test]
-    fn a_knockout_slows_the_fight_after_its_stop_and_an_ultimate_darkens_the_sky() {
+    fn a_knockout_slows_the_fight_after_its_stop() {
         let mut f = FightFeel::default();
         f.react(&Out::Ko { x: 0.0, y: 0.0 });
-        f.react(&Out::Ultimate {
-            by: 0,
-            x: 0.0,
-            y: 0.0,
-        });
-        assert!(f.dusk() > 0.0);
         for _ in 0..15 {
             f.advance(1.0 / 60.0);
         }

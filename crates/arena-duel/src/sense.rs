@@ -7,7 +7,7 @@
 
 use crate::act::recover_of;
 use crate::bar::ready;
-use crate::data::{BAR, Kind, RAGE, Spell, UNIT, spell};
+use crate::data::{BAR, Kind, Spell, UNIT, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
 use crate::kit::Place;
 use crate::shot::{ShotKind, orb_at};
@@ -55,7 +55,6 @@ pub fn skill_of(name: &str) -> Skill {
             speed: 0.0,
             lands: 0.0,
             strikes: 1,
-            ultimate: false,
             grounded: false,
             inflicts: Inflicts::default(),
         };
@@ -104,7 +103,6 @@ pub fn skill_of(name: &str) -> Skill {
         speed: seen(s.speed.unwrap_or(0.0)),
         lands,
         strikes: s.strikes.map_or(1, |n| n as u32),
-        ultimate: s.ultimate,
         grounded: s.grounded,
         inflicts: inflicts_of(s),
     }
@@ -191,7 +189,6 @@ pub fn doing_of(f: &Fighter) -> Doing {
             recover: acting.recover,
             reach: skill.reach,
             damage: skill.damage,
-            ultimate: skill.ultimate,
         };
     }
     if f.guard > 0.0 {
@@ -304,8 +301,6 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             face: b.face,
             hp: f.hp(),
             qi: f.qi(),
-            rage: f.rage,
-            rage_full: RAGE,
             flying: f.fly,
             hover: seen(f.hover),
             vx: seen(b.vx),
@@ -351,7 +346,7 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
     }
 }
 
-/// Fighter `f`'s castable slots for a policy: its three basics, its bar's slots, then its ultimate, each the index of
+/// Fighter `f`'s castable slots for a policy: its three basics, then its bar's slots, each the index of
 /// the skill in `f.spells` (`None` for an empty bar slot or a skill it cannot cast this fight).
 pub fn slots_of(f: &Fighter) -> Vec<Option<usize>> {
     let at = |name: &str| f.spells.iter().position(|n| *n == name);
@@ -363,11 +358,5 @@ pub fn slots_of(f: &Fighter) -> Vec<Option<usize>> {
         .map(|k| at(k.gem.id));
     let basics: Vec<Option<usize>> = basics.chain(core::iter::repeat(None)).take(3).collect();
     let bar = (0..BAR.slots).map(|i| f.bar.get(i).and_then(Slot::spell).and_then(at));
-    let ult = f
-        .kit
-        .skills
-        .iter()
-        .find(|k| k.place == Place::Ultimate)
-        .and_then(|k| at(k.gem.id));
-    basics.into_iter().chain(bar).chain([ult]).collect()
+    basics.into_iter().chain(bar).collect()
 }

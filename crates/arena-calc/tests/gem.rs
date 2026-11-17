@@ -12,6 +12,7 @@ use arena_calc::gem::{
     power_score, safety_factor, starting_tier,
 };
 use arena_calc::hit::spell_base;
+use arena_calc::grade::Rank;
 use arena_calc::tag::{Group, Tag};
 use std::collections::HashSet;
 
@@ -63,6 +64,9 @@ fn in_group(g: &Gem, group: Group) -> Vec<Tag> {
         .filter(|t| t.group() == group)
         .collect()
 }
+
+/// The top tier (đỉnh cấp): the former ultimates.
+const PEAK: [&str; 4] = ["tribulation", "remnantdusk", "sukiep", "daofusion"];
 
 #[test]
 fn ids_are_unique_and_found() {
@@ -174,22 +178,12 @@ fn every_delivery_and_role_tag_has_a_skill() {
 }
 
 #[test]
-fn the_pool_has_ultimates_and_every_kind_of_damage() {
-    let ultimates: Vec<&str> = GEMS
-        .iter()
-        .filter(|g| g.is_ultimate())
-        .map(|g| g.id)
-        .collect();
-    assert!(!ultimates.is_empty());
-    for id in ["tribulation", "remnantdusk", "sukiep", "daofusion"] {
-        assert!(ultimates.contains(&id), "{id} is an ultimate");
-    }
-    for g in GEMS.iter().filter(|g| g.is_ultimate()) {
-        assert!(
-            g.costs.is_empty() && g.cooldown == 0.0,
-            "{}: an ultimate is paid with rage",
-            g.id
-        );
+fn the_pool_has_its_top_tier_and_every_kind_of_damage() {
+    // the former ultimates: skills like any other, of the top tier and the top rank, paid in qi and cooled
+    for id in PEAK {
+        let g = gem::gem(id).unwrap_or_else(|| unreachable!("{id}"));
+        assert_eq!((g.tier, g.rank), (Tier::S, Rank::Faith), "{id}");
+        assert!(g.cooldown > 0.0 && g.costs.iter().any(|(r, _)| *r == Resource::Qi), "{id}");
     }
     for e in Element::ALL {
         assert!(
@@ -234,7 +228,8 @@ fn the_design_pool_is_all_here() {
 #[test]
 fn bases_convert_todays_power() {
     let per_power = TODAY_ATK / 10.0 * TODAY_DEFENCE;
-    for g in GEMS.iter().filter(|g| g.spell == g.id) {
+    // the top tier's bases are its own: they were ultimates
+    for g in GEMS.iter().filter(|g| g.spell == g.id && !PEAK.contains(&g.id)) {
         let Some(power) = spell(g.id).and_then(|s| s.damage) else {
             continue;
         };
@@ -268,14 +263,14 @@ fn timings_and_costs_are_sane() {
         assert!(g.windup + g.recover > 0.0, "{}", g.id);
         assert!(g.costs.iter().all(|(_, c)| *c > 0.0), "{}", g.id);
         if let Some(s) = spell(g.id) {
-            // a data.rs skill keeps its numbers (ultimates are paid with rage, so their qi is gone)
+            // a data.rs skill keeps its numbers (the top tier's qi and cooldown are its own: they were ultimates)
             assert_eq!(
                 (g.windup, g.recover),
                 (s.windup, s.recover),
                 "{}: timings",
                 g.id
             );
-            if !g.is_ultimate() {
+            if !PEAK.contains(&g.id) {
                 assert_eq!(g.cooldown, s.cooldown, "{}: cooldown", g.id);
                 let qi = g
                     .costs

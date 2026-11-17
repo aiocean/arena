@@ -1,6 +1,5 @@
-//! Bộ đồ: what a player builds from the shared pool (design, 2). Exactly [`ACTIVES`] distinct skills (neither basic
-//! nor ultimate), each with up to [`SUPPORTS_PER_SKILL`] supports and [`SUPPORTS_MAX`] in all, exactly one ultimate,
-//! up to [`KEYSTONES_MAX`] keystones, and up to one root, within a [`BUDGET`] of points. [`check`] is the one judge
+//! Bộ đồ: what a player builds from the shared pool (design, 2). Exactly [`ACTIVES`] distinct skills (no basic),
+//! each with up to [`SUPPORTS_PER_SKILL`] supports and [`SUPPORTS_MAX`] in all, up to [`KEYSTONES_MAX`] keystones, and up to one root, within a [`BUDGET`] of points. [`check`] is the one judge
 //! of a legal loadout, for training, the ladder and admitting a bot; [`random`] draws a legal one for training.
 
 use crate::build::{Skill, kinds};
@@ -10,7 +9,7 @@ use crate::grade::Rank;
 use crate::keystone::Keystone;
 use crate::support::{SUPPORTS, Support, excluded, support};
 
-/// Skills a loadout holds besides the basics and the ultimate.
+/// Skills a loadout holds besides the basics.
 pub const ACTIVES: usize = 8;
 /// Supports on one skill, and in the whole loadout.
 pub const SUPPORTS_PER_SKILL: usize = 3;
@@ -50,7 +49,6 @@ pub struct Slot {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Loadout {
     pub actives: Vec<Slot>,
-    pub ultimate: String,
     pub keystones: Vec<Keystone>,
     /// Bản mệnh.
     pub root: Option<Element>,
@@ -67,7 +65,7 @@ pub enum LoadoutError {
     DuplicateActive { skill: String },
     /// No such skill in the pool.
     UnknownSkill { skill: String },
-    /// A basic or an ultimate among the actives.
+    /// A basic among the actives.
     NotActive { skill: String },
     /// More than [`SUPPORTS_PER_SKILL`] on one skill.
     SlotSupports { skill: String, count: usize },
@@ -87,8 +85,6 @@ pub enum LoadoutError {
     FusePartner { skill: String, partner: String },
     /// A skill to fuse with but no Dung.
     FuseUnneeded { skill: String },
-    /// The ultimate is not an ultimate.
-    NotUltimate { skill: String },
     /// More than [`KEYSTONES_MAX`].
     Keystones { count: usize },
     /// One keystone twice.
@@ -160,7 +156,7 @@ pub fn check_in(l: &Loadout, pool: &[Gem]) -> Result<(), Vec<LoadoutError>> {
             errs.push(E::UnknownSkill { skill: name() });
             continue;
         };
-        if gem.is_ultimate() || BASICS.contains(&gem.id) {
+        if BASICS.contains(&gem.id) {
             errs.push(E::NotActive { skill: name() });
         }
         if slot.supports.len() > SUPPORTS_PER_SKILL {
@@ -242,25 +238,6 @@ pub fn check_in(l: &Loadout, pool: &[Gem]) -> Result<(), Vec<LoadoutError>> {
         }
     }
 
-    match find(&l.ultimate) {
-        None => errs.push(E::UnknownSkill {
-            skill: l.ultimate.clone(),
-        }),
-        Some(g) if !g.is_ultimate() => errs.push(E::NotUltimate {
-            skill: l.ultimate.clone(),
-        }),
-        Some(g) => {
-            for k in &l.keystones {
-                if k.forbids_skill(g.tags(), g.rank) {
-                    errs.push(E::KeystoneSkill {
-                        keystone: *k,
-                        skill: l.ultimate.clone(),
-                    });
-                }
-            }
-        }
-    }
-
     let p = points_in(l, pool);
     if p > BUDGET {
         errs.push(E::Budget { points: p });
@@ -269,7 +246,7 @@ pub fn check_in(l: &Loadout, pool: &[Gem]) -> Result<(), Vec<LoadoutError>> {
 }
 
 /// The loadout's points, against the pool [`GEMS`]: each active its tier's, each support its own, each keystone
-/// [`KEYSTONE_POINTS`], the ultimate and the root none. Unknown names count nothing.
+/// [`KEYSTONE_POINTS`], the root none. Unknown names count nothing.
 pub fn points(l: &Loadout) -> u32 {
     points_in(l, GEMS)
 }
@@ -306,7 +283,7 @@ fn pick(n: usize, r: f64) -> usize {
     ((r.clamp(0.0, 1.0) * n as f64) as usize).min(n - 1)
 }
 
-/// [`random`] from another pool. Draws the keystones (0..=2), the root, the ultimate, the actives (each within what
+/// [`random`] from another pool. Draws the keystones (0..=2), the root, the actives (each within what
 /// the budget leaves for the rest), then 0..=3 supports a skill; falls back to no keystones when they leave too
 /// few skills.
 pub fn random_in(pool: &[Gem], roll: &mut impl FnMut() -> f64) -> Option<Loadout> {
@@ -339,22 +316,12 @@ fn draw(
     roll: &mut impl FnMut() -> f64,
 ) -> Option<Loadout> {
     let allowed = |g: &Gem, rank: Rank| !keystones.iter().any(|k| k.forbids_skill(g.tags(), rank));
-    let ultimates: Vec<&Gem> = pool
-        .iter()
-        .filter(|g| g.is_ultimate() && allowed(g, g.rank))
-        .collect();
-    if ultimates.is_empty() {
-        return None;
-    }
-    let ultimate = ultimates[pick(ultimates.len(), roll())];
-
     let mut left = BUDGET.checked_sub(KEYSTONE_POINTS * keystones.len() as u32)?;
     let mut kinds_so_far = [false; N];
     let mut chosen: Vec<&Gem> = Vec::new();
     for i in 0..ACTIVES {
         let fits = |g: &&Gem| {
-            !g.is_ultimate()
-                && !BASICS.contains(&g.id)
+            !BASICS.contains(&g.id)
                 && !chosen.iter().any(|c| c.id == g.id)
                 && allowed(g, g.rank)
                 && {
@@ -441,7 +408,6 @@ fn draw(
     }
     let l = Loadout {
         actives,
-        ultimate: ultimate.id.to_string(),
         keystones,
         root,
     };

@@ -28,7 +28,7 @@ fn slot(id: &str, supports: &[&str]) -> Slot {
 fn cheapest(keep: impl Fn(&Gem) -> bool, n: usize) -> Vec<&'static Gem> {
     let mut g: Vec<&Gem> = GEMS
         .iter()
-        .filter(|g| !g.is_ultimate() && !BASICS.contains(&g.id) && g.uses.is_none() && keep(g))
+        .filter(|g| !BASICS.contains(&g.id) && g.uses.is_none() && keep(g))
         .collect();
     g.sort_by_key(|g| (g.tier.points(), g.id));
     g.into_iter().take(n).collect()
@@ -73,7 +73,6 @@ fn a_melee_only_loadout_closes_in_to_hit() {
     assert_eq!(melee.len(), 8);
     let l = Loadout {
         actives: melee.iter().map(|g| slot(g.id, &[])).collect(),
-        ultimate: "daofusion".to_string(),
         keystones: Vec::new(),
         root: None,
     };
@@ -134,7 +133,6 @@ fn a_trigger_fires_through_the_queue() {
     actives.push(slot("bolt", &["hurtcast"]));
     let l = Loadout {
         actives,
-        ultimate: "tribulation".to_string(),
         keystones: Vec::new(),
         root: None,
     };

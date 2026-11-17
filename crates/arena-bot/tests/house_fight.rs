@@ -1,6 +1,6 @@
 //! The house bot module's fights, pinned (`goldens/house_fight.json`): the module `site/build.sh` builds from
 //! `weights/policy.onnx` (`site/dist/bots/policy.wasm`), one instance in each corner, seeds 1-3, 60 s at 60 Hz, then
-//! the round, wins and each fighter's hp, qi, rage, x and air.
+//! the round, wins and each fighter's hp, qi, x and air.
 #![cfg(feature = "host")]
 
 use arena_bot::admit;
@@ -50,7 +50,7 @@ fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error
         let fighters: Vec<Value> = s
             .fighters
             .iter()
-            .map(|f| json!([f.hp(), f.qi(), f.rage, f.body.x, f.body.air]))
+            .map(|f| json!([f.hp(), f.qi(), f.body.x, f.body.air]))
             .collect();
         all.insert(
             seed.to_string(),

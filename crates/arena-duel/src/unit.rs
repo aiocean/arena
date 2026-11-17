@@ -17,8 +17,8 @@
 //!   `Spawn::damage`. It dies when its life runs out: its owner's `MinionDied` goes into the event queue, and each
 //!   fighter within `RES.souls_reach` gains a soul.
 //!
-//! A unit's blow is the built blow of the cast that made it, one blow each; its owner gets no gains and no rage from
-//! it. The rules emit `Out::Spawn`, `Out::UnitAct`, `Out::UnitHurt` and `Out::UnitDie` for the game to draw.
+//! A unit's blow is the built blow of the cast that made it, one blow each; its owner gets no gains from it. The
+//! rules emit `Out::Spawn`, `Out::UnitAct`, `Out::UnitHurt` and `Out::UnitDie` for the game to draw.
 
 use crate::data::{Spell, T, body_spec, motion};
 use crate::fighter::State;
@@ -110,8 +110,6 @@ impl Unit {
             control: self.control,
             knockback: 0.0,
             depth: 0,
-            ultimate: false,
-            rage: false,
             unit: Some(self.id),
             power: self.motion.damage.unwrap_or(0.0),
             powers: self.powers,

@@ -12,7 +12,7 @@ use arena_duel::unit::Unit;
 
 /// `skill` with `supports` first in an otherwise plain loadout.
 fn with(skill: &str, supports: &[&str]) -> Loadout {
-    let mut l = loadout(&[skill], "tribulation");
+    let mut l = loadout(&[skill]);
     l.actives[0] = LoadoutSlot {
         skill: skill.to_string(),
         supports: supports.iter().map(|s| s.to_string()).collect(),
@@ -25,7 +25,7 @@ fn with(skill: &str, supports: &[&str]) -> Loadout {
 /// Seat 0 casts `skill` (made by `l`) again and again, seat 1 stands; `skill` is on seat 0's bar, both stand
 /// `apart` pixels from each other, nobody dodges.
 fn caster(l: Loadout, skill: &'static str, apart: f64) -> Duel {
-    let mut d = duel_of(7, [always(skill), idle()], [l, loadout(&[], "tribulation")]);
+    let mut d = duel_of(7, [always(skill), idle()], [l, loadout(&[])]);
     let s = d.state_mut();
     s.fighters[0].bar[0] = common::common(skill);
     s.fighters[0].c.souls = 30.0;
@@ -42,7 +42,7 @@ fn count(out: &[Out], f: impl Fn(&Out) -> bool) -> usize {
 
 #[test]
 fn a_minion_is_an_entity_that_walks_strikes_and_dies_for_a_soul() {
-    let mut d = caster(loadout(&["beans"], "tribulation"), "beans", 500.0);
+    let mut d = caster(loadout(&["beans"]), "beans", 500.0);
     let out = run(&mut d, 1.0);
     let spawned = count(&out, |o| {
         matches!(
@@ -108,7 +108,7 @@ fn a_minion_is_an_entity_that_walks_strikes_and_dies_for_a_soul() {
 
 #[test]
 fn a_totem_casts_again_and_again_on_its_cadence() {
-    let mut d = caster(loadout(&["arsenal"], "tribulation"), "arsenal", 400.0);
+    let mut d = caster(loadout(&["arsenal"]), "arsenal", 400.0);
     let out = run(&mut d, 8.0);
     assert!(
         count(&out, |o| matches!(
@@ -184,7 +184,7 @@ fn a_mine_goes_off_when_the_foe_stands_in_its_blast() {
 #[test]
 fn units_replay_the_same_from_a_seed() {
     let go = || {
-        let mut d = caster(loadout(&["beans"], "tribulation"), "beans", 500.0);
+        let mut d = caster(loadout(&["beans"]), "beans", 500.0);
         run(&mut d, 6.0)
     };
     assert_eq!(go(), go());
@@ -192,7 +192,7 @@ fn units_replay_the_same_from_a_seed() {
 
 #[test]
 fn a_new_round_clears_the_field() {
-    let mut d = caster(loadout(&["beans"], "tribulation"), "beans", 500.0);
+    let mut d = caster(loadout(&["beans"]), "beans", 500.0);
     run(&mut d, 1.0);
     let old: Vec<u32> = d.state().units.iter().map(|u| u.id).collect();
     assert!(!old.is_empty());

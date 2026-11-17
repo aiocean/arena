@@ -97,7 +97,6 @@ fn a_windup_seen_late_runs_on_into_recovery() {
         recover: 0.32,
         reach: 24.0,
         damage: 5.0,
-        ultimate: false,
     };
     view.push(&sense(1.2, me(40.0), f));
     let (seen, _) = view.seen(1.2, 0.2);
@@ -120,7 +119,6 @@ fn a_move_seen_late_that_has_ended_is_seen_idle() {
         recover: 0.32,
         reach: 24.0,
         damage: 5.0,
-        ultimate: false,
     };
     view.push(&sense(1.0, me(40.0), f.clone()));
     f.doing = Doing::Idle;
@@ -143,7 +141,6 @@ fn a_cast_is_read_the_moment_it_starts() {
         recover: 0.3,
         reach: 0.0,
         damage: 25.0,
-        ultimate: false,
     };
     view.push(&sense(1.02, me(40.0), f.clone()));
     assert_eq!(view.seen(1.02, 0.2).0.doing, f.doing);

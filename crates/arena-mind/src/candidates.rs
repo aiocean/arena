@@ -156,8 +156,8 @@ impl Ctx<'_> {
             return 0.0;
         }
         let mut chance = chance;
-        // a raised barrier turns everything but an ultimate aside: wait it out
-        if self.foe.barrier && !s.ultimate {
+        // a raised barrier turns everything aside: wait it out
+        if self.foe.barrier {
             chance *= 0.05;
         }
         let chance = self.read.chance(i, chance, self.profile.prior);
@@ -517,24 +517,20 @@ fn attacks(out: &mut Out) {
                 }
                 let target =
                     (foe.x + pace * lead * 0.8).clamp(ctx.arena.left + 6.0, ctx.arena.right - 6.0);
-                let base = if s.ultimate {
-                    lift(ctx.value(i, 0.8, lead) * f64::from(s.strikes.max(1)), 3.0)
+                // a blow that only finds a foe on the floor
+                let low = if s.grounded && (foe.air >= 10.0 || foe.flying) {
+                    0.1
                 } else {
-                    // a blow that only finds a foe on the floor
-                    let low = if s.grounded && (foe.air >= 10.0 || foe.flying) {
-                        0.1
-                    } else {
-                        1.0
-                    };
-                    let chance = if busy > lead * 0.6 {
-                        0.85
-                    } else if s.inflicts.pull > 0.0 {
-                        0.5
-                    } else {
-                        0.4
-                    };
-                    ctx.value(i, chance * low, lead)
+                    1.0
                 };
+                let chance = if busy > lead * 0.6 {
+                    0.85
+                } else if s.inflicts.pull > 0.0 {
+                    0.5
+                } else {
+                    0.4
+                };
+                let base = ctx.value(i, chance * low, lead);
                 out.cast(i, Some(target), base, None);
             }
             SkillKind::Blast if d < s.reach + 4.0 => {

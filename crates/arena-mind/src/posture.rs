@@ -158,14 +158,11 @@ pub static POSTURES: [PostureDef; 8] = [
         base: 1.0,
         interrupt: false,
         min_time: 1.5,
-        options: &[
-            &[
-                c(Input::FoeHpLow, Curve::Linear { m: 1.6, b: -0.6 }),
-                c(Input::Lead, NUDGE),
-                c(Input::Calm, NOT_CALM),
-            ],
-            &[c(Input::RageFull, Curve::Linear { m: 0.8, b: 0.0 })],
-        ],
+        options: &[&[
+            c(Input::FoeHpLow, Curve::Linear { m: 1.6, b: -0.6 }),
+            c(Input::Lead, NUDGE),
+            c(Input::Calm, NOT_CALM),
+        ]],
         weights: [2.0, 0.3, 2.5, 2.0, 2.5, 0.6, 0.5, 0.6, 0.1, 0.2],
     },
 ];

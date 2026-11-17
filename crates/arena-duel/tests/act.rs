@@ -26,8 +26,8 @@ fn still(seed: u32) -> State {
         384.0,
         common::all_effects(),
         [
-            Fighter::new(0, common::loadout(&KIT, "tribulation")),
-            Fighter::new(1, common::loadout(&KIT, "tribulation")),
+            Fighter::new(0, common::loadout(&KIT)),
+            Fighter::new(1, common::loadout(&KIT)),
         ],
     );
     for (i, at) in [(0, 0.22), (1, 0.78)] {
@@ -283,7 +283,7 @@ fn two_bolts_meeting_head_on_are_both_spent() {
 #[test]
 fn a_bolt_with_pierce_flies_through_a_minion_to_the_foe() {
     use arena_calc::loadout::Slot as LoadoutSlot;
-    let mut l = common::loadout(&["bolt"], "tribulation");
+    let mut l = common::loadout(&["bolt"]);
     l.actives[0] = LoadoutSlot {
         skill: "bolt".to_string(),
         supports: vec!["piercing".to_string()],

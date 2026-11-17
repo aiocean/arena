@@ -23,7 +23,6 @@ fn holding(first: &[(&str, &[&str])]) -> Loadout {
         .iter()
         .filter(|g| {
             g.deals_damage()
-                && !g.is_ultimate()
                 && !BASICS.contains(&g.id)
                 && g.uses.is_none()
                 && !first.iter().any(|f| f.0 == g.id)
@@ -39,7 +38,6 @@ fn holding(first: &[(&str, &[&str])]) -> Loadout {
     }
     let l = Loadout {
         actives,
-        ultimate: "tribulation".to_string(),
         keystones: Vec::new(),
         root: None,
     };

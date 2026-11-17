@@ -47,9 +47,9 @@ fn play(env: &mut Env, shaping: f32, mut pick: impl FnMut(&Env) -> usize) -> Vec
 fn an_episode_pays_plus_or_minus_one_at_its_end() {
     let mut rng = Rng::new(1);
     for (seed, learner, opp) in [
-        // seeds 1 and 2 now run to the time limit (a random hand waits on its blows; with bodies as drawn and strikes
-        // only ahead, its blows land less), and a cut pays no ±1
-        (5, 0, Opponent::Brain),
+        // some seeds run to the time limit (a random hand waits on its blows; with bodies as drawn and strikes only
+        // ahead, its blows land less; no ultimate finishes it), and a cut pays no ±1
+        (4, 0, Opponent::Brain),
         (6, 1, Opponent::First),
         (3, 0, Opponent::Aggressive),
     ] {
@@ -178,3 +178,4 @@ fn an_act_that_fills_its_recent_decisions_pays_for_the_habit() {
         steps.len()
     );
 }
+

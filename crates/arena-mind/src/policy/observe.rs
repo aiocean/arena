@@ -4,25 +4,27 @@
 //!
 //! Layout, in order (index ranges are of the whole observation):
 //! - me (`ME` = 18, 0..18): distance to the wall behind and ahead over the arena's width, air over the ceiling,
-//!   facing the foe, hp / 100, qi / 100, rage over a full ultimate, flying, hover over the ceiling, vx toward the
+//!   facing the foe, hp / 100, qi / 100, 0 (the old rage), flying, hover over the ceiling, vx toward the
 //!   foe / 200, can act, silenced, sealed, barrier, shield (0..15); winding up, recovering, seconds left in that
 //!   phase (15..18, zero when it uses no skill);
 //! - foe (`FOE` = 38, 18..56): distance over the width, air over the ceiling, flying, hp / 100, qi / 100 (18..23),
 //!   what it does (idle, moving toward me, moving away, guarding, meditating, flying, 23..29), winding up,
 //!   recovering (29..31), the kind of skill it uses (12, 31..43), how far into its phase as a share of it (43),
-//!   seconds left in the phase (44), the phase's span (45), the skill's reach / 100 (46) and damage / 50 (47), the
-//!   skill is an ultimate (48) (29..49 zero when it uses no skill), out for, open in, frozen, shocked, barrier, the
+//!   seconds left in the phase (44), the phase's span (45), the skill's reach / 100 (46) and damage / 50 (47), 0 (48,
+//!   the old ultimate flag) (29..49 zero when it uses no skill), out for, open in, frozen, shocked, barrier, the
 //!   share of its skills ready, seeker out (mine) (49..56);
 //! - threats (`THREATS` x `THREAT` = 4 x 12, 56..104), nearest first, zero when absent: present, shape
 //!   (projectile, area, seeker, field, barrage), distance ahead / 100, height / 50, speed toward me / 200, lands
 //!   in, size / 50, damage / 50;
 //! - slots (`SLOTS` x `SLOT` = 7 x 35, 104..349), zero when empty, each: present, ready, kind (12), cost / 50,
-//!   damage x power / 50, reach / 100, windup, recover, radius / 50, ultimate (+0..+21); then what it inflicts
+//!   damage x power / 50, reach / 100, windup, recover, radius / 50, 0 (the old ultimate flag) (+0..+21); then what it inflicts
 //!   (`Inflicts`, +21..+35): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3,
 //!   burn's share of attack a second x 5, chill stacks a hit adds now (x `Sense::stacks`) over the most it holds,
 //!   slow per chill stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4,
-//!   share of attack per shock twitch x 10, pull / 100, rage stolen over a full ultimate;
+//!   share of attack per shock twitch x 10, pull / 100, 0 (the old rage stolen);
 //! - the game's tag (`TAG` = 5, 349..354).
+//!
+//! The ultimate and rage are gone from the game; their four places stay, always 0, until the next ABI drops them.
 
 use super::{SLOTS, ahead};
 use crate::sense::{ActPhase, Doing, Foe, Sense, Threat, ThreatShape};
@@ -113,7 +115,7 @@ pub fn observe(
     o.flag(me.face * dir > 0.0);
     o.put(me.hp / 100.0);
     o.put(me.qi / 100.0);
-    o.put(me.rage / me.rage_full.max(1e-9));
+    o.skip(1);
     o.flag(me.flying);
     o.put(me.hover / top);
     o.put(me.vx * dir / 200.0);
@@ -155,7 +157,6 @@ pub fn observe(
             recover,
             reach,
             damage,
-            ultimate,
         } => {
             o.flag(*phase == ActPhase::Windup);
             o.flag(*phase == ActPhase::Recover);
@@ -166,7 +167,7 @@ pub fn observe(
             o.put(span);
             o.put(reach / 100.0);
             o.put(damage / 50.0);
-            o.flag(*ultimate);
+            o.skip(1);
         }
         _ => o.skip(20),
     }
@@ -231,7 +232,7 @@ pub fn observe(
         o.put(s.windup);
         o.put(s.recover);
         o.put(s.radius / 50.0);
-        o.flag(s.ultimate);
+        o.skip(1);
         let i = &s.inflicts;
         let stacks = sense.stacks.get(k).copied().unwrap_or(1.0);
         o.put(i.freeze);
@@ -247,7 +248,7 @@ pub fn observe(
         o.put(i.shock_hold * 4.0);
         o.put(i.shock_rate * 10.0);
         o.put(i.pull / 100.0);
-        o.put(i.steal_rage / me.rage_full.max(1e-9));
+        o.skip(1);
     }
 
     for &t in tag {

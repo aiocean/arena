@@ -56,7 +56,7 @@ fn strike(s: &mut State, by: usize, name: &'static str) -> Vec<Out> {
 }
 
 fn with(skill: &str, supports: &[&str]) -> Loadout {
-    let mut l = loadout(&[skill], "tribulation");
+    let mut l = loadout(&[skill]);
     l.actives[0] = LoadoutSlot {
         skill: skill.to_string(),
         supports: supports.iter().map(|s| s.to_string()).collect(),
@@ -70,8 +70,8 @@ fn with(skill: &str, supports: &[&str]) -> Loadout {
 fn a_blow_is_built_and_resolved_by_the_damage_system() {
     let mut s = still(
         1,
-        loadout(&["palm"], "tribulation"),
-        loadout(&[], "tribulation"),
+        loadout(&["palm"]),
+        loadout(&[]),
     );
     let (life, shield) = (s.fighters[1].c.life, s.fighters[1].c.shield);
     let out = strike(&mut s, 0, "palm");
@@ -96,8 +96,8 @@ fn a_blow_is_built_and_resolved_by_the_damage_system() {
 fn fire_burns_over_time_and_shows_it() {
     let mut s = still(
         2,
-        loadout(&["fireball"], "tribulation"),
-        loadout(&[], "tribulation"),
+        loadout(&["fireball"]),
+        loadout(&[]),
     );
     s.fighters[1].body.x = 600.0;
     strike(&mut s, 0, "fireball");
@@ -123,8 +123,8 @@ fn controls_land_on_the_body() {
     // Định Thân holds the body where it stands; Hóa Ma Chỉ takes the soul, and a soulless fighter casts no spell
     let mut s = still(
         3,
-        loadout(&["bodyfix", "demonfinger"], "tribulation"),
-        loadout(&["bolt"], "tribulation"),
+        loadout(&["bodyfix", "demonfinger"]),
+        loadout(&["bolt"]),
     );
     strike(&mut s, 0, "bodyfix");
     let mut held = s.fighters[1].body.shocked > 0.0;
@@ -138,8 +138,8 @@ fn controls_land_on_the_body() {
     assert!(held, "held");
     let mut s = still(
         3,
-        loadout(&["demonfinger"], "tribulation"),
-        loadout(&["bolt"], "tribulation"),
+        loadout(&["demonfinger"]),
+        loadout(&["bolt"]),
     );
     s.fighters[1].body.x = 700.0;
     strike(&mut s, 0, "demonfinger");
@@ -160,7 +160,7 @@ fn controls_land_on_the_body() {
 
 #[test]
 fn a_root_stops_walking_and_blinking() {
-    let mut s = still(4, loadout(&[], "tribulation"), loadout(&[], "tribulation"));
+    let mut s = still(4, loadout(&[]), loadout(&[]));
     arena_duel::strike::control(&mut s, 1, arena_calc::ailment::Control::Root, 1.0);
     assert!(s.fighters[1].root > 0.0);
     assert!(!arena_duel::bar::ready(&s.fighters[1], "blink"));
@@ -168,9 +168,9 @@ fn a_root_stops_walking_and_blinking() {
 
 #[test]
 fn unyielding_stands_up_once_a_round_from_a_killing_blow() {
-    let mut l = loadout(&[], "tribulation");
+    let mut l = loadout(&[]);
     l.keystones = vec![Keystone::Unyielding];
-    let mut s = still(5, loadout(&["palm"], "tribulation"), l);
+    let mut s = still(5, loadout(&["palm"]), l);
     s.fighters[1].c.life = 1.0;
     s.fighters[1].c.shield = 0.0;
     strike(&mut s, 0, "palm");
@@ -190,8 +190,8 @@ fn unyielding_stands_up_once_a_round_from_a_killing_blow() {
 fn soul_damage_earns_souls() {
     let mut s = still(
         6,
-        loadout(&["soulsearch"], "tribulation"),
-        loadout(&[], "tribulation"),
+        loadout(&["soulsearch"]),
+        loadout(&[]),
     );
     s.fighters[1].c.sense = 1.0e6;
     s.fighters[1].c.sense_max = 1.0e6;
@@ -204,7 +204,7 @@ fn soul_damage_earns_souls() {
 fn chainweaken_fires_its_linked_attack_when_the_shield_breaks() {
     let mut s = still(
         7,
-        loadout(&["palm"], "tribulation"),
+        loadout(&["palm"]),
         with("ward", &["chainweaken"]),
     );
     s.fighters[1].c.shield = 1.0;

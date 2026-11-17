@@ -66,8 +66,6 @@ pub enum Keystone {
     Unyielding,
     /// Sát Ý (the old `fury`): each blow landed more, for the round; half the energy shield.
     Fury,
-    /// Tâm Pháp (the old `attuned`): every two qi-paid spells give a rage point; attacks give none.
-    Attuned,
 }
 
 /// Cực Cảnh: the kind's more, and the life share under which its instants execute an equal or lower rank.
@@ -125,8 +123,6 @@ pub const UNYIELDING_LIFE: f64 = 0.85;
 pub const FURY_MORE: f64 = 0.04;
 pub const FURY_STACKS: u8 = 5;
 pub const FURY_SHIELD: f64 = 0.5;
-/// Tâm Pháp: qi-paid spells a rage point.
-pub const ATTUNED_SPELLS: u8 = 2;
 
 const fn extreme(e: Element) -> [Mod; 1] {
     [Mod::more(
@@ -192,7 +188,7 @@ static FURY: [Mod; 1] = [Mod::more(
 
 impl Keystone {
     /// Every keystone; Cực Cảnh stands for each kind (taken here as force).
-    pub const ALL: [Keystone; 21] = [
+    pub const ALL: [Keystone; 20] = [
         Keystone::Extreme(Element::Force),
         Keystone::ColdQi,
         Keystone::AncientGod,
@@ -213,7 +209,6 @@ impl Keystone {
         Keystone::Faith,
         Keystone::Unyielding,
         Keystone::Fury,
-        Keystone::Attuned,
     ];
 
     /// Its code name.
@@ -389,13 +384,6 @@ impl Keystone {
                 "Sát Ý",
                 "each blow landed 4% more for the round, 5 stacks",
                 "half the energy shield",
-                "arena",
-            ),
-            Keystone::Attuned => (
-                "attuned",
-                "Tâm Pháp",
-                "every two qi-paid spells give a rage point",
-                "attacks give no rage",
                 "arena",
             ),
         }

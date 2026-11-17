@@ -39,7 +39,6 @@ fn every_observation_value_is_finite_and_bounded() {
             recover: 0.0,
             reach: f64::NAN,
             damage: 1e9,
-            ultimate: false,
         },
     ];
     for (mx, fx) in [(0.0, 220.0), (220.0, 0.0), (110.0, 110.0), (-50.0, 400.0)] {
@@ -47,7 +46,6 @@ fn every_observation_value_is_finite_and_bounded() {
             let mut s = sense(3.0, me(mx), foe(fx));
             s.slots = slots();
             s.me.vx = 1e6;
-            s.me.rage = 99.0;
             let mut f = foe(fx);
             f.doing = doing.clone();
             f.out_for = 50.0;
@@ -175,17 +173,8 @@ fn the_foes_seconds_left_fall_as_its_windup_runs() {
         v(&late, FOE_LEFT)
     );
     assert!((v(&early, FOE_SPAN) - 0.2).abs() < 1e-6);
+    // the old ultimate flag stays, always 0
     assert_eq!(v(&early, FOE_ULTIMATE), 0.0);
-    let mut f = foe(150.0);
-    let mut big = blade_windup(0.1);
-    if let Doing::Act { ultimate, .. } = &mut big {
-        *ultimate = true;
-    }
-    f.doing = big;
-    assert_eq!(
-        v(&observe(&s, &f, &[], &kit(), &[0.0; TAG]), FOE_ULTIMATE),
-        1.0
-    );
 }
 
 #[test]

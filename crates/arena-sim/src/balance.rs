@@ -257,7 +257,6 @@ pub fn run(config: Config) -> Table {
                     row(&mut t.rows, Kind::Support, x).picks += 1;
                 }
             }
-            row(&mut t.rows, Kind::Gem, &l.ultimate).picks += 1;
             for k in &l.keystones {
                 row(&mut t.rows, Kind::Keystone, &format!("{k:?}")).picks += 1;
             }
@@ -306,7 +305,7 @@ fn tally(rows: &mut Vec<Row>, l: &Loadout, side: &crate::report::SideReport, sco
     for line in &side.skills {
         let id = match line.place {
             Place::Basic | Place::Linked => continue,
-            Place::Active(_) | Place::Ultimate => line.id,
+            Place::Active(_) => line.id,
         };
         let r = row(rows, Kind::Gem, id);
         r.games += 1;

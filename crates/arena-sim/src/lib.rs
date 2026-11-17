@@ -49,8 +49,6 @@ pub const RUN_SPEED: f64 = 3.0;
 pub const SKILL_LEVEL: u8 = arena_calc::gem::BASE_LEVEL;
 /// Seconds a round lasts before it is cut (the higher share of life wins).
 pub const ROUND_TIME: f64 = 60.0;
-/// Rage points that fill the ultimate (design 10).
-pub const RAGE_MAX: u8 = 4;
 /// Rounds a side must win to take the match (best of 3), and the most rounds a match plays (drawn rounds can
 /// stretch it; past this the match is drawn).
 pub const ROUNDS_TO_WIN: u8 = 2;
@@ -60,5 +58,3 @@ pub const MAX_ROUNDS: u8 = 5;
 pub const HITSTUN: f64 = 0.1;
 pub const COUNTER_STAGGER: f64 = 0.1;
 pub const PUNISH_STAGGER: f64 = 0.2;
-/// The first seconds of an ultimate's windup, during which a blow passes through it (rules, "Frame data").
-pub const ULTIMATE_OPENING: f64 = 0.3;

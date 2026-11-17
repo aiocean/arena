@@ -287,20 +287,22 @@ fn print_telemetry(name: &str, r: &Record) {
     line("qi on casts per round", &|s| {
         format!("{:.0}", per_round(s.qi_spent))
     });
-    line("ultimates / rage spent", &|s| {
+    // the top tier (đỉnh cấp): the former ultimates
+    const PEAK: [&str; 4] = ["tribulation", "remnantdusk", "sukiep", "daofusion"];
+    line("top-tier casts", &|s| {
         let u = s
             .skills
             .iter()
-            .filter(|(n, _)| arena_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
+            .filter(|(n, _)| PEAK.contains(n))
             .map(|(_, k)| k.casts)
             .sum::<u32>();
-        format!("{u} / {:.0}", s.rage_spent)
+        format!("{u}")
     });
-    line("ultimate damage, lives", &|s| {
+    line("top-tier damage, lives", &|s| {
         let d = s
             .skills
             .iter()
-            .filter(|(n, _)| arena_duel::data::spell(n).is_some_and(|sp| sp.ultimate))
+            .filter(|(n, _)| PEAK.contains(n))
             .map(|(_, k)| k.damage)
             .sum::<f64>();
         format!("{:.2}", d / 100.0)

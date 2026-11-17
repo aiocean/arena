@@ -14,7 +14,7 @@ fn duel(bar: [&'static str; 3]) -> Duel {
     let mut d = duel_of(
         1,
         [idle(), idle()],
-        [loadout(&bar, "tribulation"), loadout(&[], "tribulation")],
+        [loadout(&bar), loadout(&[])],
     );
     let s = d.state_mut();
     s.fighters[0].bar = bar.iter().map(|&n| common(n)).collect();

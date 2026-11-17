@@ -60,7 +60,7 @@ tags! {
     Role:
         Aura = "aura", Blessing = "blessing", Curse = "curse", Warcry = "warcry", Herald = "herald",
         Movement = "movement", Guard = "guard", Recovery = "recovery", Stance = "stance", Trigger = "trigger",
-        Vaal = "vaal", Ultimate = "ultimate", Control = "control", Field = "field";
+        Vaal = "vaal", Control = "control", Field = "field";
     // Đạo (research, 4), and the marks the daos read.
     Dao:
         LifeDeath = "lifedeath", Karma = "karma", TrueFalse = "truefalse", Time = "time", Space = "space",
