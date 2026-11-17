@@ -14,6 +14,8 @@ What the player kit and the tournament still need, most important first. Each it
    the entry bar) and the bar alone as `arena_duel.entry_bar`; add one `arena_duel.check(module)` that runs them all.
 4. **Data to learn from.** A recorder that writes a fight's decisions (observation, legal acts, the act taken, the
    outcome) from a seed and two files, and a published set of the shipped AI's fights, for imitation learning.
+   Today `seat::Recorder` and `seat::Replay` (`crates/arena-duel`) record and replay a corner's acts, which the live
+   matches use; they keep no observations or outcomes yet.
 5. **See why a bot acts.** On the home page, pause on a frame and see each act's probability, which acts are legal and
    what the bot saw.
 6. **A local league.** Many files of one's own play each other and are ranked the way a season ranks them, to choose
@@ -34,4 +36,6 @@ What the player kit and the tournament still need, most important first. Each it
     happens to the files after the season (published, so replays can be checked), and what counts as cheating.
 12. **The runner.** Plays every match of a season from the submitted files, both ways, on a pool of machines, and
     writes results, ratings and replays. Deterministic, so a match can be split across machines and checked.
+    Today `crates/arena-server` loops the house AI's matches on one machine and publishes them live, and `arena-watch`
+    checks one by replaying it; it plays no submitted files and writes no results yet.
 13. **Submission and results pages.** Upload, the checks' verdict, the table, each match's replays.
