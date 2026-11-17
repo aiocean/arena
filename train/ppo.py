@@ -70,11 +70,11 @@ def main():
     if args.init:
         path = pathlib.Path(args.init)
         if path.suffix == ".pt":
-            policy.load_state_dict(torch.load(path, map_location=dev, weights_only=False)["model"])
+            policy.load_state_dict(torch.load(path, map_location=dev, weights_only=True)["model"])
         else:
             load_bin(policy, path.read_bytes())
     if args.resume:
-        ck = torch.load(args.resume, map_location=dev, weights_only=False)
+        ck = torch.load(args.resume, map_location=dev, weights_only=True)
         policy.load_state_dict(ck["model"])
         opt.load_state_dict(ck["optim"])
         start = ck["update"]

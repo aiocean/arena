@@ -38,7 +38,7 @@ def load(path):
     policy = Policy(pd.OBS, pd.ACTIONS)
     path = pathlib.Path(path)
     if path.suffix == ".pt":
-        policy.load_state_dict(torch.load(path, map_location="cpu", weights_only=False)["model"])
+        policy.load_state_dict(torch.load(path, map_location="cpu", weights_only=True)["model"])
     else:
         load_bin(policy, path.read_bytes())
     return policy.eval()
