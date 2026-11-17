@@ -13,12 +13,14 @@ use tracing_subscriber::layer::{Context, Layer, SubscriberExt};
 struct Seen {
     counts: Arc<Mutex<BTreeMap<String, u32>>>,
     results: Arc<Mutex<Vec<String>>>,
+    causes: Arc<Mutex<BTreeMap<String, u32>>>,
 }
 
 #[derive(Default)]
 struct Fields {
     message: String,
     result: String,
+    cause: String,
 }
 
 impl Visit for Fields {
@@ -31,6 +33,7 @@ impl Visit for Fields {
         match field.name() {
             "message" => self.message = format!("{value:?}"),
             "result" => self.result = format!("{value:?}").trim_matches('"').to_string(),
+            "cause" => self.cause = format!("{value:?}").trim_matches('"').to_string(),
             _ => {}
         }
     }
@@ -45,6 +48,11 @@ impl<S: tracing::Subscriber> Layer<S> for Seen {
         {
             r.push(f.result.clone());
         }
+        if f.message == "dot"
+            && let Ok(mut c) = self.causes.lock()
+        {
+            *c.entry(f.cause.clone()).or_insert(0) += 1;
+        }
         let key = if f.message.is_empty() {
             e.metadata().target().to_string()
         } else {
@@ -56,12 +64,15 @@ impl<S: tracing::Subscriber> Layer<S> for Seen {
     }
 }
 
+const SEED: u32 = 3_121_955_193;
+
 #[test]
 fn a_live_match_reports_its_whole_fight() -> Result<(), String> {
     let seen = Seen::default();
     let subscriber = tracing_subscriber::registry().with(seen.clone());
     let ticks = tracing::subscriber::with_default(subscriber, || {
-        let mut m = Match::new(3_121_955_193, ["house-a".into(), "house-b".into()]);
+        // a seed whose fight has burns and bleeds
+        let mut m = Match::new(SEED, ["house-a".into(), "house-b".into()]);
         m.observe("test-live");
         let mut ticks = 0;
         while let Some(t) = m.step() {
@@ -86,10 +97,22 @@ fn a_live_match_reports_its_whole_fight() -> Result<(), String> {
     // a snapshot of each fighter each second of fight time: the whole fight, not only its first tick
     let seconds = ticks as f64 / 60.0;
     if (n("snapshot") as f64) < 2.0 * (seconds - 1.0) {
-        return Err(format!("{} snapshots in {seconds:.1} s; got {c:?}", n("snapshot")));
+        return Err(format!(
+            "{} snapshots in {seconds:.1} s; got {c:?}",
+            n("snapshot")
+        ));
     }
     if n("match.end") != 1 || results.iter().any(|r| r == "abandoned" || r.is_empty()) {
         return Err(format!("one match.end with a result: {results:?}"));
+    }
+    // every shown tick of damage over time says what it was: a burn, a bleed, both, or a curse's strike
+    let causes = seen.causes.lock().map_err(|e| e.to_string())?.clone();
+    if causes.is_empty()
+        || causes
+            .keys()
+            .any(|c| !["burn", "bleed", "burn+bleed", "curse"].contains(&c.as_str()))
+    {
+        return Err(format!("a dot with no known cause: {causes:?}"));
     }
     Ok(())
 }

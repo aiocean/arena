@@ -37,6 +37,10 @@ struct Seen {
     statuses: [bool; STATUSES.len()],
 }
 
+/// What a seat's damage over time is made of: the rules note each step's burn and bleed (`Note::Ticked`) and show their
+/// sum every `DOT_SHOWN` seconds (`Out::Tick`); a shown tick that matches none is a curse's strike.
+const DOT_CAUSES: [&str; 2] = ["burn", "bleed"];
+
 /// How long a status must hold before it is reported, seconds of fight time.
 const HOLD: f64 = 0.25;
 
@@ -184,6 +188,8 @@ pub struct Observer {
     began: Instant,
     /// Each seat's forfeit, once reported.
     forfeited: [bool; 2],
+    /// The burn and bleed shares each seat's damage over time took since its last shown tick (`DOT_CAUSES`).
+    dots: [[f64; DOT_CAUSES.len()]; 2],
     on: bool,
     ended: bool,
 }
@@ -213,6 +219,7 @@ impl Observer {
             since: [[None; STATUSES.len()]; 2],
             began: Instant::now(),
             forfeited: [false; 2],
+            dots: [[0.0; DOT_CAUSES.len()]; 2],
             on,
             ended: false,
         };
@@ -354,11 +361,13 @@ impl Observer {
         self.seen = [seen(&s.fighters[0]), seen(&s.fighters[1])];
         self.reported = [statuses(&s.fighters[0]), statuses(&s.fighters[1])];
         self.since = [[None; STATUSES.len()]; 2];
+        self.dots = [[0.0; DOT_CAUSES.len()]; 2];
     }
 
     /// The step's events and notes, in the order the rules made them.
-    fn events(&self, s: &State, out: &[Out]) {
-        let (id, round) = (self.match_id.as_str(), self.round);
+    fn events(&mut self, s: &State, out: &[Out]) {
+        let (match_id, round) = (self.match_id.clone(), self.round);
+        let id = match_id.as_str();
         // ailments that rose on each fighter this step: laid by the blows that hit it
         let laid: [String; 2] = [0, 1].map(|f| {
             let now = ailments(&s.fighters[f]);
@@ -370,6 +379,13 @@ impl Observer {
                 .collect::<Vec<_>>()
                 .join(",")
         });
+        for (_, n) in &s.notes {
+            if let Note::Ticked { by, cause, share } = *n
+                && let Some(i) = DOT_CAUSES.iter().position(|c| *c == cause)
+            {
+                self.dots[by.min(1)][i] += share;
+            }
+        }
         for o in out {
             match *o {
                 Out::Hit {
@@ -397,22 +413,11 @@ impl Observer {
                 Out::Tick {
                     by, damage, share, ..
                 } => {
-                    let cause = s
-                        .notes
-                        .iter()
-                        .find_map(|(_, n)| match n {
-                            Note::Ticked {
-                                by: b,
-                                cause,
-                                share: sh,
-                            } if *b == by && (sh - share).abs() < 1e-9 => Some(*cause),
-                            _ => None,
-                        })
-                        .unwrap_or("");
+                    let cause = self.dot_cause(by.min(1), share);
                     event!(target: target::DUEL, Level::INFO, {
-                        match_id = id, round = round, by = by, damage = damage, share = share, cause = cause,
+                        match_id = id, round = round, by = by, damage = damage, share = share, cause = %cause,
                     }, "dot");
-                    self.damage_metric(if cause.is_empty() { "dot" } else { cause }, damage);
+                    self.damage_metric(&cause, damage);
                 }
                 Out::Heal { by, amount, .. } => event!(target: target::DUEL, Level::INFO, {
                     match_id = id, round = round, by = by, amount = amount,
@@ -477,6 +482,24 @@ impl Observer {
                 Note::Ticked { .. } | Note::Healed { .. } => {}
             }
         }
+    }
+
+    /// What a shown tick of seat `by`'s damage over time (`share` of its foe's life) was: the burns and bleeds noted
+    /// since its last one when they add up to it (`burn`, `bleed`, or `burn+bleed`), else a curse's strike (`curse`).
+    fn dot_cause(&mut self, by: usize, share: f64) -> String {
+        let noted: f64 = self.dots[by].iter().sum();
+        if noted <= 0.0 || (noted - share).abs() > 1e-6 * share.abs().max(1e-3) {
+            return "curse".to_string();
+        }
+        let cause = DOT_CAUSES
+            .iter()
+            .zip(self.dots[by])
+            .filter(|(_, v)| *v > 0.0)
+            .map(|(c, _)| *c)
+            .collect::<Vec<_>>()
+            .join("+");
+        self.dots[by] = [0.0; DOT_CAUSES.len()];
+        cause
     }
 
     fn damage_metric(&self, skill: &str, damage: f64) {
