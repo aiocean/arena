@@ -7,7 +7,7 @@ use crate::bar::{ready, slot_of};
 use crate::data::{BAR, BURN, CHILL, DEF_DOWN, Kind, RAGE, SHOCK, Spell, UNIT, school, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
 use crate::shot::{ShotKind, orb_at};
-use pixfx_mind::{
+use arena_mind::{
     ActPhase, Acting, Arena, Choice, Doing, Foe, Inflicts, Me, Sense, Skill, SkillKind, Threat,
     ThreatShape,
 };

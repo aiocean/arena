@@ -7,7 +7,7 @@ use crate::data::{
 };
 use crate::fighter::{Fighter, Shocked, State};
 use crate::out::{Note, Out};
-use pixfx_draw::math::{js_max, js_min, js_round};
+use crate::js::{js_max, js_min, js_round};
 
 /// A hard control: frozen (no moving, no acting), held by a shock, or stunned.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

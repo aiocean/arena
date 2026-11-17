@@ -32,7 +32,7 @@ pub const DECIDE_FUEL: i64 = 20_000_000;
 pub const SETUP_FUEL: i64 = 200_000_000;
 /// The global the arena adds and exports: what is left of the current call's fuel.
 pub const FUEL_EXPORT: &str = "arena_fuel";
-/// The observation's length (`pixfx_mind::policy::OBS`) and the number of acts (`ACTIONS`).
+/// The observation's length (`arena_mind::policy::OBS`) and the number of acts (`ACTIONS`).
 pub const OBS: usize = 354;
 pub const ACTIONS: usize = 30;
 

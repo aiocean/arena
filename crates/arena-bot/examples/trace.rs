@@ -40,10 +40,7 @@ fn fights() -> Res<Vec<(Bot, Bot, u32, f64)>> {
 }
 
 fn write(file: &str, unit: f64) -> Res<()> {
-    let effects: Vec<String> = pixfx_effects::EFFECTS
-        .iter()
-        .map(|e| e.meta().id.to_string())
-        .collect();
+    let effects: Vec<String> = pixfx_duel::effects::all();
     let mut w = BufWriter::new(std::fs::File::create(file)?);
     for (a, b, seed, secs) in fights()? {
         let config = DuelConfig {

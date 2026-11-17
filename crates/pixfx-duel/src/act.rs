@@ -14,9 +14,9 @@ use crate::shot::{Shot, ShotKind};
 use crate::status::{
     ControlKind, add_chill, add_shock, cleanse, control, damage_of, gain_rage, take,
 };
-use pixfx_draw::math::{js_max, js_min, js_round, js_sign, or_one};
-use pixfx_fighter::body::{Blow as BodyBlow, BodySpec, Doing};
-use pixfx_mind::Outcome;
+use crate::js::{js_max, js_min, js_round, js_sign, or_one};
+use crate::body::{Blow as BodyBlow, BodySpec, Doing};
+use arena_mind::Outcome;
 
 /// JS `clamp(v, lo, hi)`: `Math.max(lo, Math.min(hi, v))`.
 pub fn clamp(v: f64, lo: f64, hi: f64) -> f64 {

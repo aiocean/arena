@@ -6,7 +6,7 @@ use common::{all_effects, config, pick};
 use pixfx_duel::duel::{Duel, TICK};
 use pixfx_duel::ladder::{Bot, Match, bout};
 use pixfx_duel::seat::{BotSeat, Brain, Decider, Fault, MakeSeat, SharedDecider};
-use pixfx_mind::policy::{ACTIONS, OBS};
+use arena_mind::policy::{ACTIONS, OBS};
 use std::cell::RefCell;
 use std::rc::Rc;
 

@@ -26,10 +26,7 @@ fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error
         .map_err(|e| format!("{MODULE}: {e}; build it with site/embed.sh (site/build.sh)"))?;
     let runner = Runner::new(&admit(&bytes)?).map_err(|e| e.0)?;
     let (left, right) = (runner.decider(), runner.decider());
-    let effects: Vec<String> = pixfx_effects::EFFECTS
-        .iter()
-        .map(|e| e.meta().id.to_string())
-        .collect();
+    let effects: Vec<String> = pixfx_duel::effects::all();
     let mut all = serde_json::Map::new();
     for seed in 1..=3_u32 {
         let config = DuelConfig {

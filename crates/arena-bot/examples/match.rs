@@ -62,10 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seeds: from..from + seeds,
         rounds,
         limit,
-        effects: pixfx_effects::EFFECTS
-            .iter()
-            .map(|e| e.meta().id.to_string())
-            .collect(),
+        effects: pixfx_duel::effects::all(),
     };
     println!(
         "seeds {}..={}, both ways, {rounds} rounds, rounds cut at {limit} s",

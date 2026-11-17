@@ -9,7 +9,7 @@ use pixfx_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use pixfx_duel::seat::SharedDecider;
 use pixfx_duel::style::Style;
 use pixfx_duel::train::{Env, EnvConfig, Opponent};
-use pixfx_mind::policy::{ACTIONS, OBS};
+use arena_mind::policy::{ACTIONS, OBS};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
@@ -85,7 +85,7 @@ struct Worker {
 
 impl Worker {
     fn run(n: usize, rx: Receiver<Wire>) {
-        let effects = pixfx_effects::EFFECTS.iter().map(|e| e.meta().id.to_string()).collect();
+        let effects = pixfx_duel::effects::all();
         let mut w = Worker { envs: (0..n).map(|_| None).collect(), models: HashMap::new(), effects };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
@@ -332,7 +332,7 @@ fn fight_match(seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Match> {
     if seeds.0 >= seeds.1 {
         return Err(PyValueError::new_err(format!("seeds {seeds:?}: (first, past the last), like range")));
     }
-    Ok(Match { seeds: seeds.0..seeds.1, rounds, limit, effects: pixfx_effects::EFFECTS.iter().map(|e| e.meta().id.to_string()).collect() })
+    Ok(Match { seeds: seeds.0..seeds.1, rounds, limit, effects: pixfx_duel::effects::all() })
 }
 
 /// A record as a dict, from the first bot's side.

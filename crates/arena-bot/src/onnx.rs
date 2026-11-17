@@ -5,7 +5,7 @@
 
 use crate::{ACTIONS, OBS};
 use pixfx_duel::seat::{Decider, Fault, SharedDecider};
-use pixfx_mind::policy::sample;
+use arena_mind::policy::sample;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;

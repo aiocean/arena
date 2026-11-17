@@ -8,7 +8,7 @@ use crate::data::{Blow, Spell, orb_offset, school, spell};
 use crate::fighter::State;
 use crate::out::{Note, Out, PlayOpts, Stop};
 use crate::status::{ControlKind, add_chill, add_shock, control, damage_of, take};
-use pixfx_draw::math::{js_min, js_sign, or_one};
+use crate::js::{js_min, js_sign, or_one};
 
 /// What kind of shot, and its own state.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -52,10 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Rc::new(move || onnx.decider())
         }
     };
-    let effects: Vec<String> = pixfx_effects::EFFECTS
-        .iter()
-        .map(|e| e.meta().id.to_string())
-        .collect();
+    let effects: Vec<String> = pixfx_duel::effects::all();
     let m = Match {
         seeds: 1..seeds + 1,
         rounds,

@@ -2,7 +2,7 @@
 resolver = "3"
 members = ["crates/*"]
 # pixfx-duel-py needs pyo3 and is built only by maturin for the trainer: its own workspace
-exclude = ["crates/pixfx-duel-py"]
+exclude = ["crates/pixfx-duel-py", "crates/arena-wasm", "crates/arena-fighter"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,24 +10,9 @@ edition = "2024"
 license = "MIT"
 
 [workspace.dependencies]
-# The pixfx engine, pinned to one commit: a season's rules are this repo's tag plus this rev. Bump all of them
-# together, and the same rev in crates/pixfx-duel-py/Cargo.toml (its own workspace); site/pixfx.sh checks the
-# engine out at this rev for the site. To work on the engine beside the arena, see CONTRIBUTING.md.
-pixfx-core = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
-pixfx-draw = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
-pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
-pixfx-fighter = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
-pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
-# The same pins as the pixfx engine's Cargo.toml: the arena's wasm and the engine's are built with the same
-# wasm-bindgen, and serde shapes match on both sides.
-js-sys = "=0.3.107"
 libm = "0.2"
 serde = { version = "=1.0.229", features = ["derive"] }
-serde-wasm-bindgen = "=0.6.5"
 serde_json = "=1.0.154"
-serde_path_to_error = "=0.1.20"
-tsify = { version = "=0.5.8", default-features = false, features = ["js"] }
-wasm-bindgen = "=0.2.130"
 
 # Frame time first, as in the engine: opt-level 3, fat LTO in one codegen unit.
 [profile.release]

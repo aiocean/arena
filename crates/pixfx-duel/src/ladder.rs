@@ -12,7 +12,7 @@ use crate::out::{Note, Out, Stop};
 use crate::scripted::Scripted;
 use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider};
 use crate::style::Style;
-use pixfx_mind::{Choice, Outcome, Posture};
+use arena_mind::{Choice, Outcome, Posture};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ops::Range;

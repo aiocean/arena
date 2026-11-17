@@ -52,13 +52,13 @@ fn a_skill_says_what_it_inflicts_and_how_much() {
     assert_eq!(lotus.def_down, 3.0);
     assert_eq!(lotus.def_loss, DEF_DOWN);
     assert_eq!(skill_of("palm").inflicts.steal_rage, 1.0);
-    assert_eq!(skill_of("slash").inflicts, pixfx_mind::Inflicts::default());
+    assert_eq!(skill_of("slash").inflicts, arena_mind::Inflicts::default());
 }
 
 #[test]
 fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
     use pixfx_duel::fighter::{Act, Phase};
-    use pixfx_mind::{ActPhase, Doing};
+    use arena_mind::{ActPhase, Doing};
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
     let ultimate = school(duel.state.fighters[1].school).ultimate;

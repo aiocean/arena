@@ -7,7 +7,7 @@ use crate::data::{
 };
 use crate::fighter::{Fighter, Slot, State};
 use crate::out::Out;
-use pixfx_draw::math::js_min;
+use crate::js::js_min;
 
 /// `POOL_SIZE` skills of `school` a fighter plays this fight, by the duel's dice: always one of the school's
 /// signature kind and one that pays off its status, where it has them, then the rest at random.

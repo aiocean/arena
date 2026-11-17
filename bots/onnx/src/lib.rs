@@ -2,12 +2,12 @@
 //!
 //! The model takes the observation, float32 `[1, 354]`, as its first input and gives one logit per act, float32
 //! `[1, 30]` or `[30]`, as its first output. The bot picks the act as the shipped bot does: a softmax over the legal
-//! acts, read with the arena's draw `u` (`pixfx_mind::policy::sample`). Change `arena_decide` to pick otherwise.
+//! acts, read with the arena's draw `u` (`arena_mind::policy::sample`). Change `arena_decide` to pick otherwise.
 //!
 //! The model is read and optimised once, in the first `arena_start` of a match (it costs about a quarter of that
 //! call's fuel for a network of the shipped one's size).
 
-use pixfx_mind::policy::{ACTIONS, OBS, sample};
+use arena_mind::policy::{ACTIONS, OBS, sample};
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicU8, Ordering};
 use tract_onnx::prelude::tract_data::internal::bail;

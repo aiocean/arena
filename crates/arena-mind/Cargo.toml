@@ -1,0 +1,20 @@
+[package]
+name = "arena-mind"
+description = "A fighter's brain for the arena: postures chosen by score, the foe read late and learnt, skills as data, and the trained policy's inputs, acts and timing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libm.workspace = true
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[features]
+# serde for the value types (camelCase, enums tagged with "type")
+serde = ["dep:serde"]
+
+[lints]
+workspace = true

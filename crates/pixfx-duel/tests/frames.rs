@@ -5,13 +5,13 @@
 mod common;
 
 use common::arena;
-use pixfx_draw::math::{js_sign, or_one};
+use pixfx_duel::js::{js_sign, or_one};
 use pixfx_duel::act::{advance, begin, hurt};
 use pixfx_duel::data::{FRAMES, spell};
 use pixfx_duel::fighter::{Act, Phase, State, Told};
 use pixfx_duel::out::{How, Out};
-use pixfx_fighter::body::BodySpec;
-use pixfx_mind::Outcome;
+use pixfx_duel::body::BodySpec;
+use arena_mind::Outcome;
 
 const DT: f64 = 1.0 / 60.0;
 

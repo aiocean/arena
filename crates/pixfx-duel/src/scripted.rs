@@ -6,7 +6,7 @@ use crate::data::TEMPERAMENT;
 use crate::fighter::State;
 use crate::seat::{MakeSeat, Seat};
 use crate::sense::{chosen, sense_of, skill_of};
-use pixfx_mind::{ActPhase, Choice, Delayed, Doing, Outcome, SkillKind};
+use arena_mind::{ActPhase, Choice, Delayed, Doing, Outcome, SkillKind};
 
 /// How a scripted fighter plays.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

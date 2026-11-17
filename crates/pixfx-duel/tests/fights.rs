@@ -87,7 +87,7 @@ fn cast_once(seed: u32, index: usize, name: &'static str, slot: Slot) -> Duel {
     let foe = &mut s.fighters[1 - index];
     foe.body.x = x + if index == 0 { 120.0 } else { -120.0 };
     let fx = foe.body.x;
-    s.fighters[index].body.face = pixfx_draw::math::js_sign(fx - x);
+    s.fighters[index].body.face = pixfx_duel::js::js_sign(fx - x);
     duel
 }
 
@@ -507,7 +507,7 @@ fn piercing_goes_through_a_guard_every_time() {
                 held("palm", Rarity::Common, traits.clone(), false),
             );
             let (mx, fx) = (duel.state.fighters[0].body.x, duel.state.fighters[1].body.x);
-            duel.state.fighters[1].body.face = pixfx_draw::math::js_sign(mx - fx);
+            duel.state.fighters[1].body.face = pixfx_duel::js::js_sign(mx - fx);
             let mut hit = false;
             for _ in 0..60 {
                 duel.state.fighters[1].guard = 5.0;

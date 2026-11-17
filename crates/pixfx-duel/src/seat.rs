@@ -5,8 +5,8 @@ use crate::data::{TEMPERAMENT, UNIT, school};
 use crate::fighter::State;
 use crate::sense::{chosen, sense_of, skill_of};
 use crate::style::{Style, tag};
-use pixfx_mind::policy::{ACTIONS, OBS, PolicyMind};
-use pixfx_mind::{BodySize, Choice, Mind, Outcome, Posture, Profile, Thought};
+use arena_mind::policy::{ACTIONS, OBS, PolicyMind};
+use arena_mind::{BodySize, Choice, Mind, Outcome, Posture, Profile, Thought};
 use std::cell::RefCell;
 use std::rc::Rc;
 

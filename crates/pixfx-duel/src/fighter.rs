@@ -4,8 +4,8 @@ use crate::data::{Luck, Rarity, School, Stats, Trait, body_spec, stats};
 use crate::out::{Note, Out};
 use crate::shot::Shot;
 use crate::style::Style;
-use pixfx_fighter::body::{Arena, Body};
-use pixfx_mind::{Outcome, Rng};
+use crate::body::{Arena, Body};
+use arena_mind::{Outcome, Rng};
 
 /// Where a cast is: gathering before it lands, or recovering after.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

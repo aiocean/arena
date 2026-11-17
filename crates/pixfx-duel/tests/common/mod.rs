@@ -77,17 +77,12 @@ pub fn norm(v: &serde_json::Value) -> serde_json::Value {
 
 /// Every effect in the engine's registry, as the page has it.
 pub fn all_effects() -> Vec<String> {
-    pixfx_effects::EFFECTS
-        .iter()
-        .map(|e| e.meta().id.to_string())
-        .collect()
+    pixfx_duel::effects::all()
 }
 
 /// Whether effect `fx` loops (and so must be stopped).
 pub fn loops(fx: &str) -> bool {
-    pixfx_effects::EFFECTS
-        .iter()
-        .any(|e| e.meta().id == fx && e.meta().looping)
+    pixfx_duel::effects::loops(fx)
 }
 
 /// The landing arena (0 to 880, ground 600) with effects `effects`.
@@ -121,7 +116,7 @@ pub fn caster(skill: &'static str) -> pixfx_duel::seat::MakeSeat {
                 return None;
             }
             cast = true;
-            Some(pixfx_mind::Choice::Cast {
+            Some(arena_mind::Choice::Cast {
                 skill: skill.to_string(),
                 target: None,
             })
@@ -133,7 +128,7 @@ pub fn caster(skill: &'static str) -> pixfx_duel::seat::MakeSeat {
 pub fn always(skill: &'static str) -> pixfx_duel::seat::MakeSeat {
     Box::new(move |_, _| {
         Box::new(pixfx_duel::seat::Script(Box::new(move |_, _| {
-            Some(pixfx_mind::Choice::Cast {
+            Some(arena_mind::Choice::Cast {
                 skill: skill.to_string(),
                 target: None,
             })
@@ -144,7 +139,7 @@ pub fn always(skill: &'static str) -> pixfx_duel::seat::MakeSeat {
 /// Step `duel` `seconds` at 60 Hz; returns everything it emitted.
 pub fn run(duel: &mut pixfx_duel::duel::Duel, seconds: f64) -> Vec<pixfx_duel::out::Out> {
     let mut out = Vec::new();
-    for _ in 0..pixfx_draw::math::js_round(seconds * 60.0) as usize {
+    for _ in 0..pixfx_duel::js::js_round(seconds * 60.0) as usize {
         out.extend(duel.step(1.0 / 60.0));
     }
     out
@@ -186,8 +181,8 @@ impl pixfx_duel::seat::Decider for Pick {
     }
     fn decide(
         &mut self,
-        _obs: &[f32; pixfx_mind::policy::OBS],
-        legal: &[bool; pixfx_mind::policy::ACTIONS],
+        _obs: &[f32; arena_mind::policy::OBS],
+        legal: &[bool; arena_mind::policy::ACTIONS],
         u: f32,
     ) -> Result<i32, pixfx_duel::seat::Fault> {
         let ok: Vec<usize> = (0..legal.len()).filter(|&i| legal[i]).collect();

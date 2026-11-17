@@ -6,13 +6,17 @@
 #![forbid(unsafe_code)]
 
 pub mod act;
+pub mod body;
 pub mod bar;
 pub mod data;
 pub mod duel;
+pub mod effects;
 pub mod fighter;
 pub mod first_mind;
+pub mod js;
 pub mod ladder;
 pub mod out;
+pub mod pose;
 pub mod scripted;
 pub mod seat;
 pub mod sense;

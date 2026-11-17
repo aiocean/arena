@@ -5,7 +5,7 @@
 mod common;
 
 use common::arena;
-use pixfx_draw::math::{js_sign, or_one};
+use pixfx_duel::js::{js_sign, or_one};
 use pixfx_duel::act::{advance, begin, clash, knock_out};
 use pixfx_duel::data::{KNOCKBACK, spell};
 use pixfx_duel::fighter::{Act, Phase, State};

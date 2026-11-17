@@ -176,4 +176,4 @@ impl Decider for Broken {
 }
 
 // the ABI's buffer is the policy's observation and mask
-const _: () = assert!(OBS == pixfx_mind::policy::OBS && ACTIONS == pixfx_mind::policy::ACTIONS);
+const _: () = assert!(OBS == arena_mind::policy::OBS && ACTIONS == arena_mind::policy::ACTIONS);

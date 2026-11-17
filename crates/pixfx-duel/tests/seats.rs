@@ -8,7 +8,7 @@ use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::State;
 use pixfx_duel::scripted::Scripted;
 use pixfx_duel::seat::{BotSeat, MakeSeat, Seat};
-use pixfx_mind::{Choice, Outcome};
+use arena_mind::{Choice, Outcome};
 use std::cell::Cell;
 use std::rc::Rc;
 

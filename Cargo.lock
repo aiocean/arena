@@ -81,9 +81,8 @@ checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
 name = "arena-bot"
 version = "0.1.0"
 dependencies = [
+ "arena-mind",
  "pixfx-duel",
- "pixfx-effects",
- "pixfx-mind",
  "serde_json",
  "sha2",
  "tract-onnx",
@@ -94,34 +93,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "arena-fighter"
+name = "arena-mind"
 version = "0.1.0"
 dependencies = [
  "libm",
- "pixfx-core",
- "pixfx-draw",
- "pixfx-fighter",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "arena-wasm"
-version = "0.1.0"
-dependencies = [
- "arena-bot",
- "arena-fighter",
- "js-sys",
- "pixfx-core",
- "pixfx-draw",
- "pixfx-duel",
- "pixfx-fighter",
- "pixfx-mind",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "serde_path_to_error",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -520,30 +497,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
-name = "futures-core"
-version = "0.3.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e"
-
-[[package]]
-name = "futures-task"
-version = "0.3.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd"
-
-[[package]]
-name = "futures-util"
-version = "0.3.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
-dependencies = [
- "futures-core",
- "futures-task",
- "pin-project-lite",
- "slab",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -666,17 +619,6 @@ name = "itoa"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
-
-[[package]]
-name = "js-sys"
-version = "0.3.107"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dc09d2154098bbf4ef54eab6b117a3c24cbbffe94046b16ee6d6d4510584d3a"
-dependencies = [
- "cfg-if",
- "futures-util",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "kstring"
@@ -1029,81 +971,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "pin-project-lite"
-version = "0.2.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
-
-[[package]]
-name = "pixfx-core"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-draw",
- "serde",
- "tsify",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "pixfx-draw"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "serde",
- "tsify",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "pixfx-duel"
 version = "0.1.0"
 dependencies = [
+ "arena-mind",
  "libm",
- "pixfx-draw",
- "pixfx-effects",
- "pixfx-fighter",
- "pixfx-mind",
  "serde",
  "serde_json",
- "tsify",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "pixfx-effects"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-core",
- "pixfx-draw",
-]
-
-[[package]]
-name = "pixfx-fighter"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-core",
- "pixfx-draw",
- "serde",
- "tsify",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "pixfx-mind"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "serde",
- "tsify",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1363,12 +1237,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustversion"
-version = "1.0.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
-
-[[package]]
 name = "safetensors"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1419,17 +1287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-wasm-bindgen"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
-dependencies = [
- "js-sys",
- "serde",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "serde_core"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1450,17 +1307,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_derive_internals"
-version = "0.29.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "serde_json"
 version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1473,17 +1319,6 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
-]
-
-[[package]]
-name = "serde_path_to_error"
-version = "0.1.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a9ff822e371bb5403e391ecd83e182e0e77ba7f6fe0160b795797109d1b457"
-dependencies = [
- "itoa",
- "serde",
- "serde_core",
 ]
 
 [[package]]
@@ -1508,12 +1343,6 @@ name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
-
-[[package]]
-name = "slab"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "smallvec"
@@ -1835,30 +1664,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tsify"
-version = "0.5.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea3af6b48c5c5624f7eb3c2f578d1335fadac433321980cae0063e8eb0acaa44"
-dependencies = [
- "serde",
- "serde-wasm-bindgen",
- "tsify-macros",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "tsify-macros"
-version = "0.5.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef1e2e93369379d0a527c7d6632b58c55d52db7a106d8afbde3b354f3a57a9f1"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde_derive_internals",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1918,50 +1723,6 @@ name = "wasi"
 version = "0.11.1+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
-
-[[package]]
-name = "wasm-bindgen"
-version = "0.2.130"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0181c14ddd6c7b8b0b0132a5f1ea2f32be0d893cd3ea97b6e3b28886b8a3d1c"
-dependencies = [
- "cfg-if",
- "rustversion",
- "wasm-bindgen-macro",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-macro"
-version = "0.2.130"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e931a02a39abdbf66966fc35902b5ed58344750a70885bed4ebb3d8eaf28ed9"
-dependencies = [
- "quote",
- "wasm-bindgen-macro-support",
-]
-
-[[package]]
-name = "wasm-bindgen-macro-support"
-version = "0.2.130"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ca4b54280e455bd831e33a6b8e734baf432fe63fbc35c42ac14ce67a043a53a"
-dependencies = [
- "bumpalo",
- "proc-macro2",
- "quote",
- "syn 3.0.10",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-shared"
-version = "0.2.130"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b1f9c3798725016c6ee5f2f57869ec0831e8bbc0ab0310a86e787e97f41389e"
-dependencies = [
- "unicode-ident",
-]
 
 [[package]]
 name = "wasm-encoder"

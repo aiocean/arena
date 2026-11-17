@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seeds: from..from + seeds,
         rounds: 3,
         limit: 120.0,
-        effects: pixfx_effects_ids(),
+        effects: pixfx_duel::effects::all(),
     };
     println!(
         "4. the entry bar: seeds {from}..={}, both ways, 3 rounds",
@@ -131,14 +131,6 @@ fn fixed() -> Result<Vec<Case>, Box<dyn std::error::Error>> {
         out.push((obs, legal));
     }
     Ok(out)
-}
-
-/// Every effect the page has, as the ladder plays with them.
-fn pixfx_effects_ids() -> Vec<String> {
-    pixfx_effects::EFFECTS
-        .iter()
-        .map(|e| e.meta().id.to_string())
-        .collect()
 }
 
 fn print_record(name: &str, r: &Record) {

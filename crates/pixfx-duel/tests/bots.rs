@@ -7,10 +7,7 @@ fn quick(seeds: u32) -> Match {
         seeds: 1..seeds + 1,
         rounds: 3,
         limit: 120.0,
-        effects: pixfx_effects::EFFECTS
-            .iter()
-            .map(|e| e.meta().id.to_string())
-            .collect(),
+        effects: pixfx_duel::effects::all(),
     }
 }
 

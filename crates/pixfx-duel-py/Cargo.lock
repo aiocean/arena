@@ -60,12 +60,19 @@ dependencies = [
 name = "arena-bot"
 version = "0.1.0"
 dependencies = [
+ "arena-mind",
  "pixfx-duel",
- "pixfx-mind",
  "sha2",
  "tract-onnx",
  "wasm-encoder",
  "wasmparser",
+]
+
+[[package]]
+name = "arena-mind"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]
@@ -727,30 +734,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "pixfx-core"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-draw",
-]
-
-[[package]]
-name = "pixfx-draw"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
-]
-
-[[package]]
 name = "pixfx-duel"
 version = "0.1.0"
 dependencies = [
+ "arena-mind",
  "libm",
- "pixfx-draw",
- "pixfx-fighter",
- "pixfx-mind",
 ]
 
 [[package]]
@@ -758,39 +746,10 @@ name = "pixfx-duel-py"
 version = "0.1.0"
 dependencies = [
  "arena-bot",
+ "arena-mind",
  "numpy",
  "pixfx-duel",
- "pixfx-effects",
- "pixfx-mind",
  "pyo3",
-]
-
-[[package]]
-name = "pixfx-effects"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-core",
- "pixfx-draw",
-]
-
-[[package]]
-name = "pixfx-fighter"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
- "pixfx-core",
- "pixfx-draw",
-]
-
-[[package]]
-name = "pixfx-mind"
-version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
-dependencies = [
- "libm",
 ]
 
 [[package]]

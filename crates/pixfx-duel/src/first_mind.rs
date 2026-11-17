@@ -8,8 +8,8 @@ use crate::data::{Kind, Spell, UNIT, school, spell};
 use crate::fighter::{Fighter, Phase, State};
 use crate::seat::{MakeSeat, Seat};
 use crate::shot::{ShotKind, orb_at};
-use pixfx_draw::math::{js_max, js_min, js_sign, or_one};
-use pixfx_mind::{Choice, Outcome, Rng};
+use crate::js::{js_max, js_min, js_sign, or_one};
+use arena_mind::{Choice, Outcome, Rng};
 
 const REACTION: f64 = 0.16;
 const THINK: f64 = 0.12;

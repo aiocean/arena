@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # the arena's own sampling, so a model picks the way the shipped bot does
-pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "ad1612b09af290290a86318a12ca66a48aa19605" }
+arena-mind = { path = "../../crates/arena-mind" }
 tract-onnx = { version = "0.22", default-features = false }
 # tract reaches getrandom; a bot imports nothing, so it gets a source that always fails instead of the "js" one
 getrandom = { version = "0.2", features = ["custom"] }

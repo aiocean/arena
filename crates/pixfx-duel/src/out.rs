@@ -210,11 +210,11 @@ pub enum Stop {
     Clash,
 }
 
-impl From<pixfx_fighter::body::Event> for Out {
-    fn from(e: pixfx_fighter::body::Event) -> Out {
+impl From<crate::body::Event> for Out {
+    fn from(e: crate::body::Event) -> Out {
         match e {
-            pixfx_fighter::body::Event::Land { x, strength } => Out::Land { x, strength },
-            pixfx_fighter::body::Event::Bump { x, y, strength } => Out::Bump { x, y, strength },
+            crate::body::Event::Land { x, strength } => Out::Land { x, strength },
+            crate::body::Event::Bump { x, y, strength } => Out::Bump { x, y, strength },
         }
     }
 }

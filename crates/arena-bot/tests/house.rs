@@ -67,10 +67,7 @@ fn the_house_ai_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>>
         seeds: 1..7,
         rounds: 3,
         limit: 120.0,
-        effects: pixfx_effects::EFFECTS
-            .iter()
-            .map(|e| e.meta().id.to_string())
-            .collect(),
+        effects: pixfx_duel::effects::all(),
     };
     let bar = entry_bar_of(&Bot::Decider(Rc::new(move || onnx.decider())), &m);
     assert!(bar.passed(), "{bar:?}");

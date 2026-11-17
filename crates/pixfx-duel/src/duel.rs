@@ -10,9 +10,9 @@ use crate::out::Out;
 use crate::seat::{Brain, MakeSeat, Seat};
 use crate::shot::{shot, stop_shot};
 use crate::status::{burning, shocking};
-use pixfx_draw::math::{js_max, js_min};
-use pixfx_fighter::body::{Drive, Motion};
-use pixfx_mind::Choice;
+use crate::js::{js_max, js_min};
+use crate::body::{Drive, Motion};
+use arena_mind::Choice;
 
 /// One tick of the rules, in seconds: a seed is one fight at any frame rate.
 pub const TICK: f64 = 1.0 / 60.0;
@@ -174,12 +174,12 @@ impl Duel {
         }
         let [a, b] = &mut self.state.fighters;
         if a.hp > 0.0 && b.hp > 0.0 {
-            let arena = pixfx_fighter::body::Arena {
+            let arena = crate::body::Arena {
                 left: self.state.left,
                 right: self.state.right,
                 top: self.state.top,
             };
-            pixfx_fighter::body::separate(&mut a.body, &mut b.body, &arena);
+            crate::body::separate(&mut a.body, &mut b.body, &arena);
         }
         // the shots in flight at the start of the tick run, but not one another shot ended this tick
         let ids: Vec<u32> = self.state.shots.iter().map(|s| s.id).collect();

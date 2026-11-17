@@ -7,7 +7,7 @@ use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::State;
 use pixfx_duel::first_mind::FirstMind;
 use pixfx_duel::seat::{MakeSeat, Seat};
-use pixfx_mind::{Choice, Outcome};
+use arena_mind::{Choice, Outcome};
 use serde_json::{Value, json};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
