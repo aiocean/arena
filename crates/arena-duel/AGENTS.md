@@ -38,7 +38,9 @@ units, time wearing everyone, the knock-outs, the seats told, the units written 
 house AI; this crate never reads it (`arena-bot` does). A seed replays the same fight on every target. The game
 (`crates/arena-game`) plays the effect commands and feels the events the duel returns; it decides nothing. The
 server (`crates/arena-server`) fights the live matches with `seat::Recorder`s, and the live page steps the same duel
-with `seat::Replay` seats from the decisions it receives.
+with `seat::Replay` seats from the decisions it receives. Both build it with `Duel::new_drawn` (the looks drawn from
+the seed, `ladder::looks_of`): a replay built with `Duel::new` gives an odd seed's fighters each other's art and boxes,
+and steps another fight.
 
 Each tick the two fighters take their turns with who goes first alternating (`duel::turns`: seat 0 on even ticks, seat
 1 on odd ones), so neither seat strikes first or reacts second every tick; `tests/fair_seats.rs` holds a mirror to

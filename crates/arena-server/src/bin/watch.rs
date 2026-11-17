@@ -136,7 +136,7 @@ async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
     let [log0, log1] = logs_from_snapshot(&snap);
     let make0: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log0)) as Box<dyn Seat>);
     let make1: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log1)) as Box<dyn Seat>);
-    let mut duel = Duel::new(config_for(snap.seed, snap.arena), [make0, make1]);
+    let mut duel = Duel::new_drawn(config_for(snap.seed, snap.arena), [make0, make1]);
     // step exactly as far as the server fought, then read the end the rules reached
     let ticks = follow.through();
     for _ in 0..ticks {

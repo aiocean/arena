@@ -82,6 +82,14 @@ impl Duel {
         Duel::build(config, seats, l, looks)
     }
 
+    /// As [`Duel::new`], the looks drawn from the seed apart from the seats (`ladder::looks_of`): a live match as the
+    /// server fights it, and every replay of one (the page, `arena-watch`). The replay must build its duel here too,
+    /// or an odd seed's fighters wear each other's art, hit boxes and hands, and the fight it steps is another.
+    pub fn new_drawn(config: DuelConfig, seats: [MakeSeat; 2]) -> Duel {
+        let looks = crate::ladder::looks_of(config.seed);
+        Duel::new_with_looks(config, seats, looks)
+    }
+
     /// A new duel of the two `loadouts` (seat 0's, seat 1's), each checked (`loadout::check`).
     pub fn with_loadouts(
         config: DuelConfig,

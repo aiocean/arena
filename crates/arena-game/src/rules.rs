@@ -112,7 +112,8 @@ fn begin_fight(
             sky: m.arena.sky,
             effects: arena_duel::effects::all(),
         };
-        fight.duel = Some(Duel::new(config, [replay(0), replay(1)]));
+        // the server draws the looks from the seed (`Duel::new_drawn`): built any other way, the fight is another
+        fight.duel = Some(Duel::new_drawn(config, [replay(0), replay(1)]));
         fight.made_for = wanted;
         shown.seed = m.seed;
         shown.names = m.names.clone();
