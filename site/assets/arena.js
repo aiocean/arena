@@ -1,7 +1,7 @@
 // The arena's home page: the duel is the Bevy game (crates/arena-game) on the hero's canvas; this page only starts
 // it, hands it the bot modules a player drops into a corner and the seed to fight on, and shows its status line.
 // It decides nothing about the fight.
-import init, { debug, house, live, restart, run, setCorner, status } from "../game/arena_game.js";
+import init, { house, live, restart, run, setCorner, status } from "../game/arena_game.js";
 
 const PAGES = { home: mountHome };
 try {
@@ -63,8 +63,6 @@ async function mountHome() {
   const relay = askedSeed() === undefined ? await liveRelay() : undefined;
   loading(relay ? "Connecting to the arena" : "Seating the bots", 0.6);
   // the game runs on its own from here, frame by frame, on the canvas #scene
-  // `?debug` in the address opens the debug view (the backquote key or F3 flips it)
-  if (new URLSearchParams(location.search).has("debug")) debug(true);
   try {
     if (relay) live(relay);
     else run(askedSeed());

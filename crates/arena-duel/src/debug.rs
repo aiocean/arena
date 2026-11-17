@@ -1,4 +1,4 @@
-//! The shapes the rules test hits against, for a debug view: each fighter's body (where it can be hit), the area a
+//! The shapes the rules test hits against, for tests and tools (the art kept in step with the rules): each fighter's body (where it can be hit), the area a
 //! cast under way will strike when its windup ends, and every shot, field and unit on the field. Read only: nothing
 //! here decides anything. Each shape mirrors the test that uses it, named beside it, so a change to a test changes
 //! the shape drawn here in the same change.

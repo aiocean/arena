@@ -13,7 +13,6 @@
 #![allow(clippy::disallowed_methods)]
 
 pub mod bots;
-pub mod debug;
 pub mod feel;
 pub mod fighters;
 pub mod hud;
@@ -127,7 +126,6 @@ pub fn app(start: Start) -> App {
         bots::BotsPlugin,
         live::LivePlugin,
         rules::RulesPlugin,
-        debug::DebugPlugin,
         feel::FeelPlugin,
         scene::ScenePlugin,
         light::LightPlugin,

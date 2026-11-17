@@ -1,4 +1,4 @@
-//! The debug view's shapes: a fresh fight shows each fighter's body as wide as the hit tests take it.
+//! The hit tests' shapes (`arena_duel::debug`): a fresh fight shows each fighter's body as wide as the hit tests take it.
 
 use arena_duel::debug::{Mark, Shape, shapes};
 use arena_duel::duel::{Duel, DuelConfig};

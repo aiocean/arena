@@ -124,79 +124,6 @@ pub struct Live {
 thread_local! {
     /// What the connection has received since the last frame, for `pull` to fold in.
     static EVENTS: RefCell<Vec<Event>> = const { RefCell::new(Vec::new()) };
-    /// The connection's counters, for the debug view.
-    static NET: RefCell<Net> = RefCell::new(Net::default());
-}
-
-/// What the connection has seen, counted as it comes (the debug view reads it).
-#[derive(Clone, Debug, Default)]
-pub struct Net {
-    /// Sessions opened (the first, then each reconnect).
-    pub sessions: u32,
-    /// Matches followed.
-    pub matches: u32,
-    pub frames: u64,
-    pub bytes: u64,
-    pub keyframes: u64,
-    pub decisions: u64,
-    pub throughs: u64,
-    /// Frames that did not decode.
-    pub bad: u64,
-    /// The page's clock (ms since the epoch) when the last frame came.
-    pub last_ms: f64,
-    /// The last `Through`'s one-way delay, server's clock to the page's (ms): give or take the clocks' difference.
-    pub delay_ms: f64,
-    /// Its running average and the worst seen.
-    pub delay_avg_ms: f64,
-    pub delay_max_ms: f64,
-    /// The size of the last keyframe, bytes.
-    pub keyframe_bytes: usize,
-}
-
-/// The connection's counters as they stand.
-pub fn net() -> Net {
-    NET.with_borrow(Clone::clone)
-}
-
-/// Count a frame of `bytes` bytes that came at `now_ms`.
-pub fn count(frame: &Frame, bytes: usize, now_ms: f64) {
-    NET.with_borrow_mut(|n| {
-        n.frames += 1;
-        n.bytes += bytes as u64;
-        n.last_ms = now_ms;
-        match frame {
-            Frame::Keyframe(_) => {
-                n.keyframes += 1;
-                n.keyframe_bytes = bytes;
-            }
-            Frame::Decision(_) => n.decisions += 1,
-            Frame::Through(t) => {
-                n.throughs += 1;
-                if t.sent_ms > 0 {
-                    let d = now_ms - t.sent_ms as f64;
-                    n.delay_ms = d;
-                    n.delay_avg_ms = if n.throughs <= 1 { d } else { n.delay_avg_ms * 0.95 + d * 0.05 };
-                    n.delay_max_ms = n.delay_max_ms.max(d);
-                }
-            }
-            Frame::Forfeit(_) | Frame::End(_) => {}
-        }
-    });
-}
-
-#[allow(dead_code)]
-fn count_session() {
-    NET.with_borrow_mut(|n| n.sessions += 1);
-}
-
-#[allow(dead_code)]
-fn count_match() {
-    NET.with_borrow_mut(|n| n.matches += 1);
-}
-
-#[allow(dead_code)]
-fn count_bad() {
-    NET.with_borrow_mut(|n| n.bad += 1);
 }
 
 /// Queue an event from the connection (it runs on the page's one thread, outside the schedule).
@@ -313,7 +240,6 @@ mod net {
         spawn_local(async move {
             let _ = moq_net::time::run(origin_driver).await;
         });
-        super::count_session();
         push(Event::Status("Waiting for a match".into()));
 
         let scope = moq_net::Pattern::subtree(NAMESPACE)
@@ -332,7 +258,6 @@ mod net {
                 continue;
             }
             push(Event::NewMatch);
-            super::count_match();
             push(Event::Status("Live".into()));
             if let Err(e) = follow(&consumer, &update.prefix).await {
                 push(Event::Status(format!("A match was lost ({e})")));
@@ -356,12 +281,9 @@ mod net {
             .map_err(|e| e.to_string())?;
         while let Some(mut group) = track.recv_group().await.map_err(|e| e.to_string())? {
             while let Some(frame) = group.read_frame().await.map_err(|e| e.to_string())? {
-                let bytes = frame.payload.len();
                 let Ok(frame) = decode(&frame.payload) else {
-                    super::count_bad();
                     continue;
                 };
-                super::count(&frame, bytes, js_sys::Date::now());
                 let end = matches!(frame, arena_link::Frame::End(_));
                 push(Event::Frame(frame));
                 if end {

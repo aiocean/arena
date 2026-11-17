@@ -56,13 +56,6 @@ pub fn live(url: String) {
     crate::app(start).run();
 }
 
-/// The debug view on (`true`), off (`false`), or flipped (nothing): the shapes the hit tests use, the link, the frame
-/// rate (`debug.rs`; the backquote key and F3 flip it too).
-#[wasm_bindgen]
-pub fn debug(on: Option<bool>) {
-    crate::debug::ask(on);
-}
-
 /// Put bot module `bytes` (named `name`) into corner `corner` (0 Thunder, 1 Frost); the fight starts over.
 #[wasm_bindgen(js_name = setCorner)]
 pub fn set_corner(corner: usize, name: String, bytes: Vec<u8>) {

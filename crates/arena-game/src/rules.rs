@@ -48,22 +48,6 @@ pub struct Shown {
     pub fight: u32,
 }
 
-/// How a live page is keeping up with the frames received, for the debug view.
-#[derive(Resource, Default, Clone, Copy, Debug)]
-pub struct LivePace {
-    /// Ticks the page has stepped, and how far it may step (`Through` less `DELAY_TICKS`).
-    pub done: u32,
-    pub target: u32,
-    /// Ticks it trails `target`.
-    pub behind: u32,
-    /// It is running at double pace to catch up.
-    pub catching_up: bool,
-    /// Times it stepped ahead undrawn (joining late, a sleeping tab).
-    pub jumps: u32,
-    /// Frames it held still waiting for frames (nothing more had come).
-    pub starved: u64,
-}
-
 /// The duel (it holds its seats, which hold bot instances: it stays on the main thread).
 #[derive(Default)]
 pub struct Fight {
@@ -79,7 +63,6 @@ impl Plugin for RulesPlugin {
         app.insert_non_send(Fight::default())
             .init_resource::<Pace>()
             .init_resource::<Shown>()
-            .init_resource::<LivePace>()
             .add_message::<Fx>()
             .add_systems(
                 Update,
@@ -185,7 +168,6 @@ fn step(
     pace: Res<Pace>,
     layout: Res<Layout>,
     live: NonSend<Live>,
-    mut lp: ResMut<LivePace>,
     mut fight: NonSendMut<Fight>,
     mut shown: ResMut<Shown>,
     mut fx: MessageWriter<Fx>,
@@ -201,15 +183,7 @@ fn step(
         let done = (state.time / TICK).round() as u32;
         let target = m.through.saturating_sub(DELAY_TICKS);
         let behind = target.saturating_sub(done);
-        lp.done = done;
-        lp.target = target;
-        lp.behind = behind;
-        lp.catching_up = behind > CATCH_UP_TICKS && behind <= JUMP_TICKS;
-        if behind == 0 {
-            lp.starved += 1;
-        }
         if behind > JUMP_TICKS {
-            lp.jumps += 1;
             // joined late, or slept: step to the present undrawn. What starts in the jump is dropped, but an effect
             // already playing is still told to stop, or it would play on for ever
             for _ in 0..behind {
