@@ -116,9 +116,10 @@ fn run_down(left: f64, dt: f64) -> f64 {
     if left - dt > 1e-6 { left - dt } else { 0.0 }
 }
 
-/// A whole amount as JS `String(n)` writes it.
+/// An amount as a whole number: the damage system deals fractions, a player reads whole points.
 fn text(v: f64) -> String {
-    if v == v.trunc() && v.abs() < 1e15 {
+    let v = js_round(v);
+    if v.abs() < 1e15 {
         format!("{}", v as i64)
     } else {
         format!("{v}")
