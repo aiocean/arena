@@ -85,7 +85,7 @@ A fight still draws 8 skills of its school (`POOL_SIZE`). With 43 Thunder and 51
 | Merit Spirit (Ancient God spell) | `meritspirit` | Frost | ward |
 | Body Formation (Celestial Emperor Qing Lin spell) | `bodyformation` | Frost | heal |
 | True and False Domain / True and False Seal | `truefalse` | Frost | area |
-| Ancient God Cauldron | `ancientcauldron` | Thunder | area |
+| Ancient God Cauldron | `ancientcauldron` | Thunder | blink |
 | Eight Extremes Dao | `eightextremes` | Thunder | area |
 | Dao Art Fusion | `daofusion` | Thunder | blast |
 | Dao Transformation Yellow Spring | `daoyellow` | Frost | field |
@@ -100,32 +100,38 @@ Measured with `cargo run --release -p pixfx-duel --example ladder -- --seeds 150
 
 | Match | Before | First draft of the skills | 50 skills | 64 skills | All 72 skills |
 |---|---|---|---|---|---|
-| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) | 94.1% (Thunder 95.6%, Frost 92.7%) | 92.4% (Thunder 91.6%, Frost 93.3%) |
-| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% | 93.0% | 90.6% |
-| balanced vs aggressive script | 91.1% | 85.1% | 85.6% | 85.7% | 84.2% |
-| balanced vs turtle script | 100.0% | 99.9% | 99.9% | 100.0% | 99.4% |
-| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% | 45.1% (Frost 54.9%) | 46.2% (Frost 53.8%) |
+| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) | 94.1% (Thunder 95.6%, Frost 92.7%) | 91.4% (Thunder 89.1%, Frost 93.8%) |
+| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% | 93.0% | 90.3% |
+| balanced vs aggressive script | 91.1% | 85.1% | 85.6% | 85.7% | 83.8% |
+| balanced vs turtle script | 100.0% | 99.9% | 99.9% | 100.0% | 99.0% |
+| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% | 45.1% (Frost 54.9%) | 46.0% (Frost 54.0%) |
 
-The last column is the build in this repository, measured on 150 seeds. The first run of the 72 skills left Thunder at 44.9%; raising the damage of `ancientcauldron` (16), `eightextremes` (11) and `daofusion` (36) brought it to 46.2%. Thunder stays at the low end of the band: the next retrain is the lever.
+The last column is the build in this repository, measured on 150 seeds. The first run of the 72 skills left Thunder at 44.9%; raising the damage of `eightextremes` (11) and `daofusion` (36) and then turning `ancientcauldron` and `starcompass` into real swaps (the policy was never shown a swap, so it rarely lands anything after one) leaves it at 46.0%. Thunder stays at the low end of the band: the next retrain is the lever.
 
 The first draft favoured Frost: its new skills (`yellowspring`, `soulbanner`, `summonrain`, `sevencolor`) land and hurt, while Thunder's (`gather`, `gravity`, `earthsplit`, `mountain`) rarely landed, and a larger pool dilutes Thunder's older, stronger core more. The shipped numbers raise Thunder's weak new skills and trim those four of Frost's; no number of the original 27 spells changed.
 
-## Techniques the duel approximates
+## Techniques with a rule of their own, and those the duel approximates
 
-Eight techniques name a mechanic the duel has no rule for. Each is a skill of the existing kinds that keeps its role, not its mechanism, so a bot still reads it by kind and numbers:
+Two techniques name a mechanic that the duel now has, as a flag on an existing kind; a bot still reads each skill by kind and numbers, so the 354 inputs and the 30 acts are unchanged:
+
+| Technique | Skill | Rule |
+|---|---|---|
+| Ancient God Cauldron | `ancientcauldron` | `swap`: a blink that trades places with the foe wherever it stands |
+| Star Compass | `starcompass` | `swap`, quicker and cheaper |
+| Life Destruction Spirit Summoning | `spiritsummon` | `blood`: pays 20 life at the cast's start (never the last point); each point adds `BLOOD_POWER` (3%) to the blow |
+
+Six more name a mechanic the duel does not have; each is a skill of the existing kinds that keeps its role:
 
 | Technique | Skill | The mechanic it stands in for | What the skill does instead |
 |---|---|---|---|
-| Ancient God Cauldron | `ancientcauldron` | swaps the two fighters' positions | an area that pulls the foe in to the caster |
-| Star Compass | `starcompass` | swaps positions | a short blink |
-| Dao Art Fusion | `daofusion` | fuses abilities | one heavy, slow, shocking blast |
+| Dao Art Fusion | `daofusion` | fuses abilities | one heavy, slow, shocking blast; the duel's evolving pairs (`data::evolves`) already fuse two skills into one at x1.5 |
 | Eight Extremes Dao | `eightextremes` | eight Dao paths at once | four burning strikes in sequence |
 | Dao Transformation Yellow Spring | `daoyellow` | an independent reincarnation cycle | a chilling field |
 | Condensed Spring Soul | `springsoul` | a hundred million souls fused into one | a chilling dart |
 | Star Soul Extraction | `starsoul` | pulls a planet's soul out | rage steal at close range |
-| Life Destruction Spirit Summoning | `spiritsummon` | summoned allies that trade life for power | two burning waves of strikes |
+| Ghost Summoning, Billion Soul Banner and the fields above | `ghostsummon`, `soulbanner`, `daoyellow` | summoned allies | a field the foe stands in: the duel's summoned thing |
 
-A true swap, an ally that fights beside the caster, or life spent for power would change what a bot senses or can do (`docs/bot.md`): that needs a retrain and a new season, and it is the owner's call, not part of this table.
+An ally that fights beside the caster would change what a bot senses (`docs/bot.md`): that needs a retrain and a new season, and it is the owner's call.
 
 ## Techniques with no skill
 

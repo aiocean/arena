@@ -186,6 +186,7 @@ fn spell_json(s: &data::Spell) -> Value {
         ("amount", s.amount),
         ("time", s.time),
         ("spray", s.spray),
+        ("blood", s.blood),
     ] {
         if let Some(v) = v {
             put(k, json!(v));
@@ -201,6 +202,7 @@ fn spell_json(s: &data::Spell) -> Value {
         ("seals", s.seals),
         ("reflect", s.reflect),
         ("feet", s.feet),
+        ("swap", s.swap),
     ] {
         if v {
             put(k, json!(true));
@@ -349,6 +351,7 @@ fn rarity_traits_luck_and_payoffs_are_ported() -> Result<(), String> {
     }
     assert_eq!(data::RAGE, num(&f["constants"]["RAGE"]));
     assert_eq!(data::STALE, num(&f["constants"]["STALE"]));
+    assert_eq!(data::BLOOD_POWER, num(&f["constants"]["BLOOD_POWER"]));
     assert_eq!(data::POOL_SIZE as f64, num(&f["constants"]["POOL_SIZE"]));
     let fr = data::FRAMES;
     let frames = json!({

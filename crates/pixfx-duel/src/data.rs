@@ -301,6 +301,9 @@ pub fn fits(t: Trait, name: &str) -> bool {
     }
 }
 
+/// Power a skill gains for each point of life its caster spends on it (`Spell::blood`).
+pub const BLOOD_POWER: f64 = 0.03;
+
 /// An evolved skill is this many times as strong.
 pub const EVOLVED: f64 = 1.5;
 
@@ -681,6 +684,9 @@ pub struct Spell {
     pub time: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub spray: Option<f64>,
+    /// Life the caster spends to cast it (never its last point): each point adds `BLOOD_POWER` to the blow's power.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub blood: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub shock: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
@@ -699,6 +705,9 @@ pub struct Spell {
     pub reflect: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub feet: bool,
+    /// A blink that trades places with the foe instead of moving to a point.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
+    pub swap: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub counter: Option<Counter>,
 }
@@ -740,6 +749,7 @@ const BASE: Spell = Spell {
     amount: None,
     time: None,
     spray: None,
+    blood: None,
     shock: false,
     chill: false,
     dive: false,
@@ -749,6 +759,7 @@ const BASE: Spell = Spell {
     seals: false,
     reflect: false,
     feet: false,
+    swap: false,
     counter: None,
 };
 
@@ -2218,23 +2229,17 @@ static SPELLS: [Spell; 99] = [
         silence: Some(0.8),
         ..BASE
     },
-    // Thunder: Ancient God Cauldron: Swaps places: a cauldron drags the foe in to where the caster stands and strikes it there.
+    // Thunder: Ancient God Cauldron: Swaps places with the foe, wherever it stands.
     Spell {
         name: "ancientcauldron",
-        kind: Kind::Zone,
-        blow: Some(Magic),
+        kind: Kind::Blink,
         fx: Some("arcane/vortex-ring"),
-        cost: 32.0,
-        windup: 0.3,
-        recover: 0.35,
-        cooldown: 5.0,
-        damage: Some(16.0),
-        impact: Some(0.4),
-        radius: Some(14.0),
-        notice: Some(0.1),
-        pull: Some(70.0),
-        reach: Some(60.0),
-        pull_until: Some(0.7),
+        swap: true,
+        cost: 30.0,
+        windup: 0.2,
+        recover: 0.3,
+        cooldown: 4.5,
+        distance: Some(40.0),
         ..BASE
     },
     // Thunder: Eight Extremes Dao: Eight Dao paths fall on the foe one after another, four strikes that burn.
@@ -2323,7 +2328,7 @@ static SPELLS: [Spell; 99] = [
         steal_rage: Some(1.0),
         ..BASE
     },
-    // Frost: Life Destruction Spirit Summoning: Spirits of destroyed life arrive in two waves on the foe and burn it.
+    // Frost: Life Destruction Spirit Summoning: Spends 20 of the caster's life to call spirits down in two waves that burn the foe, each stronger for the life paid.
     Spell {
         name: "spiritsummon",
         kind: Kind::Zone,
@@ -2333,25 +2338,27 @@ static SPELLS: [Spell; 99] = [
         windup: 0.4,
         recover: 0.3,
         cooldown: 4.5,
-        damage: Some(12.0),
+        damage: Some(14.0),
         impact: Some(0.3),
         radius: Some(12.0),
         notice: Some(0.0),
         strikes: Some(2.0),
         every: Some(0.4),
         burn: true,
+        blood: Some(20.0),
         ..BASE
     },
-    // Frost: Star Compass: The compass turns and the caster stands elsewhere: a short step through the stars.
+    // Frost: Star Compass: The compass turns and the caster and the foe trade places, quicker and cheaper than the cauldron.
     Spell {
         name: "starcompass",
         kind: Kind::Blink,
         fx: Some("explosions/puff-burst"),
-        cost: 16.0,
-        windup: 0.06,
-        recover: 0.1,
-        cooldown: 1.6,
-        distance: Some(44.0),
+        swap: true,
+        cost: 18.0,
+        windup: 0.1,
+        recover: 0.2,
+        cooldown: 2.5,
+        distance: Some(40.0),
         ..BASE
     },
 ];

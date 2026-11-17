@@ -4,8 +4,9 @@
 
 use crate::bar::{has_trait, slot_of, spend};
 use crate::data::{
-    BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, KNOCKBACK, Kind, LUCKY, Luck,
-    RING, Spell, Status, TRAITS, Trait, WARD, block_chance, payoff, school, spell, tint,
+    BLOOD_POWER, BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, KNOCKBACK, Kind,
+    LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance, payoff, school, spell,
+    tint,
 };
 use crate::fighter::{Act, Burning, Phase, Slot, State, Told};
 use crate::out::{How, Note, Out, PlayOpts, Stop};
@@ -154,6 +155,16 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
     if let Some(at) = at {
         spend(state, me, at);
     }
+    // life spent on a skill is paid at its start, never down to the last point, and strengthens its blow
+    let power = match sp.blood {
+        Some(blood) => {
+            let f = &mut state.fighters[me];
+            let spent = js_min(blood, js_max(f.hp - 1.0, 0.0));
+            f.hp -= spent;
+            power * (1.0 + BLOOD_POWER * spent)
+        }
+        None => power,
+    };
     let mut act = Act {
         spell: name,
         phase: Phase::Windup,
@@ -627,11 +638,18 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
         Kind::Blink => {
             let fx = sp.fx.unwrap_or("");
             cast(state, me, fx, mx, g - mair, PlayOpts::default());
-            let to = clamp(
-                act.target.unwrap_or(f64::NAN),
-                state.left + mspec.half_width,
-                state.right - mspec.half_width,
-            );
+            // a swap trades places with the foe; any other blink goes to its target
+            let to = if sp.swap {
+                let at = state.fighters[foe].body.x;
+                state.fighters[foe].body.x = mx;
+                at
+            } else {
+                clamp(
+                    act.target.unwrap_or(f64::NAN),
+                    state.left + mspec.half_width,
+                    state.right - mspec.half_width,
+                )
+            };
             state.fighters[me].body.x = to;
             cast(state, me, fx, to, g - mair, PlayOpts::default());
         }

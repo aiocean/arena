@@ -1675,7 +1675,7 @@
   [
    "heavy",
    "ancientcauldron",
-   true
+   false
   ],
   [
    "heavy",
@@ -4395,20 +4395,14 @@
    "silence": 0.8
   },
   "ancientcauldron": {
-   "kind": "zone",
-   "type": "magic",
+   "kind": "blink",
    "fx": "arcane/vortex-ring",
-   "cost": 32,
-   "windup": 0.3,
-   "recover": 0.35,
-   "cooldown": 5,
-   "damage": 16,
-   "impact": 0.4,
-   "radius": 14,
-   "notice": 0.1,
-   "pull": 70,
-   "reach": 60,
-   "pullUntil": 0.7
+   "cost": 30,
+   "windup": 0.2,
+   "recover": 0.3,
+   "cooldown": 4.5,
+   "distance": 40,
+   "swap": true
   },
   "eightextremes": {
    "kind": "zone",
@@ -4489,22 +4483,24 @@
    "windup": 0.4,
    "recover": 0.3,
    "cooldown": 4.5,
-   "damage": 12,
+   "damage": 14,
    "impact": 0.3,
    "radius": 12,
    "notice": 0,
    "strikes": 2,
    "every": 0.4,
-   "burn": true
+   "burn": true,
+   "blood": 20
   },
   "starcompass": {
    "kind": "blink",
    "fx": "explosions/puff-burst",
-   "cost": 16,
-   "windup": 0.06,
-   "recover": 0.1,
-   "cooldown": 1.6,
-   "distance": 44
+   "cost": 18,
+   "windup": 0.1,
+   "recover": 0.2,
+   "cooldown": 2.5,
+   "distance": 40,
+   "swap": true
   }
  },
  "schools": {
@@ -5224,6 +5220,7 @@
    "rare",
    "epic",
    "legendary"
-  ]
+  ],
+  "BLOOD_POWER": 0.03
  }
 }

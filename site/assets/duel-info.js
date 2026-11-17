@@ -89,7 +89,7 @@ export const SPELL_INFO = {
   warprint: { name: "War Spirit Print", does: "A seal of war stamped on the foe at close range: a heavy blow that breaks its defence." },
   earthescape: { name: "Earth Escape", does: "Sinks into the ground and comes out a few steps away." },
   celestialslaughter: { name: "Celestial Slaughter Art", does: "A bolt of slaughter intent, slow to gather and heavy." },
-  ancientcauldron: { name: "Ancient God Cauldron", does: "Swaps places: a cauldron drags the foe in to where the caster stands and strikes it there." },
+  ancientcauldron: { name: "Ancient God Cauldron", does: "Swaps places with the foe, wherever it stands." },
   eightextremes: { name: "Eight Extremes Dao", does: "Eight Dao paths fall on the foe one after another, four strikes that burn." },
   daofusion: { name: "Dao Art Fusion", does: "Treasures, abilities and rules fused into one blow: slow to gather, heavy, and it shocks." },
   ghostsummon: { name: "Ghost Summoning", does: "Ghosts rise round the foe and drag it in while they cut it." },
@@ -102,8 +102,8 @@ export const SPELL_INFO = {
   daoyellow: { name: "Dao Transformation Yellow Spring", does: "A reincarnation cycle forms over the foe: a cold field that chills whoever stands in it for three seconds." },
   springsoul: { name: "Condensed Spring Soul", does: "A hundred million souls condensed into one dart that chills what it hits." },
   starsoul: { name: "Star Soul Extraction", does: "Pulls the soul out of the foe at close range: steals a point of rage." },
-  spiritsummon: { name: "Life Destruction Spirit Summoning", does: "Spirits of destroyed life arrive in two waves on the foe and burn it." },
-  starcompass: { name: "Star Compass", does: "The compass turns and the caster stands elsewhere: a short step through the stars." },
+  spiritsummon: { name: "Life Destruction Spirit Summoning", does: "Spends 20 of your life (never your last point) to call spirits down in two waves that burn the foe; each point paid makes them stronger." },
+  starcompass: { name: "Star Compass", does: "You and the foe trade places: quicker and cheaper than the cauldron." },
 };
 
 /** What each trait does, in a line, read from the rules' `TRAITS` once the engine has loaded. */

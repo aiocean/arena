@@ -35,7 +35,7 @@ cooldown, a reach, a damage, and two timings:
 - **windup**: from the cast until the blow comes out;
 - **recover**: after the blow, before the fighter can act again.
 
-Areas and blinks can be aimed (`docs/bot.md` gives where each aim lands). Everything else aims at the foe.
+Areas and blinks can be aimed (`docs/bot.md` gives where each aim lands; a swap blink, which trades places with the foe, ignores its aim). Everything else aims at the foe. A skill that spends life (`blood`) pays it when the cast begins, never down to the last point, and each point paid adds 3% to its power (`BLOOD_POWER`).
 
 ## The bar
 
@@ -135,7 +135,7 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | War Spirit Print (`warprint`) | blast | 32 | A seal of war stamped on the foe at close range: a heavy blow that breaks its defence. |
 | Earth Escape (`earthescape`) | blink | 14 | Sinks into the ground and comes out a few steps away. |
 | Celestial Slaughter Art (`celestialslaughter`) | bolt | 36 | A bolt of slaughter intent, slow to gather and heavy. |
-| Ancient God Cauldron (`ancientcauldron`) | area | 32 | Swaps places: a cauldron drags the foe in to where the caster stands and strikes it there. |
+| Ancient God Cauldron (`ancientcauldron`) | blink | 30 | Swaps places with the foe, wherever it stands (a swap blink ignores its aim). |
 | Eight Extremes Dao (`eightextremes`) | area | 40 | Eight Dao paths fall on the foe one after another, four strikes that burn. |
 | Dao Art Fusion (`daofusion`) | blast | 46 | Treasures, abilities and rules fused into one blow: slow to gather, heavy, and it shocks. |
 
@@ -181,5 +181,5 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | Dao Transformation Yellow Spring (`daoyellow`) | field | 42 | A reincarnation cycle forms over the foe: a cold field that chills whoever stands in it for three seconds. |
 | Condensed Spring Soul (`springsoul`) | bolt | 26 | A hundred million souls condensed into one dart that chills what it hits. |
 | Star Soul Extraction (`starsoul`) | blast | 30 | Pulls the soul out of the foe at close range: steals a point of rage. |
-| Life Destruction Spirit Summoning (`spiritsummon`) | area | 36 | Spirits of destroyed life arrive in two waves on the foe and burn it. |
-| Star Compass (`starcompass`) | blink | 16 | The compass turns and the caster stands elsewhere: a short step through the stars. |
+| Life Destruction Spirit Summoning (`spiritsummon`) | area | 36 | Spends 20 of the caster's life (never its last point) to call spirits down in two waves that burn the foe; each point paid adds 3% to the blows' power. |
+| Star Compass (`starcompass`) | blink | 18 | The caster and the foe trade places: quicker and cheaper than the cauldron. |

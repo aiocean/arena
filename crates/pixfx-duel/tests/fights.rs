@@ -5,7 +5,9 @@ mod common;
 
 use common::{all_effects, always, caster, config, fight, idle, loops, on_bar, run};
 use pixfx_duel::bar::skill_bar;
-use pixfx_duel::data::{LUCKY, Luck, Rarity, STALE, TRAITS, Trait, school, slot_power, spell};
+use pixfx_duel::data::{
+    BLOOD_POWER, LUCKY, Luck, Rarity, STALE, TRAITS, Trait, school, slot_power, spell,
+};
 use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::{Act, Burning, Phase, Slot};
 use pixfx_duel::out::Out;
@@ -812,4 +814,58 @@ fn the_hex_shields_dome_stands_on_the_casters_feet() {
     });
     let (y, feet) = at.unwrap_or((f64::NAN, 0.0));
     assert_eq!(y, feet);
+}
+
+#[test]
+fn a_swap_blink_trades_places_with_the_foe_wherever_it_stands() {
+    for (index, name) in [(0, "ancientcauldron"), (1, "starcompass")] {
+        let mut duel = cast_once(
+            3,
+            index,
+            name,
+            held(name, Rarity::Common, Vec::new(), false),
+        );
+        let (me0, foe0) = (
+            duel.state.fighters[index].body.x,
+            duel.state.fighters[1 - index].body.x,
+        );
+        let swapped = steps_until(&mut duel, 120, |d, _| {
+            (d.state.fighters[index].body.x - foe0).abs() < 0.5
+                && (d.state.fighters[1 - index].body.x - me0).abs() < 0.5
+        });
+        assert!(
+            swapped,
+            "{name}: the caster should stand where the foe was and the foe where the caster was"
+        );
+    }
+}
+
+#[test]
+fn life_spent_on_a_skill_is_paid_at_its_start_strengthens_its_blow_and_never_takes_the_last_point()
+{
+    let paid = |hp: f64| {
+        let mut duel = cast_once(
+            4,
+            0,
+            "spiritsummon",
+            held("spiritsummon", Rarity::Common, Vec::new(), false),
+        );
+        duel.state.fighters[0].hp = hp;
+        let mut shot = None;
+        steps_until(&mut duel, 240, |d, _| {
+            shot = d.state.shots.first().map(|s| s.power);
+            shot.is_some()
+        });
+        (duel.state.fighters[0].hp, shot.unwrap_or(0.0))
+    };
+    let (hp, full) = paid(100.0);
+    assert_eq!(hp, 80.0, "20 life paid");
+    let (hp, low) = paid(8.0);
+    assert_eq!(hp, 1.0, "never the last point");
+    // the same cast, the same dice: the blow differs only by the life paid (20 against 7)
+    let want = (1.0 + BLOOD_POWER * 20.0) / (1.0 + BLOOD_POWER * 7.0);
+    assert!(
+        (full / low - want).abs() < 1e-9,
+        "{full} / {low} should be {want}"
+    );
 }
