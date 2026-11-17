@@ -31,7 +31,7 @@ import arena_duel as pd
 env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker threads
 env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
 env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
-obs, mask = env.observe()                  # float32[n, 354], bool[n, 30]
+obs, mask = env.observe()                  # float32[n, 305], bool[n, 27]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 ```
 
@@ -131,12 +131,12 @@ house AI with your model's logits and fails.
 
 ## Bring your own model (ONNX)
 
-Any model that maps the 354 inputs to the 30 acts' logits can be a bot, whatever its size or shape, trained with
-any library. Export it to ONNX: input float32 `[1, 354]`, output float32 `[1, 30]` (opset 17 with PyTorch's legacy
+Any model that maps the 305 inputs to the 27 acts' logits can be a bot, whatever its size or shape, trained with
+any library. Export it to ONNX: input float32 `[1, 305]`, output float32 `[1, 27]` (opset 17 with PyTorch's legacy
 exporter is what tract reads best). `export.py` does it for the trainer's network; for your own model:
 
 ```python
-torch.onnx.export(model, (torch.zeros(1, 354),), "mine.onnx", opset_version=17, dynamo=False)
+torch.onnx.export(model, (torch.zeros(1, 305),), "mine.onnx", opset_version=17, dynamo=False)
 ```
 
 Build it into a bot module, then run the submission checks on it:

@@ -10,7 +10,7 @@ fn runner(body: &str) -> Runner {
     let text = format!(
         r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 1)
+  (func (export "arena_abi") (result i32) i32.const 2)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -32,10 +32,10 @@ fn memory_lasts_across_calls_and_the_input_is_written() {
     // count calls at address 0; answer the count plus the mask byte of act 2 (1) read from the input
     let r = runner(
         "(i32.store (i32.const 0) (i32.add (i32.load (i32.const 0)) (i32.const 1)))
-         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 2442)))",
+         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 2246)))",
     );
     let Ok(mut bot) = r.instance() else { return };
-    assert_eq!(bot.abi(), Ok(1));
+    assert_eq!(bot.abi(), Ok(2));
     assert_eq!(bot.decide(&OBS0, &LEGAL, 0.5), Ok(2));
     assert_eq!(bot.start(9), Ok(()));
     assert_eq!(

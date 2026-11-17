@@ -14,7 +14,7 @@ use tract_onnx::prelude::*;
 /// The house AI the arena ships, as ONNX.
 pub const HOUSE: &[u8] = include_bytes!("../../arena-duel/weights/policy.onnx");
 
-/// A loaded, optimised ONNX policy: the observation, float32 `[1, 354]`, to the acts' logits, `[1, 30]` or `[30]`.
+/// A loaded, optimised ONNX policy: the observation, float32 `[1, 305]`, to the acts' logits, `[1, 27]` or `[27]`.
 /// Cheap to clone; many seats share one.
 #[derive(Clone)]
 pub struct Onnx(Arc<TypedRunnableModel<TypedModel>>);

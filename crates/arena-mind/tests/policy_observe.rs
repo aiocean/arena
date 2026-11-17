@@ -7,7 +7,7 @@ use arena_mind::*;
 use common::*;
 
 fn slots() -> Vec<Option<usize>> {
-    vec![Some(0), None, Some(2), Some(1), Some(3), None, Some(6)]
+    vec![Some(0), None, Some(2), Some(1), Some(3), Some(6)]
 }
 
 fn bolt_at(x: f64) -> Threat {
@@ -137,20 +137,19 @@ fn threats_past_the_fourth_nearest_are_dropped_and_missing_ones_are_zero() {
 }
 
 // The documented layout (`observe.rs`'s header): me 18, foe 38, threats 4 x 12, slots 7 x 35, tag 5.
-const MY_WINDUP: usize = 15;
-const MY_RECOVER: usize = 16;
-const MY_LEFT: usize = 17;
-const FOE_LEFT: usize = 18 + 26;
-const FOE_SPAN: usize = 18 + 27;
-const FOE_ULTIMATE: usize = 18 + 30;
-const SLOTS_AT: usize = 18 + 38 + 4 * 12;
-const SLOT: usize = 35;
-const SLOT_STUN: usize = 22;
-const SLOT_CHILL: usize = 28;
+const MY_WINDUP: usize = 14;
+const MY_RECOVER: usize = 15;
+const MY_LEFT: usize = 16;
+const FOE_LEFT: usize = 17 + 26;
+const FOE_SPAN: usize = 17 + 27;
+const SLOTS_AT: usize = 17 + 37 + 4 * 12;
+const SLOT: usize = 33;
+const SLOT_STUN: usize = 21;
+const SLOT_CHILL: usize = 27;
 
 #[test]
 fn obs_is_the_documented_sum() {
-    assert_eq!(OBS, 18 + 38 + 4 * 12 + 7 * 35 + TAG);
+    assert_eq!(OBS, 17 + 37 + 4 * 12 + 6 * 33 + TAG);
 }
 
 #[test]
@@ -173,8 +172,6 @@ fn the_foes_seconds_left_fall_as_its_windup_runs() {
         v(&late, FOE_LEFT)
     );
     assert!((v(&early, FOE_SPAN) - 0.2).abs() < 1e-6);
-    // the old ultimate flag stays, always 0
-    assert_eq!(v(&early, FOE_ULTIMATE), 0.0);
 }
 
 #[test]

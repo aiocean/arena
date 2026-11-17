@@ -279,8 +279,8 @@ impl VecEnv {
         })
     }
 
-    /// Hand every worker a model as `id`, for `policy` opponents: an ONNX policy's bytes (input float32 `[1, 354]`,
-    /// output the 30 acts' logits).
+    /// Hand every worker a model as `id`, for `policy` opponents: an ONNX policy's bytes (input float32 `[1, 305]`,
+    /// output the 27 acts' logits).
     fn set_model(&self, id: u32, data: Vec<u8>) -> PyResult<()> {
         let model = Model::load(&data).map_err(PyValueError::new_err)?;
         for (tx, _, _) in &self.workers {

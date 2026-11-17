@@ -74,8 +74,7 @@ T, is a fighter's height, 240 of the arena's pixels.
 A fighter's three bar slots show one of its loadout's actives each (only those cast by hand: a skill a trigger
 casts never shows). A cast empties its slot, which refills from the other actives after 1.5 to 2.5 s; a skill ready
 and uncast for 6 s leaves for another (`STALE`). The bar's old tiers, traits, lucky casts and evolving pairs are off
-(design 2). So a bot has six castable slots: the three basics and the three bar slots (the policy's seventh slot,
-the old ultimate's, is always empty until the next bot ABI drops it).
+(design 2). So a bot has six castable slots: the three basics and the three bar slots.
 
 A skill's cooldown is its **stored uses** (`arena_calc::charge`): one, or more with a support that stores them; a
 cast spends one and they come back one at a time.

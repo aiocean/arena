@@ -130,18 +130,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
     ];
     let mut mirrors = Vec::new();
+    let mut all = Vec::new();
     for (name, a, b, mirror) in &rows {
         let r = match_up(a.as_ref(), b.as_ref(), &m);
         print_row(name, &r);
         export_row(&run, name, &m, &r);
         if *mirror {
             mirrors.push((*name, r));
+        } else {
+            all.push((*name, r));
         }
     }
     println!("\nmirrors: the win column is seat 0's share of the rounds in the seat 0 column");
     println!(
         "looks are drawn apart from seats (each seed fought in both looks, `ladder::looks_of`):"
     );
+    for (name, r) in &all {
+        if !mirrors.iter().any(|(n, _)| n == name) {
+            println!(
+                "  {name:<36} as Thunder {:.1}%, as Frost {:.1}%",
+                100.0 * r.as_look(0),
+                100.0 * r.as_look(1)
+            );
+        }
+    }
     for (name, r) in &mirrors {
         let all = f64::from((r.by_look[0] + r.by_look[1]).max(1));
         println!(

@@ -2,7 +2,7 @@
 //!
 //! `cargo run -p arena-bot --example onnx -- MODEL.onnx BOT.wasm`
 //!
-//! The model takes the observation, float32 `[1, 354]`, and gives the 30 acts' logits (`docs/bot.md`). Building
+//! The model takes the observation, float32 `[1, 305]`, and gives the 27 acts' logits (`docs/bot.md`). Building
 //! needs the repo's toolchain, which has the `wasm32-unknown-unknown` target.
 
 use std::path::{Path, PathBuf};

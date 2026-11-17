@@ -49,6 +49,9 @@ pub struct Record {
     /// Rounds won by each look (Thunder, Frost), whoever fought in it: the looks are drawn apart from the seats
     /// (`looks_of`), so in a mirror this tells the art's edge from a seat's.
     pub by_look: [u32; 2],
+    /// Rounds the first contestant won and lost in each look (Thunder, Frost).
+    pub won_as: [u32; 2],
+    pub lost_as: [u32; 2],
 }
 
 /// The looks of seed `seed`'s fights, seat 0's then seat 1's: swapped every other seed, so that neither seat keeps
@@ -127,6 +130,15 @@ impl Record {
     }
 
     /// The share it won in seat `i`.
+    /// The first contestant's share of the rounds it fought in look `i` (0 Thunder, 1 Frost).
+    pub fn as_look(&self, i: usize) -> f64 {
+        let (w, l) = (
+            self.won_as.get(i).copied().unwrap_or(0),
+            self.lost_as.get(i).copied().unwrap_or(0),
+        );
+        share(w, w + l)
+    }
+
     pub fn as_seat(&self, i: usize) -> f64 {
         let (w, l) = (
             self.won.get(i).copied().unwrap_or(0),
@@ -444,6 +456,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             for (seat, look) in looks.iter().enumerate() {
                 r.by_look[usize::from(*look == Look::Frost)] += duel.state().wins[seat];
             }
+            let mine = usize::from(looks[corner] == Look::Frost);
+            r.won_as[mine] += duel.state().wins[corner];
+            r.lost_as[mine] += duel.state().wins[1 - corner];
         }
     }
     let t = tally.borrow();

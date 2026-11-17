@@ -10,8 +10,8 @@ number in `crates/arena-duel/src/data.rs` and in the damage system, `crates/aren
 measured from the sprite sheets, `crates/arena-duel/src/frames_data.rs`, so a redrawn clip too, the bar), what a bot sees and does (`docs/bot.md`) and the
 house AI may still change, and a change may mean a bot needs retraining. There are no season tags.
 
-What a bot depends on, and what a later season would freeze: the rules; the 354 inputs, the 30 acts, the legality
-rules and the timing; the bot ABI (`arena-bot-1`), the module features it accepts and its budgets (`docs/bot.md`,
+What a bot depends on, and what a later season would freeze: the rules; the 305 inputs, the 27 acts, the legality
+rules and the timing; the bot ABI (`arena-bot-2`), the module features it accepts and its budgets (`docs/bot.md`,
 "The bot module"). The model inside a bot is never part of it: any size, any shape, retrained at will.
 
 ## What a player submits
@@ -37,7 +37,7 @@ A bot module enters the season only if:
 1. it is admitted: a valid module of the accepted features, no imports, the exports with their signatures, within
    size and memory (`arena_bot::admit` names what is wrong). The arena writes the fuel counter into it; that module is
    the bot from then on, and its SHA-256 is its identity;
-2. it answers: `arena_abi()` is 1, and 32 fixed decisions from real fights, played twice in fresh instances, give the
+2. it answers: `arena_abi()` is 2, and 32 fixed decisions from real fights, played twice in fresh instances, give the
    same acts both times within fuel;
 3. it is good enough to be worth a slot (below).
 

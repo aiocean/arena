@@ -8,7 +8,7 @@ use common::*;
 
 /// The kit's slots: slash, nothing, blink, bolt, icicle, nothing, prison.
 fn slotted(mut s: Sense) -> Sense {
-    s.slots = vec![Some(0), None, Some(2), Some(1), Some(3), None, Some(6)];
+    s.slots = vec![Some(0), None, Some(2), Some(1), Some(3), Some(6)];
     s
 }
 
@@ -80,7 +80,7 @@ fn only_areas_and_blinks_take_ahead_or_behind() {
     let kit = kit();
     let s = slotted(sense(1.0, me(40.0), foe(150.0)));
     let l = legal(&s, &kit);
-    for (slot, aims) in [(0, false), (2, true), (3, false), (4, true), (6, true)] {
+    for (slot, aims) in [(0, false), (2, true), (3, false), (4, true), (5, true)] {
         assert!(
             l[Act::Cast {
                 slot,

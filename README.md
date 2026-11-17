@@ -30,7 +30,7 @@ cd .. && cargo run -p arena-bot --example onnx -- train/mine.onnx mine.wasm   # 
 ```
 
 [docs/training.md](docs/training.md) explains each step and what to change to make the bot your own; any model that
-exports to ONNX (354 inputs, 30 logits) works, at any size its fuel allows (`--width`, `--hidden`, `--blocks`).
+exports to ONNX (305 inputs, 27 logits) works, at any size its fuel allows (`--width`, `--hidden`, `--blocks`).
 
 ## Test it before you submit
 
@@ -63,7 +63,7 @@ above.
 | Doc | For |
 |---|---|
 | [docs/rules.md](docs/rules.md) | How a fight works: loadouts, skills, the bar, resources, blows through the damage system, units, frame data, rounds. |
-| [docs/bot.md](docs/bot.md) | What a bot sees (354 numbers), what it can do (30 acts), when it decides, the bot module. |
+| [docs/bot.md](docs/bot.md) | What a bot sees (305 numbers), what it can do (27 acts), when it decides, the bot module. |
 | [docs/training.md](docs/training.md) | How to train a bot: setup, the environment, reward, opponents, export, measuring it. |
 | [docs/tournament.md](docs/tournament.md) | The test season, what a player submits, how it is checked, how matches are played and ranked. |
 | [docs/roadmap.md](docs/roadmap.md) | What the player kit and the tournament still need, in order. |

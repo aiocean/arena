@@ -4,9 +4,9 @@ What a bot sees, what it can do, when it decides, and the file a player submits.
 `crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/arena-duel/src/seat.rs` and
 `crates/arena-bot`.
 
-## What it sees: 354 numbers
+## What it sees: 305 numbers
 
-Each decision the bot gets `OBS` = 354 floats, in a frame where the foe is always ahead (positive x), so the same bot
+Each decision the bot gets `OBS` = 305 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
 unless a scale is given. Lengths are in the world's pixels (the page's), `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
 sees the same numbers whatever the arena's pixel size, and the pixels below are the world's too.
@@ -18,15 +18,15 @@ moment it shows (`arena-mind/src/view.rs`).
 
 | Range | Count | What |
 |---|---|---|
-| 0..18 | 18 | **Me.** Distance to the wall behind and the wall ahead (over the arena's width), height (over the ceiling), facing the foe, hp / 100 (hp is a percentage of full life, so this reads 0..1), qi / 100, 0 (the old rage), flying, hover (over the ceiling), speed toward the foe / 200, then flags: can act, silenced, sealed, barrier up, ward up (indexes 0..15). Winding up, recovering, seconds left in that phase (15..18). |
-| 18..56 | 38 | **Foe.** Distance (over the width), height, flying, hp / 100, qi / 100 (18..23). What it does: idle, moving toward me, moving away, guarding, meditating, flying (23..29). Winding up, recovering (29..31). The kind of skill it uses, one-hot over 12 kinds (31..43). How far into its phase as a share (43), seconds left (44), the phase's span (45), the skill's reach / 100 (46), damage / 50 (47), 0 (48, the old ultimate flag); 29..49 are zero when it uses no skill. Out for, open in, frozen, shocked, barrier, the share of its skills ready, my seeker out (49..56). |
-| 56..104 | 4 x 12 | **Threats** in flight, nearest first, zero when absent: present, shape (projectile, area, seeker, field, barrage), distance ahead / 100, height / 50, speed toward me / 200, lands in, size / 50, damage / 50. |
-| 104..349 | 7 x 35 | **Slots**, zero when empty: the three basics, the three bar slots, and a seventh always empty (the old ultimate's). Each: present, ready, kind (12), cost / 50, damage x power / 50, reach / 100, windup, recover, radius / 50, 0 (the old ultimate flag) (+0..+21); then what it inflicts (+21..+35): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3, burn's share of attack a second x 5, chill stacks a hit adds now over the most it holds, slow per chill stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4, share of attack per shock twitch x 10, pull / 100, 0 (the old rage stolen). |
-| 349..354 | 5 | **Tag.** Its look (Thunder, Frost: its art, so its body's boxes; the slots that held the old schools) and its style (aggressive, balanced, defensive), one-hot. Never its seat: everything is seen from its side, and a seat would only let a policy play one seat better than the other. Looks are drawn apart from seats, so a fighter meets both looks in both seats. |
+| 0..17 | 17 | **Me.** Distance to the wall behind and the wall ahead (over the arena's width), height (over the ceiling), facing the foe, hp / 100 (hp is a percentage of full life, so this reads 0..1), qi / 100, flying, hover (over the ceiling), speed toward the foe / 200, then flags: can act, silenced, sealed, barrier up, ward up (indexes 0..14). Winding up, recovering, seconds left in that phase (14..17). |
+| 17..54 | 37 | **Foe.** Distance (over the width), height, flying, hp / 100, qi / 100 (17..22). What it does: idle, moving toward me, moving away, guarding, meditating, flying (22..28). Winding up, recovering (28..30). The kind of skill it uses, one-hot over 12 kinds (30..42). How far into its phase as a share (42), seconds left (43), the phase's span (44), the skill's reach / 100 (45), damage / 50 (46); 28..47 are zero when it uses no skill. Out for, open in, frozen, shocked, barrier, the share of its skills ready, my seeker out (47..54). |
+| 54..102 | 4 x 12 | **Threats** in flight, nearest first, zero when absent: present, shape (projectile, area, seeker, field, barrage), distance ahead / 100, height / 50, speed toward me / 200, lands in, size / 50, damage / 50. |
+| 102..300 | 6 x 33 | **Slots**, zero when empty: the three basics, the three bar slots. Each: present, ready, kind (12), cost / 50, damage x power / 50, reach / 100, windup, recover, radius / 50 (+0..+20); then what it inflicts (+20..+33): freeze s, stun s, silence s / 2, defence-down s / 5, defence lost (share), burn s / 3, burn's share of attack a second x 5, chill stacks a hit adds now over the most it holds, slow per chill stack x 4, shock stacks a hit adds now over the most it holds, hold per shock twitch x 4, share of attack per shock twitch x 10, pull / 100. |
+| 300..305 | 5 | **Tag.** Its look (Thunder, Frost: its art, so its body's boxes; the slots that held the old schools) and its style (aggressive, balanced, defensive), one-hot. Never its seat: everything is seen from its side, and a seat would only let a policy play one seat better than the other. Looks are drawn apart from seats, so a fighter meets both looks in both seats. |
 
 The 12 skill kinds, in order: melee, dive, dash, blast, bolt, seeker, area, field, heal, ward, barrier, blink.
 
-**The damage system in these slots.** The rules play by the damage system (`docs/rules.md`), but the 354 numbers keep
+**The damage system in these slots.** The rules play by the damage system (`docs/rules.md`), but the 305 numbers keep
 their shape, so a bot of the old rules still runs: what the new state means is mapped onto the slots that fit it and
 the rest reads 0 (design `docs/specs/2026-11-17-damage-system-design.md`, 16, lists what needs slots of its own).
 
@@ -37,8 +37,8 @@ the rest reads 0 (design `docs/specs/2026-11-17-damage-system-design.md`, 16, li
   stun, knockdown or jolt, silence s a lost soul; defence-down s and defence lost are sunder (metal); burn s and burn's
   rate are the burn (fire); the chill slots are soak (water) and the slow is bind (wood); the shock slots are jolt
   (thunder).
-- There is no ultimate and no rage any more (`docs/rules.md`, "Loadouts"): their places above are always 0, and the
-  seventh slot always empty, until the next ABI drops them.
+- There is no ultimate and no rage (`docs/rules.md`, "Loadouts"). ABI 2 dropped their places: the old rage, the
+  ultimate flags, rage stolen and the ultimate's slot. A bot of ABI 1 (354 inputs, 30 acts) is refused.
 
 A skill is known by its kind and its numbers, never its name, so a bot reads a skill the bar has just drawn the same
 way as one it has seen a thousand times.
@@ -49,9 +49,9 @@ the sense, the resources besides qi, the ailments stacked on either fighter, and
 traps and mines. The two corners
 see the same kinds of numbers, so neither side knows more.
 
-## What it can do: 30 acts
+## What it can do: 27 acts
 
-`ACTIONS` = 30, each at a fixed index:
+`ACTIONS` = 27, each at a fixed index:
 
 | Index | Act |
 |---|---|
@@ -64,7 +64,7 @@ see the same kinds of numbers, so neither side knows more.
 | 6 | fly high (to 0.6 of the ceiling) |
 | 7 | land |
 | 8 | meditate |
-| 9 + 3 x slot + aim | cast the skill in `slot` (0..7) with `aim` 0, 1 or 2 |
+| 9 + 3 x slot + aim | cast the skill in `slot` (0..6) with `aim` 0, 1 or 2 |
 
 Where an aim lands:
 
@@ -104,7 +104,7 @@ another: the arena measures decisions, not reflexes.
 
 One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
 of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
-`[1, 354]`, output the 30 acts' logits, float32 `[1, 30]`. One command builds it into a module with the `bots/onnx`
+`[1, 305]`, output the 27 acts' logits, float32 `[1, 27]`. One command builds it into a module with the `bots/onnx`
 template ("Bring your own model" in `docs/training.md`):
 
 ```
@@ -117,14 +117,14 @@ seat's draw `u`. A bot that wants to always play its best act trains its logits 
 
 ## The bot module
 
-A WebAssembly module of the ABI `arena-bot-1` (`crates/arena-bot`; the design and its reasons:
+A WebAssembly module of the ABI `arena-bot-2` (`crates/arena-bot`; the design and its reasons:
 `docs/specs/2026-11-16-arena-wasm-bots-design.md`). It **imports nothing** and exports:
 
 | Export | Signature | What |
 |---|---|---|
 | `memory` | memory | its linear memory |
-| `arena_abi` | `() -> i32` | returns `1` |
-| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 354 inputs as `f32` LE, then the 30 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
+| `arena_abi` | `() -> i32` | returns `2` |
+| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 305 inputs as `f32` LE, then the 27 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
 | `arena_start` | `(seed: i32)` | a new fight of the match; `seed` is the bot's own dice for it |
 | `arena_round` | `()` | a new round, the first included |
 | `arena_decide` | `(u: f32) -> i32` | the act, 0..30, for the decision the buffer holds; `u` is the seat's draw in [0, 1) |

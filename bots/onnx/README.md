@@ -1,8 +1,8 @@
 # onnx-bot
 
-A bot module of the `arena-bot-1` ABI (`docs/bot.md`, "The bot module") that runs an ONNX model with
-[tract](https://github.com/sonos/tract). The model takes the observation, float32 `[1, 354]`, and gives the 30 acts'
-logits, float32 `[1, 30]`; the bot samples the act from the legal ones with the arena's draw, as the shipped bot does.
+A bot module of the `arena-bot-2` ABI (`docs/bot.md`, "The bot module") that runs an ONNX model with
+[tract](https://github.com/sonos/tract). The model takes the observation, float32 `[1, 305]`, and gives the 27 acts'
+logits, float32 `[1, 27]`; the bot samples the act from the legal ones with the arena's draw, as the shipped bot does.
 
 ```sh
 cargo run -p arena-bot --example onnx -- MODEL.onnx BOT.wasm          # from the repo's root
