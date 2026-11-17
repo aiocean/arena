@@ -1,7 +1,6 @@
-//! The house bot module's fights, pinned (`goldens/house_fight.json`): the module `site/embed.sh` builds from
-//! `weights/policy.onnx` (`site/assets/bots/policy.wasm`), one instance in each corner, seeds 1-3, 60 s at 60 Hz, then
-//! the round, wins and each fighter's hp, qi, rage, x and air. `site/tests/policy.test.js` plays the same fights in the
-//! browser's WebAssembly and checks them against this file, so the tournament's host and the page play the same bits.
+//! The house bot module's fights, pinned (`goldens/house_fight.json`): the module `site/build.sh` builds from
+//! `weights/policy.onnx` (`site/dist/bots/policy.wasm`), one instance in each corner, seeds 1-3, 60 s at 60 Hz, then
+//! the round, wins and each fighter's hp, qi, rage, x and air.
 #![cfg(feature = "host")]
 
 use arena_bot::admit;
@@ -13,7 +12,7 @@ use serde_json::{Value, json};
 
 const MODULE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../site/assets/bots/policy.wasm"
+    "/../../site/dist/bots/policy.wasm"
 );
 const GOLDEN: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -23,7 +22,7 @@ const GOLDEN: &str = concat!(
 #[test]
 fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error>> {
     let bytes = std::fs::read(MODULE)
-        .map_err(|e| format!("{MODULE}: {e}; build it with site/embed.sh (site/build.sh)"))?;
+        .map_err(|e| format!("{MODULE}: {e}; build it with site/build.sh"))?;
     let runner = Runner::new(&admit(&bytes)?).map_err(|e| e.0)?;
     let (left, right) = (runner.decider(), runner.decider());
     let effects: Vec<String> = pixfx_duel::effects::all();
