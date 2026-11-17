@@ -52,8 +52,10 @@ commit="$(git -C "$root" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 dirty=false
 if [[ -n "$(git -C "$root" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then dirty=true; fi
 stamp="$commit"; [[ "$dirty" == true ]] && stamp="$commit+dirty"
+# a page's `"@ARENA_DIRTY@" === "true"` (a script that runs unbuilt too) becomes the boolean itself
 for page in "$here"/*.html; do
-  sed -e "s/@ARENA_COMMIT@/$commit/g" -e "s/@ARENA_DIRTY@/$dirty/g" -e "s/@ARENA_STAMP@/$stamp/g" \
+  sed -e "s/\"@ARENA_DIRTY@\" === \"true\"/$dirty/g" \
+    -e "s/@ARENA_COMMIT@/$commit/g" -e "s/@ARENA_DIRTY@/$dirty/g" -e "s/@ARENA_STAMP@/$stamp/g" \
     "$page" > "$out/$(basename "$page")"
 done
 sed -i.bak "s#\"game/arena_game#\"game/$game/arena_game#g" "$out/index.html" && rm "$out/index.html.bak"
