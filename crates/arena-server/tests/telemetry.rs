@@ -116,3 +116,26 @@ fn a_live_match_reports_its_whole_fight() -> Result<(), String> {
     }
     Ok(())
 }
+
+/// A match stopped from outside (the server shutting down) still ends in telemetry, as `server_stopped`, once.
+#[test]
+fn a_stopped_match_ends_as_server_stopped() -> Result<(), String> {
+    let seen = Seen::default();
+    let subscriber = tracing_subscriber::registry().with(seen.clone());
+    tracing::subscriber::with_default(subscriber, || {
+        let mut m = Match::new(SEED, ["house-a".into(), "house-b".into()]);
+        m.observe("test-stopped");
+        for _ in 0..120 {
+            m.step();
+        }
+        m.stop("server_stopped");
+        // stopping twice, or dropping it after, reports nothing more
+        m.stop("server_stopped");
+        drop(m);
+    });
+    let results = seen.results.lock().map_err(|e| e.to_string())?.clone();
+    if results != ["server_stopped"] {
+        return Err(format!("one match.end, server_stopped: {results:?}"));
+    }
+    Ok(())
+}

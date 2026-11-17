@@ -108,6 +108,14 @@ impl Match {
         self.observer = Some(Observer::start(&self.duel, match_id, corners));
     }
 
+    /// Stop the match before it ends (the server shutting down): its observer reports `match.end` with `result`
+    /// (`"server_stopped"`) instead of leaving the match with no end, or "abandoned". A match already over is left be.
+    pub fn stop(&mut self, result: &str) {
+        if let Some(o) = self.observer.take() {
+            o.stop(&self.duel, result);
+        }
+    }
+
     /// Fighting ticks elapsed so far.
     pub fn tick(&self) -> u32 {
         self.tick

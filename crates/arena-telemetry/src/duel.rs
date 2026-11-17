@@ -315,20 +315,27 @@ impl Observer {
     /// The match is over: emits `match.end` with its result. `cut` when it was stopped before anyone won it (a time
     /// or tick limit).
     pub fn end(mut self, duel: &Duel, cut: bool) {
-        self.finish(duel.state(), cut);
+        self.finish(duel.state(), cut, None);
     }
 
-    fn finish(&mut self, s: &State, cut: bool) {
+    /// The match was stopped from outside before it ended (the server shutting down: `"server_stopped"`): emits
+    /// `match.end` with `result` and `cut`, and the fight as it stood.
+    pub fn stop(mut self, duel: &Duel, result: &str) {
+        self.finish(duel.state(), true, Some(result));
+    }
+
+    fn finish(&mut self, s: &State, cut: bool, stopped: Option<&str>) {
         if self.ended || !self.on {
             self.ended = true;
             return;
         }
         self.ended = true;
-        let result = match s.wins[0].cmp(&s.wins[1]) {
+        let result = match (stopped, s.wins[0].cmp(&s.wins[1])) {
+            (Some(why), _) => why,
             _ if cut => "cut",
-            std::cmp::Ordering::Greater => "seat0",
-            std::cmp::Ordering::Less => "seat1",
-            std::cmp::Ordering::Equal => "draw",
+            (None, std::cmp::Ordering::Greater) => "seat0",
+            (None, std::cmp::Ordering::Less) => "seat1",
+            (None, std::cmp::Ordering::Equal) => "draw",
         };
         let leader = match s.wins[0].cmp(&s.wins[1]) {
             std::cmp::Ordering::Greater => self.seats[0].as_str(),
