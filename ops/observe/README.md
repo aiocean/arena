@@ -77,6 +77,7 @@ sides will be `match_id` and the viewer's session id.
 | `arena-server` | the live match server: its matches and its health |
 | `arena-bot` | the bot host (wasmtime): think time, fuel, faults (filed under this name whichever process hosts the bot) |
 | `arena-ladder` | the sim, balance and ladder runs |
+| `arena-watchdog` | the watchdog's check results, stream `arena_alerts` (Alerts, below) |
 
 Log streams (OpenObserve type `logs`). Every row has `_timestamp`, `body` (the event's name), `severity`,
 `service_name`, `service_version`, `vcs_revision` (the commit), `host_name`, `trace_id` and `span_id` (the match's
@@ -112,7 +113,7 @@ Open https://arena-obs.aiocean.io, log in with the root user's email and passwor
 |---|---|
 | Arena: live matches | matches in progress, played, mean length and rounds; matches per hour, results (seat0, seat1, cut, abandoned), match length, rounds per match, the latest 50 matches |
 | Arena: game events | casts per skill, damage per skill (dots by cause) and per kind, hits by how, blows stopped by how, ailments laid, units spawned / acted / hurt / killed, KOs per round, events per minute |
-| Arena: server health | step time (buckets; mean and most per minute), publish time, how far behind the wall clock, errors and warnings per hour, relay subscription changes, panics, server starts, the latest errors |
+| Arena: server health | step time (buckets; mean and most per minute), publish time, how far behind the wall clock, errors and warnings per hour, relay subscription changes, panics, server starts, the latest errors; the watchdog's alerts (each check's latest result, failures over time) |
 | Arena: balance | the latest balance run (keystones, gems, supports: win, damage a game) and ladder run (seat win rates), sim wins by seat |
 | Arena: bots | think time p50 and p95, think and fuel buckets, fuel per instance, faults by kind and call, forfeits |
 
@@ -130,9 +131,71 @@ cargo run -p arena-telemetry --example dashboards -- --from ops/observe/dashboar
 `--push`: change it in the example. A panel that names a field the stream has never had (`watched`, a panic's `reason`)
 fails until one arrives, so those fields are left to Logs.
 
-There are no alerts yet: OpenObserve sends them to a destination (email or a webhook) and none is set up. With one,
-the two to add are errors per hour in `arena_server` above zero, and no `match.start` from `arena-server` in ten
-minutes.
+## Alerts
+
+OpenObserve sends its own alerts only to a destination (email or a webhook), and none is set up. Until one is, a
+watchdog on the kiosk does the checking: `crates/arena-telemetry/examples/watchdog.rs`, run every five minutes by the
+launchd job `io.aiocean.arena-watchdog` (`ops/observe/io.aiocean.arena-watchdog.plist`). Each run:
+
+- writes one row a check to the stream `arena_alerts` (`check`, `status` ok / fail / unknown, `ok`, `value`,
+  `threshold`, `message`, `flipped`, `silenced`; `service_name` = `arena-watchdog`);
+- appends one line to `~/Library/Logs/game-factory/arena-alerts.log` (the failing checks and why; the job's own
+  stderr is `arena-watchdog.log` beside it);
+- raises a macOS notification for each check that has just turned from ok to failing (best-effort; the last state of
+  each is kept in `~/services/arena/observe/watchdog-state.json`, so a check failing for an hour notifies once).
+
+It always exits 0. When the store is down only `telemetry` fails and the store's checks are `unknown` (they keep
+their last state); nothing reaches `arena_alerts` then, so look in the log file. The windows count back from the run.
+
+| Check | Fails when | Means | Where to look |
+|---|---|---|---|
+| `telemetry` | OpenObserve does not answer a query | the store is down, so every other check is blind | `docker compose -f ops/observe/compose.yaml ps`, the log file |
+| `live_match_start` | no `match.start` from `arena-server` in 600 s | the live server is down or stuck between matches | `launchctl print gui/$(id -u)/io.aiocean.arena-live`, `~/Library/Logs/game-factory/arena-live.log` |
+| `live_snapshot` | the newest live `snapshot` is older than 120 s | no match is being fought (one is written a second of fight) | as above; Arena: live matches |
+| `server_errors` | over 20 ERROR / WARN rows in `arena_server` in 15 min (a deploy's restart makes about ten) | the server or the relay is in trouble | Arena: server health, Latest errors and warnings |
+| `server_panics` | any `panic` row in `arena_server` in 15 min | the server panicked | Logs, stream `arena_server`, `body = 'panic'` (`reason`, `location`) |
+| `missed_ticks` | over 60 `arena_server_missed_ticks_total` in 15 min | ticks run a whole tick late and are caught up back to back | Arena: server health, Behind the wall clock |
+| `tick_resyncs` | any `arena_server_resyncs_total` in 15 min | the server fell over 250 ms behind and restarted its tick schedule | as above; the plist's `ProcessType` (above) |
+| `tick_late` | `arena_server_late_seconds_max` over 0.1 s in 15 min | a tick landed over 100 ms after its time | as above |
+| `disk_data` | `~/services/arena/observe/data` over 5 GB on disk | the store outgrows the kiosk | `du -sh`, `--streams` (above); lower the retention |
+| `disk_free` | under 10 GB free on its volume | the kiosk's disk is filling | `df -h ~` |
+
+A metric stream that does not exist yet (the server has not sent that counter) passes as "no data". The thresholds
+are constants at the top of `watchdog.rs`, tested there (`cargo test -p arena-telemetry`).
+
+The server-health dashboard shows them: Alerts: each check's latest result (failing first), and Alerts: failures over
+time (failing runs per hour and check; 12 is a whole hour). In SQL:
+
+```sql
+SELECT "check", status, value, message FROM arena_alerts WHERE status = 'fail' ORDER BY _timestamp DESC
+```
+
+**Silence** a check's notifications: put its name on a line of `~/services/arena/observe/watchdog-silence` (`all`
+for every check, `#` for a comment); it is still checked and written, with `silenced` true. Delete the line to
+unsilence. Stop the watchdog altogether with `launchctl bootout gui/$(id -u)/io.aiocean.arena-watchdog`.
+
+**Install or update** it:
+
+```
+cargo build --release -p arena-telemetry --example watchdog
+install -m 755 target/release/examples/watchdog ~/services/arena/observe/watchdog
+cp ops/observe/io.aiocean.arena-watchdog.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/io.aiocean.arena-watchdog.plist   # bootout first if loaded
+launchctl kickstart gui/$(id -u)/io.aiocean.arena-watchdog                                 # a run now
+```
+
+`watchdog --dry` prints the checks and writes nothing. `ARENA_WATCHDOG_DATA`, `_STATE`, `_SILENCE` and `_LOG` move its
+files (tests and trials).
+
+**Once a destination exists**, add in OpenObserve (Alerts, with the destination) the two that should reach the owner
+away from the kiosk, and keep the watchdog for the rest:
+
+- errors in `arena_server` above zero in an hour: `SELECT count(*) AS n FROM arena_server WHERE severity = 'ERROR'`,
+  every 60 minutes over 60 minutes, fire when `n > 0`;
+- no `match.start` from `arena-server` in ten minutes: `SELECT count(*) AS n FROM arena_match WHERE body =
+  'match.start' AND service_name = 'arena-server'`, every 5 minutes over 10 minutes, fire when `n < 1`.
+
+A webhook destination could also take the watchdog's flips (a scheduled alert on `arena_alerts WHERE flipped`).
 
 ## Queries
 

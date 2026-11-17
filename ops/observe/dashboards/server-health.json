@@ -720,6 +720,187 @@
           "queryType": "sql",
           "title": "Latest errors and warnings",
           "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "The watchdog (io.aiocean.arena-watchdog, every five minutes): failing first. What each check means and how to silence it: ops/observe/README.md, Alerts.",
+          "htmlContent": "",
+          "id": "Panel_10",
+          "layout": {
+            "h": 10,
+            "i": 10,
+            "w": 24,
+            "x": 0,
+            "y": 46
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_alerts",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "c",
+                    "color": null,
+                    "column": "c",
+                    "label": "Check"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "status",
+                    "color": null,
+                    "column": "status",
+                    "label": "Status"
+                  },
+                  {
+                    "alias": "value",
+                    "color": null,
+                    "column": "value",
+                    "label": "Value"
+                  },
+                  {
+                    "alias": "threshold",
+                    "color": null,
+                    "column": "threshold",
+                    "label": "Threshold"
+                  },
+                  {
+                    "alias": "message",
+                    "color": null,
+                    "column": "message",
+                    "label": "Message"
+                  },
+                  {
+                    "alias": "t",
+                    "color": null,
+                    "column": "t",
+                    "label": "Checked"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT \"check\" AS c, status, value, threshold, message, to_timestamp_micros(_timestamp) AS t FROM (SELECT *, row_number() OVER (PARTITION BY \"check\" ORDER BY _timestamp DESC) AS rn FROM arena_alerts) a WHERE rn = 1 ORDER BY ok, c",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Alerts: each check's latest result",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Failing runs per hour and check (twelve runs an hour: 12 is failing all hour).",
+          "htmlContent": "",
+          "id": "Panel_11",
+          "layout": {
+            "h": 10,
+            "i": 11,
+            "w": 24,
+            "x": 24,
+            "y": 46
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [
+                  {
+                    "alias": "c",
+                    "color": null,
+                    "column": "c",
+                    "label": "Check"
+                  }
+                ],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_alerts",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Hour"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Failing runs"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp, '1 hour') AS x_axis_1, \"check\" AS c, count(*) AS y_axis_1 FROM arena_alerts WHERE status = 'fail' GROUP BY x_axis_1, c ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Alerts: failures over time",
+          "type": "bar"
         }
       ],
       "tabId": "default"

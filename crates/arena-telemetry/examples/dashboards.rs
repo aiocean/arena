@@ -360,6 +360,20 @@ fn server_health() -> Value {
                  WHERE severity IN ('ERROR', 'WARN') ORDER BY _timestamp DESC LIMIT 50")
                 .columns(&[("Time", "t"), ("Severity", "severity"), ("Event", "body"), ("Match", "match_id"), ("Error", "error")])
                 .size(COLS, 10),
+            panel("table", "Alerts: each check's latest result", "arena_alerts",
+                "SELECT \"check\" AS c, status, value, threshold, message, to_timestamp_micros(_timestamp) AS t \
+                 FROM (SELECT *, row_number() OVER (PARTITION BY \"check\" ORDER BY _timestamp DESC) AS rn \
+                 FROM arena_alerts) a WHERE rn = 1 ORDER BY ok, c")
+                .about("The watchdog (io.aiocean.arena-watchdog, every five minutes): failing first. What each check \
+                        means and how to silence it: ops/observe/README.md, Alerts.")
+                .columns(&[("Check", "c"), ("Status", "status"), ("Value", "value"), ("Threshold", "threshold"),
+                    ("Message", "message"), ("Checked", "t")])
+                .size(COLS / 2, 10),
+            panel("bar", "Alerts: failures over time", "arena_alerts",
+                "SELECT histogram(_timestamp, '1 hour') AS x_axis_1, \"check\" AS c, count(*) AS y_axis_1 \
+                 FROM arena_alerts WHERE status = 'fail' GROUP BY x_axis_1, c ORDER BY x_axis_1")
+                .about("Failing runs per hour and check (twelve runs an hour: 12 is failing all hour).")
+                .axes("Hour", "Failing runs").by("Check", "c").size(COLS / 2, 10),
         ],
     )
 }
