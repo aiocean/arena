@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 pub fn parse(json: &str) -> Result<Layout, LayoutError> {
     let layout: Layout =
         serde_json::from_str(json).map_err(|e| LayoutError::Json(e.to_string()))?;
-    for clip in crate::pick::CLIPS {
+    for clip in arena_duel::pick::CLIPS {
         if layout.clips.get(*clip).is_none_or(Vec::is_empty) {
             return Err(LayoutError::Missing((*clip).to_string()));
         }

@@ -19,6 +19,7 @@ pub mod js;
 pub mod kit;
 pub mod ladder;
 pub mod out;
+pub mod pick;
 pub mod pose;
 pub mod scripted;
 pub mod seat;

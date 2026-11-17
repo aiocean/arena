@@ -20,7 +20,6 @@ pub mod layers;
 pub mod layout;
 pub mod light;
 pub mod live;
-pub mod pick;
 pub use arena_vfx::raster;
 pub mod rules;
 pub mod scene;

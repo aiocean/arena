@@ -60,3 +60,15 @@ pub enum Gather {
     /// Arms crossed (barriers, blinks).
     Cross,
 }
+
+/// How a spell of `kind` is gathered: a summoning raises both arms, a palm draws back, a prayer joins the hands.
+pub fn gather_of(kind: crate::data::Kind) -> Gather {
+    use crate::data::Kind;
+    match kind {
+        Kind::Zone | Kind::Void | Kind::Orb => Gather::Summon,
+        Kind::Dash => Gather::Lunge,
+        Kind::Heal | Kind::Ward => Gather::Prayer,
+        Kind::Barrier | Kind::Blink => Gather::Cross,
+        Kind::Bolt | Kind::Blast | Kind::Melee => Gather::Palm,
+    }
+}

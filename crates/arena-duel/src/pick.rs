@@ -1,8 +1,11 @@
 //! Which frame of which animation a fighter shows: its pose, how long it has held it, and for a wind-up how far
-//! along it is. Pure: the same appearance always picks the same frame.
+//! along it is. Pure: the same appearance always picks the same frame. The game draws that frame; the rules take the
+//! frame's hurtboxes and hitbox from it (`frames`), so a fighter is struck where it is drawn.
 
-use arena_duel::js::js_round;
-use arena_duel::pose::{Gather, Pose};
+use crate::data::spell;
+use crate::fighter::Phase;
+use crate::js::js_round;
+use crate::pose::{Gather, Pose};
 
 /// What picks a fighter's frame: its pose, how long it has held it, whether it is out, and the cast it is gathering.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -25,6 +28,32 @@ pub struct Act {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Windup {
     pub progress: f64,
+}
+
+/// What picks a fighter's frame, from what the rules keep of it: its pose and how long it has held it, whether it is
+/// out, and the cast it is gathering (`spell`, its phase and time in it).
+pub fn appearance(pose: Pose, pose_t: f64, out: bool, act: Option<(&str, Phase, f64)>) -> Appearance {
+    let act = act.and_then(|(name, phase, t)| {
+        let s = spell(name)?;
+        let windup = (phase == Phase::Windup).then(|| Windup {
+            progress: if s.windup > 0.0 {
+                (t / s.windup).min(1.0)
+            } else {
+                1.0
+            },
+        });
+        Some(Act {
+            how: crate::pose::gather_of(s.kind),
+            dive: s.dive,
+            windup,
+        })
+    });
+    Appearance {
+        pose,
+        pose_t,
+        out,
+        act,
+    }
 }
 
 /// Every animation a fighter's sheet must hold.
@@ -145,7 +174,7 @@ pub fn pick(a: &Appearance, fps: f64, len: impl Fn(&str) -> usize) -> Shot {
     let (first, end) = (js_round(p.from * last), js_round(p.to * last));
     let span = (end - first).max(0.0);
     let step = if a.pose_t.is_finite() {
-        (a.pose_t.max(0.0) * fps).floor()
+        libm::floor(a.pose_t.max(0.0) * fps)
     } else {
         0.0
     };

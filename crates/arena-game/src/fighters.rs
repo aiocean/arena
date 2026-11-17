@@ -5,15 +5,13 @@
 use crate::feel::Jolts;
 use crate::layers::Z_FIGHTERS;
 use crate::layout::Layout;
-use crate::pick::{Act, Appearance, Windup, pick};
+use arena_duel::pick::{Appearance, pick};
 use crate::rules::Shown;
 use crate::sheet::{self, Cell};
 use bevy::asset::RenderAssetUsages;
 use bevy::image::{CompressedImageFormats, ImageSampler, ImageType};
 use bevy::prelude::*;
-use arena_duel::data::{Kind, UNIT, spell};
-use arena_duel::fighter::Phase;
-use arena_duel::pose::Gather;
+use arena_duel::data::UNIT;
 use arena_duel::view::FighterView;
 
 /// A fighter's sheet: its layout and its pages as textures.
@@ -99,40 +97,14 @@ fn load(mut commands: Commands, assets: Res<AssetServer>) {
     }
 }
 
-/// How a spell of `kind` is gathered: a summoning raises both arms, a palm draws back, a prayer joins the hands.
-fn gather(kind: Kind) -> Gather {
-    match kind {
-        Kind::Zone | Kind::Void | Kind::Orb => Gather::Summon,
-        Kind::Dash => Gather::Lunge,
-        Kind::Heal | Kind::Ward => Gather::Prayer,
-        Kind::Barrier | Kind::Blink => Gather::Cross,
-        Kind::Bolt | Kind::Blast | Kind::Melee => Gather::Palm,
-    }
-}
-
 /// What picks fighter `f`'s frame.
 pub fn appearance(f: &FighterView) -> Appearance {
-    let act = f.act.and_then(|a| {
-        let s = spell(a.spell)?;
-        let windup = (a.phase == Phase::Windup).then(|| Windup {
-            progress: if s.windup > 0.0 {
-                (a.t / s.windup).min(1.0)
-            } else {
-                1.0
-            },
-        });
-        Some(Act {
-            how: gather(s.kind),
-            dive: s.dive,
-            windup,
-        })
-    });
-    Appearance {
-        pose: f.pose,
-        pose_t: f.pose_t,
-        out: f.hp <= 0.0,
-        act,
-    }
+    arena_duel::pick::appearance(
+        f.pose,
+        f.pose_t,
+        f.hp <= 0.0,
+        f.act.map(|a| (a.spell, a.phase, a.t)),
+    )
 }
 
 /// Where a frame's sprite goes: the centre of its box in world pixels, its feet at (`x`, `feet`), facing `face`
