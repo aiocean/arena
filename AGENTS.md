@@ -22,6 +22,8 @@ resolve it there.
 | hands the env to Python | `crates/arena-duel-py` (translation only) |
 | is a live match on the wire: the postcard frames a server publishes and a page folds, how they lie on MoQ | `crates/arena-link` (pure; `docs/specs/2026-11-17-live-matches-design.md`) |
 | fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`) |
+| sets up a process's logs, traces and metrics, exports them over OTLP, or turns a duel step into telemetry events (the duel observer: it only reads) | `crates/arena-telemetry` (`init`, `duel::Observer`; a process calls `init` once in `main`, game code only uses `tracing` on the `arena::*` targets) |
+| runs or documents the telemetry store (OpenObserve), its streams, its retention and its queries | `ops/observe` (`compose.yaml`, `README.md`) |
 | records a corner's decisions or replays them (the server's side and the page's) | `crates/arena-duel` (`seat::Recorder`, `seat::Replay`) |
 | watches a live match in the game: the subscription, the replay seats, stepping only as far as the frames reach | `crates/arena-game` (`live.rs`, `rules.rs`) |
 | trains, exports or loads a model (ONNX) in Python | `train/` |
