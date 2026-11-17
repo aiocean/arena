@@ -173,6 +173,23 @@ fn strip(im: &RgbaImage, kind: &str) -> (RgbaImage, usize) {
 }
 
 /// The box of the opaque pixels: x0, y0, x1, y1 (exclusive); none for an empty picture.
+/// The middle of the figure's feet in `im` (its box `x0`..`x1`, `y0`..`y1`): the opaque pixels of its bottom rows, a
+/// sixteenth of its height and at least four.
+fn feet_x(im: &RgbaImage, x0: u32, y0: u32, x1: u32, y1: u32) -> i32 {
+    let band = ((y1 - y0) / 16).max(4).min(y1 - y0);
+    let mut lo = u32::MAX;
+    let mut hi = 0;
+    for y in y1 - band..y1 {
+        for x in x0..x1 {
+            if im.get_pixel(x, y)[3] > 0 {
+                lo = lo.min(x);
+                hi = hi.max(x + 1);
+            }
+        }
+    }
+    if lo >= hi { ((x0 + x1) / 2) as i32 } else { ((lo + hi) / 2) as i32 }
+}
+
 fn bbox(im: &RgbaImage) -> Option<(u32, u32, u32, u32)> {
     let mut b: Option<(u32, u32, u32, u32)> = None;
     for (x, y, c) in im.enumerate_pixels() {
@@ -338,7 +355,9 @@ fn main() -> Res<()> {
     }
     let idle = clips.get("stance-idle").and_then(|f| f.first()).ok_or("no stance-idle frames")?;
     let (x0, y0, x1, y1) = bbox(idle).ok_or("the first idle frame is empty")?;
-    let feet = ((x0 + x1) as i32 / 2, y1 as i32);
+    // the feet: the middle of what stands on the bottom rows, not of the whole figure (a blade held forward would
+    // pull the middle of the box ahead of the body, and the sprite would stand behind where the rules put it)
+    let feet = (feet_x(idle, x0, y0, x1, y1), y1 as i32);
 
     // pack: one row per animation, a new page when a row would pass the page's foot
     let mut cells: BTreeMap<String, Vec<serde_json::Value>> = BTreeMap::new();
