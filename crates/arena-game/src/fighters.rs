@@ -109,7 +109,17 @@ fn load(mut commands: Commands, assets: Res<AssetServer>) {
                 return;
             }
         };
-        let pages = pngs.iter().map(|path| assets.load(*path)).collect();
+        // on the page the sheets are lossless WebP, the same pixels a quarter smaller (`site/build.sh`)
+        let pages = pngs
+            .iter()
+            .map(|path| {
+                if cfg!(target_arch = "wasm32") {
+                    assets.load(path.replace(".png", ".webp"))
+                } else {
+                    assets.load(*path)
+                }
+            })
+            .collect();
         looks.push(Look { layout, pages });
     }
     commands.insert_resource(Looks(looks));
