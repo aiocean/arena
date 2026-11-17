@@ -46,3 +46,8 @@ name = "query"
 [[test]]
 name = "observer"
 required-features = ["duel"]
+
+[[example]]
+name = "watchdog"
+# its threshold and state tests run with `cargo test -p arena-telemetry`
+test = true
