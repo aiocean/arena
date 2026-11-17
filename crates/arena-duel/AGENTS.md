@@ -70,7 +70,8 @@ Each tick the two fighters take their turns with who goes first alternating (`du
 
 - `tests/goldens/` pins what the rules produce: `event_hashes.json` (every command and event of 120 s of seeds
   1-20), `first_mind.json` (the first mind's first 600 choices of seeds 1-5) and `arenas.json` (each seed's two
-  loadouts and opening bars). A change that alters fights fails them; when the change is meant, delete the files it
+  loadouts and opening bars), and `frame_sprite.txt` (each skill's windup and recover beside its clip's frames,
+  `tests/frame_sprite.rs`; a redrawn clip or a changed timing fails it). A change that alters fights fails them; when the change is meant, delete the files it
   fails and run the tests once to rewrite them. A change in `arena-calc` that alters a blow re-pins them too.
 - `tests/fixtures/js_numbers.json` pins the motions, the looks, the brain's temperament and the constants
   (`tests/data.rs`), one key per number: a deliberate change to a number edits its key there too.

@@ -145,7 +145,10 @@ rule change: run it again, re-pin the duel's goldens, measure with the ladder, a
 `cargo run -p arena-game --example hitbox_review -- <out dir>` draws review shots of real fights stopped on the
 frames that show the boxes. A skill's windup a foe can counter and its recover it can punish are drawn for as long as
 the rules keep them open: a change to a skill's `windup` or `recover` re-checks its clip, and a redrawn clip re-checks
-the numbers.
+the numbers. `crates/arena-duel/tests/frame_sprite.rs` holds it: every wind-up has a frame of its own, and every
+skill's timing in each look is pinned beside its clip's frames with two verdicts, `choppy` (a wind-up under 10 frames
+a second) and `open_short` (the drawn follow-through ends before the rules' recovery does), so a change to one side
+without the other fails it.
 
 ## Spell effects drawn by an image model
 
