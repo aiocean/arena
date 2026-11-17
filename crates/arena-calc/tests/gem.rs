@@ -316,7 +316,8 @@ fn force_shakes_from_fists_palms_and_slams() {
 #[test]
 fn starting_tiers_follow_the_budget() {
     let mut count = [0usize; 4];
-    for g in GEMS {
+    // the top tier is S by the owner's word and priced by hand (a 20 s cooldown the budget's score reads as weak)
+    for g in GEMS.iter().filter(|g| !PEAK.contains(&g.id)) {
         // measurement (design 12.3) may move a tier; it starts at the budget's and stays within a step of it
         let gap = (g.tier as i32 - starting_tier(g) as i32).abs();
         assert!(

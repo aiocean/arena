@@ -689,12 +689,12 @@ mod pool {
         body("timeaura", "Tuế Nguyệt Ý Cảnh", &[Body, Intent, Mid, Aura, Time], &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.5, 0.3, 8.0], "flowingmoon", "TN252", A),
         // ---- 11.8 đỉnh cấp: the former ultimates, actives at the top tier and the top rank, priced as such: a
         // heavy blow, a 20 s cooldown, 60 qi, and one to a loadout (`loadout::FAITH_MAX`) ----
-        rank(with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 60.0, &[(R::Qi, 60.0)], [0.5, 0.8, 20.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 52.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]), FAITH),
         // Night over the arena; the sunrise strikes light no one dodges.
-        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area], &[(E::Fire, 0.5), (E::Light, 0.5)], 34.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area], &[(E::Fire, 0.5), (E::Light, 0.5)], 24.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
         // A ring drawn, tribulations 1 to 8 called, each a different kind.
         rank(with(magic("sukiep", "Tô Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Metal, 0.125), (E::Wood, 0.125), (E::Water, 0.125), (E::Fire, 0.125), (E::Earth, 0.125), (E::Thunder, 0.125), (E::Light, 0.125), (E::Yin, 0.125)], 14.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "CM1303", S), &[Effect::Hits(8.0)]), FAITH),
-        rank(magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 340.0, &[(R::Qi, 60.0)], [0.4, 0.5, 20.0], "daofusion", "TN", S), FAITH),
+        rank(magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 25.0, &[(R::Qi, 60.0)], [0.8, 0.5, 20.0], "daofusion", "TN", S), FAITH),
         // ---- research techniques the design's section 11 leaves out ----
         // Tens of restriction qi made one spear; it grows as it gathers the restriction qi on the ground.
         attack("banspear", "Cấm Khí Trường Thương", &[Attack, Sword, Mid, Line, Strike, Ban], &[(E::Force, 1.0)], 24.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN309", B),
