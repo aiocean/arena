@@ -29,10 +29,10 @@ pub use act::Act;
 use serde::{Deserialize, Serialize};
 
 /// The rules build, and the frames' shape, this link speaks for (2: `Through` carries the server's clock; 3: bodies
-/// sized to the HD figures, strikes ahead of the striker). A page whose rules differ steps a different fight from the same decisions, so
+/// sized to the HD figures, strikes ahead of the striker; 4: hurtboxes and hitboxes frame by frame). A page whose rules differ steps a different fight from the same decisions, so
 /// the server refuses it (and the page reloads itself). Bump this with any change to the rules or to a bot's inputs or
 /// acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 3;
+pub const RULES_VERSION: u32 = 4;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.
