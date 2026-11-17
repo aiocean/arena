@@ -85,7 +85,11 @@ impl Match {
     /// Start a match on `seed` between two house brains named `corners`.
     pub fn new(seed: u32, corners: [String; 2]) -> Match {
         HANDLES.with(|h| h.borrow_mut().clear());
-        let duel = Duel::new(arena_config(seed), [recording_house(), recording_house()]);
+        let duel = Duel::new_with_looks(
+            arena_config(seed),
+            [recording_house(), recording_house()],
+            arena_duel::ladder::looks_of(seed),
+        );
         let handles = HANDLES.with(|h| h.borrow().clone());
         let logs = [Rc::clone(&handles[0]), Rc::clone(&handles[1])];
         Match {
@@ -264,7 +268,11 @@ mod tests {
         let [log0, log1] = logs_from_snapshot(&snap);
         let make0: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log0)) as Box<dyn Seat>);
         let make1: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log1)) as Box<dyn Seat>);
-        let mut replay = Duel::new(arena_config(seed), [make0, make1]);
+        let mut replay = Duel::new_with_looks(
+            arena_config(seed),
+            [make0, make1],
+            arena_duel::ladder::looks_of(seed),
+        );
         for (i, want) in fought.iter().enumerate() {
             replay.step(TICK);
             assert_eq!(&view(replay.state()), want, "wire replay diverged at step {i}");

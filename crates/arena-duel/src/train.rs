@@ -172,7 +172,7 @@ impl Env {
             u: 0.0,
         };
         let mut env = Env {
-            duel: Duel::new(config, seats),
+            duel: Duel::new_with_looks(config, seats, crate::ladder::looks_of(cfg.seed)),
             me,
             limit: cfg.limit,
             wire,

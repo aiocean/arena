@@ -138,7 +138,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             mirrors.push((*name, r));
         }
     }
-    println!("\nmirrors: the win column is seat 0's share of the rounds in the seat 0 column\n");
+    println!("\nmirrors: the win column is seat 0's share of the rounds in the seat 0 column");
+    println!(
+        "looks are drawn apart from seats (each seed fought in both looks, `ladder::looks_of`):"
+    );
+    for (name, r) in &mirrors {
+        let all = f64::from((r.by_look[0] + r.by_look[1]).max(1));
+        println!(
+            "  {name:<36} Thunder won {:.1}% of the rounds, Frost {:.1}%",
+            100.0 * f64::from(r.by_look[0]) / all,
+            100.0 * f64::from(r.by_look[1]) / all
+        );
+    }
+    println!();
     if telemetry {
         for (name, r) in &mirrors {
             print_telemetry(name, r);

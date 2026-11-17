@@ -3,7 +3,7 @@
 //! seat, how long rounds last, whether fights stall, how varied and how aggressive the first contestant plays, and
 //! the distance it keeps; and, for each seat whoever sits in it, what each skill did (telemetry).
 
-use crate::data::spell;
+use crate::data::{Look, spell};
 use crate::duel::{Duel, DuelConfig, TICK};
 use crate::fighter::State;
 use crate::first_mind::FirstMind;
@@ -46,6 +46,19 @@ pub struct Record {
     pub mean_distance: f64,
     /// What each seat (0 left, 1 right) did, whoever sat in it.
     pub seats: [SeatLog; 2],
+    /// Rounds won by each look (Thunder, Frost), whoever fought in it: the looks are drawn apart from the seats
+    /// (`looks_of`), so in a mirror this tells the art's edge from a seat's.
+    pub by_look: [u32; 2],
+}
+
+/// The looks of seed `seed`'s fights, seat 0's then seat 1's: swapped every other seed, so that neither seat keeps
+/// one look's art (its frames and hit boxes) over a match.
+pub fn looks_of(seed: u32) -> [Look; 2] {
+    if seed.is_multiple_of(2) {
+        [Look::Thunder, Look::Frost]
+    } else {
+        [Look::Frost, Look::Thunder]
+    }
 }
 
 /// What one skill of a seat did over a match. Shares of life are of a full life (100 is one life).
@@ -392,7 +405,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                 sky: 384.0,
                 effects: m.effects.clone(),
             };
-            let mut duel = Duel::new(config, seats);
+            // the second way round swaps the looks too: each seed's loadouts are fought in both looks
+            let looks = looks_of(seed + corner as u32);
+            let mut duel = Duel::new_with_looks(config, seats, looks);
             let mut started = duel.state().time;
             let mut round = duel.state().round;
             let mut ended = false;
@@ -426,6 +441,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             }
             r.won[corner] += duel.state().wins[corner];
             r.lost[corner] += duel.state().wins[1 - corner];
+            for (seat, look) in looks.iter().enumerate() {
+                r.by_look[usize::from(*look == Look::Frost)] += duel.state().wins[seat];
+            }
         }
     }
     let t = tally.borrow();

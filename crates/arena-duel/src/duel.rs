@@ -3,7 +3,7 @@
 use crate::act::{advance, begin, break_act, drop_barrier, knock_out, set_meditating, settle};
 use crate::bar::draw;
 use crate::body::{Drive, Motion};
-use crate::data::{BAR, DECOR, FLY, QI_REGEN, ROUND_PAUSE, STALE, spell};
+use crate::data::{BAR, DECOR, FLY, Look, QI_REGEN, ROUND_PAUSE, STALE, spell};
 use crate::fighter::{Fighter, Phase, Slot, State, Told};
 use crate::js::{js_max, js_min};
 use crate::seat::{Brain, MakeSeat, Seat};
@@ -70,8 +70,16 @@ impl Duel {
     /// A new duel with a random legal loadout for each fighter (`loadouts`), each fighter's seat made by `seats` once
     /// both fighters exist, its first round begun.
     pub fn new(config: DuelConfig, seats: [MakeSeat; 2]) -> Duel {
+        Duel::new_with_looks(config, seats, [Look::of_seat(0), Look::of_seat(1)])
+    }
+
+    /// As [`Duel::new`], fighter `i` looking as `looks[i]`: its art, so its frames, its hit boxes and where its hands
+    /// are, and its colours; what the policy reads as who it is (`style::tag`). `new` gives each fighter its seat's
+    /// look; a ladder, the trainer or a server draws looks apart from seats (`ladder::looks_of`), so that neither seat
+    /// keeps one look's art.
+    pub fn new_with_looks(config: DuelConfig, seats: [MakeSeat; 2], looks: [Look; 2]) -> Duel {
         let l = loadouts(config.seed);
-        Duel::build(config, seats, l)
+        Duel::build(config, seats, l, looks)
     }
 
     /// A new duel of the two `loadouts` (seat 0's, seat 1's), each checked (`loadout::check`).
@@ -89,10 +97,20 @@ impl Duel {
         if !errs.is_empty() {
             return Err(errs);
         }
-        Ok(Duel::build(config, seats, loadouts))
+        Ok(Duel::build(
+            config,
+            seats,
+            loadouts,
+            [Look::of_seat(0), Look::of_seat(1)],
+        ))
     }
 
-    fn build(config: DuelConfig, seats: [MakeSeat; 2], loadouts: [Loadout; 2]) -> Duel {
+    fn build(
+        config: DuelConfig,
+        seats: [MakeSeat; 2],
+        loadouts: [Loadout; 2],
+        looks: [Look; 2],
+    ) -> Duel {
         let top = js_min(FLY.top, config.sky);
         let [la, lb] = loadouts;
         let mut state = State::new(
@@ -104,12 +122,14 @@ impl Duel {
             config.effects,
             [Fighter::new(0, la), Fighter::new(1, lb)],
         );
-        for (f, style) in state
+        for ((f, style), look) in state
             .fighters
             .iter_mut()
             .zip(crate::style::draw(config.seed))
+            .zip(looks)
         {
             f.style = style;
+            f.look = look;
         }
         // a skill whose effect is not in the registry is never cast
         let effects = state.effects.clone();
@@ -202,8 +222,7 @@ pub fn tick_schedule() -> Schedule {
             clock,
             between_rounds.run_if(not(fighting)),
             (
-                fields, turn::<0>, turn::<1>, keep_apart, shots, pending, units, wear, knock_outs,
-                hold, flush,
+                fields, turns, keep_apart, shots, pending, units, wear, knock_outs, hold, flush,
             )
                 .chain()
                 .run_if(fighting),
@@ -316,15 +335,25 @@ fn fields(mut state: ResMut<State>) {
     }
 }
 
-/// Fighter `ME`'s turn: its seat hears what happened, thinks, and its fighter does what it chose and moves; then the
-/// damage system's triggers answer what happened.
-fn turn<const ME: usize>(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
+/// Both fighters' turns, the first of them swapping every tick: seat 0 first on an even tick, seat 1 on an odd one.
+/// The fighter who goes first strikes first on a tick both strike, and the one who goes second sees the other's move
+/// before it thinks; swapping gives each seat each edge half the time, so neither seat wins more for being it.
+fn turns(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
     let state = state.as_mut();
-    tell_seats(state, &mut seats);
-    if let Some(choice) = seats.0[ME].think(state, ME, TICK) {
-        apply(state, ME, &choice);
+    let first = (state.ticks % 2) as usize;
+    for me in [first, 1 - first] {
+        turn(state, &mut seats, me);
     }
-    body(state, ME, TICK);
+}
+
+/// Fighter `me`'s turn: its seat hears what happened, thinks, and its fighter does what it chose and moves; then the
+/// damage system's triggers answer what happened.
+fn turn(state: &mut State, seats: &mut Seats, me: usize) {
+    tell_seats(state, seats);
+    if let Some(choice) = seats.0[me].think(state, me, TICK) {
+        apply(state, me, &choice);
+    }
+    body(state, me, TICK);
     run_queue(state);
 }
 

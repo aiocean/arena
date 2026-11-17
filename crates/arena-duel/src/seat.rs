@@ -124,7 +124,13 @@ pub fn policy_mind(state: &State, me: usize, style: Style) -> PolicyMind {
     let skills = f.spells.iter().map(|n| skill_of(n)).collect();
     let t = TEMPERAMENT;
     let seed = state.seed.wrapping_mul(2).wrapping_add(me as u32) ^ 0x9e37_79b9;
-    PolicyMind::new(skills, tag(me, style), t.reaction, t.think, seed)
+    PolicyMind::new(
+        skills,
+        tag(state.fighters[me].look, style),
+        t.reaction,
+        t.think,
+        seed,
+    )
 }
 
 /// Why a bot module's call failed: it trapped or ran out of fuel. It loses the round it happened in.

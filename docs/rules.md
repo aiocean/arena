@@ -10,14 +10,20 @@ numbers only where they explain a mechanic. When a number here and the code disa
 
 - Two fighters on a flat arena with walls, seat 0 on the left and seat 1 on the right. They walk, jump, duck, guard,
   fly and meditate, and cast skills. There are no classes: both start from the same base (3000 life, a 600 energy
-  shield, 100 sense, 100 qi, 400 might, 600 armour, no resistances; design 1). Seat 0 is drawn as Vương Lâm in
-  Thunder's colours and seat 1 as the Seven-Colored Daoist in Frost's, and that is all the two looks are.
+  shield, 100 sense, 100 qi, 400 might, 600 armour, no resistances; design 1). A fighter looks as Vương Lâm in
+  Thunder's colours or as the Seven-Colored Daoist in Frost's: its art, so its frames and the boxes its body and
+  blows have, and nothing else. The ladder, the trainer and the server draw the looks apart from the seats
+  (`ladder::looks_of`): each seed is fought in both looks, so neither seat keeps one look's art.
 - A round ends when one fighter's life reaches 0 (unless a keystone gives it a spare life). A round that passes the
   time limit is **cut**. In training a cut round counts as lost for the learner, so stalling never pays. In the
   ladder a cut ends that fight: it shows in the `cut` column, and its unplayed rounds count neither way.
 - A bot module that traps or runs out of fuel **gives up the round** it happened in (`docs/bot.md`).
 - The simulation runs at 60 ticks a second (`duel::TICK`). A seed decides every roll, so the same seed and the same
   two bots give the same fight on every machine.
+- Each tick both fighters take their turn (their seat thinks, the fighter acts and moves), the first of them
+  swapping every tick: seat 0 first on an even tick, seat 1 on an odd one. Whoever goes first strikes first on a
+  tick both strike, and whoever goes second sees the other's move before it thinks; swapping gives each seat each
+  edge half the time, so in a mirror neither seat wins more for being it (`tests/fair_seats.rs`).
 
 ## Loadouts
 
