@@ -3,7 +3,7 @@
 //! ```text
 //! cargo run --release -p arena-smoke -- [--url https://arena.aiocean.io/] [--out target/arena-smoke]
 //!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 30] [--headful] [--mbps 20]
-//!     [--telemetry-otlp]
+//!     [--profile phone|laptop|desktop] [--telemetry-otlp]
 //! ```
 //!
 //! The checks, each PASS or FAIL:
@@ -15,13 +15,22 @@
 //!   (`frames`), and it is watching the server's match, not fighting on its own (the status line's `live`).
 //! - `hud`: the canvas is painted (many colours, most pixels not the background).
 //! - `weight` (never fails the run): what the first visit downloaded, bytes on the wire by kind and the heaviest
-//!   files and when each finished, and when the last did (`arena_smoke::Weight`). The machine's own timings follow its load; `--mbps N` emulates a visitor's connection (N
-//!   megabits a second down, 40 ms latency), so the seconds follow the bytes.
+//!   files and when each finished, the fighters' sheets and the last (`arena_smoke::Weight`). The machine's own
+//!   timings follow its load; `--mbps N` emulates a visitor's connection (N megabits a second down, 40 ms latency),
+//!   so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //! - `build`: the page's build (`window.__arena.build`, stamped by `site/build.sh`) against the live server's (the
 //!   commit on its newest `match.start` in the telemetry store, read with `ARENA_OTLP_ENDPOINT` and its credentials)
 //!   and their rules builds (`window.__arena.rules`, `window.__arena.live.rules`). It fails only when the rules builds
 //!   differ; other commits on one rules build (a docs-only site deploy) or a build not known is a `WARN` line.
+//! - `fps` (never fails the run): the page's frame rate over ten seconds of the match, from the gaps between painted
+//!   frames (`requestAnimationFrame`): the rate, the median, the 95th percentile and the longest gap.
+//!
+//! `--profile` plays the page as a device (`arena_smoke::Profile`): `phone` (390x844 CSS pixels at pixel ratio 3,
+//! touch, a CPU four times slower, 10 Mbit/s at 150 ms), `laptop` (1366x768, twice slower, 20 Mbit/s), `desktop`
+//! (the default 1280x800, this machine). The whole page as it shows, scrolled through, is `page.png` in `--out`. The
+//! CPU throttle slows the page's own thread; WebGL is drawn by SwiftShader on this machine's CPU, unthrottled, so a
+//! phone's frame rate here is a model of its script, not of its GPU.
 //!
 //! The wait for the game to start is a fixed 30 s (`--wait`), never stretched for a busy machine: a slow start is what
 //! the run is there to see. When the game does not start within it, and only then, the whole run is tried once more
@@ -42,8 +51,8 @@
 //! `~/.cache/arena-smoke`.
 
 use arena_smoke::{
-    Check, Load, Picture, Summary, Weight, changed, ignored_console, ignored_request, paint,
-    redact, stamp,
+    Check, Fps, Load, Picture, Profile, Summary, Weight, changed, ignored_console, ignored_request,
+    paint, redact, stamp,
 };
 use arena_telemetry::target::METRICS;
 use chromiumoxide::cdp::browser_protocol::network::{
@@ -78,6 +87,8 @@ struct Args {
     headful: bool,
     /// A visitor's connection to emulate: megabits a second down, 40 ms latency (none: the machine's own).
     mbps: Option<f64>,
+    /// The device to play the page as (`--profile phone|laptop|desktop`).
+    profile: Profile,
 }
 
 /// The fixed wait for the game to start, seconds.
@@ -92,6 +103,7 @@ fn args() -> Result<Args, String> {
         wait: WAIT,
         headful: false,
         mbps: None,
+        profile: Profile::DESKTOP,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -104,10 +116,15 @@ fn args() -> Result<Args, String> {
             "--wait" => a.wait = value()?.parse().map_err(|e| format!("--wait: {e}"))?,
             "--headful" => a.headful = true,
             "--mbps" => a.mbps = Some(value()?.parse().map_err(|e| format!("--mbps: {e}"))?),
+            "--profile" => {
+                let name = value()?;
+                a.profile = Profile::named(&name)
+                    .ok_or(format!("--profile {name}: phone, laptop or desktop"))?;
+            }
             // read by arena_telemetry::requested
             arena_telemetry::FLAG => {}
             "-h" | "--help" => {
-                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N] [--telemetry-otlp]".into());
+                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N] [--profile phone|laptop|desktop] [--telemetry-otlp]".into());
             }
             other => return Err(format!("unknown argument {other}")),
         }
@@ -435,12 +452,16 @@ async fn smoke(a: &Args) -> Result<(Summary, Vec<u8>), String> {
     } else {
         config.new_headless_mode()
     };
+    let p = &a.profile;
     let config = config
-        .window_size(WIDTH, HEIGHT)
+        .window_size(p.width.max(WIDTH), p.height.max(HEIGHT))
         .viewport(Window {
-            width: WIDTH,
-            height: HEIGHT,
-            ..Window::default()
+            width: p.width,
+            height: p.height,
+            device_scale_factor: Some(p.dpr),
+            emulating_mobile: p.mobile,
+            is_landscape: p.width > p.height,
+            has_touch: p.mobile,
         })
         // WebGL without a GPU (headless), and the relay's HTTP/3 (WebTransport is QUIC)
         .arg("--enable-unsafe-swiftshader")
@@ -474,19 +495,29 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     let own = origin(&a.url);
     let seen = Arc::new(Mutex::new(Seen::default()));
     listen(&page, &seen, &own).await?;
-    if let Some(mbps) = a.mbps {
+    // the connection: --mbps, else the profile's
+    if let Some(mbps) = a.mbps.or(a.profile.mbps) {
         // deprecated for the by-rule commands, which chromiumoxide 0.9 does not have yet
         #[allow(deprecated)]
         let throttle =
             chromiumoxide::cdp::browser_protocol::network::EmulateNetworkConditionsParams::new(
                 false,
-                40.0,
+                a.profile.rtt_ms,
                 mbps * 125_000.0,
                 mbps * 125_000.0,
             );
         page.execute(throttle)
             .await
             .map_err(|e| format!("emulating {mbps} Mbit/s: {e}"))?;
+    }
+    if a.profile.cpu > 1.0 {
+        page.execute(
+            chromiumoxide::cdp::browser_protocol::emulation::SetCpuThrottlingRateParams::new(
+                a.profile.cpu,
+            ),
+        )
+        .await
+        .map_err(|e| format!("a CPU {}x slower: {e}", a.profile.cpu))?;
     }
 
     let mut checks = Vec::new();
@@ -704,13 +735,18 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
 
     let (pa, pb) = (Picture::from_png(&first)?, Picture::from_png(&second)?);
     let painted = paint(&pb);
+    // the canvas as the page lays it out (CSS pixels) and as the game draws it (its backing pixels)
+    let canvas = eval_string(
+        &page,
+        "(() => { const c = document.getElementById('scene'); return c ? \
+         `${c.clientWidth}x${c.clientHeight} CSS px, drawn at ${c.width}x${c.height}, pixel ratio ${devicePixelRatio}` : '' })()",
+    )
+    .await;
     checks.push(Check::new(
         "hud",
         painted.painted(),
         format!(
-            "canvas {}x{}: {} colours, {:.0}% of it off the background",
-            pb.width,
-            pb.height,
+            "canvas {canvas}: {} colours, {:.0}% of it off the background",
             painted.colours,
             painted.off_background * 100.0
         ),
@@ -739,6 +775,25 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         ),
     ));
 
+    // the frame rate over ten seconds of the match, from the gaps between painted frames
+    let gaps = eval_json(
+        &page,
+        "new Promise(done => { const gaps = []; let last = null; const t0 = performance.now(); \
+         const step = t => { if (last !== null) gaps.push(t - last); last = t; \
+         if (t - t0 < 10000) requestAnimationFrame(step); else done(gaps); }; requestAnimationFrame(step); })",
+    )
+    .await;
+    let gaps: Vec<f64> = gaps
+        .as_array()
+        .map(|g| g.iter().filter_map(Value::as_f64).collect())
+        .unwrap_or_default();
+    let fps = Fps::of(&gaps);
+    checks.push(Check::new(
+        "fps",
+        true,
+        fps.as_ref()
+            .map_or("no frames painted".to_string(), Fps::line),
+    ));
     let full = page
         .screenshot(
             ScreenshotParams::builder()
@@ -747,6 +802,39 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         )
         .await
         .map_err(|e| format!("screenshot: {e}"))?;
+    // the whole page as the device shows it, below the window too, without resizing the window (a full-page
+    // capture that resizes it stretches the game, which fills the window's height)
+    let size = eval_json(
+        &page,
+        "({w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight})",
+    )
+    .await;
+    let whole = page
+        .screenshot(
+            ScreenshotParams::builder()
+                .format(CaptureScreenshotFormat::Png)
+                .clip(Viewport {
+                    x: 0.0,
+                    y: 0.0,
+                    width: size
+                        .get("w")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(f64::from(WIDTH)),
+                    height: size
+                        .get("h")
+                        .and_then(Value::as_f64)
+                        .unwrap_or(f64::from(HEIGHT)),
+                    scale: 1.0,
+                })
+                .capture_beyond_viewport(true)
+                .build(),
+        )
+        .await;
+    if let Ok(whole) = whole {
+        let _ = std::fs::create_dir_all(&a.out);
+        let _ = std::fs::write(a.out.join("page.png"), whole);
+    }
+
     let (errors, mut ignored) = {
         let s = lock(&seen);
         (s.errors.clone(), s.ignored.clone())
@@ -798,6 +886,8 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         page_rules,
         server_rules,
         build_warning,
+        profile: a.profile.name.to_string(),
+        fps,
         ..Summary::default()
     };
     Ok((summary, full))

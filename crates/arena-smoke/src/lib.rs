@@ -111,6 +111,10 @@ pub struct Summary {
     pub server_rules: Option<u32>,
     /// A warning that does not fail the run: the page and the server built from different commits on one rules build.
     pub build_warning: Option<String>,
+    /// The device the run played (`Profile`): its name, empty for the default desktop.
+    pub profile: String,
+    /// The page's frame rate over ten seconds of the match, as the browser paints it (`requestAnimationFrame`).
+    pub fps: Option<Fps>,
     /// Why the run was retried, when it was.
     pub retry_reason: Option<String>,
     /// The first attempt, when the run was retried (this summary is the second's).
@@ -132,6 +136,9 @@ pub struct Weight {
     /// The first request to the last response finished (the pictures arrive after the game has started).
     #[serde(default)]
     pub all_loaded_s: Option<f64>,
+    /// The first request to the last fighter sheet's last byte: when the fighters can be drawn.
+    #[serde(default)]
+    pub fighters_in_s: Option<f64>,
 }
 
 impl Weight {
@@ -155,7 +162,13 @@ impl Weight {
             .collect();
         largest.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
         largest.truncate(10);
+        let fighters_in_s = responses
+            .iter()
+            .filter(|r| r.0.contains("/fighters/"))
+            .map(|r| r.3)
+            .reduce(f64::max);
         Weight {
+            fighters_in_s,
             bytes: responses.iter().map(|r| r.2).sum(),
             requests: u32::try_from(responses.len()).unwrap_or(u32::MAX),
             by_kind,
@@ -172,12 +185,112 @@ impl Weight {
             .map(|(k, b, n)| format!("{k} {} ({n})", mb(*b)))
             .collect();
         format!(
-            "{} in {} requests: {}; all loaded {}",
+            "{} in {} requests: {}; fighters in {}, all loaded {}",
             mb(self.bytes),
             self.requests,
             kinds.join(", "),
+            self.fighters_in_s
+                .map_or("never".to_string(), |s| format!("{s:.1} s")),
             self.all_loaded_s
                 .map_or("never".to_string(), |s| format!("{s:.1} s"))
+        )
+    }
+}
+
+/// A device to play the page as: its viewport in CSS pixels, its pixel ratio, a phone's touch and mobile layout, its
+/// CPU as a slowdown of this machine's, and its connection (megabits a second down, round trip in ms).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Profile {
+    pub name: &'static str,
+    pub width: u32,
+    pub height: u32,
+    pub dpr: f64,
+    pub mobile: bool,
+    pub cpu: f64,
+    pub mbps: Option<f64>,
+    pub rtt_ms: f64,
+}
+
+impl Profile {
+    /// The default: a desktop window, this machine's CPU and connection.
+    pub const DESKTOP: Profile = Profile {
+        name: "",
+        width: 1280,
+        height: 800,
+        dpr: 1.0,
+        mobile: false,
+        cpu: 1.0,
+        mbps: None,
+        rtt_ms: 40.0,
+    };
+
+    /// `phone`: a portrait phone (390x844, pixel ratio 3, touch), a CPU four times slower, 10 Mbit/s at 150 ms.
+    /// `laptop`: a low-end laptop (1366x768), a CPU twice slower, 20 Mbit/s at 40 ms.
+    pub fn named(name: &str) -> Option<Profile> {
+        match name {
+            "phone" => Some(Profile {
+                name: "phone",
+                width: 390,
+                height: 844,
+                dpr: 3.0,
+                mobile: true,
+                cpu: 4.0,
+                mbps: Some(10.0),
+                rtt_ms: 150.0,
+            }),
+            "laptop" => Some(Profile {
+                name: "laptop",
+                width: 1366,
+                height: 768,
+                dpr: 1.0,
+                mobile: false,
+                cpu: 2.0,
+                mbps: Some(20.0),
+                rtt_ms: 40.0,
+            }),
+            "desktop" => Some(Profile::DESKTOP),
+            _ => None,
+        }
+    }
+}
+
+/// A frame rate measured from the gaps between painted frames (milliseconds).
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct Fps {
+    pub frames: u32,
+    pub seconds: f64,
+    pub fps: f64,
+    /// The median gap, the 95th percentile and the longest, ms.
+    pub p50_ms: f64,
+    pub p95_ms: f64,
+    pub longest_ms: f64,
+}
+
+impl Fps {
+    /// From the gaps between frames; `None` without any.
+    pub fn of(gaps: &[f64]) -> Option<Fps> {
+        if gaps.is_empty() {
+            return None;
+        }
+        let mut sorted = gaps.to_vec();
+        sorted.sort_by(f64::total_cmp);
+        let at = |q: f64| sorted[((sorted.len() - 1) as f64 * q) as usize];
+        let seconds = gaps.iter().sum::<f64>() / 1000.0;
+        Some(Fps {
+            frames: u32::try_from(gaps.len()).unwrap_or(u32::MAX),
+            seconds,
+            fps: gaps.len() as f64 / seconds.max(1e-9),
+            p50_ms: at(0.5),
+            p95_ms: at(0.95),
+            longest_ms: sorted[sorted.len() - 1],
+        })
+    }
+
+    /// `57.3 fps (median 16.7 ms, p95 25.0 ms, longest 120 ms)`.
+    pub fn line(&self) -> String {
+        format!(
+            "{:.1} fps over {:.0} s (median {:.1} ms, p95 {:.1} ms, longest {:.0} ms)",
+            self.fps, self.seconds, self.p50_ms, self.p95_ms, self.longest_ms
         )
     }
 }
@@ -703,6 +816,40 @@ pub fn write_review(
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    #[test]
+    fn frame_rate_from_the_gaps() -> Result<(), String> {
+        assert_eq!(Fps::of(&[]), None);
+        let mut gaps = vec![16.0; 90];
+        gaps.extend([50.0; 9]);
+        gaps.push(200.0);
+        let f = Fps::of(&gaps).ok_or("no fps")?;
+        assert_eq!(f.frames, 100);
+        assert!((f.seconds - 2.09).abs() < 1e-9, "{f:?}");
+        assert!((f.fps - 100.0 / 2.09).abs() < 1e-9, "{f:?}");
+        assert_eq!((f.p50_ms, f.p95_ms, f.longest_ms), (16.0, 50.0, 200.0));
+        assert!(
+            f.line().starts_with("47.8 fps over 2 s (median 16.0 ms"),
+            "{}",
+            f.line()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn profiles_by_name() {
+        let phone = Profile::named("phone");
+        assert_eq!(
+            phone.as_ref().map(|p| (p.width, p.height, p.cpu, p.mobile)),
+            Some((390, 844, 4.0, true))
+        );
+        assert_eq!(
+            Profile::named("laptop").map(|p| (p.width, p.cpu)),
+            Some((1366, 2.0))
+        );
+        assert_eq!(Profile::named("desktop"), Some(Profile::DESKTOP));
+        assert_eq!(Profile::named("watch"), None);
+    }
 
     #[test]
     fn a_visit_is_weighed_by_kind_heaviest_first() {
