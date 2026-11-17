@@ -434,41 +434,89 @@ fn balance() -> Value {
     )
 }
 
+/// The bot.end rows that carry the runtime and the percentiles (since 2026-11-18).
+const ENDS: &str = "body = 'bot.end' AND runtime IS NOT NULL";
+/// A bot's label: runtime and bot, `onnx/house`.
+const WHO: &str = "concat(runtime, '/', bot)";
+
+/// A per-instance percentile `col` over the range, weighted by each instance's decisions.
+fn weighted(col: &str) -> String {
+    format!("sum({col} * decisions) / sum(decisions)")
+}
+
 fn bots() -> Value {
     let b = "arena_bot";
     let think = "arena_bot_think_seconds";
     dashboard(
         "Arena: bots",
-        "Bot modules in the host (wasmtime): think time, fuel, faults and forfeits.",
+        "Bots as the arena runs them: modules in the host (runtime wasm, wasmtime) and ONNX policies natively \
+         (runtime onnx, tract; the house AI): think time, fuel, decisions, faults and forfeits.",
         "7d",
         vec![
+            panel("table", "Think time by runtime and bot", b, format!(
+                "SELECT {WHO} AS x_axis_1, count(*) AS instances, sum(matches) AS matches, sum(decisions) AS decisions, \
+                 {} AS p50, {} AS p95, {} AS p99, max(think_max_ms) AS most, sum(faults) AS faults \
+                 FROM arena_bot WHERE {ENDS} GROUP BY x_axis_1 ORDER BY x_axis_1",
+                weighted("think_p50_ms"), weighted("think_p95_ms"), weighted("think_p99_ms")))
+                .about("From bot.end: each instance's p50, p95 and p99 in ms, weighted by its decisions; most is the \
+                        slowest decision of any. An instance is one match in the tournament, one ladder row in the ladder.")
+                .columns(&[("Runtime/bot", "x_axis_1"), ("Instances", "instances"), ("Matches", "matches"),
+                    ("Decisions", "decisions"), ("p50 ms", "p50"), ("p95 ms", "p95"), ("p99 ms", "p99"),
+                    ("Most ms", "most"), ("Faults", "faults")])
+                .size(COLS, 8),
+            panel("line", "Think time p95 by runtime and bot", b, format!(
+                "SELECT histogram(_timestamp) AS x_axis_1, {WHO} AS who, {} AS y_axis_1 FROM arena_bot WHERE {ENDS} \
+                 GROUP BY x_axis_1, who ORDER BY x_axis_1", weighted("think_p95_ms")))
+                .about("bot.end's p95, weighted by decisions, ms.")
+                .axes("Time", "p95 ms").by("Runtime/bot", "who").size(COLS / 3, 9),
+            panel("line", "Think time p99 by runtime and bot", b, format!(
+                "SELECT histogram(_timestamp) AS x_axis_1, {WHO} AS who, {} AS y_axis_1 FROM arena_bot WHERE {ENDS} \
+                 GROUP BY x_axis_1, who ORDER BY x_axis_1", weighted("think_p99_ms")))
+                .about("bot.end's p99, weighted by decisions, ms.")
+                .axes("Time", "p99 ms").by("Runtime/bot", "who").size(COLS / 3, 9),
+            panel("bar", "Decisions per match", b, format!(
+                "SELECT {WHO} AS x_axis_1, sum(decisions) / sum(matches) AS y_axis_1 FROM arena_bot \
+                 WHERE {ENDS} AND matches > 0 GROUP BY x_axis_1 ORDER BY x_axis_1"))
+                .about("bot.end: decisions over the fights started on the instances.")
+                .axes("Runtime/bot", "Decisions").size(COLS / 3, 9),
+            panel("line", "Fuel p95 against the cap", b,
+                "SELECT histogram(_timestamp) AS x_axis_1, max(fuel_p95) AS p95, max(fuel_max) AS most, \
+                 max(fuel_cap) AS cap FROM arena_bot WHERE body = 'bot.end' AND runtime = 'wasm' \
+                 GROUP BY x_axis_1 ORDER BY x_axis_1")
+                .about("Modules only (ONNX has no fuel): the highest instance p95 and the most one decision burned, \
+                        against the cap a decision is given (2e7).")
+                .axes("Time", "Fuel").ys(&[("p95", "p95"), ("Most", "most"), ("Cap", "cap")]),
+            panel("table", "Fuel by module", b,
+                "SELECT bot AS x_axis_1, sum(decisions) AS decisions, sum(fuel_p50 * decisions) / sum(decisions) AS p50, \
+                 sum(fuel_p95 * decisions) / sum(decisions) AS p95, max(fuel_max) AS most, max(fuel_cap) AS cap, \
+                 max(fuel_max) / max(fuel_cap) AS share FROM arena_bot WHERE body = 'bot.end' AND runtime = 'wasm' \
+                 GROUP BY x_axis_1 ORDER BY share DESC")
+                .about("Share: the most one decision burned, of the cap.")
+                .columns(&[("Bot", "x_axis_1"), ("Decisions", "decisions"), ("p50", "p50"), ("p95", "p95"),
+                    ("Most", "most"), ("Cap", "cap"), ("Most / cap", "share")]),
             panel("metric", "Think time p50", "arena_bot_think_seconds_bucket", quantile(think, 0.5))
-                .about("The bucket bound it falls under.")
+                .about("Every decision of every runtime, from the metric's buckets: the bucket bound it falls under.")
                 .metrics().axes("", "p50").unit("seconds").size(COLS / 4, 6),
             panel("metric", "Think time p95", "arena_bot_think_seconds_bucket", quantile(think, 0.95))
-                .about("The bucket bound it falls under.")
+                .about("Every decision of every runtime, from the metric's buckets: the bucket bound it falls under.")
                 .metrics().axes("", "p95").unit("seconds").size(COLS / 4, 6),
-            panel("metric", "Mean think (ms)", b,
-                "SELECT avg(think_mean_ms) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'")
-                .about("Over the bot instances that ended (bot.end).")
-                .axes("", "ms").size(COLS / 4, 6),
             panel("metric", "Decisions", b,
                 "SELECT sum(decisions) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'")
                 .axes("", "Decisions").size(COLS / 4, 6),
+            panel("metric", "Faults", b,
+                "SELECT sum(faults) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'")
+                .about("Over the instances that ended (bot.end).")
+                .axes("", "Faults").size(COLS / 4, 6),
             panel("bar", "Think time", "arena_bot_think_seconds_bucket", buckets("arena_bot_think_seconds_bucket", ""))
                 .about("Decisions that took up to each bound, seconds.")
                 .metrics().axes("Seconds", "Decisions"),
             panel("bar", "Fuel a decision", "arena_bot_fuel_bucket", buckets("arena_bot_fuel_bucket", ""))
                 .about("Decisions that burned up to each bound of fuel (the cap is 2e7).")
                 .metrics().axes("Fuel", "Decisions"),
-            panel("line", "Fuel per instance: mean and most", b,
-                "SELECT histogram(_timestamp) AS x_axis_1, avg(fuel_mean) AS mean, max(fuel_most) AS most, \
-                 max(fuel_cap) AS cap FROM arena_bot WHERE body = 'bot.end' GROUP BY x_axis_1 ORDER BY x_axis_1")
-                .ys(&[("Mean", "mean"), ("Most", "most"), ("Cap", "cap")]),
             panel("pie", "Faults by kind", "arena_bot_faults_total", format!(
                 "SELECT kind AS x_axis_1, sum(value) AS y_axis_1 FROM arena_bot_faults_total WHERE {DELTA} \
                  GROUP BY x_axis_1"))
-                .about("trap: the module failed; out_of_fuel: it thought too long.")
+                .about("trap: the module failed; out_of_fuel: it thought too long; error: an ONNX policy failed.")
                 .metrics().axes("Kind", "Faults").size(COLS / 4, 10),
             panel("bar", "Faults by call", "arena_bot_faults_total", format!(
                 "SELECT call AS x_axis_1, kind AS k, sum(value) AS y_axis_1 FROM arena_bot_faults_total WHERE {DELTA} \

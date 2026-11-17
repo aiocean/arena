@@ -7,13 +7,561 @@
     "startTime": 0,
     "type": "relative"
   },
-  "description": "Bot modules in the host (wasmtime): think time, fuel, faults and forfeits.",
+  "description": "Bots as the arena runs them: modules in the host (runtime wasm, wasmtime) and ONNX policies natively (runtime onnx, tract; the house AI): think time, fuel, decisions, faults and forfeits.",
   "owner": "owner@aiocean.io",
   "role": "",
   "tabs": [
     {
       "name": "Default",
       "panels": [
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "From bot.end: each instance's p50, p95 and p99 in ms, weighted by its decisions; most is the slowest decision of any. An instance is one match in the tournament, one ladder row in the ladder.",
+          "htmlContent": "",
+          "id": "Panel_1",
+          "layout": {
+            "h": 8,
+            "i": 1,
+            "w": 48,
+            "x": 0,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Runtime/bot"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "instances",
+                    "color": null,
+                    "column": "instances",
+                    "label": "Instances"
+                  },
+                  {
+                    "alias": "matches",
+                    "color": null,
+                    "column": "matches",
+                    "label": "Matches"
+                  },
+                  {
+                    "alias": "decisions",
+                    "color": null,
+                    "column": "decisions",
+                    "label": "Decisions"
+                  },
+                  {
+                    "alias": "p50",
+                    "color": null,
+                    "column": "p50",
+                    "label": "p50 ms"
+                  },
+                  {
+                    "alias": "p95",
+                    "color": null,
+                    "column": "p95",
+                    "label": "p95 ms"
+                  },
+                  {
+                    "alias": "p99",
+                    "color": null,
+                    "column": "p99",
+                    "label": "p99 ms"
+                  },
+                  {
+                    "alias": "most",
+                    "color": null,
+                    "column": "most",
+                    "label": "Most ms"
+                  },
+                  {
+                    "alias": "faults",
+                    "color": null,
+                    "column": "faults",
+                    "label": "Faults"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT concat(runtime, '/', bot) AS x_axis_1, count(*) AS instances, sum(matches) AS matches, sum(decisions) AS decisions, sum(think_p50_ms * decisions) / sum(decisions) AS p50, sum(think_p95_ms * decisions) / sum(decisions) AS p95, sum(think_p99_ms * decisions) / sum(decisions) AS p99, max(think_max_ms) AS most, sum(faults) AS faults FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time by runtime and bot",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "bot.end's p95, weighted by decisions, ms.",
+          "htmlContent": "",
+          "id": "Panel_2",
+          "layout": {
+            "h": 9,
+            "i": 2,
+            "w": 16,
+            "x": 0,
+            "y": 8
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [
+                  {
+                    "alias": "who",
+                    "color": null,
+                    "column": "who",
+                    "label": "Runtime/bot"
+                  }
+                ],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Time"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "p95 ms"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, concat(runtime, '/', bot) AS who, sum(think_p95_ms * decisions) / sum(decisions) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL GROUP BY x_axis_1, who ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time p95 by runtime and bot",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "bot.end's p99, weighted by decisions, ms.",
+          "htmlContent": "",
+          "id": "Panel_3",
+          "layout": {
+            "h": 9,
+            "i": 3,
+            "w": 16,
+            "x": 16,
+            "y": 8
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [
+                  {
+                    "alias": "who",
+                    "color": null,
+                    "column": "who",
+                    "label": "Runtime/bot"
+                  }
+                ],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Time"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "p99 ms"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, concat(runtime, '/', bot) AS who, sum(think_p99_ms * decisions) / sum(decisions) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL GROUP BY x_axis_1, who ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time p99 by runtime and bot",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "bot.end: decisions over the fights started on the instances.",
+          "htmlContent": "",
+          "id": "Panel_4",
+          "layout": {
+            "h": 9,
+            "i": 4,
+            "w": 16,
+            "x": 32,
+            "y": 8
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Runtime/bot"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Decisions"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT concat(runtime, '/', bot) AS x_axis_1, sum(decisions) / sum(matches) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL AND matches > 0 GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Decisions per match",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Modules only (ONNX has no fuel): the highest instance p95 and the most one decision burned, against the cap a decision is given (2e7).",
+          "htmlContent": "",
+          "id": "Panel_5",
+          "layout": {
+            "h": 9,
+            "i": 5,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Time"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "p95",
+                    "color": null,
+                    "column": "p95",
+                    "label": "p95"
+                  },
+                  {
+                    "alias": "most",
+                    "color": null,
+                    "column": "most",
+                    "label": "Most"
+                  },
+                  {
+                    "alias": "cap",
+                    "color": null,
+                    "column": "cap",
+                    "label": "Cap"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, max(fuel_p95) AS p95, max(fuel_max) AS most, max(fuel_cap) AS cap FROM arena_bot WHERE body = 'bot.end' AND runtime = 'wasm' GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Fuel p95 against the cap",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Share: the most one decision burned, of the cap.",
+          "htmlContent": "",
+          "id": "Panel_6",
+          "layout": {
+            "h": 9,
+            "i": 6,
+            "w": 24,
+            "x": 24,
+            "y": 17
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Bot"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "decisions",
+                    "color": null,
+                    "column": "decisions",
+                    "label": "Decisions"
+                  },
+                  {
+                    "alias": "p50",
+                    "color": null,
+                    "column": "p50",
+                    "label": "p50"
+                  },
+                  {
+                    "alias": "p95",
+                    "color": null,
+                    "column": "p95",
+                    "label": "p95"
+                  },
+                  {
+                    "alias": "most",
+                    "color": null,
+                    "column": "most",
+                    "label": "Most"
+                  },
+                  {
+                    "alias": "cap",
+                    "color": null,
+                    "column": "cap",
+                    "label": "Cap"
+                  },
+                  {
+                    "alias": "share",
+                    "color": null,
+                    "column": "share",
+                    "label": "Most / cap"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT bot AS x_axis_1, sum(decisions) AS decisions, sum(fuel_p50 * decisions) / sum(decisions) AS p50, sum(fuel_p95 * decisions) / sum(decisions) AS p95, max(fuel_max) AS most, max(fuel_cap) AS cap, max(fuel_max) / max(fuel_cap) AS share FROM arena_bot WHERE body = 'bot.end' AND runtime = 'wasm' GROUP BY x_axis_1 ORDER BY share DESC",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Fuel by module",
+          "type": "table"
+        },
         {
           "config": {
             "axis_border_show": false,
@@ -32,15 +580,15 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
-          "description": "The bucket bound it falls under.",
+          "description": "Every decision of every runtime, from the metric's buckets: the bucket bound it falls under.",
           "htmlContent": "",
-          "id": "Panel_1",
+          "id": "Panel_7",
           "layout": {
             "h": 6,
-            "i": 1,
+            "i": 7,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 26
           },
           "markdownContent": "",
           "queries": [
@@ -101,15 +649,15 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
-          "description": "The bucket bound it falls under.",
+          "description": "Every decision of every runtime, from the metric's buckets: the bucket bound it falls under.",
           "htmlContent": "",
-          "id": "Panel_2",
+          "id": "Panel_8",
           "layout": {
             "h": 6,
-            "i": 2,
+            "i": 8,
             "w": 12,
             "x": 12,
-            "y": 0
+            "y": 26
           },
           "markdownContent": "",
           "queries": [
@@ -169,83 +717,15 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
-          "description": "Over the bot instances that ended (bot.end).",
-          "htmlContent": "",
-          "id": "Panel_3",
-          "layout": {
-            "h": 6,
-            "i": 3,
-            "w": 12,
-            "x": 24,
-            "y": 0
-          },
-          "markdownContent": "",
-          "queries": [
-            {
-              "config": {
-                "layer_type": "scatter",
-                "limit": 0.0,
-                "max": 100.0,
-                "min": 0.0,
-                "promql_legend": "",
-                "time_shift": [],
-                "weight_fixed": 1.0
-              },
-              "customQuery": true,
-              "fields": {
-                "breakdown": [],
-                "filter": {
-                  "conditions": [],
-                  "filterType": "group",
-                  "logicalOperator": "AND"
-                },
-                "stream": "arena_bot",
-                "stream_type": "logs",
-                "x": [],
-                "y": [
-                  {
-                    "alias": "y_axis_1",
-                    "color": null,
-                    "column": "y_axis_1",
-                    "label": "ms"
-                  }
-                ],
-                "z": []
-              },
-              "query": "SELECT avg(think_mean_ms) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'",
-              "vrlFunctionQuery": ""
-            }
-          ],
-          "queryType": "sql",
-          "title": "Mean think (ms)",
-          "type": "metric"
-        },
-        {
-          "config": {
-            "axis_border_show": false,
-            "base_map": null,
-            "connect_nulls": true,
-            "decimals": 2.0,
-            "legends_position": null,
-            "map_view": null,
-            "mark_line": [],
-            "no_value_replacement": "",
-            "override_config": [],
-            "show_legends": false,
-            "table_dynamic_columns": false,
-            "table_transpose": false,
-            "wrap_table_cells": false
-          },
-          "customChartContent": "",
           "description": "",
           "htmlContent": "",
-          "id": "Panel_4",
+          "id": "Panel_9",
           "layout": {
             "h": 6,
-            "i": 4,
+            "i": 9,
             "w": 12,
-            "x": 36,
-            "y": 0
+            "x": 24,
+            "y": 26
           },
           "markdownContent": "",
           "queries": [
@@ -305,15 +785,83 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
+          "description": "Over the instances that ended (bot.end).",
+          "htmlContent": "",
+          "id": "Panel_10",
+          "layout": {
+            "h": 6,
+            "i": 10,
+            "w": 12,
+            "x": 36,
+            "y": 26
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Faults"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT sum(faults) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Faults",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
           "description": "Decisions that took up to each bound, seconds.",
           "htmlContent": "",
-          "id": "Panel_5",
+          "id": "Panel_11",
           "layout": {
             "h": 9,
-            "i": 5,
+            "i": 11,
             "w": 24,
             "x": 0,
-            "y": 6
+            "y": 32
           },
           "markdownContent": "",
           "queries": [
@@ -382,13 +930,13 @@
           "customChartContent": "",
           "description": "Decisions that burned up to each bound of fuel (the cap is 2e7).",
           "htmlContent": "",
-          "id": "Panel_6",
+          "id": "Panel_12",
           "layout": {
             "h": 9,
-            "i": 6,
+            "i": 12,
             "w": 24,
             "x": 24,
-            "y": 6
+            "y": 32
           },
           "markdownContent": "",
           "queries": [
@@ -455,102 +1003,15 @@
             "wrap_table_cells": false
           },
           "customChartContent": "",
-          "description": "",
+          "description": "trap: the module failed; out_of_fuel: it thought too long; error: an ONNX policy failed.",
           "htmlContent": "",
-          "id": "Panel_7",
-          "layout": {
-            "h": 9,
-            "i": 7,
-            "w": 24,
-            "x": 0,
-            "y": 15
-          },
-          "markdownContent": "",
-          "queries": [
-            {
-              "config": {
-                "layer_type": "scatter",
-                "limit": 0.0,
-                "max": 100.0,
-                "min": 0.0,
-                "promql_legend": "",
-                "time_shift": [],
-                "weight_fixed": 1.0
-              },
-              "customQuery": true,
-              "fields": {
-                "breakdown": [],
-                "filter": {
-                  "conditions": [],
-                  "filterType": "group",
-                  "logicalOperator": "AND"
-                },
-                "stream": "arena_bot",
-                "stream_type": "logs",
-                "x": [
-                  {
-                    "alias": "x_axis_1",
-                    "color": null,
-                    "column": "x_axis_1",
-                    "label": ""
-                  }
-                ],
-                "y": [
-                  {
-                    "alias": "mean",
-                    "color": null,
-                    "column": "mean",
-                    "label": "Mean"
-                  },
-                  {
-                    "alias": "most",
-                    "color": null,
-                    "column": "most",
-                    "label": "Most"
-                  },
-                  {
-                    "alias": "cap",
-                    "color": null,
-                    "column": "cap",
-                    "label": "Cap"
-                  }
-                ],
-                "z": []
-              },
-              "query": "SELECT histogram(_timestamp) AS x_axis_1, avg(fuel_mean) AS mean, max(fuel_most) AS most, max(fuel_cap) AS cap FROM arena_bot WHERE body = 'bot.end' GROUP BY x_axis_1 ORDER BY x_axis_1",
-              "vrlFunctionQuery": ""
-            }
-          ],
-          "queryType": "sql",
-          "title": "Fuel per instance: mean and most",
-          "type": "line"
-        },
-        {
-          "config": {
-            "axis_border_show": false,
-            "base_map": null,
-            "connect_nulls": true,
-            "decimals": 2.0,
-            "legends_position": null,
-            "map_view": null,
-            "mark_line": [],
-            "no_value_replacement": "",
-            "override_config": [],
-            "show_legends": true,
-            "table_dynamic_columns": false,
-            "table_transpose": false,
-            "wrap_table_cells": false
-          },
-          "customChartContent": "",
-          "description": "trap: the module failed; out_of_fuel: it thought too long.",
-          "htmlContent": "",
-          "id": "Panel_8",
+          "id": "Panel_13",
           "layout": {
             "h": 10,
-            "i": 8,
+            "i": 13,
             "w": 12,
-            "x": 24,
-            "y": 15
+            "x": 0,
+            "y": 41
           },
           "markdownContent": "",
           "queries": [
@@ -619,13 +1080,13 @@
           "customChartContent": "",
           "description": "",
           "htmlContent": "",
-          "id": "Panel_9",
+          "id": "Panel_14",
           "layout": {
             "h": 10,
-            "i": 9,
+            "i": 14,
             "w": 12,
-            "x": 36,
-            "y": 15
+            "x": 12,
+            "y": 41
           },
           "markdownContent": "",
           "queries": [
@@ -701,13 +1162,13 @@
           "customChartContent": "",
           "description": "A seat that gave up: its bot faulted out.",
           "htmlContent": "",
-          "id": "Panel_10",
+          "id": "Panel_15",
           "layout": {
             "h": 10,
-            "i": 10,
+            "i": 15,
             "w": 24,
-            "x": 0,
-            "y": 25
+            "x": 24,
+            "y": 41
           },
           "markdownContent": "",
           "queries": [

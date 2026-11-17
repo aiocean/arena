@@ -75,7 +75,7 @@ sides will be `match_id` and the viewer's session id.
 | service.name | What |
 |---|---|
 | `arena-server` | the live match server: its matches and its health |
-| `arena-bot` | the bot host (wasmtime): think time, fuel, faults (filed under this name whichever process hosts the bot) |
+| `arena-bot` | a bot as the arena runs it, a module in the host (wasmtime, `runtime` wasm) or an ONNX policy natively (tract, `runtime` onnx: the house AI in the ladder): think time, fuel, faults (filed under this name whichever process runs the bot) |
 | `arena-ladder` | the sim, balance and ladder runs |
 | `arena-watchdog` | the watchdog's check results, stream `arena_alerts` (Alerts, below) |
 
@@ -88,7 +88,7 @@ trace), and the event's own fields:
 | `arena_match` | `match.start`, one per seat: `match_id`, `seed`, `seat`, `bot`, `foe`, `actives` (`skill[support+support],…`), `supports`, `keystones`, `root`, `life`, `qi` (the qi bar; null when `qi_uncapped`: Cổ Thần Quyết has no cap), `qi_uncapped`. `round.start`: `round`, `wins_0`, `wins_1`. `round.end`: `winner`, `winner_bot`, `seconds`, `life_0`, `life_1`. `forfeit`: `seat`, `bot`. `match.end`: `result` (seat0, seat1, draw, cut, abandoned, server_stopped, connection_closed), `winner_bot`, `cut`, `rounds`, `wins_0`, `wins_1`, `seconds` (fight time), `ticks`, `wall_seconds`, `bot_0`, `bot_1` |
 | `arena_duel_events` | each with `match_id`, `round`. `cast`: `who`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `basic`, `qi`. `hit`: `by`, `bot`, `skill`, `skill_name`, `tags`, `kinds`, `damage`, `share` (of full life), `how` (plain, counter, punish), `crit`, `launch`, `ranged`, `power`, `ailments` (laid this step), `foe_life`. `stopped`: `by`, `skill`, `how` (guard, barrier, ward, dodge, clash), `chip`. `broken`: `who`, `skill`. `dot` (damage over time, shown every half second (`DOT_SHOWN`), or a curse's strike): `by`, `damage`, `share`, `cause` (burn, bleed, burn+bleed, curse). `heal`, `ward`: `by`, `amount`. `barrier`, `unyielding`: `by`. `ko`: `winner`, `life_0`, `life_1`, `seconds`. `status`: `who`, `status` (guard, meditate, fly, sealed, rooted, no_guard, silenced, barrier, down), `on` (after holding a quarter second). `ailment`: `who`, `ailment`, `stacks`, `before`. `curse`: `who`, `curse`, `on`. `unit.spawn`: `unit`, `by`, `kind`, `skill`, `x`; `unit.act`, `unit.hurt`, `unit.die`. `snapshot` (each fighter, each second of fight time): `who`, `bot`, `time`, `life`, `life_max`, `shield`, `sense`, `qi`, `x`, `y`, `ailments` (`burn:2,soak:1`), `curses`, `units`, `act` |
 | `arena_server` | the server's own: `new match`, `match done` (`ticks`, `groups`, `frames`, `wall_seconds`, `missed`, `resyncs`), `match stopped` (`why`: server_stopped, connection_closed), `stopping` (`signal`), `tick schedule resynced` (`late_ms`), `relay subscription` (`watched`: the relay took or dropped the track; the server sees the relay, not each viewer), `server stopped` (`error`), `panic` (`reason`, `location`), moq warnings |
-| `arena_bot` | `bot.fault`: `call` (start, round, decide), `kind` (trap, out_of_fuel), `fault`, `faults` (the first ten of an instance, then every thousandth). `bot.broken`: a module that will not instantiate. `bot.end` (an instance's totals): `decisions`, `faults`, `think_mean_ms`, `fuel_mean`, `fuel_most`, `fuel_cap` |
+| `arena_bot` | each with `runtime` (wasm, onnx) and `bot` (`house`, `onnx-<hash>`, `module-<hash>`, or the name the tool gives it: the ladder's `--bot` is `<file>-<hash>`). `bot.fault`: `call` (start, round, decide), `kind` (trap, out_of_fuel; error for ONNX), `fault`, `faults` (the first ten of an instance, then every thousandth). `bot.broken`: a module that will not instantiate. `bot.end` (an instance's totals, when it is dropped: one match in the tournament, one row in the ladder): `decisions`, `matches` (fights started on it), `faults`, `think_mean_ms`, `think_p50_ms`, `think_p95_ms`, `think_p99_ms`, `think_max_ms`, `fuel_mean`, `fuel_p50`, `fuel_p95`, `fuel_max`, `fuel_most` (= `fuel_max`, kept for older queries), `fuel_cap`; the fuel fields are null for ONNX. The percentiles come from a fixed log-linear histogram in the host (32 buckets to each power of two, `crates/arena-bot/src/meter.rs`): within 1/64 of the true sample, the max exact. Rows before 2026-11-18 have no `runtime` and only the means |
 | `arena_ladder` | each with `run_id` or `match_id`. `ladder.row`: `row`, `win`, `seat0`, `seat1`, `round_seconds`, `timeouts`, `top`, `attack_share`, `distance`. `ladder.skill`: `row`, `seat`, `skill`, `casts`, `landed`, `damage`, `damage_share`, `guarded`, `chip`, `barrier`, `ward`, `dodged`, `clashed`, `broken`, `punished`, `finals`. `ladder.seat`. `balance.run`; `balance.row`: `kind` (gem, support, keystone), `id`, `tier`, `picks`, `games`, `win`, `used_rate`, `damage_per_game`, `casts`, `hits`. `sim.match` (by seat: loadout, `won`, `damage`), `sim.round`, `sim.skill` |
 
 Traces (type `traces`, streams `arena_server`, `arena_ladder`): a `match` span (`match_id`, `seed`) with a `round`
@@ -98,7 +98,7 @@ Metrics (type `metrics`, one stream each; a histogram also has `_bucket`, `_coun
 `arena_matches_total`, `arena_rounds_total`, `arena_casts_total` (`skill`), `arena_damage_total` (`skill`, `kind`),
 `arena_step_seconds` (a duel step's wall time), `arena_server_publish_seconds` (a tick stepped and written to the
 track), `arena_server_late_seconds` (how far a tick runs behind the wall clock), `arena_server_missed_ticks_total` (ticks begun a whole tick or more late, caught up back to back), `arena_server_resyncs_total` (times the server fell more than 250 ms behind and restarted its tick schedule from now), `arena_bot_think_seconds`,
-`arena_bot_fuel`, `arena_bot_faults_total` (`call`, `kind`).
+`arena_bot_fuel` (both with `runtime` and `bot`; fuel for modules only), `arena_bot_faults_total` (`call`, `kind`, `runtime`, `bot`). The metric points are filed under the process's service (`arena-ladder` for the ladder), the `arena_bot` rows under `arena-bot`.
 
 Metrics are sent as deltas (since 2026-11-18; `aggregation_temporality` = `AGGREGATION_TEMPORALITY_DELTA`): each point
 is its ten seconds' own counts, so `sum(value)` over any range is what happened in it, and a histogram's `_max` is its
@@ -115,7 +115,7 @@ Open https://arena-obs.aiocean.io, log in with the root user's email and passwor
 | Arena: game events | casts per skill, damage per skill (dots by cause) and per kind, hits by how, blows stopped by how, ailments laid, units spawned / acted / hurt / killed, KOs per round, events per minute |
 | Arena: server health | step time (buckets; mean and most per minute), publish time, how far behind the wall clock, errors and warnings per hour, relay subscription changes, panics, server starts, the latest errors; the watchdog's alerts (each check's latest result, failures over time) |
 | Arena: balance | the latest balance run (keystones, gems, supports: win, damage a game) and ladder run (seat win rates), sim wins by seat |
-| Arena: bots | think time p50 and p95, think and fuel buckets, fuel per instance, faults by kind and call, forfeits |
+| Arena: bots | think time p50, p95, p99 and most by runtime and bot (a table, and p95 and p99 over time), decisions per match, fuel p95 and most against the cap, fuel by module, think time p50 and p95 over all decisions from the metric's buckets, think and fuel buckets, faults by kind and call, forfeits |
 
 The live and game-event panels read only the live server's rows (`service_name = 'arena-server'`); the metric panels
 only delta points. They are made in code, `crates/arena-telemetry/examples/dashboards.rs`, and what the store exports of
@@ -220,7 +220,9 @@ SELECT skill, count(*) AS hits, sum(damage) AS damage, avg(damage) AS per_hit FR
 SELECT skill, count(*) AS casts FROM arena_duel_events WHERE body = 'cast' GROUP BY skill ORDER BY casts DESC
 -- bot faults and timeouts (out of fuel)
 SELECT kind, call, count(*) AS n FROM arena_bot WHERE body = 'bot.fault' GROUP BY kind, call
-SELECT max(fuel_most) AS most, avg(think_mean_ms) AS think_ms FROM arena_bot WHERE body = 'bot.end'
+SELECT runtime, bot, sum(decisions) AS decisions, sum(think_p95_ms * decisions) / sum(decisions) AS p95_ms,
+  max(think_max_ms) AS most_ms, max(fuel_max) AS fuel_most FROM arena_bot WHERE body = 'bot.end' AND runtime IS NOT NULL
+  GROUP BY runtime, bot
 -- the server falling behind its clock (metrics)
 SELECT max(value) AS worst FROM arena_server_late_seconds_max
 ```
