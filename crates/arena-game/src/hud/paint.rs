@@ -4,11 +4,11 @@
 //! lies under the skill icons goes on `base`, what lies over them on `over`; the faces and icons themselves are
 //! sprites (finer than the world), placed from what is painted here.
 
-use super::glyphs::{DIGIT, buff, icon_cell, letter, trait_mark};
+use super::glyphs::{DIGIT, buff, icon_cell};
 use crate::layout::{BARS_TALL, Layout};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
 use bevy::math::ops;
-use pixfx_duel::data::{Luck, RAGE, Rarity, School};
+use pixfx_duel::data::{Look, RAGE};
 use pixfx_duel::view::{DuelView, FighterView};
 
 const BRONZE_LIGHT: &str = "#f0cf7a";
@@ -23,39 +23,30 @@ const BAR_QI_LIGHT: &str = "#c8e0ff";
 const BAR_RAGE: &str = "#ff5a32";
 const BAR_RAGE_LIGHT: &str = "#ffb070";
 const WHITE: &str = "#ffffff";
-const GOLD: &str = "#ffd84a";
-const OUTLINE: &str = "#13101b";
 const TILE: &str = "#120d18";
 /// A buff tile's rim: green for a good one, red for a bad one.
 const RIM_GOOD: &str = "#3fae5a";
 const RIM_BAD: &str = "#c8322a";
-/// A rare skill's frame, an epic one's (pulsing to white) and a legendary one's (pulsing orange to pale gold).
-const RARE: &str = "#4fa3ff";
-const EPIC: &str = "#c36bff";
-const LEGENDARY: [&str; 2] = ["#ff8a1a", "#ffe08a"];
 const SLOT_FIELD: &str = "#1a1424";
 const SLOT_SHADE: &str = "#06050c";
 /// How stale a bar skill is (0 to 1) when its icon starts to flicker before it leaves the bar.
 const STALE_FLICKER: f64 = 2.0 / 3.0;
-/// How long a lucky word floats, in seconds, and a tier-up's.
-const LUCKY_TIME: f32 = 1.2;
-const TIER_TIME: f32 = 1.2;
 /// How long a slot flashes when a spell in it is cast, and glints when its cooldown ends, in seconds.
 const GLINT: f32 = 0.25;
 
-/// A school's colours the HUD draws in (the engine's looks): its life bar's ribbon, light then dark, and its glow.
+/// A look's colours the HUD draws in (the engine's looks): its life bar's ribbon, light then dark, and its glow.
 pub struct Colors {
     pub ribbon: [Rgba; 2],
     pub glow: Rgba,
 }
 
-pub fn colors(s: School) -> Colors {
+pub fn colors(s: Look) -> Colors {
     match s {
-        School::Thunder => Colors {
+        Look::Thunder => Colors {
             ribbon: [hex("#e0443a"), hex("#a8241c")],
             glow: hex("#ffe066"),
         },
-        School::Frost => Colors {
+        Look::Frost => Colors {
             ribbon: [hex("#bff2ff"), hex("#7ab8e0")],
             glow: hex("#a6ecff"),
         },
@@ -146,10 +137,9 @@ pub fn hud_at(view: &DuelView, g: &Geo, px: f32, py: f32) -> Option<Hit> {
 pub struct Seen {
     /// The life its bar last showed, so a blow's loss drains away behind the bar.
     pub trail: Option<f64>,
-    /// Each slot's cooldown last frame, when it last came off cooldown and when it last rose a tier (fight time).
+    /// Each slot's cooldown last frame, and when it last came off cooldown (fight time).
     pub left: Vec<f64>,
     pub at: Vec<f64>,
-    pub up: Vec<f64>,
 }
 
 impl Seen {
@@ -157,7 +147,6 @@ impl Seen {
         if self.left.len() < n {
             self.left.resize(n, 0.0);
             self.at.resize(n, f64::NEG_INFINITY);
-            self.up.resize(n, f64::NEG_INFINITY);
         }
     }
 }
@@ -221,27 +210,6 @@ impl Pen<'_> {
         self.rect(x, y + 1, 1, n - 2, c, a);
         self.rect(x + n - 1, y + 1, 1, n - 2, c, a);
     }
-
-    fn words(&mut self, word: &str, x: i32, y: i32, c: Rgba, a: f32) {
-        let mut at = x;
-        for ch in word.chars() {
-            if let Some(rows) = letter(ch) {
-                self.glyph(&rows, at, y, c, 1, a);
-                at += rows[0].len() as i32 + 1;
-            } else {
-                at += 3;
-            }
-        }
-    }
-}
-
-/// How wide `word` is in the HUD's letters.
-fn words_wide(word: &str) -> i32 {
-    let w: i32 = word
-        .chars()
-        .map(|c| letter(c).map_or(3, |rows| rows[0].len() as i32 + 1))
-        .sum();
-    (w - 1).max(0)
 }
 
 /// Where in a clockwise turn from twelve o'clock pixel (`px`, `py`) of an `n`-square lies, 0 to 1.
@@ -306,11 +274,11 @@ pub fn bars(
     );
     for f in &view.fighters {
         let right = f.index == 1;
-        let c = colors(f.school);
+        let c = colors(f.look);
         let mx = if right { g.right - medal } else { g.left };
         medallion(pen, f, mx, top, medal, &c);
         faces.push(Face {
-            school: f.school as usize,
+            school: f.index.min(1),
             x: mx + 3,
             y: top + 3,
             size: medal - 6,
@@ -424,7 +392,7 @@ pub fn bars(
         } else {
             mid_x + 1 + (17 - w + 1).div_euclid(2)
         };
-        let glow = colors(f.school).glow;
+        let glow = colors(f.look).glow;
         for (i, d) in digits.iter().enumerate() {
             if let Some(rows) = DIGIT.get(*d) {
                 pen.glyph(rows, x0 + i as i32 * 4, top + 4, glow, 1, 1.0);
@@ -483,54 +451,10 @@ fn buffs(pen: &mut Pen, g: &Geo, f: &FighterView) {
     }
 }
 
-fn tier_word(r: Rarity) -> Option<(&'static str, &'static str)> {
-    match r {
-        Rarity::Common => None,
-        Rarity::Rare => Some(("RARE", RARE)),
-        Rarity::Epic => Some(("EPIC", "#e2a8ff")),
-        Rarity::Legendary => Some(("LEGENDARY", "#ffb040")),
-    }
-}
-
-fn luck_word(l: Luck) -> &'static str {
-    match l {
-        Luck::Double => "DOUBLE",
-        Luck::Free => "FREE",
-        Luck::Again => "AGAIN",
-    }
-}
-
-/// A word floating up over the slot centred on `cx` whose top is `top`, `since` seconds into its `time`, kept
-/// inside the arena.
-#[allow(clippy::too_many_arguments)]
-fn float(
-    pen: &mut Pen,
-    g: &Geo,
-    word: &str,
-    color: &str,
-    cx: i32,
-    top: i32,
-    since: f32,
-    time: f32,
-) {
-    let w = words_wide(word);
-    let half = w as f32 / 2.0 + 1.0;
-    let tx = (cx as f32)
-        .max(g.left as f32 + half)
-        .min(g.right as f32 - half);
-    let base = round(top as f32 - 3.0 - since * 8.0);
-    let a = 1.0 - since / time;
-    let (x0, y0) = (round(tx - w as f32 / 2.0), base - 5);
-    for (ox, oy) in [(-1, 0), (1, 0), (0, -1), (0, 1), (1, 1)] {
-        pen.words(word, x0 + ox, y0 + oy, hex(OUTLINE), a);
-    }
-    pen.words(word, x0, y0, hex(color), a);
-}
-
 /// Each fighter's skill bar on the floor under its own side: slots 1, 2 and 3 and the ultimate, the ultimate nearest
-/// the middle. A slot's frame shows its tier; the icon (a sprite, listed in `icons`) shows full while it can be
+/// the middle. A slot's frame is bronze (the bar's tiers are off); the icon (a sprite, listed in `icons`) shows full while it can be
 /// cast and dimmer while it cannot; a cooldown sweeps back clockwise over it; an empty slot counts down to its next
-/// skill; the ultimate's frame fills with rage; lucky casts and tier-ups float their words.
+/// skill; the ultimate's frame fills with rage; a skill with uses stored shows how many.
 pub fn skills(
     base: &mut Pen,
     over: &mut Pen,
@@ -550,7 +474,7 @@ pub fn skills(
         hex(WHITE),
     );
     for f in &view.fighters {
-        let c = colors(f.school);
+        let c = colors(f.look);
         let s = &mut seen[f.index.min(1)];
         s.slots(f.skill_bar.len());
         for (i, slot) in f.skill_bar.iter().enumerate() {
@@ -560,30 +484,13 @@ pub fn skills(
             }
             s.left[i] = slot.left;
             let pulse = ops::sin(time * 6.0) > 0.0;
-            // the frame: bronze, or the tier's colour
-            let ring = match slot.rarity {
-                Rarity::Legendary => LEGENDARY[usize::from(pulse)],
-                Rarity::Epic if pulse => "#f4e0ff",
-                Rarity::Epic => EPIC,
-                Rarity::Rare => RARE,
-                Rarity::Common => BRONZE_MID,
-            };
+            let _ = pulse;
+            // the frame: bronze
             base.rect(x, top, size, size, deep, 1.0);
-            base.frame(x + 1, top + 1, size - 2, hex(ring), 1.0);
-            let plain = slot.rarity == Rarity::Common || slot.empty;
-            base.rect(
-                x + 1,
-                top + 1,
-                size - 2,
-                1,
-                hex(if plain { BRONZE_LIGHT } else { WHITE }),
-                if plain { 1.0 } else { 0.6 },
-            );
+            base.frame(x + 1, top + 1, size - 2, hex(BRONZE_MID), 1.0);
+            base.rect(x + 1, top + 1, size - 2, 1, hex(BRONZE_LIGHT), 1.0);
             base.rect(x + 2, top + 2, n, n, field, 1.0);
-            let cell = slot
-                .spell
-                .and_then(|name| icon_cell(f.school, name))
-                .filter(|_| !slot.empty);
+            let cell = slot.spell.and_then(icon_cell).filter(|_| !slot.empty);
             let Some(cell) = cell else {
                 // the wait for the next skill: its frame lights clockwise, and the seconds left stand in the middle
                 if slot.full > 0.0 {
@@ -643,26 +550,12 @@ pub fn skills(
             if slot.ultimate && !slot.ready && slot.left == 0.0 {
                 over.rect(x + 2, top + 2, n, n, shade, 0.35);
             }
-            // an evolved skill: a white ring round its icon
-            if slot.evolved {
-                over.frame(x + 2, top + 2, n, white, 0.8);
-            }
-            // its traits' marks, in its top corner
-            let shown = if n >= 16 {
-                slot.traits.len()
-            } else {
-                slot.traits.len().min(1)
-            };
-            for (j, t) in slot.traits.iter().take(shown).enumerate() {
-                let j = j as i32;
-                let gx = if f.index == 0 {
-                    x + 2 + j * 6
-                } else {
-                    x + 2 + n - 5 - j * 6
-                };
-                over.rect(gx - 1, top + 1, 7, 7, shade, 0.75);
-                let (rows, col) = trait_mark(*t);
-                over.glyph(&rows, gx, top + 2, hex(col), 1, 1.0);
+            // uses stored beyond one: their count in the top corner
+            if slot.max_uses > 1 {
+                let d = usize::from(slot.uses).min(9);
+                let gx = if f.index == 0 { x + 2 } else { x + 2 + n - 4 };
+                over.rect(gx - 1, top + 1, 5, 7, shade, 0.75);
+                over.glyph(&DIGIT[d], gx, top + 2, white, 1, 1.0);
             }
             // the cooldown: the share still to run stays dark, sweeping clockwise from twelve o'clock
             if slot.left > 0.0 && slot.full > 0.0 {
@@ -683,37 +576,6 @@ pub fn skills(
             let ago = (view.time - s.at[i]) as f32;
             if (0.0..GLINT).contains(&ago) && slot.ready {
                 over.frame(x, top, size, white, 0.8 * (1.0 - ago / GLINT));
-            }
-            // a tier-up: the frame flashes in the new tier's colour, and the tier's name floats over the slot
-            let up = (view.time - s.up[i]) as f32;
-            if (0.0..TIER_TIME).contains(&up)
-                && let Some((word, color)) = tier_word(slot.rarity)
-            {
-                if up < 0.4 {
-                    over.frame(x, top, size, hex(color), 1.0 - up / 0.4);
-                    over.rect(x + 2, top + 2, n, n, white, 0.5 * (1.0 - up / 0.4));
-                }
-                float(over, g, word, color, x + size / 2, top, up, TIER_TIME);
-            }
-        }
-        // a lucky cast: its slot flashes gold, and its word floats up over the bar
-        if let Some(luck) = f.lucky {
-            let since = (view.time - luck.at) as f32;
-            if (0.0..LUCKY_TIME).contains(&since) {
-                let [x, ..] = g.slot(f.index, luck.slot);
-                if since < 0.3 {
-                    over.frame(x, top, size, hex(GOLD), 1.0 - since / 0.3);
-                }
-                float(
-                    over,
-                    g,
-                    luck_word(luck.kind),
-                    GOLD,
-                    x + size / 2,
-                    top,
-                    since,
-                    LUCKY_TIME,
-                );
             }
         }
     }

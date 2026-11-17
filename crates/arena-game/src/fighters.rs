@@ -1,6 +1,6 @@
 //! The two fighters, each drawn from its sprite sheet (`assets/fighters`, made by `art/<character>/tools/sheet.rs`):
 //! the frame its pose shows (`pick`), its feet on the floor or in the air, facing its way, `UNIT` times finer than
-//! the world. A blow's flash brightens it to white, the grace after getting up blinks it, ice tints it.
+//! the world. A blow's flash brightens it to white, the grace after getting up blinks it, a hold flickers it.
 
 use crate::feel::Jolts;
 use crate::layers::Z_FIGHTERS;
@@ -22,7 +22,8 @@ pub struct Look {
     pub pages: Vec<Handle<Image>>,
 }
 
-/// Each school's fighter: Thunder (Vương Lâm) first, then Frost (the Seven-Colored Daoist).
+/// Each look's fighter: Thunder (Vương Lâm) first, then Frost (the Seven-Colored Daoist). Seat 0 looks like the
+/// first, seat 1 like the second (`pixfx_duel::data::Look`).
 #[derive(Resource)]
 pub struct Looks(pub Vec<Look>);
 
@@ -30,7 +31,7 @@ pub struct Looks(pub Vec<Look>);
 #[derive(Component)]
 pub struct FighterSprite(pub usize);
 
-/// Each school's sheet: its layout, built into the game, and its pages, loaded from the game's assets (a fighter
+/// Each look's sheet: its layout, built into the game, and its pages, loaded from the game's assets (a fighter
 /// shows once they have arrived).
 const SHEETS: [(&str, &[&str]); 2] = [
     (
@@ -165,7 +166,7 @@ fn show(
     };
     for (FighterSprite(i), mut sprite, mut transform, mut visibility) in &mut sprites {
         let f = &view.fighters[*i];
-        let Some(look) = looks.0.get(f.school as usize) else {
+        let Some(look) = looks.0.get(f.look as usize) else {
             continue;
         };
         let shot = pick(&appearance(f), look.layout.fps, |c| look.layout.len(c));
@@ -194,8 +195,6 @@ fn show(
         sprite.color = if f.flash > 0.0 {
             // brighter than white: the screen clamps it, so the sprite flashes white
             Color::LinearRgba(LinearRgba::new(8.0, 8.0, 8.0, 1.0))
-        } else if f.frozen > 0.0 {
-            Color::srgb(0.72, 0.88, 1.0)
         } else if f.shocked > 0.0 && (time.elapsed_secs() * 24.0) as i32 % 2 == 0 {
             Color::LinearRgba(LinearRgba::new(1.6, 1.6, 2.4, 1.0))
         } else {

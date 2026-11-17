@@ -51,7 +51,7 @@ fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error
         let fighters: Vec<Value> = s
             .fighters
             .iter()
-            .map(|f| json!([f.hp, f.qi, f.rage, f.body.x, f.body.air]))
+            .map(|f| json!([f.hp(), f.qi(), f.rage, f.body.x, f.body.air]))
             .collect();
         all.insert(
             seed.to_string(),

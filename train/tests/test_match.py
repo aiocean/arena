@@ -10,7 +10,7 @@ HOUSE = pd.HOUSE
 def test_a_bout_between_an_onnx_policy_and_a_built_in_bot_counts_every_round():
     r = pd.bout(HOUSE, "brain", seeds=(1, 3))
     assert r["won"] + r["lost"] + r["cut"] >= 2 * 2 * 2
-    assert 0.0 <= r["as_thunder"] <= 1.0 and 0.0 <= r["as_frost"] <= 1.0
+    assert 0.0 <= r["as_seat0"] <= 1.0 and 0.0 <= r["as_seat1"] <= 1.0
     assert r == pd.bout(HOUSE, "brain", seeds=(1, 3))
     assert r == pd.bout("house", "brain", seeds=(1, 3))
 

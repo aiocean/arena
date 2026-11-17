@@ -26,6 +26,7 @@ pub mod scene;
 pub mod sheet;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod shots;
+pub mod units;
 pub mod vfx;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
@@ -125,6 +126,7 @@ pub fn app(start: Start) -> App {
         light::LightPlugin,
         vfx::VfxPlugin,
         fighters::FightersPlugin,
+        units::UnitsPlugin,
         hud::HudPlugin,
     ));
     #[cfg(not(target_arch = "wasm32"))]

@@ -12,7 +12,7 @@ use crate::fighters::Looks;
 use crate::layers::{Canvases, Cleared, Z_HUD};
 use crate::layout::{Layout, MainCamera};
 use crate::raster::Canvas;
-use crate::rules::{Fx, Shown};
+use crate::rules::Shown;
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
@@ -20,8 +20,7 @@ use bevy::text::FontSize;
 use bevy::window::PrimaryWindow;
 use info::{Tip, Tone};
 use paint::{Geo, Hit, Painted, Pen, Seen};
-use pixfx_duel::data::{Rarity, UNIT};
-use pixfx_duel::out::Out;
+use pixfx_duel::data::UNIT;
 
 /// The skill icon atlases: 24 and 32 pixels an icon, five to a row.
 const SKILLS_24: &[u8] = include_bytes!("../../assets/skills-24.png");
@@ -141,23 +140,11 @@ fn spawn(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut hud: Res
     ));
 }
 
-/// A new fight forgets the last; a tier-up is remembered at the fight's time it came.
-fn notice(shown: Res<Shown>, mut hud: ResMut<Hud>, mut fx: MessageReader<Fx>) {
+/// A new fight forgets the last.
+fn notice(shown: Res<Shown>, mut hud: ResMut<Hud>) {
     if hud.fight != shown.fight {
         hud.fight = shown.fight;
         hud.seen = Default::default();
-    }
-    let Some(view) = &shown.view else {
-        fx.clear();
-        return;
-    };
-    for Fx(out) in fx.read() {
-        if let Out::Tier { by, slot, .. } = out
-            && let Some(seen) = hud.seen.get_mut(*by)
-        {
-            seen.slots(slot + 1);
-            seen.up[*slot] = view.time;
-        }
     }
 }
 
@@ -308,10 +295,7 @@ fn place(
 
 fn tone_color(t: Tone) -> Color {
     let c = match t {
-        Tone::Plain | Tone::Rarity(Rarity::Common) => (0xf0, 0xcf, 0x7a),
-        Tone::Rarity(Rarity::Rare) => (0x4f, 0xa3, 0xff),
-        Tone::Rarity(Rarity::Epic) => (0xe2, 0xa8, 0xff),
-        Tone::Rarity(Rarity::Legendary) => (0xff, 0xb0, 0x40),
+        Tone::Plain => (0xf0, 0xcf, 0x7a),
         Tone::Ultimate => (0xff, 0xd8, 0x4a),
         Tone::Good => (0x6f, 0xdc, 0x8a),
         Tone::Bad => (0xff, 0x6a, 0x5a),

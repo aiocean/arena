@@ -125,7 +125,6 @@ fn part_of(a: &Appearance) -> Part {
         Pose::Guard => whole("guard", Play::Once),
         Pose::Meditate => whole("meditate", Play::Once),
         Pose::Hurt => whole("hit", Play::Once),
-        Pose::Frozen => whole("frozen", Play::Once),
         Pose::Shocked => whole("shocked", Play::Loop),
         Pose::Launched => whole("launched", Play::Once),
         Pose::Tumble => whole("tumble", Play::Loop),
@@ -279,7 +278,7 @@ mod tests {
         use Pose::*;
         for pose in [
             Idle, Walk, Jump, Fly, Land, Crouch, Duck, Draw, Slash, Channel, Cast, Guard, Meditate,
-            Hurt, Frozen, Shocked, Launched, Tumble, Fall, Down, Roll, Sit, Kneel, Win,
+            Hurt, Shocked, Launched, Tumble, Fall, Down, Roll, Sit, Kneel, Win,
         ] {
             let shot = pick(&stand(pose, 0.3), 10.0, NINE);
             assert!(CLIPS.contains(&shot.clip), "{pose:?} picks {}", shot.clip);

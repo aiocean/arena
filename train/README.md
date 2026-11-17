@@ -10,8 +10,8 @@ uv run pytest
 uv run python ppo.py --run v1                     # runs/v1/log.jsonl, runs/v1/last.pt
 uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0
                                                   # a fine-tune: a new run from v1's network
-uv run python ppo.py --run v3 --init runs/v2/last.pt ... --thunder 0.9
-                                                  # the learner plays Thunder in 90% of its fights (0.5 by default)
+uv run python ppo.py --run v3 --init runs/v2/last.pt ... --seat0 0.9
+                                                  # the learner sits in seat 0 in 90% of its fights (0.5 by default)
 uv run python export.py runs/v1/last.pt           # crates/pixfx-duel/weights/policy.onnx + its Rust check
 cargo run --release -p arena-bot --features host,onnx --example ladder -- --seeds 150
 ```
@@ -19,8 +19,8 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --seed
 - `net.py`: the network (any size: `--width`, `--hidden`, `--blocks`), its export to ONNX and back; the HL-Gauss
   critic.
 - `league.py`: who the learner fights (latest self 35%, a past self 25%, brain 15%, first mind 10%, scripted 15%),
-  and in which school. The shipped policy was fine-tuned with `--thunder 0.9`: at an even share it played Thunder
-  worse and won only about 40% of the mirror as Thunder.
+  and in which seat (each fight draws both fighters' loadouts at random from the seed). The shipped policy was
+  trained on the old rules (two schools); it needs a retrain on the damage system (`docs/specs/2026-11-17-damage-system-design.md`, 13 and 16).
 - `ppo.py`: the trainer. CPU beats MPS for this network (10.2K vs 8.1K env steps/s on the M4).
 - `export.py`: the shipped file and `crates/pixfx-duel/tests/fixtures/policy_check.json`, which
   `cargo test -p pixfx-duel --test policy_export` checks against Rust's own forward pass.

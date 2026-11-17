@@ -18,7 +18,7 @@ use crate::layout::{Layout, MainCamera};
 use crate::rules::{Fx, Pace, Shown};
 use bevy::prelude::*;
 use fight::{DUSK_DEPTH, FightFeel};
-use pixfx_duel::data::School;
+use pixfx_duel::data::Look;
 
 /// Whole world pixels the screen's answer to a blow jolts each fighter off its place.
 #[derive(Resource, Default, Clone, Copy)]
@@ -117,21 +117,21 @@ fn dusk(feel: Res<Feel>, mut canvases: ResMut<Canvases>) {
     draw::dusk(&mut canvases.back, feel.fight.dusk());
 }
 
-/// Each fighter's school, for the colours of its streaks and numbers.
-pub fn schools(shown: &Shown) -> [School; 2] {
+/// Each fighter's look, for the colours of its streaks and numbers.
+pub fn looks(shown: &Shown) -> [Look; 2] {
     shown
         .view
         .as_ref()
-        .map(|v| [v.fighters[0].school, v.fighters[1].school])
-        .unwrap_or([School::Thunder, School::Frost])
+        .map(|v| [v.fighters[0].look, v.fighters[1].look])
+        .unwrap_or([Look::Thunder, Look::Frost])
 }
 
 /// The dust, the streaks and the numbers over the fighters.
 fn marks(feel: Res<Feel>, shown: Res<Shown>, layout: Res<Layout>, mut canvases: ResMut<Canvases>) {
     let ground = f64::from(layout.ground);
-    let schools = schools(&shown);
+    let looks = looks(&shown);
     let front = &mut canvases.front;
     draw::dust(front, &feel.fight.dust(), ground);
-    draw::streaks(front, &feel.fight.streaks(), ground, schools);
-    draw::numbers(front, &feel.fight.numbers(), ground, schools);
+    draw::streaks(front, &feel.fight.streaks(), ground, looks);
+    draw::numbers(front, &feel.fight.numbers(), ground, looks);
 }

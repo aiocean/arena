@@ -52,7 +52,7 @@ def main():
     ap.add_argument("--snapshot-every", type=int, default=20)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--thunder", type=float, default=0.5, help="share of fights in which the learner plays Thunder")
+    ap.add_argument("--seat0", type=float, default=0.5, help="share of fights in which the learner sits in seat 0")
     ap.add_argument("--resume")
     ap.add_argument("--init", help="start from this network (.pt or .onnx) with a fresh schedule")
     ap.add_argument("--width", type=int, default=WIDTH)
@@ -79,7 +79,7 @@ def main():
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
     start = 0
     env = pd.VecEnv(n, args.threads)
-    league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, thunder=args.thunder)
+    league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, seat0=args.seat0)
     # a resumed run takes its network from its checkpoint (long-run.sh passes the run's --init again on a resume)
     if args.init and not args.resume:
         path = pathlib.Path(args.init)
@@ -130,9 +130,9 @@ def main():
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))
             for i in np.nonzero(d)[0]:
-                kind, style, school = kinds[i]
+                kind, style, seat = kinds[i]
                 results[kind].append(float(won[i] == 1))
-                results[f"{kind}/{('thunder', 'frost')[school]}"].append(float(won[i] == 1))
+                results[f"{kind}/seat{seat}"].append(float(won[i] == 1))
                 if kind == "brain":
                     results[f"brain/style{style}"].append(float(won[i] == 1))
                 lengths.append(float(length[i]))

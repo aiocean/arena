@@ -205,7 +205,7 @@ impl VecEnv {
         Ok(())
     }
 
-    /// Start env `i` on a fresh round: the fight's `seed`, the learner's corner (0 Thunder, 1 Frost) and style
+    /// Start env `i` on a fresh round: the fight's `seed`, the learner's seat (0 left, 1 right) and style
     /// (0 aggressive, 1 balanced, 2 defensive), the opponent's style, the opponent (`brain`, `first`, `aggressive`,
     /// `turtle`, `policy`), the model id of a `policy` opponent (`set_model`), and the seconds a round may last.
     #[allow(clippy::too_many_arguments)]
@@ -339,8 +339,8 @@ fn fight_match(seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Match> {
 fn record<'py>(py: Python<'py>, r: &Record) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new(py);
     d.set_item("win_rate", r.win_rate())?;
-    d.set_item("as_thunder", r.as_school(0))?;
-    d.set_item("as_frost", r.as_school(1))?;
+    d.set_item("as_seat0", r.as_seat(0))?;
+    d.set_item("as_seat1", r.as_seat(1))?;
     d.set_item("won", r.won[0] + r.won[1])?;
     d.set_item("lost", r.lost[0] + r.lost[1])?;
     d.set_item("cut", r.timeouts)?;
@@ -350,7 +350,7 @@ fn record<'py>(py: Python<'py>, r: &Record) -> PyResult<Bound<'py, PyDict>> {
 
 /// Bot `a` against bot `b`: each seed in `seeds` (`(first, past the last)`, like `range`) fought both ways, `rounds`
 /// rounds a fight, a round cut after `limit` seconds. A bot is a built-in name, `house`, or a model's bytes. Returns `a`'s
-/// record: `win_rate`, `as_thunder`, `as_frost`, `won`, `lost`, `cut`, `mean_round`.
+/// record: `win_rate`, `as_seat0`, `as_seat1`, `won`, `lost`, `cut`, `mean_round`.
 #[pyfunction]
 #[pyo3(signature = (a, b, seeds = (1, 151), rounds = 3, limit = 120.0))]
 fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Bound<'py, PyDict>> {

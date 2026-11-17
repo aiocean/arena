@@ -6,13 +6,13 @@
 //!
 //! The bot is the house AI (`weights/policy.onnx`) unless `--onnx` names another ONNX policy or `--bot` a bot module.
 //!
-//! `--telemetry` adds, for each mirror, what each school's skills did, Thunder beside Frost.
+//! `--telemetry` adds, for each mirror, what each seat's skills did, seat 0 beside seat 1.
 
 use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
 use pixfx_duel::duel::{Duel, DuelConfig, TICK};
 use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::ladder::{Match, Record, SchoolLog, SkillLog, match_up};
+use pixfx_duel::ladder::{Match, Record, SeatLog, SkillLog, match_up};
 use pixfx_duel::scripted::Scripted;
 use pixfx_duel::seat::{BotSeat, Brain, MakeSeat, SharedDecider, policy_mind};
 use pixfx_duel::sense::sense_of;
@@ -72,9 +72,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("ladder: {seeds} seeds x both ways x {rounds} rounds, rounds cut at {limit} s\n");
     println!(
         "{:<34} {:>7} {:>9} {:>7} {:>7} {:>5} {:>6} {:>7} {:>6}",
-        "match", "win", "thunder", "frost", "len s", "cut", "top", "attack", "dist"
+        "match", "win", "seat 0", "seat 1", "len s", "cut", "top", "attack", "dist"
     );
-    // each row: its name, its seats, and whether it is a mirror whose schools the telemetry compares
+    // each row: its name, its seats, and whether it is a mirror whose seats the telemetry compares
     let rows: Vec<(&str, Maker<'_>, Maker<'_>, bool)> = vec![
         (
             "balanced vs brain (>=75%, 65% each)",
@@ -113,7 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             false,
         ),
         (
-            "brain mirror (school baseline)",
+            "brain mirror (seat baseline)",
             Box::new(Brain::make),
             Box::new(Brain::make),
             true,
@@ -127,7 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             mirrors.push((*name, r));
         }
     }
-    println!("\nmirrors: the win column is Thunder's share of the rounds in the thunder column\n");
+    println!("\nmirrors: the win column is seat 0's share of the rounds in the seat 0 column\n");
     if telemetry {
         for (name, r) in &mirrors {
             print_telemetry(name, r);
@@ -148,8 +148,8 @@ fn print_row(name: &str, r: &Record) {
         "{:<34} {:>7} {:>9} {:>7} {:>7.1} {:>5} {:>6} {:>7} {:>6.0}   top: {top}",
         name,
         pct(r.win_rate()),
-        pct(r.as_school(0)),
-        pct(r.as_school(1)),
+        pct(r.as_seat(0)),
+        pct(r.as_seat(1)),
         r.mean_length(),
         r.timeouts,
         pct(r.most_used()),
@@ -158,17 +158,17 @@ fn print_row(name: &str, r: &Record) {
     );
 }
 
-/// What each school did in a mirror, Thunder beside Frost: per skill, then per school.
+/// What each seat did in a mirror, seat 0 beside seat 1: per skill, then per seat.
 fn print_telemetry(name: &str, r: &Record) {
-    let [t, f] = &r.schools;
+    let [t, f] = &r.seats;
     let wins = [r.won[0] + r.lost[1], r.won[1] + r.lost[0]];
     let rounds = wins[0] + wins[1];
     println!(
-        "telemetry: {name}, {rounds} rounds (Thunder won {}, Frost {})",
+        "telemetry: {name}, {rounds} rounds (seat 0 won {}, seat 1 {})",
         wins[0], wins[1]
     );
     println!(
-        "  dmg: lives of the foe taken (1.00 = one life), chip and field ticks included; dmg% of the school's total. \
+        "  dmg: lives of the foe taken (1.00 = one life), chip and field ticks included; dmg% of the seat's total. \
          grd/bar/wrd/ddg/clh: blows the foe's guard held, its barrier turned, a ward erased, it dodged, blades met. \
          brk: casts broken while gathering. pun: struck while recovering. fin: last blow of a round it won."
     );
@@ -182,19 +182,19 @@ fn print_telemetry(name: &str, r: &Record) {
             format!("{c:>w$}")
         })
         .collect();
-    println!("  {:<12} | {:^74} | {:^74}", "", "Thunder", "Frost");
+    println!("  {:<12} | {:^74} | {:^74}", "", "seat 0", "seat 1");
     println!("  {:<12} |{head} |{head}", "skill");
     let mut names: Vec<&str> = t.skills.keys().chain(f.skills.keys()).copied().collect();
     names.sort_unstable();
     names.dedup();
-    // the heaviest hitters first, by the two schools' damage together
-    let dmg = |s: &SchoolLog, n: &str| s.skills.get(n).map_or(0.0, |k| k.damage);
+    // the heaviest hitters first, by the two seats' damage together
+    let dmg = |s: &SeatLog, n: &str| s.skills.get(n).map_or(0.0, |k| k.damage);
     names.sort_by(|a, b| (dmg(t, b) + dmg(f, b)).total_cmp(&(dmg(t, a) + dmg(f, a))));
     for n in names {
         println!("  {n:<12} |{} |{}", skill_cells(t, n), skill_cells(f, n));
     }
     for status in ["burn", "shock"] {
-        let cell = |s: &SchoolLog| {
+        let cell = |s: &SeatLog| {
             let d = s.statuses.get(status).copied().unwrap_or(0.0);
             let fin = s.finals.get(status).copied().unwrap_or(0);
             format!(
@@ -207,10 +207,10 @@ fn print_telemetry(name: &str, r: &Record) {
         };
         println!("  {status:<12} |{} |{}", cell(t), cell(f));
     }
-    let line = |label: &str, v: &dyn Fn(&SchoolLog) -> String| {
+    let line = |label: &str, v: &dyn Fn(&SeatLog) -> String| {
         println!("  {label:<34} {:>14} {:>14}", v(t), v(f));
     };
-    println!("  {:<34} {:>14} {:>14}", "per school", "Thunder", "Frost");
+    println!("  {:<34} {:>14} {:>14}", "per seat", "seat 0", "seat 1");
     let per_round = |x: f64| x / f64::from(rounds.max(1));
     line("lives dealt", &|s| format!("{:.2}", s.dealt() / 100.0));
     line("lives lost", &|s| format!("{:.2}", s.life_lost / 100.0));
@@ -278,8 +278,8 @@ fn print_telemetry(name: &str, r: &Record) {
     println!();
 }
 
-/// One school's cells for skill `n`.
-fn skill_cells(s: &SchoolLog, n: &str) -> String {
+/// One seat's cells for skill `n`.
+fn skill_cells(s: &SeatLog, n: &str) -> String {
     let k = s.skills.get(n).cloned().unwrap_or_default();
     let fin = s.finals.get(n).copied().unwrap_or(0);
     format!(
@@ -298,7 +298,7 @@ fn skill_cells(s: &SchoolLog, n: &str) -> String {
     )
 }
 
-fn sum(s: &SchoolLog, of: impl Fn(&SkillLog) -> u32) -> u32 {
+fn sum(s: &SeatLog, of: impl Fn(&SkillLog) -> u32) -> u32 {
     s.skills.values().map(of).sum()
 }
 

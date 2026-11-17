@@ -95,9 +95,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_record("vs first mind", &bar.vs_first);
     let passed = bar.passed();
     println!(
-        "entry bar (vs brain >= {:.0}%, >= {:.0}% as each school; vs first mind >= {:.0}%): {}",
+        "entry bar (vs brain >= {:.0}%, >= {:.0}% in each seat; vs first mind >= {:.0}%): {}",
         EntryBar::BRAIN * 100.0,
-        EntryBar::BRAIN_EACH_SCHOOL * 100.0,
+        EntryBar::BRAIN_EACH_SEAT * 100.0,
         EntryBar::FIRST * 100.0,
         if passed { "PASS" } else { "FAIL" }
     );
@@ -136,10 +136,10 @@ fn fixed() -> Result<Vec<Case>, Box<dyn std::error::Error>> {
 fn print_record(name: &str, r: &Record) {
     let pct = |x: f64| format!("{:.1}%", x * 100.0);
     println!(
-        "   {name}: won {} (as Thunder {}, as Frost {}), {} of {} rounds; mean round {:.1} s; {} fights cut",
+        "   {name}: won {} (in seat 0 {}, in seat 1 {}), {} of {} rounds; mean round {:.1} s; {} fights cut",
         pct(r.win_rate()),
-        pct(r.as_school(0)),
-        pct(r.as_school(1)),
+        pct(r.as_seat(0)),
+        pct(r.as_seat(1)),
         r.won[0] + r.won[1],
         r.won[0] + r.won[1] + r.lost[0] + r.lost[1],
         r.mean_length(),

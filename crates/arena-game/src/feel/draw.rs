@@ -5,13 +5,13 @@
 use super::fight::{Dust, Number, NumberKind, Streak};
 use super::math::{floor, hypot, js_round, sin, sqrt};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
-use pixfx_duel::data::School;
+use pixfx_duel::data::Look;
 
-/// Each school's glow (the engine's looks): a hit's number and a streak are drawn in the striker's.
-pub fn glow(school: School) -> Rgba {
-    match school {
-        School::Thunder => hex("#ffe066"),
-        School::Frost => hex("#a6ecff"),
+/// Each look's glow (the engine's looks): a hit's number and a streak are drawn in the striker's.
+pub fn glow(look: Look) -> Rgba {
+    match look {
+        Look::Thunder => hex("#ffe066"),
+        Look::Frost => hex("#a6ecff"),
     }
 }
 
@@ -66,13 +66,13 @@ const OUTLINE: &str = "#13101b";
 
 /// The numbers over the fighters, centred on their `x`, standing on row `ground - y`, each pixel drawn once (the
 /// outline under the face) so a fading number fades evenly.
-pub fn numbers(canvas: &mut Canvas, list: &[Number], ground: f64, schools: [School; 2]) {
+pub fn numbers(canvas: &mut Canvas, list: &[Number], ground: f64, looks: [Look; 2]) {
     for n in list {
         let (s, color) = look(n.kind);
         let color = color.map(hex).unwrap_or_else(|| {
             glow(
-                n.by.and_then(|b| schools.get(b).copied())
-                    .unwrap_or(School::Thunder),
+                n.by.and_then(|b| looks.get(b).copied())
+                    .unwrap_or(Look::Thunder),
             )
         });
         let glyphs: Vec<[&str; 5]> = n.text.chars().filter_map(glyph).collect();
@@ -143,16 +143,16 @@ fn plot(canvas: &mut Canvas, (x0, y0): (f64, f64), (x1, y1): (f64, f64), c: Rgba
 }
 
 /// Each qi streak from the caster's hand to where its spell lands.
-pub fn streaks(canvas: &mut Canvas, list: &[Streak], ground: f64, schools: [School; 2]) {
+pub fn streaks(canvas: &mut Canvas, list: &[Streak], ground: f64, looks: [Look; 2]) {
     for k in list {
-        let school = schools.get(k.by).copied().unwrap_or(School::Thunder);
+        let look = looks.get(k.by).copied().unwrap_or(Look::Thunder);
         let (x0, y0, x1, y1) = (k.x0, ground - k.y0, k.x1, ground - k.y1);
         let n = js_round(hypot(x1 - x0, y1 - y0) / 6.0).max(2.0) as usize;
         let pts: Vec<(f64, f64)> = (0..=n)
             .map(|i| {
                 let u = i as f64 / n as f64;
                 // lightning jags, ice runs true
-                let jag = if school == School::Thunder && i > 0 && i < n {
+                let jag = if look == Look::Thunder && i > 0 && i < n {
                     js_round(sin(i as f64 * 12.9898 + k.x0 * 78.233) * 3.0)
                 } else {
                     0.0
@@ -166,8 +166,8 @@ pub fn streaks(canvas: &mut Canvas, list: &[Streak], ground: f64, schools: [Scho
         let a = (k.fade * 1.6).min(1.0) as f32;
         let white = hex("#ffffff");
         for i in 0..n {
-            plot(canvas, pts[i], pts[i + 1], fade(glow(school), a), false);
-            if school == School::Frost && i % 2 == 0 {
+            plot(canvas, pts[i], pts[i + 1], fade(glow(look), a), false);
+            if look == Look::Frost && i % 2 == 0 {
                 canvas.put(
                     pts[i].0 as i32,
                     pts[i].1 as i32 - 1,

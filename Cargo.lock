@@ -313,6 +313,7 @@ name = "arena-game"
 version = "0.1.0"
 dependencies = [
  "arena-bot",
+ "arena-calc",
  "arena-mind",
  "arena-vfx",
  "bevy",
