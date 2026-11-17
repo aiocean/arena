@@ -12,7 +12,7 @@
 //! clock.
 
 use arena_duel::duel::TICK;
-use arena_server::match_run::Match;
+use arena_server::match_run::{Match, Pairing, Seats};
 use arena_server::pace::Pacer;
 use std::time::{Duration, Instant};
 use tracing_subscriber::layer::{Layer, SubscriberExt};
@@ -45,13 +45,22 @@ fn flag(args: &[String], name: &str) -> Option<u64> {
         .and_then(|v| v.parse().ok())
 }
 
+/// The seat factory, the house AI loaded (it exits when the model does not load).
+fn seats() -> Seats {
+    Seats::new().unwrap_or_else(|e| {
+        eprintln!("the house AI: {}", e.0);
+        std::process::exit(1)
+    })
+}
+
 fn steps(matches: u64, observe: bool) -> Vec<f64> {
+    let seats = seats();
     let mut took = Vec::new();
     for n in 0..matches {
         let seed = (0x9E37_79B9_u64.wrapping_mul(n + 1) as u32) | 1;
-        let mut m = Match::new(seed, ["a".into(), "b".into()]);
+        let mut m = Match::new(seed, Pairing::of(n + 1, seed), &seats);
         if observe {
-            m.observe(&format!("bench-{n}"));
+            m.observe(&format!("bench-{n}"), arena_telemetry::GIT_HASH);
         }
         loop {
             let t = Instant::now();
@@ -92,7 +101,9 @@ fn main() {
                 }
             };
             let (late, resyncs) = rt.block_on(async move {
-                let mut m = Match::new(12_345, ["a".into(), "b".into()]);
+                let seats = seats();
+                let mut n = 1;
+                let mut m = Match::new(12_345, Pairing::of(n, 12_345), &seats);
                 let mut pacer = Pacer::new(Instant::now(), Duration::from_secs_f64(TICK));
                 let end = Instant::now() + Duration::from_secs(seconds);
                 let mut late = Vec::new();
@@ -105,7 +116,11 @@ fn main() {
                     late.push(tick.late.as_secs_f64());
                     match m.step() {
                         Some(t) if t.ended.is_none() => {}
-                        _ => m = Match::new(m.tick() ^ 0x5555, ["a".into(), "b".into()]),
+                        _ => {
+                            n += 1;
+                            let seed = m.tick() ^ 0x5555;
+                            m = Match::new(seed, Pairing::of(n, seed), &seats);
+                        }
                     }
                 }
                 (late, pacer.resyncs())

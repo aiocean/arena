@@ -1,12 +1,20 @@
 //! Fighting one match and turning it into a stream of `arena-link` frames.
 //!
-//! A match is the pure rules (`arena_duel`) and two house brains, each seat wrapped in a `Recorder`. We step one tick
-//! at a time, drain the recorders for the decisions and forfeits that tick produced, and hand them back as frames. The
-//! caller (the publisher) paces the stepping to the wall clock and writes the frames onto a MoQ track.
+//! A match is the pure rules (`arena_duel`) and two seats: the house AI (`arena-bot`'s ONNX policy, run natively
+//! through tract) against one of the minds the rules ship (`Pairing`), each seat wrapped in a `Recorder`. We step one
+//! tick at a time, drain the recorders for the decisions and forfeits that tick produced, and hand them back as
+//! frames. The caller (the publisher) paces the stepping to the wall clock and writes the frames onto a MoQ track.
+//!
+//! The page never runs a mind: it replays each corner's recorded decisions (`seat::Replay`) on its own copy of the
+//! rules, so whatever sits in a corner here, the page needs only the rules.
 
+use arena_bot::onnx::Onnx;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::effects;
-use arena_duel::seat::{Brain, Log, MakeSeat, Recorder, Recording};
+use arena_duel::first_mind::FirstMind;
+use arena_duel::scripted::Scripted;
+use arena_duel::seat::{BotSeat, Brain, Fault, Log, MakeSeat, Recorder, Recording};
+use arena_duel::style::Style;
 use arena_duel::view::{DuelView, view};
 use arena_link::{Act, Arena, Decision, Ended, Forfeit, Snapshot};
 use arena_telemetry::duel::Observer;
@@ -45,14 +53,107 @@ pub fn config_for(seed: u32, arena: Arena) -> DuelConfig {
 pub const WINS_TO_TAKE: u32 = 2;
 pub const MAX_TICKS: u32 = 120 * 60; // two minutes
 
-thread_local! {
-    static HANDLES: RefCell<Vec<Recording>> = const { RefCell::new(Vec::new()) };
+/// Who sits in a live corner, by kind: what [`Seats`] turns into a seat. The house AI is a model run natively (ONNX
+/// through tract, `arena-bot`); the minds are built into the rules. A bot module a player uploads (`arena-bot`'s host)
+/// is the kind still to add.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Bot {
+    /// The house AI, `weights/policy.onnx`, in the balanced style (as the ladder measures it).
+    House,
+    Brain,
+    First,
+    Aggressive,
+    Turtle,
 }
 
-fn recording_house() -> MakeSeat {
+impl Bot {
+    /// The minds the house AI meets, in turn.
+    pub const MINDS: [Bot; 4] = [Bot::Brain, Bot::First, Bot::Aggressive, Bot::Turtle];
+
+    /// Its name: the corner's name on the wire and its telemetry's `bot`.
+    pub fn name(self) -> &'static str {
+        match self {
+            Bot::House => "house",
+            Bot::Brain => "brain",
+            Bot::First => "first",
+            Bot::Aggressive => "aggressive",
+            Bot::Turtle => "turtle",
+        }
+    }
+
+    /// What runs it, as its telemetry's `runtime` says.
+    pub fn runtime(self) -> &'static str {
+        match self {
+            Bot::House => "onnx",
+            _ => "builtin",
+        }
+    }
+}
+
+/// Who fights a live match: the house AI, in which seat, and the mind it meets. With the seed it fixes the match.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Pairing {
+    /// The house AI's seat, 0 or 1.
+    pub house_seat: usize,
+    pub opponent: Bot,
+}
+
+impl Pairing {
+    /// The `n`th match's pairing (counted from 1) on `seed`: the minds in turn, the house AI's seat drawn from the seed
+    /// (`house_seat`), the looks from the seed too (`Duel::new_drawn`), so neither seat nor look keeps one bot.
+    pub fn of(n: u64, seed: u32) -> Pairing {
+        let i = (n.saturating_sub(1) % Bot::MINDS.len() as u64) as usize;
+        Pairing {
+            house_seat: house_seat(seed),
+            opponent: Bot::MINDS[i],
+        }
+    }
+
+    /// The bots in seat 0 and seat 1.
+    pub fn bots(self) -> [Bot; 2] {
+        let mut bots = [self.opponent; 2];
+        bots[self.house_seat.min(1)] = Bot::House;
+        bots
+    }
+}
+
+/// The house AI's seat on `seed`: the top bit of the seed mixed, so it is drawn apart from the looks (the seed's
+/// parity, `ladder::looks_of`).
+pub fn house_seat(seed: u32) -> usize {
+    (seed.wrapping_mul(0x9E37_79B1) >> 31) as usize
+}
+
+/// Makes a corner's seat by its bot's kind: the seat factory, holding what a kind loads once (the house AI's model).
+pub struct Seats {
+    house: Onnx,
+}
+
+impl Seats {
+    /// The factory, the house AI loaded and checked.
+    pub fn new() -> Result<Seats, Fault> {
+        Ok(Seats {
+            house: Onnx::house()?,
+        })
+    }
+
+    /// A maker for `bot`'s seat. The house AI gets a fresh instance each match, so its `bot.end` (runtime "onnx")
+    /// reports that match when the match is dropped.
+    pub fn maker(&self, bot: Bot) -> MakeSeat {
+        match bot {
+            Bot::House => BotSeat::make(self.house.decider(), Some(Style::Balanced)),
+            Bot::Brain => Brain::make(),
+            Bot::First => FirstMind::make(),
+            Bot::Aggressive => Scripted::aggressive(),
+            Bot::Turtle => Scripted::turtle(),
+        }
+    }
+}
+
+/// `inner` wrapped in a `Recorder` once the duel makes it, its log handed out through `slot`.
+fn recording(inner: MakeSeat, slot: Rc<RefCell<Option<Recording>>>) -> MakeSeat {
     Box::new(move |state, me| {
-        let (rec, handle) = Recorder::new(Box::new(Brain::new(state, me)));
-        HANDLES.with(|h| h.borrow_mut().push(handle));
+        let (rec, handle) = Recorder::new(inner(state, me));
+        *slot.borrow_mut() = Some(handle);
         Box::new(rec)
     })
 }
@@ -62,6 +163,7 @@ pub struct Match {
     duel: Duel,
     logs: [Recording; 2],
     seed: u32,
+    pairing: Pairing,
     corners: [String; 2],
     /// Fighting ticks elapsed. A seat decides once per fighting tick, so this is the recorders' tick count.
     tick: u32,
@@ -82,21 +184,25 @@ pub struct Tick {
 }
 
 impl Match {
-    /// Start a match on `seed` between two house brains named `corners`.
-    pub fn new(seed: u32, corners: [String; 2]) -> Match {
-        HANDLES.with(|h| h.borrow_mut().clear());
-        let duel = Duel::new_with_looks(
+    /// Start a match on `seed` for `pairing`, its seats made by `seats`.
+    pub fn new(seed: u32, pairing: Pairing, seats: &Seats) -> Match {
+        let bots = pairing.bots();
+        let slots: [Rc<RefCell<Option<Recording>>>; 2] = Default::default();
+        let duel = Duel::new_drawn(
             arena_config(seed),
-            [recording_house(), recording_house()],
-            arena_duel::ladder::looks_of(seed),
+            [
+                recording(seats.maker(bots[0]), Rc::clone(&slots[0])),
+                recording(seats.maker(bots[1]), Rc::clone(&slots[1])),
+            ],
         );
-        let handles = HANDLES.with(|h| h.borrow().clone());
-        let logs = [Rc::clone(&handles[0]), Rc::clone(&handles[1])];
+        // the duel made both seats as it was built; a slot it left empty would be a seat never made
+        let logs = slots.map(|s| s.borrow_mut().take().unwrap_or_default());
         Match {
             duel,
             logs,
             seed,
-            corners,
+            pairing,
+            corners: bots.map(|b| b.name().to_string()),
             tick: 0,
             sent: [0, 0],
             sent_forfeit: [false, false],
@@ -105,11 +211,36 @@ impl Match {
         }
     }
 
+    /// Who fights it.
+    pub fn pairing(&self) -> Pairing {
+        self.pairing
+    }
+
+    /// Each corner's decisions so far.
+    pub fn decisions(&self) -> [usize; 2] {
+        [
+            self.logs[0].borrow().decisions.len(),
+            self.logs[1].borrow().decisions.len(),
+        ]
+    }
+
+    /// The match's result once over, else None.
+    pub fn ended(&self) -> Option<Ended> {
+        self.ended
+    }
+
     /// Report this match as `match_id` to telemetry (`arena_telemetry::duel::Observer`): its events, spans and
-    /// metrics, from now until it ends.
-    pub fn observe(&mut self, match_id: &str) {
+    /// metrics, from now until it ends; `match.start` names each seat's bot, what runs it and the server's `build`.
+    pub fn observe(&mut self, match_id: &str, build: &str) {
+        let bots = self.pairing.bots();
         let corners = [self.corners[0].as_str(), self.corners[1].as_str()];
-        self.observer = Some(Observer::start(&self.duel, match_id, corners));
+        self.observer = Some(Observer::start_seated(
+            &self.duel,
+            match_id,
+            corners,
+            bots.map(Bot::runtime),
+            build,
+        ));
     }
 
     /// Stop the match before it ends (the server shutting down): its observer reports `match.end` with `result`
@@ -249,30 +380,29 @@ mod tests {
     use super::*;
     use arena_duel::seat::{MakeSeat, Replay, Seat};
 
-    /// The server's wire snapshot (Act-encoded, split by corner, keyed by tick) replays the very fight it fought: the
-    /// server-side half of P1. A page fed this snapshot draws what the server drew.
-    #[test]
-    fn the_wire_snapshot_replays_the_fought_match() {
-        let seed = 7_654_321;
-        let mut m = Match::new(seed, ["a".into(), "b".into()]);
+    /// Fight a match to its end (or `ticks`), keeping the fight as it stood after each step.
+    fn fight(seed: u32, pairing: Pairing, ticks: u32) -> Result<(Match, Vec<DuelView>), String> {
+        let seats = Seats::new().map_err(|e| format!("the house AI did not load: {}", e.0))?;
+        let mut m = Match::new(seed, pairing, &seats);
         let mut fought = Vec::new();
-        for _ in 0..1200 {
+        for _ in 0..ticks {
             if m.step().is_none() {
                 break;
             }
             fought.push(m.view());
         }
-        assert!(!fought.is_empty());
+        Ok((m, fought))
+    }
 
-        let snap = m.snapshot();
-        let [log0, log1] = logs_from_snapshot(&snap);
+    /// The page's side: a duel built as `live.rs`/`rules.rs` builds one (`Duel::new_drawn`) on two `Replay` seats fed
+    /// the corners' logs split from the wire snapshot, stepped tick by tick and checked against the fight the server
+    /// fought.
+    fn replays(seed: u32, snap: &Snapshot, fought: &[DuelView]) {
+        let [log0, log1] = logs_from_snapshot(snap);
         let make0: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log0)) as Box<dyn Seat>);
         let make1: MakeSeat = Box::new(move |_s, _m| Box::new(Replay::new(log1)) as Box<dyn Seat>);
-        let mut replay = Duel::new_with_looks(
-            arena_config(seed),
-            [make0, make1],
-            arena_duel::ladder::looks_of(seed),
-        );
+        let mut replay = Duel::new_drawn(config_for(snap.seed, snap.arena), [make0, make1]);
+        assert_eq!(snap.seed, seed);
         for (i, want) in fought.iter().enumerate() {
             replay.step(TICK);
             assert_eq!(
@@ -280,6 +410,69 @@ mod tests {
                 want,
                 "wire replay diverged at step {i}"
             );
+        }
+    }
+
+    /// The server's wire snapshot (Act-encoded, split by corner, keyed by tick) replays the very fight it fought: the
+    /// server-side half of P1. A page fed this snapshot draws what the server drew, the house AI in either seat and on
+    /// either parity of seed (which swaps the looks).
+    #[test]
+    fn the_wire_snapshot_replays_the_fought_match() -> Result<(), String> {
+        for (seed, house_seat, opponent) in [
+            (7_654_321, 0, Bot::Brain),
+            (7_654_322, 1, Bot::Brain),
+            (1_234, 1, Bot::Turtle),
+            (99, 0, Bot::Aggressive),
+        ] {
+            let pairing = Pairing {
+                house_seat,
+                opponent,
+            };
+            let (m, fought) = fight(seed, pairing, 1200)?;
+            assert!(!fought.is_empty());
+            let snap = m.snapshot();
+            assert_eq!(snap.corners[house_seat], "house");
+            assert_eq!(snap.corners[1 - house_seat], opponent.name());
+            assert!(
+                snap.decisions
+                    .iter()
+                    .any(|d| d.corner as usize == house_seat),
+                "the house AI decided nothing"
+            );
+            replays(seed, &snap, &fought);
+        }
+        Ok(())
+    }
+
+    /// A seed, the opponent and the house AI's seat fix the match: fought twice, the same decisions and the same end.
+    #[test]
+    fn a_seed_and_a_pairing_fight_the_same_match_twice() -> Result<(), String> {
+        let pairing = Pairing {
+            house_seat: 1,
+            opponent: Bot::First,
+        };
+        let (a, fa) = fight(424_243, pairing, MAX_TICKS)?;
+        let (b, fb) = fight(424_243, pairing, MAX_TICKS)?;
+        assert!(a.ended().is_some(), "the match ran out of ticks unended");
+        assert_eq!(a.snapshot(), b.snapshot());
+        assert_eq!(a.ended(), b.ended());
+        assert_eq!(fa.last(), fb.last());
+        assert!(a.decisions()[1] > 0, "the house AI decided nothing");
+        Ok(())
+    }
+
+    /// The minds take turns, the house AI's seat comes from the seed, and both seats come up.
+    #[test]
+    fn pairings_rotate_the_minds_and_draw_the_seat() {
+        let opponents: Vec<Bot> = (1..=8).map(|n| Pairing::of(n, 5).opponent).collect();
+        assert_eq!(&opponents[..4], &Bot::MINDS);
+        assert_eq!(&opponents[4..], &Bot::MINDS);
+        let seats: Vec<usize> = (0..64_u32).map(house_seat).collect();
+        assert!(seats.contains(&0) && seats.contains(&1));
+        for seed in 0..64 {
+            let p = Pairing::of(1, seed);
+            assert_eq!(p.bots()[p.house_seat], Bot::House);
+            assert_eq!(p.bots()[1 - p.house_seat], Bot::Brain);
         }
     }
 }

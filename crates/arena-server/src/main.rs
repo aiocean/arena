@@ -12,7 +12,10 @@
 //! The file form keeps the token out of a service's definition: `--relay-env` reads `KEY=VALUE` lines, takes
 //! `MOQ_PUBLISH_TOKEN`, and dials `https://<MOQ_RELAY_HOST>/<token>` (the host defaults to Cloudflare's draft-18 relay).
 //!
-//! It loops: a fresh seed, a house-vs-house match published as it is fought, then the next. Each match is one MoQ
+//! It loops: a fresh seed, a match published as it is fought, then the next. Each match seats the house AI (the ONNX
+//! policy `arena-bot` runs natively through tract) against one of the rules' minds in turn (brain, first mind,
+//! aggressive script, turtle script); the house AI's seat and the looks are drawn from the seed
+//! (`arena_server::match_run::Pairing`). The page replays each corner's decisions, so it runs no mind and no model. Each match is one MoQ
 //! broadcast (`arena_link::moq`), its track a run of postcard `arena_link::Frame`s. A new group every
 //! `GROUP_TICKS` opens with a `Keyframe` (the whole match so far), so a page joining late rebuilds from the start.
 //!
@@ -31,7 +34,7 @@
 use anyhow::{Context, Result};
 use arena_link::Frame;
 use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, broadcast};
-use arena_server::match_run::Match;
+use arena_server::match_run::{Match, Pairing, Seats};
 use arena_server::pace::Pacer;
 use arena_server::publish::Publisher;
 use std::time::{Duration, Instant};
@@ -40,9 +43,6 @@ use url::Url;
 
 use arena_duel::duel::TICK;
 
-/// The names the house corners fight under.
-const CORNERS: [&str; 2] = ["house-thunder", "house-frost"];
-
 /// Why the server is stopping, sent to the match loop: `None` while it runs.
 type Stop = watch::Receiver<Option<&'static str>>;
 
@@ -50,6 +50,15 @@ type Stop = watch::Receiver<Option<&'static str>>;
 // QUIC's sends and receives never wait behind a tick, nor a tick behind them.
 #[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() -> Result<()> {
+    if std::env::args().any(|a| a == "--version") {
+        println!(
+            "arena-server {} (commit {}, rules {})",
+            env!("CARGO_PKG_VERSION"),
+            arena_telemetry::GIT_HASH,
+            arena_link::RULES_VERSION
+        );
+        return Ok(());
+    }
     let telemetry = arena_telemetry::init(
         "arena-server",
         arena_telemetry::Options {
@@ -60,7 +69,14 @@ async fn main() -> Result<()> {
         },
     );
 
+    tracing::info!(
+        build = arena_telemetry::GIT_HASH,
+        rules = arena_link::RULES_VERSION,
+        "arena-server starting"
+    );
     let url = connect_url()?;
+    // the seat factory, the house AI's model loaded once; a server that cannot seat it does not start
+    let seats = Seats::new().map_err(|e| anyhow::anyhow!("the house AI did not load: {}", e.0))?;
 
     // connect::Config is non_exhaustive, so it is built from its default and then pointed at the relay
     #[allow(clippy::field_reassign_with_default)]
@@ -81,7 +97,7 @@ async fn main() -> Result<()> {
 
     // the match loop stops at a tick's edge when told why: it ends its match's track and observer, then returns
     let (stop, stopped) = watch::channel(None);
-    let matches = run_matches(&origin, stopped);
+    let matches = run_matches(&origin, &seats, stopped);
     tokio::pin!(matches);
     let res = tokio::select! {
         res = &mut matches => res,
@@ -130,7 +146,11 @@ async fn shutdown_signal() -> &'static str {
 }
 
 /// One match after another, each on a fresh seed, until told to stop.
-async fn run_matches(origin: &moq_net::origin::Producer, mut stop: Stop) -> Result<()> {
+async fn run_matches(
+    origin: &moq_net::origin::Producer,
+    seats: &Seats,
+    mut stop: Stop,
+) -> Result<()> {
     let mut n: u64 = 0;
     loop {
         if stop.borrow().is_some() {
@@ -139,10 +159,18 @@ async fn run_matches(origin: &moq_net::origin::Producer, mut stop: Stop) -> Resu
         n += 1;
         // a seed from the wall clock and the match number: unpredictable enough for a demo, and in the match id so a
         // watcher can name the fight.
-        let seed = (seed_now() ^ n.wrapping_mul(0x9E37_79B9)) as u32 | 1;
+        // never 0, either parity: the parity draws the looks (`ladder::looks_of`)
+        let seed = ((seed_now() ^ n.wrapping_mul(0x9E37_79B9)) as u32).max(1);
         let match_id = format!("m{n}-{seed}");
-        tracing::info!(match_id, seed, "new match");
-        if let Err(e) = run_one(origin, &match_id, seed, &mut stop).await {
+        let pairing = Pairing::of(n, seed);
+        tracing::info!(
+            match_id,
+            seed,
+            house_seat = pairing.house_seat,
+            opponent = pairing.opponent.name(),
+            "new match"
+        );
+        if let Err(e) = run_one(origin, &match_id, seed, pairing, seats, &mut stop).await {
             tracing::warn!(match_id, error = %e, "match failed");
         }
     }
@@ -153,6 +181,8 @@ async fn run_one(
     origin: &moq_net::origin::Producer,
     match_id: &str,
     seed: u32,
+    pairing: Pairing,
+    seats: &Seats,
     stop: &mut Stop,
 ) -> Result<()> {
     let bc = origin
@@ -164,9 +194,8 @@ async fn run_one(
         .announce(Default::default())
         .context("announce")?;
 
-    let corners = [CORNERS[0].to_string(), CORNERS[1].to_string()];
-    let mut m = Match::new(seed, corners);
-    m.observe(match_id);
+    let mut m = Match::new(seed, pairing, seats);
+    m.observe(match_id, arena_telemetry::GIT_HASH);
     let mut watched = false;
     let mut frames: u64 = 0;
     let mut in_group: u32 = 0;
@@ -192,7 +221,15 @@ async fn run_one(
             // the server is stopping mid-match: the observer ends it as `why`, the track is cut off (aborted)
             m.stop(why);
             publisher.abort();
-            tracing::info!(match_id, ticks = m.tick(), why, "match stopped");
+            let decisions = m.decisions();
+            tracing::info!(
+                match_id,
+                ticks = m.tick(),
+                why,
+                decisions_0 = decisions[0],
+                decisions_1 = decisions[1],
+                "match stopped"
+            );
             return Ok(());
         }
 
@@ -255,9 +292,15 @@ async fn run_one(
     // the last group, then the track: a viewer reads to the end and sees the track end cleanly
     publisher.finish()?;
     let wall_seconds = start.elapsed().as_secs_f64();
+    let decisions = m.decisions();
     tracing::info!(
         match_id,
         ticks = m.tick(),
+        result = ?m.ended(),
+        house_seat = pairing.house_seat,
+        opponent = pairing.opponent.name(),
+        decisions_0 = decisions[0],
+        decisions_1 = decisions[1],
         groups,
         frames,
         wall_seconds,

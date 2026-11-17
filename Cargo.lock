@@ -424,6 +424,7 @@ name = "arena-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arena-bot",
  "arena-duel",
  "arena-link",
  "arena-mind",
@@ -459,6 +460,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "ureq",
 ]
 
 [[package]]

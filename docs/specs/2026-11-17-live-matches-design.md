@@ -16,6 +16,8 @@ tick. With the server deciding, the page loads no bot at all.
 
 - **The server runs every match**: the rules (`arena-duel`) and both corners' bots natively (the house AI on tract,
   `arena-bot` `onnx`; a submitted module in wasmtime, `arena-bot` `host`, metered as today). One match is one task.
+  Today each match seats the house AI against a built-in mind (brain, first mind, aggressive, turtle) in turn, the
+  house AI's seat and the looks drawn from the seed (`arena_server::match_run::Pairing`).
 - **The page plays the match back**: the rules are deterministic from a seed, so the server sends the seed and each
   corner's decisions as they are made, a few bytes each, and the page's own copy of the rules steps the same fight and
   draws it. Nothing of the fight's state crosses the link.
