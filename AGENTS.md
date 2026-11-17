@@ -54,7 +54,8 @@ resolve it there.
   build. A change to the rules, to a seat's `think` order or to a bot's inputs or acts bumps
   `arena_link::RULES_VERSION` to origin's number plus one at push time (`git pull --rebase` first: another change may
   have taken the next number) and ships the server with the page in one deploy ("Deploy", below). A page on other
-  rules refuses the match and is told to reload; the smoke test fails it as stale.
+  rules refuses the match and is told to reload; the smoke test fails it as stale. The page replays in WebAssembly
+  what the server fought natively: run the native = wasm check (`CONTRIBUTING.md`) before pushing a rules change.
 - A change to a rule changes every bot's world: while the arena is in testing it goes in on `main`. Update `docs/rules.md`
   in the same change.
 - A new house AI: `train/export.py` (writes `crates/arena-duel/weights/policy.onnx` and its check), then

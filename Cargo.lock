@@ -371,6 +371,7 @@ dependencies = [
  "libm",
  "serde",
  "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -19,6 +19,14 @@ serde = { workspace = true, optional = true }
 serde_json = { version = "=1.0.154", features = ["float_roundtrip", "preserve_order"] }
 
 # the trace compares whole fights, views and senses as JSON
+# examples/wasm_hashes.rs, built for the browser's WebAssembly (the native = wasm check, `tests/wasm/`)
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen = "=0.2.130"
+
+[[example]]
+name = "wasm_hashes"
+crate-type = ["cdylib"]
+
 [features]
 # serde for the commands, events and views, in the shapes JS reads them (camelCase, tagged with "type")
 serde = ["dep:serde", "arena-mind/serde", "arena-calc/serde"]

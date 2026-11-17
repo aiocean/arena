@@ -14,6 +14,7 @@ pub mod debug;
 pub mod duel;
 pub mod effects;
 pub mod fighter;
+pub mod fingerprint;
 pub mod frames;
 #[rustfmt::skip]
 mod frames_data;

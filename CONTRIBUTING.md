@@ -19,6 +19,15 @@ cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
 site/build.sh
 ```
 
+The page replays the matches the server fights natively, so the rules must fight bit for bit the same in the
+browser's WebAssembly. Check it before you push a change to the rules (under a minute; not yet in CI):
+
+```sh
+cargo build --release -p arena-duel --example wasm_hashes --target wasm32-unknown-unknown
+wasm-bindgen --target nodejs --out-dir target/wasm-hashes target/wasm32-unknown-unknown/release/examples/wasm_hashes.wasm
+node crates/arena-duel/tests/wasm/native_wasm.mjs target/wasm-hashes   # PASS: the native goldens' hashes in wasm
+```
+
 Run `cargo fmt --all` before you push. A clone refuses a push that is not formatted once its hooks are on, which
 every clone should do once:
 

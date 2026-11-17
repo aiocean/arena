@@ -86,6 +86,11 @@ Each tick the two fighters take their turns with who goes first alternating (`du
   never stops a looping one), and a new effect id needs a painter in `arena-vfx` and a re-bake, or a drawn sheet
   (`art/vfx/`), and its id in `effects::EFFECTS`.
 - One extra or missing roll of the dice changes every fight after it.
+- Native = wasm: the page replays in WebAssembly what the server fought natively. `examples/wasm_hashes.rs` works out
+  the goldens' fingerprints (`fingerprint`, seeds 1-20 of 120 s) in `wasm32-unknown-unknown` and
+  `tests/wasm/native_wasm.mjs` holds them to `event_hashes.json` under node (the commands are in
+  `CONTRIBUTING.md`): run it after a change to the rules, and anything that could round or order differently in
+  wasm (floats, collections, the dice).
 - A change to the rules, to a seat's `think` order or to what a bot sees or does bumps `arena_link::RULES_VERSION`
   (root `AGENTS.md`, "Traps"): the live page and the server must run one rules build.
 - A redrawn fighter sheet changes the boxes: run `frame_boxes` again, re-pin the goldens and measure with the ladder;
