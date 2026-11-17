@@ -61,7 +61,7 @@ jobs:
           merge-multiple: true
       - name: The season's files and their checksums
         run: |
-          cp crates/pixfx-duel/weights/policy.bin dist/
+          cp crates/pixfx-duel/weights/policy.onnx dist/
           cd dist && sha256sum * > SHA256SUMS
       - name: Release
         env:
@@ -69,4 +69,4 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes "Season ${GITHUB_REF_NAME#arena-s}: the rules at this tag on the pixfx engine rev pinned in Cargo.toml. Install the env module with
           \`pip install pixfx-duel --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}\`.
-          policy.bin is the shipped AI; SHA256SUMS lists every file's hash."
+          policy.onnx is the house AI (build it into a bot module with bots/onnx); SHA256SUMS lists every file's hash."
