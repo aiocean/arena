@@ -38,7 +38,7 @@ resolve it there.
 | plays a spell's effect in the game: a baked sheet as sprites, an effect that reads the fighter painted live | `crates/arena-game/src/vfx` (`sprites`; `arena_vfx::SPRITE_AWARE` and `AMBIENT` are the live ones) |
 | is a spell's effect drawn by an image model (smooth, no pixels) and moved by code: its frames, prompts and `motion.json` (spin, flight, scale-in, idle, tail, exit, its anchor) | `art/vfx/<name>/`, built by `cargo -Zscript art/vfx/tools/vfx.rs --all art/vfx crates/arena-game/assets/drawn`; read by `arena_vfx::drawn`, played by `crates/arena-game/src/vfx/drawn.rs`. An effect with a drawn sheet plays from it, the rest from their recipes. The sprite keeps only the drawn shapes; whatever code can do (a turn, a flight, a scale, a fade) is in `motion.json` |
 | is the backdrop, the light, the fight's feel (hit-stop, shake, numbers), the HUD | `crates/arena-game` (`scene`, `light`, `feel`, `hud`) |
-| makes a fighter's sprite sheets from its PixelLab export | `art/<character>/tools/sheet.rs`, writing `crates/arena-game/assets/fighters/` |
+| makes a fighter's sprite sheets from its generated pictures (cut the grid, key the ground, find the feet, scale) | `art/tools/sheet.rs` (to be written), writing `crates/arena-game/assets/fighters/`; the PixelLab exports' own `art/<character>/tools/sheet.rs` built today's sheets until they are redrawn |
 | decides how a fighter is drawn: canvas, height, outline, colours, clips, the checks before it ships | `art/README.md` (the art direction; not a player doc) |
 | starts the game on the page, hands it a dropped bot module and a seed | `site/assets/arena.js` (it decides nothing) |
 | is a page of the arena site (arena.aiocean.io): home (the duel and the bot slots), the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
@@ -64,9 +64,13 @@ resolve it there.
   a module.
 - Long training runs go on a desktop as launchd jobs, never on a laptop (`train/README.md`, "Training on a
   desktop").
-- A new fighter is made to `art/README.md`: HD pixel art, a 256 px PixelLab canvas (v3), side view, about 240 px
-  tall, the 20 clips of `pick::CLIPS` facing east, checked beside the reference before any animation is paid for
-  (about 170 generations a character with its master).
+- Pixel is how the arena is shown, not how it is drawn (owner, 2026-11-17). Art is generated smooth, a clean
+  vector-style illustration, by image models through OpenRouter (game-factory `tools/openrouter-image`, Gemini for
+  clips), never asked for as pixel art, and kept smooth in the game; the pixel layer at render makes the pixels.
+  PixelLab is no longer used. A new fighter is made to `art/README.md`: a master in the fighting stance approved
+  through the layer before any clip is paid for, then the 20 clips of `pick::CLIPS` facing east, 8 key poses a
+  picture with the master as the reference (about $0.07 a picture). The PixelLab sheets on the page stay until each
+  is redrawn.
 - An effect is a sprite sheet unless it reads the fighter it plays on (its body, its outline: `SPRITE_AWARE`) or
   fills the scene (`AMBIENT`). A drawn sheet (`assets/drawn`, from `art/vfx/`) plays in place of the baked one; the
   rest are baked from their recipes. A change to an effect's painter, or to the colours and sizes the rules play it

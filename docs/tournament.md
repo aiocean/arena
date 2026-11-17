@@ -8,7 +8,9 @@ This is the design; what is not built yet is listed in `docs/roadmap.md`.
 The arena runs a single season for now, the test one, on this repo's `main`. Nothing is frozen yet: the rules (every
 number in `crates/arena-duel/src/data.rs` and in the damage system, `crates/arena-calc`, the frame data and the boxes
 measured from the sprite sheets, `crates/arena-duel/src/frames_data.rs`, so a redrawn clip too, the bar), what a bot sees and does (`docs/bot.md`) and the
-house AI may still change, and a change may mean a bot needs retraining. There are no season tags.
+house AI may still change, and a change may mean a bot needs retraining. There are no season tags while the arena is
+in testing; the release workflow (`.github/workflows/release.yml`, a tag `arena-s<N>`) is kept, dormant, for when
+seasons start.
 
 What a bot depends on, and what a later season would freeze: the rules; the 305 inputs, the 27 acts, the legality
 rules and the timing; the bot ABI (`arena-bot-2`), the module features it accepts and its budgets (`docs/bot.md`,

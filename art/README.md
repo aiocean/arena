@@ -1,45 +1,60 @@
 # Art direction
 
-How every fighter in the arena is drawn, so a new one stands beside the others without looking pasted in. The arena
-is **HD pixel art** (decided 2026-11-17): the detail of the King of Fighters XIII sprites, every pixel still placed on
-one grid. The references are two PixelLab characters drawn at 256, side by side in style and height (240 and 241 px):
+How every fighter and every spell effect in the arena is drawn, so a new one stands beside the others without looking
+pasted in.
 
-- **Tu Sĩ Hắc Kiếm HD** (`e87e46ec-fb25-4da9-9260-522d28aa2c4c`), the cultivator redrawn in HD;
-- **Thất Thải Đạo Nhân HD test** (`e2025e8c-a3b0-48b8-a4c6-24e16540d230`), a density test. It follows the Daoist's
-  first draft, so for his design (crown, face) the master is still the 128 px `Idle v2` state (`099d4273-…`,
-  `art/seven-colored-daoist`, `docs/specs/2026-11-17-seven-colored-daoist-design.md`); he is redrawn in HD from it.
+**Pixel is how the arena is shown, not how it is drawn (owner, 2026-11-17).** Art is generated smooth, a clean
+vector-style illustration, by image models through OpenRouter (game-factory `tools/openrouter-image`, Gemini for
+clips), never asked for as pixel art, and kept smooth in the game; the pixel layer at render makes the pixels.
+PixelLab is no longer used. A new fighter is a master in the fighting stance, approved through the layer before any
+clip is paid for, then the 20 clips of `pick::CLIPS` facing east, 8 key poses a picture with the master as the
+reference (about $0.07 a picture). The PixelLab sheets on the page stay until each is redrawn.
 
-A new character is checked against them, at the size the game shows it, before any animation is made. The 128 px
-characters (`29a1ef98-…` in `cultivator/src`, the Daoist's 128 states) are the old standard: half the detail, used
-for design only, never mixed with HD fighters in one duel.
+Where it stands: the two fighters on the page are still the PixelLab sheets, shown pixel for pixel (the game samples
+them nearest, `ImagePlugin::default_nearest`, and enlarges the whole picture by a whole number,
+`crates/arena-game/src/layout.rs`). The pixel layer is not in the game's render yet; the spell effects are already
+drawn on the new route ("Spell effects drawn by an image model", below) and sampled smoothly.
 
-This file is for the people and agents who make the art. The player docs are `docs/` (published on the site).
-Why HD, the pictures that decided it, and the other generators looked at: `art/research/README.md`.
+This file is for the people and agents who make the art. The player docs are `docs/` (published on the site). The
+generators looked at and the pictures that decided the route: `art/research/README.md`.
 
-## Pixel density: one art pixel is one screen pixel of the fighter
+## Making a fighter
 
-- A fighter is drawn on a **256 x 256** PixelLab canvas, side view, and its body is about **240 px tall** and 110 to
-  130 px wide facing east. This is the detail level of the reference: eyes, brows and lips, single locks of hair,
-  folds in a sleeve and each stripe of a trim are drawn, so a face can show what the fighter feels.
-- The screen is made for it: a fighter stands about 45% of the picture's height, so the duel's picture is about
-  **500 px tall** before the page enlarges it.
-- The game shows those pixels **as drawn**: never halved, never scaled by a fraction, never rotated or smoothed. The
-  game enlarges the whole picture by a whole number (`crates/arena-game/src/layout.rs`, `scale`) and samples the
-  fighters' sheets nearest (`ImagePlugin::default_nearest`).
-- Every fighter in one duel has the same density. A smaller or larger character is drawn smaller or larger on the same
-  grid (a child on a smaller body, a beast on a bigger canvas), never resized from another size.
-- Nothing on the way from PixelLab to the screen changes the pixels' size: the sheet keeps every frame as drawn.
+1. **The master.** One picture of the fighter in its fighting stance (weapon in hand, feet set), side view facing
+   east, smooth, on a plain ground that keys out, at the cast's height: about 6.5 heads tall, a slender wuxia figure.
+   Put it through the pixel layer beside the other fighters at the game's density and have the owner approve it
+   before any clip is generated.
+2. **The clips.** The 20 clips of `CLIPS` (`crates/arena-duel/src/pick.rs`), facing east:
+
+   `stance-idle walk dash jump duck guard slash overhead cast hit knockdown launched tumble getting-up roll frozen
+   shocked meditate win defeat`
+
+   One picture holds 8 key poses in a 4 x 2 grid, read left to right then top to bottom, with the master given as the
+   reference image, so the design (hair, trims, the weapon's hand and side) stays the master's. A 16-frame clip is two
+   pictures, the second continuing the first; the short clips (`hit`, `guard`, `frozen`, `shocked`) one.
+3. **Clip to clip.** The game cuts from one clip to the next without blending, so the clips must meet: every clip
+   starts from the master's stance; every clip that ends standing (`stance-idle`, `walk`, strikes, `cast`, `guard`,
+   `hit`, `getting-up`, `roll`, `duck`, `win`) ends back in it, said on its last frame's line; loops (`stance-idle`,
+   `walk`, `tumble`, `shocked`) end where they start; `knockdown` ends lying as `defeat` and `getting-up` begin.
+   `launched` and `knockdown` start in the air, thrown by a blow: no standing frame at their start.
+4. **Frame data.** A strike's or a cast's picture numbers which frames wind up, which one is the release (the blow
+   lands, the spell leaves the hand) and which recover, as long as the rules keep each open ("Frame data and the
+   sprite", below).
+5. **Look at every frame.** A model draws an effect, a second figure, a cut-off weapon, a hand crossing into the next
+   cell: redraw that picture. Check the details that drift between pictures against the master.
+6. **The sheet.** Cut the grid, key the ground, find the feet, scale the whole character once, and write the sheet
+   the game reads (below) into `crates/arena-game/assets/fighters/`. The tool for this route is still to be written
+   (`art/tools/sheet.rs`); the PixelLab characters' own `art/<character>/tools/sheet.rs` built today's sheets.
 
 ## Style
 
-| | Rule | In the references |
-|---|---|---|
-| Outline | One near-black outline round the silhouette, 1 px, with no gaps; inner lines a darker shade of the area, not black | near-black edge, as in both 128 px characters (`#05060a`, `#000000`) |
-| Shading | Soft cel shading: 3 to 5 steps a material, shadows cooler and darker, highlights warmer; no dithering, no gradients | white robe: off-white, pale grey, blue-grey |
-| Light | From the front and above, the same in every frame; the fighter is mirrored for the west side, light included | |
-| Colours | At most 64 a character, all opaque: every pixel has alpha 0 or 255 | 64, no part-transparent pixels |
-| Detail | High: face, hair strands, folds and trims drawn, but the silhouette stays one readable shape at 1x | |
-| Proportions | Slender wuxia figures, about 6.5 heads tall, long robes; feet visible or the hem ending at the floor | |
+| | Rule |
+|---|---|
+| Drawing | A clean vector-style illustration: crisp shapes, soft cel shading in a few steps a material, shadows cooler and darker, highlights warmer; no glow, no haze, no effects drawn into a fighter |
+| Outline | One dark outline round the silhouette; inner lines a darker shade of the area. The pixel layer draws the outline the screen shows |
+| Light | From the front and above, the same in every frame; the fighter is mirrored for the west side, light included |
+| Edges | Smooth: anti-aliased, part-transparent edges are kept; the layer decides the pixels |
+| Proportions | Slender wuxia figures, about 6.5 heads tall, long robes; feet visible or the hem ending at the floor |
 
 ### Colour of a character
 
@@ -55,7 +70,10 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
   image model" below), and played by `crates/arena-game/src/vfx` in the colours of the effect palettes in
   `crates/arena-duel/src/data.rs` (`Tint`). The character's own colours are never reused for an effect's glow.
 
-## Making a character on PixelLab
+## How the PixelLab characters on the page were made (history)
+
+The two fighters on the page today were made on PixelLab before the rule above. Their sheets stay until each is
+redrawn on the route above; this is how they were made, for reading them, not for a new character.
 
 1. `create_character`, mode `v3` (the only mode that draws 256; 9 generations), size 256, view `side`, outline
    "single color black outline", detail "high detail". Describe outfit, hair, weapon, materials and colours in the
@@ -152,12 +170,12 @@ plays in place of its baked recipe.
 
 ## Before a character ships
 
-- [ ] East rotation beside the references at 1x: same height (±12 px), outline and shading.
+- [ ] The master through the pixel layer beside the cast at the game's density: same height, outline and shading;
+  approved by the owner before any clip is generated.
 - [ ] Every clip in `pick::CLIPS` present, 16 frames (8 for the short ones) at 20 fps, feet steady across a clip (no
   sliding while idle).
 - [ ] Each clip's first frame is the stance and the clips that end standing end in it: step through one clip into
   the next on the page.
-- [ ] No pixel with alpha other than 0 or 255; at most 64 colours.
 - [ ] No effect glow left in the frames.
 - [ ] Each look's sheet: the accent recoloured, nothing else changed.
 - [ ] `frame_boxes` run again and its table reviewed (`hitbox_review`): the boxes sit on the body and the blade.
