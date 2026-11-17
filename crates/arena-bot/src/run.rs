@@ -53,7 +53,7 @@ pub fn bot(
     move || BotSeat::make(new.clone(), style)
 }
 
-fn effects() -> Vec<String> {
+pub fn effects() -> Vec<String> {
     pixfx_effects::EFFECTS
         .iter()
         .map(|e| e.meta().id.to_string())
@@ -62,7 +62,7 @@ fn effects() -> Vec<String> {
 
 /// Plays `seats` on `seed` until `rounds` are decided, a round passes `limit` seconds, or a seat faults; the faults
 /// of the two seats.
-fn play(seats: [MakeSeat; 2], seed: u32, rounds: u32, limit: f64) -> [Option<Fault>; 2] {
+pub fn play(seats: [MakeSeat; 2], seed: u32, rounds: u32, limit: f64) -> [Option<Fault>; 2] {
     let config = DuelConfig {
         seed,
         left: 0.0,
@@ -98,6 +98,18 @@ pub fn fight(
     rounds: u32,
     limit: f64,
 ) -> Result<ActLog, Refusal> {
+    fought(engine, a, b, seed, rounds, limit).map(|(log, _)| log)
+}
+
+/// `fight`, and the fault that ended it for each corner.
+pub fn fought(
+    engine: &Engine,
+    a: &[u8],
+    b: &[u8],
+    seed: u32,
+    rounds: u32,
+    limit: f64,
+) -> Result<(ActLog, [Option<Fault>; 2]), Refusal> {
     let (ma, mb) = (check(engine, a)?, check(engine, b)?);
     let log = Rc::new(RefCell::new(ActLog {
         season: SEASON.to_string(),
@@ -107,8 +119,8 @@ pub fn fight(
     }));
     let seats = [bot(engine, &ma, None)(), bot(engine, &mb, None)()]
         .map(|make| recorded(make, log.clone()));
-    play(seats, seed, rounds, limit);
-    Ok(log.take())
+    let faults = play(seats, seed, rounds, limit);
+    Ok((log.take(), faults))
 }
 
 /// Why a log is not the fight of these modules.
@@ -207,10 +219,14 @@ pub enum Verdict {
         rows: Vec<Row>,
     },
     Refused(Refusal),
-    /// It faulted in a fight.
+    /// The arena has this module already.
+    Known(String),
+    /// It faulted answering the recorded decisions.
     Faulted(Fault),
-    /// The same fight twice gave different acts.
-    Unstable,
+    /// Fights the bar played ended by a fault.
+    FaultedFights(u32),
+    /// Two fresh instances answered the recorded decisions differently: the call where they first differ.
+    Unstable(usize),
     /// The first bar it missed.
     Below(Row),
 }
@@ -232,8 +248,13 @@ impl fmt::Display for Verdict {
                 write!(f, "enters the season as {hash}")
             }
             Verdict::Refused(why) => write!(f, "{why}"),
-            Verdict::Faulted(fault) => write!(f, "faulted in a fight: {fault}"),
-            Verdict::Unstable => f.write_str("the same fight gave different acts twice"),
+            Verdict::Known(hash) => write!(f, "module {hash} is already entered"),
+            Verdict::Faulted(fault) => write!(f, "faulted on the recorded decisions: {fault}"),
+            Verdict::FaultedFights(n) => write!(f, "{n} fights of the bar ended by a fault"),
+            Verdict::Unstable(at) => write!(
+                f,
+                "two fresh instances differ at decision {at} (act or fuel left)"
+            ),
             Verdict::Below(r) => write!(
                 f,
                 "{}: {:.1}%, the bar is {:.0}%",
@@ -245,30 +266,97 @@ impl fmt::Display for Verdict {
     }
 }
 
-/// The submission checks that run on the module alone: it is a bot, it plays one fight the same twice without a
-/// fault, and it clears the bar of `docs/tournament.md` over `seeds`, both ways.
-pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>) -> Verdict {
+/// One call of `arena_decide`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Decision {
+    pub obs: [f32; OBS],
+    pub legal: [bool; ACTIONS],
+    pub u: f32,
+}
+
+const DECISION_BYTES: usize = OBS * 4 + ACTIONS + 4;
+
+/// The seed the recorded decisions are answered from.
+const REPLAY_SEED: u32 = 1;
+
+/// The recorded decisions the entry replays: 64 of the house bot against the brain, seed 1 (`tests/cli.rs` writes
+/// the file when it is empty).
+const DECISIONS: &[u8] = include_bytes!("entry_decisions.bin");
+
+impl Decision {
+    pub fn encode(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(DECISION_BYTES);
+        out.extend(self.obs.iter().flat_map(|x| x.to_le_bytes()));
+        out.extend(self.legal.iter().map(|&l| u8::from(l)));
+        out.extend(self.u.to_le_bytes());
+        out
+    }
+
+    fn decode(bytes: &[u8]) -> Decision {
+        let mut obs = [0.0; OBS];
+        let (floats, rest) = bytes.split_at(OBS * 4);
+        for (x, c) in obs.iter_mut().zip(floats.as_chunks::<4>().0.iter()) {
+            *x = f32::from_le_bytes(*c);
+        }
+        let mut legal = [false; ACTIONS];
+        for (l, &b) in legal.iter_mut().zip(rest) {
+            *l = b != 0;
+        }
+        let u = rest
+            .get(ACTIONS..ACTIONS + 4)
+            .map_or(0.0, |c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]));
+        Decision { obs, legal, u }
+    }
+}
+
+/// The decisions of a recording.
+pub fn decisions(bytes: &[u8]) -> Vec<Decision> {
+    bytes
+        .as_chunks::<DECISION_BYTES>()
+        .0
+        .iter()
+        .map(|c| Decision::decode(c))
+        .collect()
+}
+
+/// What a fresh instance answers the decisions: the act and the fuel left after each call.
+fn answers(
+    engine: &Engine,
+    module: &Module,
+    decisions: &[Decision],
+) -> Result<Vec<(i32, u64)>, Fault> {
+    let mut bot = WasmBot::new(engine, module)?;
+    bot.start(REPLAY_SEED)?;
+    decisions
+        .iter()
+        .map(|d| {
+            let act = bot.decide(&d.obs, &d.legal, d.u)?;
+            Ok((act, bot.fuel_left()))
+        })
+        .collect()
+}
+
+/// The submission checks: the module is not `known`, it is a bot, two fresh instances answer the recorded decisions
+/// alike within fuel, and it clears the bar of `docs/tournament.md` over `seeds`, both ways.
+pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>, known: &[String]) -> Verdict {
+    let id = hash(bytes);
+    if known.contains(&id) {
+        return Verdict::Known(id);
+    }
     let module = match check(engine, bytes) {
         Ok(module) => module,
         Err(why) => return Verdict::Refused(why),
     };
     let balanced = bot(engine, &module, Some(Style::Balanced));
-    let mut played = Vec::new();
-    for _ in 0..2 {
-        let log = Rc::new(RefCell::new(ActLog::default()));
-        let [fault, _] = play(
-            [recorded(balanced(), log.clone()), Brain::make()],
-            seeds.start,
-            ROUNDS,
-            LIMIT,
-        );
-        if let Some(fault) = fault {
-            return Verdict::Faulted(fault);
-        }
-        played.push(log.take().acts);
-    }
-    if played[0] != played[1] {
-        return Verdict::Unstable;
+    let recorded = decisions(DECISIONS);
+    let twice = [0, 1].map(|_| answers(engine, &module, &recorded));
+    let [first, second] = twice;
+    let (first, second) = match (first, second) {
+        (Ok(a), Ok(b)) => (a, b),
+        (Err(fault), _) | (_, Err(fault)) => return Verdict::Faulted(fault),
+    };
+    if let Some(at) = first.iter().zip(&second).position(|(a, b)| a != b) {
+        return Verdict::Unstable(at);
     }
     let m = Match {
         seeds,
@@ -279,8 +367,8 @@ pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>) -> Verdict {
     let brain = match_up(&balanced, &Brain::make, &m);
     let first = match_up(&balanced, &FirstMind::make, &m);
     for r in [&brain, &first] {
-        if let Some(fault) = r.faults.iter().find(|n| **n > 0) {
-            return Verdict::Faulted(Fault::Trap(format!("{fault} fights ended by a fault")));
+        if let Some(n) = r.faults.iter().find(|n| **n > 0) {
+            return Verdict::FaultedFights(*n);
         }
     }
     let rows = vec![
@@ -307,9 +395,6 @@ pub fn entry(engine: &Engine, bytes: &[u8], seeds: Range<u32>) -> Verdict {
     ];
     match rows.iter().find(|r| !r.met()) {
         Some(row) => Verdict::Below(row.clone()),
-        None => Verdict::Pass {
-            hash: hash(bytes),
-            rows,
-        },
+        None => Verdict::Pass { hash: id, rows },
     }
 }

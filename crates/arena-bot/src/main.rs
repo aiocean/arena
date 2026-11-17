@@ -1,10 +1,10 @@
-//! `arena-bot check FILE` | `ladder FILE [--vs FILE] [--seeds N]` | `fight A B --seed N [--out LOG]` | `verify LOG A B`:
+//! `arena-bot check FILE [--known FILE]` | `ladder FILE [--vs FILE] [--seeds N]` | `fight A B --seed N [--out LOG]` | `verify LOG A B`:
 //! exit 0 on a pass, 1 with the reason on stderr otherwise.
 
 use std::error::Error;
 use std::process::ExitCode;
 
-use arena_bot::run::{LIMIT, ROUNDS, Verdict, bot, entry, fight, verify};
+use arena_bot::run::{LIMIT, ROUNDS, Verdict, bot, effects, entry, fought, verify};
 use arena_bot::{check, engine};
 use pixfx_duel::first_mind::FirstMind;
 use pixfx_duel::ladder::{Match, Record, match_up};
@@ -14,7 +14,7 @@ use pixfx_duel::seat::Brain;
 use pixfx_duel::style::Style;
 use wasmtime::Engine;
 
-const USAGE: &str = "usage: arena-bot check FILE | ladder FILE [--vs FILE] [--seeds N] | fight A B --seed N [--out LOG] | verify LOG A B";
+const USAGE: &str = "usage: arena-bot check FILE [--known FILE] | ladder FILE [--vs FILE] [--seeds N] | fight A B --seed N [--out LOG] | verify LOG A B";
 
 /// The seeds of the ladder and of the entry bar.
 const SEEDS: u32 = 150;
@@ -61,7 +61,15 @@ fn command(args: &[String]) -> Result<(), Box<dyn Error>> {
     match (args.first().map(String::as_str), files.as_slice()) {
         (Some("check"), [file]) => {
             let bytes = std::fs::read(file)?;
-            match entry(&engine, &bytes, 1..SEEDS + 1) {
+            let known: Vec<String> = match flag(rest, "--known") {
+                Some(path) => std::fs::read_to_string(path)?
+                    .lines()
+                    .map(|l| l.trim().to_string())
+                    .filter(|l| !l.is_empty())
+                    .collect(),
+                None => Vec::new(),
+            };
+            match entry(&engine, &bytes, 1..SEEDS + 1, &known) {
                 verdict @ Verdict::Pass { .. } => {
                     println!("{verdict}");
                     Ok(())
@@ -76,7 +84,7 @@ fn command(args: &[String]) -> Result<(), Box<dyn Error>> {
             let seed = flag(rest, "--seed")
                 .ok_or("fight needs --seed N")?
                 .parse()?;
-            let log = fight(
+            let (log, faults) = fought(
                 &engine,
                 &std::fs::read(a)?,
                 &std::fs::read(b)?,
@@ -89,7 +97,16 @@ fn command(args: &[String]) -> Result<(), Box<dyn Error>> {
                 Some(path) => std::fs::write(path, json)?,
                 None => println!("{json}"),
             }
-            Ok(())
+            let ended: Vec<String> = faults
+                .iter()
+                .enumerate()
+                .filter_map(|(corner, f)| f.as_ref().map(|f| format!("corner {corner}: {f}")))
+                .collect();
+            if ended.is_empty() {
+                Ok(())
+            } else {
+                Err(format!("the fight ended by a fault, {}", ended.join("; ")).into())
+            }
         }
         (Some("verify"), [log, a, b]) => {
             let log: ActLog = serde_json::from_slice(&std::fs::read(log)?)?;
@@ -116,10 +133,7 @@ fn ladder(
         seeds: 1..seeds + 1,
         rounds: ROUNDS,
         limit: LIMIT,
-        effects: pixfx_effects::EFFECTS
-            .iter()
-            .map(|e| e.meta().id.to_string())
-            .collect(),
+        effects: effects(),
     };
     println!("ladder: {seeds} seeds x both ways x {ROUNDS} rounds, rounds cut at {LIMIT} s\n");
     println!(
@@ -136,7 +150,7 @@ fn ladder(
             pct(r.as_school(1)),
             r.mean_length(),
             r.timeouts,
-            r.faults[0],
+            format!("{}/{}", r.faults[0], r.faults[1]),
         );
     };
     row("balanced vs brain", match_up(&balanced, &Brain::make, &m));
