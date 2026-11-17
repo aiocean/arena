@@ -2,9 +2,9 @@
 
 mod common;
 
-use common::{all_effects, idle};
 use arena_duel::ladder::{Match, match_up};
 use arena_duel::seat::Brain;
+use common::{all_effects, idle};
 
 #[test]
 fn every_seed_is_fought_both_ways_and_counted() {

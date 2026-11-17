@@ -32,7 +32,12 @@ pub struct Windup {
 
 /// What picks a fighter's frame, from what the rules keep of it: its pose and how long it has held it, whether it is
 /// out, and the cast it is gathering (`spell`, its phase and time in it).
-pub fn appearance(pose: Pose, pose_t: f64, out: bool, act: Option<(&str, Phase, f64)>) -> Appearance {
+pub fn appearance(
+    pose: Pose,
+    pose_t: f64,
+    out: bool,
+    act: Option<(&str, Phase, f64)>,
+) -> Appearance {
     let act = act.and_then(|(name, phase, t)| {
         let s = spell(name)?;
         let windup = (phase == Phase::Windup).then(|| Windup {

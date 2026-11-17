@@ -3,11 +3,11 @@
 
 mod common;
 
-use common::{all_effects, config, fight, run};
 use arena_duel::data::spell;
 use arena_duel::duel::Duel;
 use arena_duel::fighter::Slot;
 use arena_duel::out::Out;
+use common::{all_effects, config, fight, run};
 
 const PLAN2: [&str; 16] = [
     "fire/candle",
@@ -66,7 +66,10 @@ fn fights_end_in_a_knockout_and_the_next_round_starts() {
             assert_eq!((last[0] + last[1]) as usize, r.len(), "seed {seed}");
         }
     }
-    assert!(knockouts >= 6, "only {knockouts} of 12 seeds reached a knockout");
+    assert!(
+        knockouts >= 6,
+        "only {knockouts} of 12 seeds reached a knockout"
+    );
 }
 
 #[test]
@@ -74,10 +77,7 @@ fn a_heavy_blow_throws_its_target_which_lands_lies_and_gets_up() {
     let mut duel = common::duel_of(
         2,
         [common::idle(), common::idle()],
-        [
-            common::loadout(&["nineturn"]),
-            common::loadout(&[]),
-        ],
+        [common::loadout(&["nineturn"]), common::loadout(&[])],
     );
     for f in &mut duel.state_mut().fighters {
         f.c.evasion = 0.0;

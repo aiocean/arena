@@ -2,7 +2,7 @@
 //! `Choice` variant that `Act` does not mirror fails to compile here (the match is exhaustive); one mirrored wrong
 //! fails the equality.
 
-use arena_link::{Act, Arena, Decision, Ended, Frame, Forfeit, Snapshot, Through, decode, encode};
+use arena_link::{Act, Arena, Decision, Ended, Forfeit, Frame, Snapshot, Through, decode, encode};
 
 const ARENA: Arena = Arena {
     left: 88.0,
@@ -69,7 +69,10 @@ fn frames_round_trip_through_postcard() -> Result<(), postcard::Error> {
         arena: ARENA,
         corners: ["thunder".into(), "frost".into()],
         decisions: decisions.clone(),
-        forfeits: vec![Forfeit { tick: 90, corner: 1 }],
+        forfeits: vec![Forfeit {
+            tick: 90,
+            corner: 1,
+        }],
         ended: Some(Ended::Winner(0)),
         ticks: 600,
     };
@@ -77,7 +80,10 @@ fn frames_round_trip_through_postcard() -> Result<(), postcard::Error> {
         Frame::Keyframe(snapshot),
         Frame::Decision(decisions[0].clone()),
         Frame::Forfeit(Forfeit { tick: 5, corner: 0 }),
-        Frame::Through(Through { tick: 61, sent_ms: 1_794_931_227_207 }),
+        Frame::Through(Through {
+            tick: 61,
+            sent_ms: 1_794_931_227_207,
+        }),
         Frame::End(Ended::Draw),
     ];
     for f in frames {
@@ -107,8 +113,20 @@ fn follow_builds_the_match_from_its_frames() -> Result<(), String> {
     assert_eq!(f.apply(Frame::Decision(d(0, 0))), Applied::Ignored);
     assert_eq!(f.apply(Frame::Decision(d(3, 1))), Applied::Taken);
     assert_eq!(f.through(), 0);
-    assert_eq!(f.apply(Frame::Through(Through { tick: 12, sent_ms: 0 })), Applied::Taken);
-    assert_eq!(f.apply(Frame::Through(Through { tick: 5, sent_ms: 0 })), Applied::Ignored);
+    assert_eq!(
+        f.apply(Frame::Through(Through {
+            tick: 12,
+            sent_ms: 0
+        })),
+        Applied::Taken
+    );
+    assert_eq!(
+        f.apply(Frame::Through(Through {
+            tick: 5,
+            sent_ms: 0
+        })),
+        Applied::Ignored
+    );
     assert_eq!(f.through(), 12);
     assert_eq!(f.apply(Frame::End(Ended::Winner(1))), Applied::Taken);
     let s = f.snapshot().ok_or("no match held")?;
@@ -116,6 +134,9 @@ fn follow_builds_the_match_from_its_frames() -> Result<(), String> {
     assert_eq!(s.ended, Some(Ended::Winner(1)));
     // other rules: the page reloads
     let other = Snapshot::new(RULES_VERSION + 1, 9, ARENA, ["a".into(), "b".into()]);
-    assert_eq!(f.apply(Frame::Keyframe(other)), Applied::OtherRules(RULES_VERSION + 1));
+    assert_eq!(
+        f.apply(Frame::Keyframe(other)),
+        Applied::OtherRules(RULES_VERSION + 1)
+    );
     Ok(())
 }

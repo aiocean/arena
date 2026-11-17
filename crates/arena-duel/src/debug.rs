@@ -35,8 +35,17 @@ pub enum Mark {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Shape {
     /// From (`x0`, `y0`) to (`x1`, `y1`).
-    Rect { x0: f64, y0: f64, x1: f64, y1: f64 },
-    Circle { x: f64, y: f64, r: f64 },
+    Rect {
+        x0: f64,
+        y0: f64,
+        x1: f64,
+        y1: f64,
+    },
+    Circle {
+        x: f64,
+        y: f64,
+        r: f64,
+    },
 }
 
 /// One shape to draw, whose it is, and what it is.
@@ -94,7 +103,8 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
             _ => continue,
         };
         let face = if b.face < 0.0 { -1.0 } else { 1.0 };
-        let [x0, y0, x1, y1] = crate::unit::strike_box(state, me, b.x, b.air, face, reach, level, blade);
+        let [x0, y0, x1, y1] =
+            crate::unit::strike_box(state, me, b.x, b.air, face, reach, level, blade);
         out.push(Drawn {
             owner: Some(me),
             mark: Mark::Strike,
@@ -108,7 +118,9 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         let r = sp.radius.unwrap_or(0.0);
         let drawn = match &s.kind {
             // shot::run_bolt: shot::overlaps at the bolt's place, give or take its radius
-            ShotKind::Bolt { .. } => s.bolt_at(state).map(|(x, y, _)| (Mark::Shot, Shape::Circle { x, y, r })),
+            ShotKind::Bolt { .. } => s
+                .bolt_at(state)
+                .map(|(x, y, _)| (Mark::Shot, Shape::Circle { x, y, r })),
             // shot::run, Orb: shot::overlaps(bx, -by, radius)
             ShotKind::Orb { .. } => {
                 let (bx, by) = orb_at(s);

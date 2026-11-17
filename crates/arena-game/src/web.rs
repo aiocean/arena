@@ -7,9 +7,9 @@
 use crate::bots::{Corner, Seat, Seated, Seating};
 use crate::rules::Shown;
 use arena_bot::{ACTIONS, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};
+use arena_duel::seat::{Decider, Fault, SharedDecider};
 use bevy::prelude::*;
 use js_sys::{BigInt, Function, Object, Reflect, Uint8Array, WebAssembly};
-use arena_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;

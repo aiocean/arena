@@ -2,11 +2,11 @@
 
 mod common;
 
+use arena_duel::style::Style;
+use arena_duel::train::{Env, EnvConfig, Opponent, Step};
 use arena_mind::Rng;
 use arena_mind::policy::{ACTIONS, Act};
 use common::all_effects;
-use arena_duel::style::Style;
-use arena_duel::train::{Env, EnvConfig, Opponent, Step};
 
 fn cfg(seed: u32, learner: usize, opponent: Opponent) -> EnvConfig {
     EnvConfig {
@@ -50,7 +50,11 @@ fn an_episode_pays_plus_or_minus_one_at_its_end() {
     let mut rng = Rng::new(1);
     let (mut ends, mut tried) = (0, 0);
     for seed in 1..=6 {
-        for (learner, opp) in [(0, Opponent::Brain), (1, Opponent::First), (0, Opponent::Aggressive)] {
+        for (learner, opp) in [
+            (0, Opponent::Brain),
+            (1, Opponent::First),
+            (0, Opponent::Aggressive),
+        ] {
             tried += 1;
             let mut env = Env::new(cfg(seed, learner, opp));
             let steps = play(&mut env, 0.0, |e| random_legal(e, &mut rng));
@@ -60,11 +64,18 @@ fn an_episode_pays_plus_or_minus_one_at_its_end() {
             ends += 1;
             let won = last.won.unwrap_or(false);
             let want = if won { 1.0 } else { -1.0 };
-            assert!((last.reward - want).abs() < 0.05, "seed {seed}: {} for won {won}", last.reward);
+            assert!(
+                (last.reward - want).abs() < 0.05,
+                "seed {seed}: {} for won {won}",
+                last.reward
+            );
             assert!(last.length > 0.0 && last.length < 90.0);
         }
     }
-    assert!(ends * 2 >= tried, "only {ends} of {tried} episodes ended in a knockout");
+    assert!(
+        ends * 2 >= tried,
+        "only {ends} of {tried} episodes ended in a knockout"
+    );
 }
 
 #[test]
@@ -175,4 +186,3 @@ fn an_act_that_fills_its_recent_decisions_pays_for_the_habit() {
         steps.len()
     );
 }
-

@@ -6,9 +6,9 @@
 use super::glyphs::{DIGIT, buff, icon_cell};
 use crate::layout::{BARS_TALL, Layout};
 use crate::raster::{Blend, Canvas, Rgba, fade, hex};
-use bevy::math::ops;
 use arena_duel::data::Look;
 use arena_duel::view::{DuelView, FighterView};
+use bevy::math::ops;
 
 const BRONZE_LIGHT: &str = "#f0cf7a";
 const BRONZE_MID: &str = "#b8893c";

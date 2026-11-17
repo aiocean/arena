@@ -77,7 +77,14 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
 /// `cast`, for an effect nobody keeps to stop: a looping one is stopped as it starts, so it shows a moment and fades
 /// instead of playing for the rest of the fight (a buff or a curse that borrows a bolt's motion shows the bolt's
 /// looping effect once). Every play whose key is dropped goes through here.
-pub fn cast_once(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
+pub fn cast_once(
+    state: &mut State,
+    me: usize,
+    fx: &'static str,
+    x: f64,
+    y: f64,
+    opts: PlayOpts,
+) -> u32 {
     let key = cast(state, me, fx, x, y, opts);
     if crate::effects::loops(fx) {
         state.emit(Out::Stop { key });
@@ -627,7 +634,9 @@ pub fn strike(
                     }
                     // the blast goes off ahead of its caster: a foe behind it, or above or below its blast, is not caught
                     Target::Fighter(_)
-                        if !crate::unit::strike_hits(state, me, mx, mair, face, range, fspec.body, false) => {}
+                        if !crate::unit::strike_hits(
+                            state, me, mx, mair, face, range, fspec.body, false,
+                        ) => {}
                     Target::Fighter(_) => {
                         let fx = state.fighters[foe].body.x;
                         let fair = state.fighters[foe].body.air;

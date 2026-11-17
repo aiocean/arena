@@ -29,8 +29,8 @@
 //! resyncs, the relay's subscription.
 
 use anyhow::{Context, Result};
-use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, broadcast};
 use arena_link::Frame;
+use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, broadcast};
 use arena_server::match_run::Match;
 use arena_server::pace::Pacer;
 use arena_server::publish::Publisher;
@@ -67,13 +67,17 @@ async fn main() -> Result<()> {
     let client = {
         let mut cfg = moq_tokio::connect::Config::default();
         cfg.url = Some(url.clone());
-        cfg.init(Default::default()).context("building the MoQ client")?
+        cfg.init(Default::default())
+            .context("building the MoQ client")?
     };
 
     let origin = moq_tokio::origin::spawn();
     let connection = client.with_publisher(&origin).connect(url.clone());
     // the token rides in the path, so only the host is logged
-    tracing::info!(relay = url.host_str().unwrap_or("?"), "publishing to the relay");
+    tracing::info!(
+        relay = url.host_str().unwrap_or("?"),
+        "publishing to the relay"
+    );
 
     // the match loop stops at a tick's edge when told why: it ends its match's track and observer, then returns
     let (stop, stopped) = watch::channel(None);
@@ -145,7 +149,12 @@ async fn run_matches(origin: &moq_net::origin::Producer, mut stop: Stop) -> Resu
 }
 
 /// Fight and publish one match, paced to the wall clock, until it ends or the server stops.
-async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32, stop: &mut Stop) -> Result<()> {
+async fn run_one(
+    origin: &moq_net::origin::Producer,
+    match_id: &str,
+    seed: u32,
+    stop: &mut Stop,
+) -> Result<()> {
     let bc = origin
         .create_broadcast(broadcast(match_id))
         .context("create broadcast")?;
@@ -198,7 +207,12 @@ async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32, 
             tracing::event!(target: "arena::metrics", tracing::Level::INFO, {
                 monotonic_counter.arena_server_resyncs_total = 1_u64,
             });
-            tracing::warn!(match_id, tick = m.tick(), late_ms = at.late.as_secs_f64() * 1e3, "tick schedule resynced");
+            tracing::warn!(
+                match_id,
+                tick = m.tick(),
+                late_ms = at.late.as_secs_f64() * 1e3,
+                "tick schedule resynced"
+            );
         }
         // roll the group before stepping, so its keyframe holds everything up to now and the tick's decisions follow it
         // once, as incremental frames
@@ -241,8 +255,16 @@ async fn run_one(origin: &moq_net::origin::Producer, match_id: &str, seed: u32, 
     // the last group, then the track: a viewer reads to the end and sees the track end cleanly
     publisher.finish()?;
     let wall_seconds = start.elapsed().as_secs_f64();
-    tracing::info!(match_id, ticks = m.tick(), groups, frames, wall_seconds, missed = pacer.missed(),
-        resyncs = pacer.resyncs(), "match done");
+    tracing::info!(
+        match_id,
+        ticks = m.tick(),
+        groups,
+        frames,
+        wall_seconds,
+        missed = pacer.missed(),
+        resyncs = pacer.resyncs(),
+        "match done"
+    );
     Ok(())
 }
 
@@ -261,7 +283,8 @@ fn connect_url() -> Result<Url> {
                 .find(|(k, _)| k.trim() == key)
                 .map(|(_, v)| v.trim().trim_matches('"').to_string())
         };
-        let token = value("MOQ_PUBLISH_TOKEN").with_context(|| format!("no MOQ_PUBLISH_TOKEN in {path}"))?;
+        let token = value("MOQ_PUBLISH_TOKEN")
+            .with_context(|| format!("no MOQ_PUBLISH_TOKEN in {path}"))?;
         let host = value("MOQ_RELAY_HOST").unwrap_or_else(|| RELAY_HOST.to_string());
         return format!("https://{host}/{token}")
             .parse()

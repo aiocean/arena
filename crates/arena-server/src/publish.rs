@@ -214,7 +214,10 @@ mod tests {
         })??;
         anyhow::ensure!(end.is_ok(), "a finished track ends cleanly: {end:?}");
         // the default subscription is at the live edge: the last group, read whole
-        anyhow::ensure!(groups.last().map(Vec::len) == Some(2), "the last group whole: {groups:?}");
+        anyhow::ensure!(
+            groups.last().map(Vec::len) == Some(2),
+            "the last group whole: {groups:?}"
+        );
         anyhow::ensure!(warns.0.load(Ordering::Relaxed) == 0, "no drop warning");
         Ok(())
     }
@@ -233,7 +236,10 @@ mod tests {
             drop(p);
             anyhow::Ok(drain(reader).await.1)
         })??;
-        anyhow::ensure!(end.is_err(), "a cut-off track ends with an error, not a clean end");
+        anyhow::ensure!(
+            end.is_err(),
+            "a cut-off track ends with an error, not a clean end"
+        );
         anyhow::ensure!(warns.0.load(Ordering::Relaxed) == 0, "no drop warning");
         Ok(())
     }
@@ -261,7 +267,10 @@ mod tests {
         let g = track.create_group(0u64.into())?;
         g.finish()?;
         drop(track);
-        anyhow::ensure!(warns.0.load(Ordering::Relaxed) >= 1, "moq warns of a bare drop");
+        anyhow::ensure!(
+            warns.0.load(Ordering::Relaxed) >= 1,
+            "moq warns of a bare drop"
+        );
         Ok(())
     }
 }

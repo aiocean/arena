@@ -2,11 +2,11 @@
 
 mod common;
 
-use arena_mind::policy::{ACTIONS, OBS};
-use common::{all_effects, config, pick};
 use arena_duel::duel::{Duel, TICK};
 use arena_duel::ladder::{Bot, Match, bout};
 use arena_duel::seat::{BotSeat, Brain, Decider, Fault, MakeSeat, SharedDecider};
+use arena_mind::policy::{ACTIONS, OBS};
+use common::{all_effects, config, pick};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -75,7 +75,10 @@ fn a_bot_seat_replays_the_same_fight_from_a_seed() {
             fights += 1;
         }
     }
-    assert!(fights >= 4, "the bot hurt the brain on only {fights} of 8 seeds");
+    assert!(
+        fights >= 4,
+        "the bot hurt the brain on only {fights} of 8 seeds"
+    );
 }
 
 /// The ticks until each of the first `rounds` rounds was won, and by whom.

@@ -10,9 +10,9 @@ pub mod sprites;
 use crate::layers::{Canvases, Cleared};
 use crate::layout::Layout;
 use crate::rules::{Fx, Pace, Shown};
+use arena_duel::out::{Out, PlayOpts};
 pub use arena_vfx::{Effect, Instance, Paint, Spawn, kit, recipes};
 use bevy::prelude::*;
-use arena_duel::out::{Out, PlayOpts};
 use std::collections::BTreeMap;
 
 /// An effect played by the game itself rather than the rules (the scene's braziers): at world pixel (`x`, `y`).

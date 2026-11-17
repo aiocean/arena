@@ -81,7 +81,10 @@ fn main() {
         }
         Some("pace") => {
             let seconds = flag(&args, "--seconds").unwrap_or(20);
-            let rt = match tokio::runtime::Builder::new_current_thread().enable_time().build() {
+            let rt = match tokio::runtime::Builder::new_current_thread()
+                .enable_time()
+                .build()
+            {
                 Ok(rt) => rt,
                 Err(e) => {
                     eprintln!("runtime: {e}");

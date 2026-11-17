@@ -78,7 +78,9 @@ pub fn launch_bolt(state: &mut State, sp: &'static Spell, p: Payload, o: Origin)
     let spec = state.fighters[me].body.spec;
     // a fighter's bolt leaves its hand as its clip draws it on the frame it casts on; a unit's, its middle
     let (x, y) = match o.unit {
-        None => crate::frames::cast_hand(state, me).unwrap_or((o.x + o.face * 32.0, o.air + spec.chest)),
+        None => {
+            crate::frames::cast_hand(state, me).unwrap_or((o.x + o.face * 32.0, o.air + spec.chest))
+        }
         Some(_) => (o.x + o.face * 32.0, o.air + spec.chest),
     };
     let fired = Fired {

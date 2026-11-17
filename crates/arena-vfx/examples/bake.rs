@@ -9,11 +9,11 @@
 
 #![allow(clippy::disallowed_methods)]
 
+use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::out::{Out, PlayOpts};
 use arena_vfx::raster::Canvas;
 use arena_vfx::sheet::{Cell, Index, Variant};
 use arena_vfx::{Paint, Spawn, baked, recipes, variant_key};
-use arena_duel::duel::{Duel, DuelConfig, TICK};
-use arena_duel::out::{Out, PlayOpts};
 use std::collections::BTreeMap;
 
 /// Frames a second a sheet is baked at: a quick blow at the fighters' 20, a long one at 15, a loop (a slow cycle: a

@@ -13,6 +13,7 @@ use crate::layers::{Canvases, Cleared, Z_HUD};
 use crate::layout::{Layout, MainCamera};
 use crate::raster::Canvas;
 use crate::rules::Shown;
+use arena_duel::data::UNIT;
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
@@ -20,7 +21,6 @@ use bevy::text::FontSize;
 use bevy::window::PrimaryWindow;
 use info::{Tip, Tone};
 use paint::{Geo, Hit, Painted, Pen, Seen};
-use arena_duel::data::UNIT;
 
 /// The skill icon atlases: 24 and 32 pixels an icon, five to a row.
 const SKILLS_24: &[u8] = include_bytes!("../../assets/skills-24.png");

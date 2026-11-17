@@ -2,12 +2,12 @@
 //! floor, the arena on the dais between its two braziers, and where the bars go. The camera shows the world's pixels
 //! with (0, 0) at the top left and y down, as the page measured them.
 
+use arena_duel::data::UNIT;
 use bevy::camera::ScalingMode;
 use bevy::core_pipeline::tonemapping::{DebandDither, Tonemapping};
 use bevy::prelude::*;
 use bevy::render::view::Msaa;
 use bevy::window::PrimaryWindow;
-use arena_duel::data::UNIT;
 
 /// How tall the bars at the top are, in world pixels.
 pub const BARS_TALL: f32 = 26.0;

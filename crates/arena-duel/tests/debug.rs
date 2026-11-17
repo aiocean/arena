@@ -43,7 +43,10 @@ fn hurtboxes_follow_the_pose() -> Result<(), String> {
     let mut d = duel();
     for f in 0..2 {
         let standing = span(&d, f);
-        assert!(standing.0 > 200.0 && standing.1 < 10.0, "fighter {f} standing: {standing:?}");
+        assert!(
+            standing.0 > 200.0 && standing.1 < 10.0,
+            "fighter {f} standing: {standing:?}"
+        );
 
         // crouched, well into its duck clip: the boxes are low
         {
@@ -52,7 +55,10 @@ fn hurtboxes_follow_the_pose() -> Result<(), String> {
             b.pose_t = 0.4;
         }
         let ducking = span(&d, f);
-        assert!(ducking.0 < standing.0 - 40.0, "fighter {f} ducking {ducking:?} vs standing {standing:?}");
+        assert!(
+            ducking.0 < standing.0 - 40.0,
+            "fighter {f} ducking {ducking:?} vs standing {standing:?}"
+        );
 
         // in the air: the boxes are where the body is
         {
@@ -62,7 +68,10 @@ fn hurtboxes_follow_the_pose() -> Result<(), String> {
             b.air = 150.0;
         }
         let flying = span(&d, f);
-        assert!(flying.1 >= 150.0, "fighter {f} in the air at 150: {flying:?}");
+        assert!(
+            flying.1 >= 150.0,
+            "fighter {f} in the air at 150: {flying:?}"
+        );
         {
             let b = &mut d.state_mut().fighters[f].body;
             b.pose = Pose::Idle;
@@ -70,7 +79,10 @@ fn hurtboxes_follow_the_pose() -> Result<(), String> {
         }
     }
     // and the debug shapes draw exactly those boxes
-    let bodies = shapes(d.state()).into_iter().filter(|s| s.mark == Mark::Body).count();
+    let bodies = shapes(d.state())
+        .into_iter()
+        .filter(|s| s.mark == Mark::Body)
+        .count();
     let boxes = hurtboxes(d.state(), 0).len() + hurtboxes(d.state(), 1).len();
     assert_eq!(bodies, boxes);
     Ok(())

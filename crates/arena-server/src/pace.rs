@@ -146,7 +146,11 @@ mod tests {
         }
         // ticks 1..=6 were due by 100 ms (6 * 16.667 = 100.002 is not)
         assert_eq!(caught, 5);
-        assert_eq!(p.missed(), 4, "ticks 1 to 4 began a whole tick or more late");
+        assert_eq!(
+            p.missed(),
+            4,
+            "ticks 1 to 4 began a whole tick or more late"
+        );
         assert!(p.wait(now) > Duration::ZERO);
         assert_eq!(p.resyncs(), 0);
     }
@@ -174,7 +178,10 @@ mod tests {
         let mut p = Pacer::new(t0, DT);
         assert_eq!(p.wait(t0), Duration::ZERO);
         p.begin(t0 + Duration::from_millis(1));
-        assert_eq!(p.wait(t0 + Duration::from_millis(1)), DT - Duration::from_millis(1));
+        assert_eq!(
+            p.wait(t0 + Duration::from_millis(1)),
+            DT - Duration::from_millis(1)
+        );
         assert_eq!(p.ticks(), 1);
     }
 }

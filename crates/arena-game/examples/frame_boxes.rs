@@ -54,7 +54,10 @@ const CASTS: &[&str] = &["cast", "dash"];
 const SHEETS: [(&str, &[&str]); 2] = [
     (
         "assets/fighters/cultivator.json",
-        &["assets/fighters/cultivator-thunder.png", "assets/fighters/cultivator-thunder-1.png"],
+        &[
+            "assets/fighters/cultivator-thunder.png",
+            "assets/fighters/cultivator-thunder-1.png",
+        ],
     ),
     (
         "assets/fighters/seven-colored-daoist.json",
@@ -201,7 +204,10 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
     let edge = torso.map_or(0, |t| t[2]);
     let body = body_part(&f.px);
     let ahead = |lo: i32, hi: i32| -> Vec<(i32, i32)> {
-        body.iter().copied().filter(|&(x, y)| y >= lo && y < hi && x > edge + 2).collect()
+        body.iter()
+            .copied()
+            .filter(|&(x, y)| y >= lo && y < hi && x > edge + 2)
+            .collect()
     };
     if REACHING.contains(&clip) {
         // the arm and hand: columns ahead of the torso as thick as a limb, from the torso's edge out to the first
@@ -223,7 +229,13 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
             out.hurt.push([edge, y0, x1 + 1, y1]);
         }
     }
-    let farthest = |lo: i32| body.iter().filter(|p| p.1 >= lo && p.1 < top).map(|p| p.0 + 1).max().unwrap_or(0);
+    let farthest = |lo: i32| {
+        body.iter()
+            .filter(|p| p.1 >= lo && p.1 < top)
+            .map(|p| p.0 + 1)
+            .max()
+            .unwrap_or(0)
+    };
     if BLADES.contains(&clip) {
         // a cut at the body's height: what is held out from the waist up (a blade hanging down at rest is not)
         let cut = ahead(waist - 10, ymax);
@@ -236,7 +248,10 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
         out.reach = farthest(waist - 10);
     }
     if CASTS.contains(&clip) {
-        let hand = body.iter().filter(|p| p.1 >= waist && p.1 < top).max_by_key(|p| (p.0, p.1));
+        let hand = body
+            .iter()
+            .filter(|p| p.1 >= waist && p.1 < top)
+            .max_by_key(|p| (p.0, p.1));
         out.hand = hand.map(|p| [p.0 + 1, p.1]);
         out.reach = farthest(waist);
     }
@@ -248,7 +263,13 @@ fn num(v: i32) -> String {
 }
 
 fn rect(r: &[i32; 4]) -> String {
-    format!("[{}, {}, {}, {}]", num(r[0]), num(r[1]), num(r[2]), num(r[3]))
+    format!(
+        "[{}, {}, {}, {}]",
+        num(r[0]),
+        num(r[1]),
+        num(r[2]),
+        num(r[3])
+    )
 }
 
 fn main() -> Result<(), String> {
@@ -266,7 +287,8 @@ fn main() -> Result<(), String> {
          pub static LOOKS: [LookFrames; 2] = ["
     );
     for (json_path, pages) in SHEETS {
-        let json = std::fs::read_to_string(format!("{root}/{json_path}")).map_err(|e| format!("{json_path}: {e}"))?;
+        let json = std::fs::read_to_string(format!("{root}/{json_path}"))
+            .map_err(|e| format!("{json_path}: {e}"))?;
         let layout = parse(&json).map_err(|e| format!("{json_path}: {e:?}"))?;
         let images: Vec<RgbaImage> = pages
             .iter()
@@ -276,12 +298,21 @@ fn main() -> Result<(), String> {
                     .map_err(|e| format!("{p}: {e}"))
             })
             .collect::<Result<_, _>>()?;
-        let _ = writeln!(src, "    LookFrames {{\n        fps: {:?},\n        clips: &[", layout.fps);
+        let _ = writeln!(
+            src,
+            "    LookFrames {{\n        fps: {:?},\n        clips: &[",
+            layout.fps
+        );
         for clip in CLIPS {
-            let cells = layout.clips.get(*clip).ok_or(format!("{json_path}: no clip {clip}"))?;
+            let cells = layout
+                .clips
+                .get(*clip)
+                .ok_or(format!("{json_path}: no clip {clip}"))?;
             let mut all = Vec::with_capacity(cells.len());
             for c in cells {
-                let page = images.get(c.page as usize).ok_or(format!("{json_path}: no page {}", c.page))?;
+                let page = images
+                    .get(c.page as usize)
+                    .ok_or(format!("{json_path}: no page {}", c.page))?;
                 all.push(boxes(&figure(page, c), clip));
             }
             // the active frame: where the blade or the casting hand reaches farthest ahead (the rules strike there:
@@ -299,7 +330,10 @@ fn main() -> Result<(), String> {
             let window = active.map(|a| {
                 let mut end = a;
                 if BLADES.contains(clip) {
-                    while all.get(end + 1).is_some_and(|b| b.reach - rest >= REACH_MIN && b.hit.is_some()) {
+                    while all
+                        .get(end + 1)
+                        .is_some_and(|b| b.reach - rest >= REACH_MIN && b.hit.is_some())
+                    {
                         end += 1;
                     }
                 }
@@ -316,10 +350,13 @@ fn main() -> Result<(), String> {
                     b.hand = None;
                 }
                 let hurt: Vec<String> = b.hurt.iter().map(rect).collect();
-                let hit = b.hit.as_ref().map_or("None".into(), |h| format!("Some({})", rect(h)));
-                let hand = b
-                    .hand
-                    .map_or("None".into(), |h| format!("Some([{}, {}])", num(h[0]), num(h[1])));
+                let hit = b
+                    .hit
+                    .as_ref()
+                    .map_or("None".into(), |h| format!("Some({})", rect(h)));
+                let hand = b.hand.map_or("None".into(), |h| {
+                    format!("Some([{}, {}])", num(h[0]), num(h[1]))
+                });
                 let _ = writeln!(
                     src,
                     "                Frame {{ hurt: &[{}], hit: {hit}, hand: {hand} }},",

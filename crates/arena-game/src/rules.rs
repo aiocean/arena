@@ -9,10 +9,10 @@
 use crate::bots::Seating;
 use crate::layout::Layout;
 use crate::live::Live;
-use bevy::prelude::*;
 use arena_duel::data::UNIT;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::seat::{MakeSeat, Replay, Seat};
+use bevy::prelude::*;
 use std::rc::Rc;
 
 /// How far behind the frames received a live page plays: room for the network to wobble without the fight stalling.

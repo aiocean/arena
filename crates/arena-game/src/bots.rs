@@ -3,10 +3,10 @@
 //! its ONNX model; in the browser the page's WebAssembly runs the module (`web`), the house AI being the module
 //! built from the same model. Each corner gets its own instance, which keeps its memory for the corner's whole match.
 
-use bevy::prelude::*;
 use arena_duel::first_mind::FirstMind;
 use arena_duel::seat::BotSeat;
 use arena_duel::seat::{Brain, MakeSeat, SharedDecider};
+use bevy::prelude::*;
 use std::rc::Rc;
 use std::sync::Arc;
 

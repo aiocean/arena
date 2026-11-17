@@ -5,13 +5,13 @@
 mod common;
 
 use arena_calc::hit::FRAME_MORE;
-use arena_mind::Outcome;
 use arena_duel::act::{advance, begin};
 use arena_duel::body::BodySpec;
 use arena_duel::data::{FRAMES, POWER, body_spec, spell};
 use arena_duel::fighter::{Act, Fighter, Phase, State, Told};
 use arena_duel::js::{js_sign, or_one};
 use arena_duel::out::{How, Out};
+use arena_mind::Outcome;
 
 const DT: f64 = 1.0 / 60.0;
 

@@ -6,12 +6,12 @@ mod common;
 use arena_calc::ailment::Ailment;
 use arena_calc::keystone::Keystone;
 use arena_calc::loadout::{Loadout, Slot as LoadoutSlot};
-use common::{all_effects, loadout};
 use arena_duel::act::advance;
 use arena_duel::data::spell;
 use arena_duel::fighter::{Act, Fighter, Phase, State};
 use arena_duel::js::{js_sign, or_one};
 use arena_duel::out::Out;
+use common::{all_effects, loadout};
 
 /// Both fighters with `a` and `b`, 80 px apart facing each other, nobody dodging or crit.
 fn still(seed: u32, a: Loadout, b: Loadout) -> State {
@@ -68,11 +68,7 @@ fn with(skill: &str, supports: &[&str]) -> Loadout {
 
 #[test]
 fn a_blow_is_built_and_resolved_by_the_damage_system() {
-    let mut s = still(
-        1,
-        loadout(&["palm"]),
-        loadout(&[]),
-    );
+    let mut s = still(1, loadout(&["palm"]), loadout(&[]));
     let (life, shield) = (s.fighters[1].c.life, s.fighters[1].c.shield);
     let out = strike(&mut s, 0, "palm");
     let damage = out.iter().find_map(|o| match o {
@@ -94,11 +90,7 @@ fn a_blow_is_built_and_resolved_by_the_damage_system() {
 
 #[test]
 fn fire_burns_over_time_and_shows_it() {
-    let mut s = still(
-        2,
-        loadout(&["fireball"]),
-        loadout(&[]),
-    );
+    let mut s = still(2, loadout(&["fireball"]), loadout(&[]));
     s.fighters[1].body.x = 600.0;
     strike(&mut s, 0, "fireball");
     let mut ticks = 0;
@@ -121,11 +113,7 @@ fn fire_burns_over_time_and_shows_it() {
 #[test]
 fn controls_land_on_the_body() {
     // Định Thân holds the body where it stands; Hóa Ma Chỉ takes the soul, and a soulless fighter casts no spell
-    let mut s = still(
-        3,
-        loadout(&["bodyfix", "demonfinger"]),
-        loadout(&["bolt"]),
-    );
+    let mut s = still(3, loadout(&["bodyfix", "demonfinger"]), loadout(&["bolt"]));
     strike(&mut s, 0, "bodyfix");
     let mut held = s.fighters[1].body.shocked > 0.0;
     for _ in 0..120 {
@@ -136,11 +124,7 @@ fn controls_land_on_the_body() {
         held |= s.fighters[1].body.shocked > 0.0;
     }
     assert!(held, "held");
-    let mut s = still(
-        3,
-        loadout(&["demonfinger"]),
-        loadout(&["bolt"]),
-    );
+    let mut s = still(3, loadout(&["demonfinger"]), loadout(&["bolt"]));
     s.fighters[1].body.x = 700.0;
     strike(&mut s, 0, "demonfinger");
     for _ in 0..120 {
@@ -188,11 +172,7 @@ fn unyielding_stands_up_once_a_round_from_a_killing_blow() {
 
 #[test]
 fn soul_damage_earns_souls() {
-    let mut s = still(
-        6,
-        loadout(&["soulsearch"]),
-        loadout(&[]),
-    );
+    let mut s = still(6, loadout(&["soulsearch"]), loadout(&[]));
     s.fighters[1].c.sense = 1.0e6;
     s.fighters[1].c.sense_max = 1.0e6;
     let before = s.fighters[0].c.souls;
@@ -202,11 +182,7 @@ fn soul_damage_earns_souls() {
 
 #[test]
 fn chainweaken_fires_its_linked_attack_when_the_shield_breaks() {
-    let mut s = still(
-        7,
-        loadout(&["palm"]),
-        with("ward", &["chainweaken"]),
-    );
+    let mut s = still(7, loadout(&["palm"]), with("ward", &["chainweaken"]));
     s.fighters[1].c.shield = 1.0;
     strike(&mut s, 0, "palm");
     arena_duel::strike::run_queue(&mut s);

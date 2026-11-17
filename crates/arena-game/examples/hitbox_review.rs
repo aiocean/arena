@@ -36,7 +36,10 @@ const BELOW: f64 = 24.0;
 const SHEETS: [(&str, &[&str]); 2] = [
     (
         "assets/fighters/cultivator.json",
-        &["assets/fighters/cultivator-thunder.png", "assets/fighters/cultivator-thunder-1.png"],
+        &[
+            "assets/fighters/cultivator-thunder.png",
+            "assets/fighters/cultivator-thunder-1.png",
+        ],
     ),
     (
         "assets/fighters/seven-colored-daoist.json",
@@ -63,7 +66,14 @@ enum Moment {
 }
 
 impl Moment {
-    const ALL: [Moment; 6] = [Moment::Stand, Moment::Duck, Moment::Meditate, Moment::Air, Moment::Slash, Moment::Bolt];
+    const ALL: [Moment; 6] = [
+        Moment::Stand,
+        Moment::Duck,
+        Moment::Meditate,
+        Moment::Air,
+        Moment::Slash,
+        Moment::Bolt,
+    ];
     fn name(self) -> &'static str {
         match self {
             Moment::Stand => "stand",
@@ -81,14 +91,17 @@ fn at(state: &State, f: usize, m: Moment) -> bool {
     let fi = &state.fighters[f];
     let b = &fi.body;
     match m {
-        Moment::Stand => state.time > 1.0 && b.pose == Pose::Idle && b.air == 0.0 && fi.act.is_none(),
+        Moment::Stand => {
+            state.time > 1.0 && b.pose == Pose::Idle && b.air == 0.0 && fi.act.is_none()
+        }
         Moment::Duck => b.pose == Pose::Duck && b.pose_t >= 0.3,
         Moment::Meditate => b.pose == Pose::Meditate && b.pose_t >= 0.6,
         Moment::Air => b.air > 90.0 && fi.act.is_none(),
         Moment::Slash => fi.act.is_some_and(|a| {
             a.phase == Phase::Recover
                 && a.t == 0.0
-                && arena_duel::data::spell(a.spell).is_some_and(|s| s.kind == Kind::Melee && !s.dive)
+                && arena_duel::data::spell(a.spell)
+                    .is_some_and(|s| s.kind == Kind::Melee && !s.dive)
         }),
         Moment::Bolt => state
             .shots
@@ -118,7 +131,10 @@ struct View {
 
 impl View {
     fn px(&self, x: f64, y: f64) -> (i64, i64) {
-        (((x - self.left) * ZOOM).round() as i64, (self.ground_px - y * ZOOM).round() as i64)
+        (
+            ((x - self.left) * ZOOM).round() as i64,
+            (self.ground_px - y * ZOOM).round() as i64,
+        )
     }
 }
 
@@ -134,7 +150,16 @@ fn rect(img: &mut RgbaImage, v: &View, r: [f64; 4], fill: [u8; 4], line: [u8; 4]
 }
 
 #[allow(clippy::too_many_arguments)]
-fn text(img: &mut RgbaImage, font: &FontRef, x: i64, y: i64, size: f32, s: &str, color: [u8; 4], back: bool) {
+fn text(
+    img: &mut RgbaImage,
+    font: &FontRef,
+    x: i64,
+    y: i64,
+    size: f32,
+    s: &str,
+    color: [u8; 4],
+    back: bool,
+) {
     let scale = PxScale::from(size);
     let sf = font.as_scaled(scale);
     let width: f32 = s.chars().map(|c| sf.h_advance(font.glyph_id(c))).sum();
@@ -147,13 +172,20 @@ fn text(img: &mut RgbaImage, font: &FontRef, x: i64, y: i64, size: f32, s: &str,
     }
     let mut caret = x as f32;
     for c in s.chars() {
-        let g = font.glyph_id(c).with_scale_and_position(scale, ab_glyph::point(caret, y as f32 + sf.ascent()));
+        let g = font
+            .glyph_id(c)
+            .with_scale_and_position(scale, ab_glyph::point(caret, y as f32 + sf.ascent()));
         caret += sf.h_advance(font.glyph_id(c));
         if let Some(o) = font.outline_glyph(g) {
             let bb = o.px_bounds();
             o.draw(|gx, gy, cov| {
                 let a = (cov * color[3] as f32) as u8;
-                blend(img, bb.min.x as i64 + gx as i64, bb.min.y as i64 + gy as i64, [color[0], color[1], color[2], a]);
+                blend(
+                    img,
+                    bb.min.x as i64 + gx as i64,
+                    bb.min.y as i64 + gy as i64,
+                    [color[0], color[1], color[2], a],
+                );
             });
         }
     }
@@ -163,7 +195,12 @@ fn text(img: &mut RgbaImage, font: &FontRef, x: i64, y: i64, size: f32, s: &str,
 fn draw_fighter(img: &mut RgbaImage, v: &View, state: &State, f: usize, sheet: &Sheet) {
     let fi = &state.fighters[f];
     let b = &fi.body;
-    let a = appearance(b.pose, b.pose_t, !fi.alive(), fi.act.map(|a| (a.spell, a.phase, a.t)));
+    let a = appearance(
+        b.pose,
+        b.pose_t,
+        !fi.alive(),
+        fi.act.map(|a| (a.spell, a.phase, a.t)),
+    );
     let look = fi.look;
     let shot = pick(
         &a,
@@ -171,7 +208,12 @@ fn draw_fighter(img: &mut RgbaImage, v: &View, state: &State, f: usize, sheet: &
         |c| sheet.layout.clips.get(c).map_or(0, Vec::len),
         |c| arena_duel::frames::active(look, c),
     );
-    let Some(cell) = sheet.layout.clips.get(shot.clip).and_then(|c| c.get(shot.frame)) else {
+    let Some(cell) = sheet
+        .layout
+        .clips
+        .get(shot.clip)
+        .and_then(|c| c.get(shot.frame))
+    else {
         return;
     };
     let Some(page) = sheet.pages.get(cell.page as usize) else {
@@ -179,7 +221,11 @@ fn draw_fighter(img: &mut RgbaImage, v: &View, state: &State, f: usize, sheet: &
     };
     let face_left = b.face < 0.0;
     // as fighters::placed: the box's left from the feet, mirrored round them facing left
-    let left = if face_left { b.x - cell.dx as f64 - cell.w as f64 } else { b.x + cell.dx as f64 };
+    let left = if face_left {
+        b.x - cell.dx as f64 - cell.w as f64
+    } else {
+        b.x + cell.dx as f64
+    };
     let top_up = b.air - cell.dy as f64;
     for py in 0..cell.h {
         for qx in 0..cell.w {
@@ -199,7 +245,14 @@ fn draw_fighter(img: &mut RgbaImage, v: &View, state: &State, f: usize, sheet: &
     }
 }
 
-fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, out: &str) -> Result<(), String> {
+fn shoot(
+    state: &State,
+    f: usize,
+    m: Moment,
+    sheets: &[Sheet],
+    font: &FontRef,
+    out: &str,
+) -> Result<(), String> {
     let fi = &state.fighters[f];
     let b = &fi.body;
     let (w, h) = ((2.0 * HALF_W * ZOOM) as u32, ((HIGH + BELOW) * ZOOM) as u32);
@@ -221,13 +274,28 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
         }];
         draw_fighter(&mut img, &v, state, g, sheet);
     }
-    let colour = |g: usize| if state.fighters[g].look == Look::Thunder { [255, 200, 40] } else { [60, 220, 255] };
+    let colour = |g: usize| {
+        if state.fighters[g].look == Look::Thunder {
+            [255, 200, 40]
+        } else {
+            [60, 220, 255]
+        }
+    };
     for g in 0..2 {
         let [r, gg, bb] = colour(g);
         for hb in hurtboxes(state, g) {
             rect(&mut img, &v, hb, [r, gg, bb, 70], [r, gg, bb, 255], 3);
             let (x, y) = v.px(hb[0], hb[3]);
-            text(&mut img, font, x + 5, y + 4, 15.0, "HURTBOX", [r, gg, bb, 255], true);
+            text(
+                &mut img,
+                font,
+                x + 5,
+                y + 4,
+                15.0,
+                "HURTBOX",
+                [r, gg, bb, 255],
+                true,
+            );
         }
     }
     let mut note = String::new();
@@ -237,10 +305,28 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
     {
         let sp = fi.kit.skills[k].motion;
         let face = if b.face < 0.0 { -1.0 } else { 1.0 };
-        let hb = arena_duel::unit::strike_box(state, f, b.x, b.air, face, sp.range.unwrap_or(0.0), b.spec.chest + 16.0, true);
+        let hb = arena_duel::unit::strike_box(
+            state,
+            f,
+            b.x,
+            b.air,
+            face,
+            sp.range.unwrap_or(0.0),
+            b.spec.chest + 16.0,
+            true,
+        );
         rect(&mut img, &v, hb, [255, 40, 40, 80], [255, 40, 40, 255], 3);
         let (x, y) = v.px(hb[0], hb[1]);
-        text(&mut img, font, x + 5, y - 24, 15.0, "HITBOX", [255, 90, 90, 255], true);
+        text(
+            &mut img,
+            font,
+            x + 5,
+            y - 24,
+            15.0,
+            "HITBOX",
+            [255, 90, 90, 255],
+            true,
+        );
         note = format!("{} (reach {:.0})", act.spell, sp.range.unwrap_or(0.0));
     }
     if m == Moment::Bolt {
@@ -250,11 +336,29 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
             for dy in -7..=7i64 {
                 for dx in -7..=7i64 {
                     if dx * dx + dy * dy <= 49 {
-                        blend(&mut img, x + dx, y + dy, if dx * dx + dy * dy <= 16 { [255, 255, 80, 255] } else { [20, 20, 20, 255] });
+                        blend(
+                            &mut img,
+                            x + dx,
+                            y + dy,
+                            if dx * dx + dy * dy <= 16 {
+                                [255, 255, 80, 255]
+                            } else {
+                                [20, 20, 20, 255]
+                            },
+                        );
                     }
                 }
             }
-            text(&mut img, font, x + 10, y - 26, 15.0, "launch", [255, 255, 120, 255], true);
+            text(
+                &mut img,
+                font,
+                x + 10,
+                y - 26,
+                15.0,
+                "launch",
+                [255, 255, 120, 255],
+                true,
+            );
         }
         for s in state.shots.iter().filter(|s| s.owner == f) {
             if let Some((bx, by, _)) = s.bolt_at(state) {
@@ -263,12 +367,29 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
                     blend(&mut img, x + d, y, [255, 80, 220, 255]);
                     blend(&mut img, x, y + d, [255, 80, 220, 255]);
                 }
-                note = format!("{} leaves {}", s.name, if launch.is_some() { "the hand" } else { "the shoulders (no hand drawn ahead)" });
+                note = format!(
+                    "{} leaves {}",
+                    s.name,
+                    if launch.is_some() {
+                        "the hand"
+                    } else {
+                        "the shoulders (no hand drawn ahead)"
+                    }
+                );
             }
         }
     }
-    let who = if fi.look == Look::Thunder { "Thunder" } else { "Frost" };
-    let a = appearance(b.pose, b.pose_t, !fi.alive(), fi.act.map(|a| (a.spell, a.phase, a.t)));
+    let who = if fi.look == Look::Thunder {
+        "Thunder"
+    } else {
+        "Frost"
+    };
+    let a = appearance(
+        b.pose,
+        b.pose_t,
+        !fi.alive(),
+        fi.act.map(|a| (a.spell, a.phase, a.t)),
+    );
     let sheet = &sheets[if fi.look == Look::Thunder { 0 } else { 1 }];
     let look = fi.look;
     let shot = pick(
@@ -277,8 +398,23 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
         |c| sheet.layout.clips.get(c).map_or(0, Vec::len),
         |c| arena_duel::frames::active(look, c),
     );
-    let title = format!("{who} · {} · clip {} frame {} {}", m.name(), shot.clip, shot.frame, note);
-    text(&mut img, font, 10, 8, 20.0, &title, [255, 255, 255, 255], true);
+    let title = format!(
+        "{who} · {} · clip {} frame {} {}",
+        m.name(),
+        shot.clip,
+        shot.frame,
+        note
+    );
+    text(
+        &mut img,
+        font,
+        10,
+        8,
+        20.0,
+        &title,
+        [255, 255, 255, 255],
+        true,
+    );
     let path = format!("{out}/{}-{}.png", who.to_lowercase(), m.name());
     img.save(&path).map_err(|e| format!("{path}: {e}"))?;
     println!("{path}");
@@ -286,18 +422,26 @@ fn shoot(state: &State, f: usize, m: Moment, sheets: &[Sheet], font: &FontRef, o
 }
 
 fn main() -> Result<(), String> {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "/tmp/hitbox-review".into());
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "/tmp/hitbox-review".into());
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     let root = env!("CARGO_MANIFEST_DIR");
-    let font_bytes = std::fs::read(format!("{root}/assets/fonts/BeVietnamPro-Bold-vi.ttf")).map_err(|e| e.to_string())?;
+    let font_bytes = std::fs::read(format!("{root}/assets/fonts/BeVietnamPro-Bold-vi.ttf"))
+        .map_err(|e| e.to_string())?;
     let font = FontRef::try_from_slice(&font_bytes).map_err(|e| e.to_string())?;
     let mut sheets = Vec::new();
     for (json, pages) in SHEETS {
-        let layout = parse(&std::fs::read_to_string(format!("{root}/{json}")).map_err(|e| e.to_string())?)
-            .map_err(|e| format!("{json}: {e:?}"))?;
+        let layout =
+            parse(&std::fs::read_to_string(format!("{root}/{json}")).map_err(|e| e.to_string())?)
+                .map_err(|e| format!("{json}: {e:?}"))?;
         let pages = pages
             .iter()
-            .map(|p| image::open(format!("{root}/{p}")).map(|i| i.to_rgba8()).map_err(|e| format!("{p}: {e}")))
+            .map(|p| {
+                image::open(format!("{root}/{p}"))
+                    .map(|i| i.to_rgba8())
+                    .map_err(|e| format!("{p}: {e}"))
+            })
             .collect::<Result<Vec<_>, _>>()?;
         sheets.push(Sheet { layout, pages });
     }

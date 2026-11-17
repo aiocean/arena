@@ -59,7 +59,9 @@ pub fn len(look: Look, clip: &str) -> usize {
 
 /// The active frame of clip `clip` of look `look`: where its wind-up ends and the blow or the cast goes out.
 pub fn active(look: Look, clip: &str) -> Option<usize> {
-    clip_of(look, clip).and_then(|(a, _)| a).map(|(start, _)| start)
+    clip_of(look, clip)
+        .and_then(|(a, _)| a)
+        .map(|(start, _)| start)
 }
 
 /// The frames a second look `look`'s clips play at.
@@ -71,8 +73,18 @@ pub fn fps(look: Look) -> f64 {
 fn shown(state: &State, f: usize) -> Option<(&'static str, usize)> {
     let fi = state.fighters.get(f)?;
     let b = &fi.body;
-    let a = appearance(b.pose, b.pose_t, !fi.alive(), fi.act.map(|a| (a.spell, a.phase, a.t)));
-    let shot = pick(&a, fps(fi.look), |c| len(fi.look, c), |c| active(fi.look, c));
+    let a = appearance(
+        b.pose,
+        b.pose_t,
+        !fi.alive(),
+        fi.act.map(|a| (a.spell, a.phase, a.t)),
+    );
+    let shot = pick(
+        &a,
+        fps(fi.look),
+        |c| len(fi.look, c),
+        |c| active(fi.look, c),
+    );
     Some((shot.clip, shot.frame))
 }
 
@@ -109,10 +121,23 @@ pub fn hurtboxes(state: &State, f: usize) -> Vec<[f64; 4]> {
     };
     let b = &fi.body;
     match frame_of(state, f) {
-        Some(fr) if !fr.hurt.is_empty() => fr.hurt.iter().map(|r| place(*r, b.x, b.air, b.face)).collect(),
+        Some(fr) if !fr.hurt.is_empty() => fr
+            .hurt
+            .iter()
+            .map(|r| place(*r, b.x, b.air, b.face))
+            .collect(),
         _ => {
-            let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
-            vec![[b.x - b.spec.half_width, b.air, b.x + b.spec.half_width, b.air + top]]
+            let top = if b.duck > 0.0 {
+                b.spec.duck
+            } else {
+                b.spec.body
+            };
+            vec![[
+                b.x - b.spec.half_width,
+                b.air,
+                b.x + b.spec.half_width,
+                b.air + top,
+            ]]
         }
     }
 }
@@ -125,13 +150,23 @@ pub fn overlap(a: [f64; 4], b: [f64; 4]) -> bool {
 /// The clip fighter `f`'s cast plays (a blade blow's `slash` or `overhead`, a spell's `cast` or `dash`), if it casts.
 fn act_clip(state: &State, f: usize) -> Option<&'static str> {
     let fi = state.fighters.get(f)?;
-    let a = appearance(fi.body.pose, fi.body.pose_t, false, fi.act.map(|a| (a.spell, a.phase, a.t))).act?;
+    let a = appearance(
+        fi.body.pose,
+        fi.body.pose_t,
+        false,
+        fi.act.map(|a| (a.spell, a.phase, a.t)),
+    )
+    .act?;
     Some(match (a.how, a.dive) {
         (crate::pose::Gather::Palm, true) => "overhead",
         (crate::pose::Gather::Lunge, _) => "dash",
         _ => {
             let s = crate::data::spell(fi.act?.spell)?;
-            if s.kind == crate::data::Kind::Melee { "slash" } else { "cast" }
+            if s.kind == crate::data::Kind::Melee {
+                "slash"
+            } else {
+                "cast"
+            }
         }
     })
 }
@@ -150,7 +185,11 @@ fn active_frame(state: &State, f: usize) -> Option<&'static Frame> {
 /// out ahead (the rules then strike their own box).
 pub fn strike_hitbox(state: &State, f: usize) -> Option<[f64; 4]> {
     let b = &state.fighters.get(f)?.body;
-    let now = if in_window(state, f) { frame_of(state, f).and_then(|fr| fr.hit) } else { None };
+    let now = if in_window(state, f) {
+        frame_of(state, f).and_then(|fr| fr.hit)
+    } else {
+        None
+    };
     now.or_else(|| active_frame(state, f)?.hit)
         .map(|r| place(r, b.x, b.air, b.face))
 }

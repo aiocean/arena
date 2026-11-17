@@ -67,7 +67,9 @@ impl Payload {
     /// Whether it holds its caster until it plays out (`Fighter::bound`): a blow of a skill cast by hand that binds
     /// (`Gem::binds`); a unit's blow and a triggered one never do.
     pub fn binds(&self) -> bool {
-        self.depth == 0 && self.unit.is_none() && arena_calc::gem::gem(self.skill).is_some_and(|g| g.binds())
+        self.depth == 0
+            && self.unit.is_none()
+            && arena_calc::gem::gem(self.skill).is_some_and(|g| g.binds())
     }
 }
 

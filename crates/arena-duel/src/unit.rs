@@ -217,7 +217,16 @@ pub fn targets_of(state: &State, me: usize, floor: bool) -> Vec<Body> {
 /// the drawing or the reach, whichever is farther). It touches the foe when it overlaps one of the hurtboxes of the
 /// frame the foe shows (`frames::hurtboxes`). A foe behind the striker is not struck.
 #[allow(clippy::too_many_arguments)]
-pub fn strike_hits(state: &State, me: usize, x: f64, air: f64, face: f64, reach: f64, level: f64, blade: bool) -> bool {
+pub fn strike_hits(
+    state: &State,
+    me: usize,
+    x: f64,
+    air: f64,
+    face: f64,
+    reach: f64,
+    level: f64,
+    blade: bool,
+) -> bool {
     let bx = strike_box(state, me, x, air, face, reach, level, blade);
     crate::frames::hurtboxes(state, 1 - me)
         .iter()
@@ -226,7 +235,16 @@ pub fn strike_hits(state: &State, me: usize, x: f64, air: f64, face: f64, reach:
 
 /// The box `strike_hits` tests: from `x` to `reach` ahead, `level` up from `air`, or a fighter's blade's hitbox.
 #[allow(clippy::too_many_arguments)]
-pub fn strike_box(state: &State, me: usize, x: f64, air: f64, face: f64, reach: f64, level: f64, blade: bool) -> [f64; 4] {
+pub fn strike_box(
+    state: &State,
+    me: usize,
+    x: f64,
+    air: f64,
+    face: f64,
+    reach: f64,
+    level: f64,
+    blade: bool,
+) -> [f64; 4] {
     let ahead = face >= 0.0;
     let mut bx = if ahead {
         [x, air, x + reach, air + level]

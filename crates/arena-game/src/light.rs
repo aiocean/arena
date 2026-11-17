@@ -10,8 +10,8 @@ use crate::layers::Canvases;
 use crate::layout::Layout;
 use crate::raster::{Blend, Rgba, hex};
 use crate::rules::{Fx, Pace, Shown};
-use bevy::prelude::*;
 use arena_duel::out::Out;
+use bevy::prelude::*;
 
 /// How far an effect's light reaches, in world pixels; those not listed reach `REACH_DEFAULT`.
 const REACH: [(&str, f64); 10] = [

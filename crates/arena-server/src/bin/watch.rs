@@ -9,27 +9,30 @@
 //! It exits 0 when the replayed match ends as the server said, 1 otherwise.
 
 use anyhow::{Context, Result, bail};
-use arena_link::moq::{NAMESPACE, TRACK};
-use arena_link::{Applied, Ended, Follow, decode};
-use arena_server::match_run::{WINS_TO_TAKE, config_for, logs_from_snapshot};
 use arena_duel::duel::{Duel, TICK};
 use arena_duel::seat::{MakeSeat, Replay, Seat};
 use arena_duel::view::view;
+use arena_link::moq::{NAMESPACE, TRACK};
+use arena_link::{Applied, Ended, Follow, decode};
+use arena_server::match_run::{WINS_TO_TAKE, config_for, logs_from_snapshot};
 use url::Url;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("arena_watch=info,moq_tokio=warn")),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                tracing_subscriber::EnvFilter::new("arena_watch=info,moq_tokio=warn")
+            }),
         )
         .init();
 
     let url: Url = std::env::var("MOQ_CONNECT")
         .ok()
         .or_else(|| std::env::args().nth(1))
-        .context("set MOQ_CONNECT (or pass the connect URL) to the relay, a subscribe token in its path")?
+        .context(
+            "set MOQ_CONNECT (or pass the connect URL) to the relay, a subscribe token in its path",
+        )?
         .parse()
         .context("the connect URL did not parse")?;
 
@@ -38,7 +41,8 @@ async fn main() -> Result<()> {
     let client = {
         let mut cfg = moq_tokio::connect::Config::default();
         cfg.url = Some(url.clone());
-        cfg.init(Default::default()).context("building the MoQ client")?
+        cfg.init(Default::default())
+            .context("building the MoQ client")?
     };
 
     let origin = moq_tokio::origin::spawn();
@@ -62,7 +66,8 @@ async fn main() -> Result<()> {
 /// Follow the first match announced, then check its replay. True when the replay ends as the server said.
 async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
     let scope = moq_net::Patterns::from(
-        moq_net::Pattern::subtree(NAMESPACE).map_err(|e| anyhow::anyhow!("bad namespace: {e:?}"))?,
+        moq_net::Pattern::subtree(NAMESPACE)
+            .map_err(|e| anyhow::anyhow!("bad namespace: {e:?}"))?,
     );
     let consumer = origin
         .consume()
@@ -90,12 +95,23 @@ async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
 
     let mut follow = Follow::new();
     let mut frames = 0usize;
-    'groups: while let Some(mut group) = track.recv_group().await.map_err(|e| anyhow::anyhow!("group: {e}"))? {
-        while let Some(frame) = group.read_frame().await.map_err(|e| anyhow::anyhow!("frame: {e}"))? {
+    'groups: while let Some(mut group) = track
+        .recv_group()
+        .await
+        .map_err(|e| anyhow::anyhow!("group: {e}"))?
+    {
+        while let Some(frame) = group
+            .read_frame()
+            .await
+            .map_err(|e| anyhow::anyhow!("frame: {e}"))?
+        {
             frames += 1;
             let frame = decode(&frame.payload).context("a frame did not decode")?;
             match follow.apply(frame) {
-                Applied::OtherRules(v) => bail!("the match was fought on rules {v}, this build's are {}", arena_link::RULES_VERSION),
+                Applied::OtherRules(v) => bail!(
+                    "the match was fought on rules {v}, this build's are {}",
+                    arena_link::RULES_VERSION
+                ),
                 Applied::Taken | Applied::Ignored => {}
             }
             if follow.snapshot().is_some_and(|s| s.ended.is_some()) {
@@ -105,7 +121,9 @@ async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
     }
 
     let snap = follow.snapshot().context("no keyframe came")?.clone();
-    let ended = snap.ended.context("the stream ended before the match did")?;
+    let ended = snap
+        .ended
+        .context("the stream ended before the match did")?;
     tracing::info!(
         frames,
         seed = snap.seed,

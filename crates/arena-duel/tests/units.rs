@@ -5,10 +5,10 @@ mod common;
 
 use arena_calc::device::Kind;
 use arena_calc::loadout::{Loadout, Slot as LoadoutSlot};
-use common::{always, duel_of, idle, loadout, run};
 use arena_duel::duel::Duel;
 use arena_duel::out::Out;
 use arena_duel::unit::Unit;
+use common::{always, duel_of, idle, loadout, run};
 
 /// `skill` with `supports` first in an otherwise plain loadout.
 fn with(skill: &str, supports: &[&str]) -> Loadout {

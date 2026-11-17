@@ -21,8 +21,8 @@ const GOLDEN: &str = concat!(
 
 #[test]
 fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error>> {
-    let bytes = std::fs::read(MODULE)
-        .map_err(|e| format!("{MODULE}: {e}; build it with site/build.sh"))?;
+    let bytes =
+        std::fs::read(MODULE).map_err(|e| format!("{MODULE}: {e}; build it with site/build.sh"))?;
     let runner = Runner::new(&admit(&bytes)?).map_err(|e| e.0)?;
     let (left, right) = (runner.decider(), runner.decider());
     let effects: Vec<String> = arena_duel::effects::all();

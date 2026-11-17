@@ -2,12 +2,12 @@
 
 mod common;
 
-use arena_mind::{Choice, Outcome};
-use common::{all_effects, config, pinned};
 use arena_duel::duel::Duel;
 use arena_duel::fighter::State;
 use arena_duel::first_mind::FirstMind;
 use arena_duel::seat::{MakeSeat, Seat};
+use arena_mind::{Choice, Outcome};
+use common::{all_effects, config, pinned};
 use serde_json::{Value, json};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;

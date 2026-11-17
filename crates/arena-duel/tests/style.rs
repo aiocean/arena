@@ -2,9 +2,9 @@
 
 mod common;
 
-use common::fight;
 use arena_duel::style::Style;
 use arena_duel::view::view;
+use common::fight;
 
 #[test]
 fn styles_are_drawn_from_the_seed() {

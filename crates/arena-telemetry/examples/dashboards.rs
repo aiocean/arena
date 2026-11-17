@@ -41,7 +41,12 @@ struct Panel {
     h: u32,
 }
 
-fn panel(kind: &'static str, title: &'static str, stream: &'static str, sql: impl Into<String>) -> Panel {
+fn panel(
+    kind: &'static str,
+    title: &'static str,
+    stream: &'static str,
+    sql: impl Into<String>,
+) -> Panel {
     Panel {
         kind,
         title,
@@ -381,8 +386,15 @@ fn server_health() -> Value {
 fn balance() -> Value {
     let l = "arena_ladder";
     let row_cols: &[(&str, &str)] = &[
-        ("Id", "id"), ("Tier", "tier"), ("Win %", "win"), ("Games", "games"), ("Picks", "picks"),
-        ("Used", "used_rate"), ("Damage a game", "damage_per_game"), ("Casts", "casts"), ("Hits", "hits"),
+        ("Id", "id"),
+        ("Tier", "tier"),
+        ("Win %", "win"),
+        ("Games", "games"),
+        ("Picks", "picks"),
+        ("Used", "used_rate"),
+        ("Damage a game", "damage_per_game"),
+        ("Casts", "casts"),
+        ("Hits", "hits"),
     ];
     let cols = "id, tier, win, games, picks, used_rate, damage_per_game, casts, hits";
     dashboard(
@@ -494,8 +506,12 @@ impl Store {
         let url = format!("{}{path}", self.base);
         let res = match (method, body) {
             ("GET", _) => ureq::get(&url).header("Authorization", &self.auth).call(),
-            ("POST", Some(b)) => ureq::post(&url).header("Authorization", &self.auth).send_json(b),
-            ("PUT", Some(b)) => ureq::put(&url).header("Authorization", &self.auth).send_json(b),
+            ("POST", Some(b)) => ureq::post(&url)
+                .header("Authorization", &self.auth)
+                .send_json(b),
+            ("PUT", Some(b)) => ureq::put(&url)
+                .header("Authorization", &self.auth)
+                .send_json(b),
             _ => return Err(format!("{method} {path}: no body")),
         };
         res.map_err(|e| format!("{method} {url}: {e}"))?
@@ -518,7 +534,10 @@ impl Store {
             let kind = q["fields"]["stream_type"].as_str().unwrap_or("logs");
             let title = p["title"].as_str().unwrap_or("?");
             match self.call("POST", &format!("/_search?type={kind}"), Some(&body)) {
-                Ok(r) => println!("  ok   {title}: {} rows", r["hits"].as_array().map_or(0, Vec::len)),
+                Ok(r) => println!(
+                    "  ok   {title}: {} rows",
+                    r["hits"].as_array().map_or(0, Vec::len)
+                ),
                 Err(e) => failed.push(format!("{title}: {e}")),
             }
         }
@@ -543,7 +562,11 @@ impl Store {
                 d["owner"] = x["owner"].clone();
                 d["created"] = x["created"].clone();
                 let folder = x["folder_id"].as_str().unwrap_or("default").to_string();
-                self.call("PUT", &format!("/dashboards/{id}?folder={folder}&hash={hash}"), Some(&d))?
+                self.call(
+                    "PUT",
+                    &format!("/dashboards/{id}?folder={folder}&hash={hash}"),
+                    Some(&d),
+                )?
             }
             None => self.call("POST", "/dashboards?folder=default", Some(&d))?,
         };
@@ -570,7 +593,9 @@ fn main() -> Result<(), String> {
     };
     // the UI's address for a dashboard (through the arena tunnel)
     let view = |id: &str| {
-        format!("https://arena-obs.aiocean.io/web/dashboards/view?org_identifier=default&dashboard={id}&folder=default")
+        format!(
+            "https://arena-obs.aiocean.io/web/dashboards/view?org_identifier=default&dashboard={id}&folder=default"
+        )
     };
     if let Some(dir) = flag("--from") {
         let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
@@ -581,7 +606,8 @@ fn main() -> Result<(), String> {
         files.sort();
         for f in files {
             let text = std::fs::read_to_string(&f).map_err(|e| format!("{}: {e}", f.display()))?;
-            let d: Value = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", f.display()))?;
+            let d: Value =
+                serde_json::from_str(&text).map_err(|e| format!("{}: {e}", f.display()))?;
             let id = store.push(&d)?;
             println!("{:<28} {}", d["title"].as_str().unwrap_or("?"), view(&id));
         }
@@ -599,7 +625,9 @@ fn main() -> Result<(), String> {
         return Err(format!("failed:\n{}", failed.join("\n")));
     }
     if !args.iter().any(|a| a == "--push") {
-        return Err("--push (make them and export them) or --from DIR (push the exported ones)".into());
+        return Err(
+            "--push (make them and export them) or --from DIR (push the exported ones)".into(),
+        );
     }
     let out = PathBuf::from(flag("--out").unwrap_or_else(|| "ops/observe/dashboards".to_string()));
     std::fs::create_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;

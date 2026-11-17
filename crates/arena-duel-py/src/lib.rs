@@ -3,13 +3,13 @@
 //! never moves between threads); only plain arrays cross. It translates only: rewards, episodes and opponents are
 //! `arena_duel::train`'s.
 
-use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use arena_bot::onnx::Onnx;
 use arena_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use arena_duel::seat::SharedDecider;
 use arena_duel::style::Style;
 use arena_duel::train::{Env, EnvConfig, Opponent};
 use arena_mind::policy::{ACTIONS, OBS};
+use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
@@ -27,7 +27,9 @@ impl Model {
     /// with `cargo run -p arena-bot --features host --example check`.
     fn load(bytes: &[u8]) -> Result<Model, String> {
         if bytes.starts_with(b"\0asm") {
-            return Err("a bot module (.wasm) is not run from Python: hand in its ONNX model".into());
+            return Err(
+                "a bot module (.wasm) is not run from Python: hand in its ONNX model".into(),
+            );
         }
         Onnx::load(bytes).map(Model).map_err(|e| e.0)
     }
@@ -65,15 +67,38 @@ struct Out {
 
 impl Out {
     fn blank() -> Out {
-        Out { obs: vec![0.0; OBS], mask: vec![false; ACTIONS], reward: 0.0, done: true, won: 0, length: 0.0 }
+        Out {
+            obs: vec![0.0; OBS],
+            mask: vec![false; ACTIONS],
+            reward: 0.0,
+            done: true,
+            won: 0,
+            length: 0.0,
+        }
     }
 }
 
 /// What the main thread asks a worker.
 enum Wire {
-    Model { id: u32, model: Model },
-    Reset { slot: usize, seed: u32, learner: usize, style: Style, foe_style: Style, foe: Foe, limit: f64, reply: Sender<Result<Out, String>> },
-    Step { actions: Vec<i64>, shaping: f32, reply: Sender<Vec<Out>> },
+    Model {
+        id: u32,
+        model: Model,
+    },
+    Reset {
+        slot: usize,
+        seed: u32,
+        learner: usize,
+        style: Style,
+        foe_style: Style,
+        foe: Foe,
+        limit: f64,
+        reply: Sender<Result<Out, String>>,
+    },
+    Step {
+        actions: Vec<i64>,
+        shaping: f32,
+        reply: Sender<Vec<Out>>,
+    },
 }
 
 /// A worker's envs and the models it has been handed.
@@ -86,7 +111,11 @@ struct Worker {
 impl Worker {
     fn run(n: usize, rx: Receiver<Wire>) {
         let effects = arena_duel::effects::all();
-        let mut w = Worker { envs: (0..n).map(|_| None).collect(), models: HashMap::new(), effects };
+        let mut w = Worker {
+            envs: (0..n).map(|_| None).collect(),
+            models: HashMap::new(),
+            effects,
+        };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
         }
@@ -97,10 +126,23 @@ impl Worker {
             Wire::Model { id, model } => {
                 self.models.insert(id, model);
             }
-            Wire::Reset { slot, seed, learner, style, foe_style, foe, limit, reply } => {
+            Wire::Reset {
+                slot,
+                seed,
+                learner,
+                style,
+                foe_style,
+                foe,
+                limit,
+                reply,
+            } => {
                 let _ = reply.send(self.reset(slot, seed, learner, style, foe_style, foe, limit));
             }
-            Wire::Step { actions, shaping, reply } => {
+            Wire::Step {
+                actions,
+                shaping,
+                reply,
+            } => {
                 let outs = self
                     .envs
                     .iter_mut()
@@ -128,18 +170,43 @@ impl Worker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn reset(&mut self, slot: usize, seed: u32, learner: usize, style: Style, foe_style: Style, foe: Foe, limit: f64) -> Result<Out, String> {
+    fn reset(
+        &mut self,
+        slot: usize,
+        seed: u32,
+        learner: usize,
+        style: Style,
+        foe_style: Style,
+        foe: Foe,
+        limit: f64,
+    ) -> Result<Out, String> {
         let opponent = match foe {
             Foe::Brain => Opponent::Brain,
             Foe::First => Opponent::First,
             Foe::Aggressive => Opponent::Aggressive,
             Foe::Turtle => Opponent::Turtle,
-            Foe::Policy(id) => Opponent::Bot(self.models.get(&id).ok_or(format!("no model {id}: set_model first"))?.decider()),
+            Foe::Policy(id) => Opponent::Bot(
+                self.models
+                    .get(&id)
+                    .ok_or(format!("no model {id}: set_model first"))?
+                    .decider(),
+            ),
         };
-        let cfg = EnvConfig { seed, learner, style, foe_style, opponent, limit, effects: self.effects.clone() };
+        let cfg = EnvConfig {
+            seed,
+            learner,
+            style,
+            foe_style,
+            opponent,
+            limit,
+            effects: self.effects.clone(),
+        };
         let env = Env::new(cfg);
         let out = snapshot(&env);
-        let place = self.envs.get_mut(slot).ok_or(format!("no env slot {slot}"))?;
+        let place = self
+            .envs
+            .get_mut(slot)
+            .ok_or(format!("no env slot {slot}"))?;
         *place = Some(env);
         Ok(Out { done: false, ..out })
     }
@@ -148,7 +215,14 @@ impl Worker {
 /// An env's current decision.
 fn snapshot(env: &Env) -> Out {
     let (obs, mask) = env.observe();
-    Out { obs: obs.to_vec(), mask: mask.to_vec(), reward: 0.0, done: false, won: 0, length: 0.0 }
+    Out {
+        obs: obs.to_vec(),
+        mask: mask.to_vec(),
+        reward: 0.0,
+        done: false,
+        won: 0,
+        length: 0.0,
+    }
 }
 
 /// Many duel environments stepped together.
@@ -164,12 +238,17 @@ struct VecEnv {
 impl VecEnv {
     /// The worker that owns env `i`, and `i`'s slot in it.
     fn owner(&self, i: usize) -> Option<(&Sender<Wire>, usize)> {
-        self.workers.iter().find(|(_, start, len)| i >= *start && i < start + len).map(|(tx, start, _)| (tx, i - start))
+        self.workers
+            .iter()
+            .find(|(_, start, len)| i >= *start && i < start + len)
+            .map(|(tx, start, _)| (tx, i - start))
     }
 }
 
 fn style(i: usize) -> PyResult<Style> {
-    Style::ALL.get(i).copied().ok_or_else(|| PyValueError::new_err(format!("style {i}: 0 aggressive, 1 balanced, 2 defensive")))
+    Style::ALL.get(i).copied().ok_or_else(|| {
+        PyValueError::new_err(format!("style {i}: 0 aggressive, 1 balanced, 2 defensive"))
+    })
 }
 
 #[pymethods]
@@ -192,7 +271,12 @@ impl VecEnv {
             handles.push(handle);
             start += len;
         }
-        Ok(VecEnv { n, workers, handles, outs: (0..n).map(|_| Out::blank()).collect() })
+        Ok(VecEnv {
+            n,
+            workers,
+            handles,
+            outs: (0..n).map(|_| Out::blank()).collect(),
+        })
     }
 
     /// Hand every worker a model as `id`, for `policy` opponents: an ONNX policy's bytes (input float32 `[1, 354]`,
@@ -200,7 +284,11 @@ impl VecEnv {
     fn set_model(&self, id: u32, data: Vec<u8>) -> PyResult<()> {
         let model = Model::load(&data).map_err(PyValueError::new_err)?;
         for (tx, _, _) in &self.workers {
-            tx.send(Wire::Model { id, model: model.clone() }).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            tx.send(Wire::Model {
+                id,
+                model: model.clone(),
+            })
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         }
         Ok(())
     }
@@ -209,23 +297,53 @@ impl VecEnv {
     /// (0 aggressive, 1 balanced, 2 defensive), the opponent's style, the opponent (`brain`, `first`, `aggressive`,
     /// `turtle`, `policy`), the model id of a `policy` opponent (`set_model`), and the seconds a round may last.
     #[allow(clippy::too_many_arguments)]
-    fn reset(&mut self, i: usize, seed: u32, learner: usize, style_: usize, foe_style: usize, opponent: &str, model: i64, limit: f64) -> PyResult<()> {
+    fn reset(
+        &mut self,
+        i: usize,
+        seed: u32,
+        learner: usize,
+        style_: usize,
+        foe_style: usize,
+        opponent: &str,
+        model: i64,
+        limit: f64,
+    ) -> PyResult<()> {
         let foe = match opponent {
             "brain" => Foe::Brain,
             "first" => Foe::First,
             "aggressive" => Foe::Aggressive,
             "turtle" => Foe::Turtle,
-            "policy" => Foe::Policy(u32::try_from(model).map_err(|_| PyValueError::new_err("a policy opponent needs its model id"))?),
+            "policy" => Foe::Policy(
+                u32::try_from(model)
+                    .map_err(|_| PyValueError::new_err("a policy opponent needs its model id"))?,
+            ),
             other => return Err(PyValueError::new_err(format!("no opponent {other:?}"))),
         };
         if learner > 1 {
-            return Err(PyValueError::new_err(format!("learner corner {learner}: 0 or 1")));
+            return Err(PyValueError::new_err(format!(
+                "learner corner {learner}: 0 or 1"
+            )));
         }
         let (style, foe_style) = (style(style_)?, style(foe_style)?);
-        let (tx, slot) = self.owner(i).ok_or_else(|| PyValueError::new_err(format!("no env {i} of {}", self.n)))?;
+        let (tx, slot) = self
+            .owner(i)
+            .ok_or_else(|| PyValueError::new_err(format!("no env {i} of {}", self.n)))?;
         let (reply, rx) = channel();
-        tx.send(Wire::Reset { slot, seed, learner, style, foe_style, foe, limit, reply }).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-        let out = rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?.map_err(PyValueError::new_err)?;
+        tx.send(Wire::Reset {
+            slot,
+            seed,
+            learner,
+            style,
+            foe_style,
+            foe,
+            limit,
+            reply,
+        })
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let out = rx
+            .recv()
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?
+            .map_err(PyValueError::new_err)?;
         if let Some(o) = self.outs.get_mut(i) {
             *o = out;
         }
@@ -234,8 +352,16 @@ impl VecEnv {
 
     /// Every env's observation (`float32[n, OBS]`) and legal actions (`bool[n, ACTIONS]`).
     fn observe<'py>(&self, py: Python<'py>) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-        let obs: Vec<f32> = self.outs.iter().flat_map(|o| o.obs.iter().copied()).collect();
-        let mask: Vec<bool> = self.outs.iter().flat_map(|o| o.mask.iter().copied()).collect();
+        let obs: Vec<f32> = self
+            .outs
+            .iter()
+            .flat_map(|o| o.obs.iter().copied())
+            .collect();
+        let mask: Vec<bool> = self
+            .outs
+            .iter()
+            .flat_map(|o| o.mask.iter().copied())
+            .collect();
         let obs = PyArray1::from_vec(py, obs).reshape([self.n, OBS])?;
         let mask = PyArray1::from_vec(py, mask).reshape([self.n, ACTIONS])?;
         Ok((obs.into_any(), mask.into_any()))
@@ -249,10 +375,19 @@ impl VecEnv {
         py: Python<'py>,
         actions: PyReadonlyArray1<'py, i64>,
         shaping: f32,
-    ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+    ) -> PyResult<(
+        Bound<'py, PyAny>,
+        Bound<'py, PyAny>,
+        Bound<'py, PyAny>,
+        Bound<'py, PyAny>,
+    )> {
         let actions = actions.as_slice()?.to_vec();
         if actions.len() != self.n {
-            return Err(PyValueError::new_err(format!("{} actions for {} envs", actions.len(), self.n)));
+            return Err(PyValueError::new_err(format!(
+                "{} actions for {} envs",
+                actions.len(),
+                self.n
+            )));
         }
         let workers: Vec<(Sender<Wire>, usize, usize)> = self.workers.clone();
         let done_before: Vec<bool> = self.outs.iter().map(|o| o.done).collect();
@@ -261,16 +396,31 @@ impl VecEnv {
             for (tx, start, len) in &workers {
                 let (reply, rx) = channel();
                 let slice = actions.get(*start..start + len).unwrap_or(&[]).to_vec();
-                tx.send(Wire::Step { actions: slice, shaping, reply }).map_err(|e| e.to_string())?;
+                tx.send(Wire::Step {
+                    actions: slice,
+                    shaping,
+                    reply,
+                })
+                .map_err(|e| e.to_string())?;
                 replies.push(rx);
             }
-            replies.into_iter().map(|rx| rx.recv().map_err(|e| e.to_string())).collect()
+            replies
+                .into_iter()
+                .map(|rx| rx.recv().map_err(|e| e.to_string()))
+                .collect()
         });
         let outs = outs.map_err(PyRuntimeError::new_err)?;
         for (i, out) in outs.into_iter().flatten().enumerate() {
-            let Some(o) = self.outs.get_mut(i) else { continue };
+            let Some(o) = self.outs.get_mut(i) else {
+                continue;
+            };
             if done_before.get(i).copied().unwrap_or(true) {
-                *o = Out { reward: 0.0, done: true, won: 0, ..o.clone() };
+                *o = Out {
+                    reward: 0.0,
+                    done: true,
+                    won: 0,
+                    ..o.clone()
+                };
             } else {
                 *o = out;
             }
@@ -309,15 +459,24 @@ impl Spec {
     fn of(x: &Bound<'_, PyAny>) -> PyResult<Spec> {
         if let Ok(name) = x.extract::<String>() {
             if name == "house" {
-                return Onnx::house().map(|o| Spec::Model(Model(o))).map_err(|e| PyValueError::new_err(e.0));
+                return Onnx::house()
+                    .map(|o| Spec::Model(Model(o)))
+                    .map_err(|e| PyValueError::new_err(e.0));
             }
             return match Bot::named(&name) {
                 Some(_) => Ok(Spec::Named(name)),
-                None => Err(PyValueError::new_err(format!("no bot {name:?}: {}, house, or a model's bytes", Bot::NAMES.join(", ")))),
+                None => Err(PyValueError::new_err(format!(
+                    "no bot {name:?}: {}, house, or a model's bytes",
+                    Bot::NAMES.join(", ")
+                ))),
             };
         }
-        let bytes: Vec<u8> = x.extract().map_err(|_| PyValueError::new_err("a bot is a name or a model's bytes"))?;
-        Model::load(&bytes).map(Spec::Model).map_err(PyValueError::new_err)
+        let bytes: Vec<u8> = x
+            .extract()
+            .map_err(|_| PyValueError::new_err("a bot is a name or a model's bytes"))?;
+        Model::load(&bytes)
+            .map(Spec::Model)
+            .map_err(PyValueError::new_err)
     }
 
     fn bot(self) -> Result<Bot, String> {
@@ -330,9 +489,16 @@ impl Spec {
 
 fn fight_match(seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Match> {
     if seeds.0 >= seeds.1 {
-        return Err(PyValueError::new_err(format!("seeds {seeds:?}: (first, past the last), like range")));
+        return Err(PyValueError::new_err(format!(
+            "seeds {seeds:?}: (first, past the last), like range"
+        )));
     }
-    Ok(Match { seeds: seeds.0..seeds.1, rounds, limit, effects: arena_duel::effects::all() })
+    Ok(Match {
+        seeds: seeds.0..seeds.1,
+        rounds,
+        limit,
+        effects: arena_duel::effects::all(),
+    })
 }
 
 /// A record as a dict, from the first bot's side.
@@ -353,9 +519,22 @@ fn record<'py>(py: Python<'py>, r: &Record) -> PyResult<Bound<'py, PyDict>> {
 /// record: `win_rate`, `as_seat0`, `as_seat1`, `won`, `lost`, `cut`, `mean_round`.
 #[pyfunction]
 #[pyo3(signature = (a, b, seeds = (1, 151), rounds = 3, limit = 120.0))]
-fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seeds: (u32, u32), rounds: u32, limit: f64) -> PyResult<Bound<'py, PyDict>> {
-    let (a, b, m) = (Spec::of(a)?, Spec::of(b)?, fight_match(seeds, rounds, limit)?);
-    let r = py.detach(move || -> Result<Record, String> { Ok(arena_duel::ladder::bout(&a.bot()?, &b.bot()?, &m)) });
+fn bout<'py>(
+    py: Python<'py>,
+    a: &Bound<'py, PyAny>,
+    b: &Bound<'py, PyAny>,
+    seeds: (u32, u32),
+    rounds: u32,
+    limit: f64,
+) -> PyResult<Bound<'py, PyDict>> {
+    let (a, b, m) = (
+        Spec::of(a)?,
+        Spec::of(b)?,
+        fight_match(seeds, rounds, limit)?,
+    );
+    let r = py.detach(move || -> Result<Record, String> {
+        Ok(arena_duel::ladder::bout(&a.bot()?, &b.bot()?, &m))
+    });
     record(py, &r.map_err(PyValueError::new_err)?)
 }
 
@@ -363,7 +542,11 @@ fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seed
 /// `seeds` (the ladder's 1-150 by default): `passed`, and the records `vs_brain` and `vs_first`.
 #[pyfunction]
 #[pyo3(signature = (bot, seeds = (1, 151)))]
-fn entry_bar<'py>(py: Python<'py>, bot: &Bound<'py, PyAny>, seeds: (u32, u32)) -> PyResult<Bound<'py, PyDict>> {
+fn entry_bar<'py>(
+    py: Python<'py>,
+    bot: &Bound<'py, PyAny>,
+    seeds: (u32, u32),
+) -> PyResult<Bound<'py, PyDict>> {
     let spec = Spec::of(bot)?;
     let m = fight_match(seeds, 3, 120.0)?;
     let bar = py.detach(move || -> Result<_, String> { Ok(entry_bar_of(&spec.bot()?, &m)) });

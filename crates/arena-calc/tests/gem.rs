@@ -11,8 +11,8 @@ use arena_calc::gem::{
     self, GEMS, Gem, Resource, TODAY_ATK, TODAY_DEFENCE, Tier, aura_of, band, curse_of, domain_of,
     power_score, safety_factor, starting_tier,
 };
-use arena_calc::hit::spell_base;
 use arena_calc::grade::Rank;
+use arena_calc::hit::spell_base;
 use arena_calc::tag::{Group, Tag};
 use std::collections::HashSet;
 
@@ -183,7 +183,10 @@ fn the_pool_has_its_top_tier_and_every_kind_of_damage() {
     for id in PEAK {
         let g = gem::gem(id).unwrap_or_else(|| unreachable!("{id}"));
         assert_eq!((g.tier, g.rank), (Tier::S, Rank::Faith), "{id}");
-        assert!(g.cooldown > 0.0 && g.costs.iter().any(|(r, _)| *r == Resource::Qi), "{id}");
+        assert!(
+            g.cooldown > 0.0 && g.costs.iter().any(|(r, _)| *r == Resource::Qi),
+            "{id}"
+        );
     }
     for e in Element::ALL {
         assert!(
@@ -229,7 +232,10 @@ fn the_design_pool_is_all_here() {
 fn bases_convert_todays_power() {
     let per_power = TODAY_ATK / 10.0 * TODAY_DEFENCE;
     // the top tier's bases are its own: they were ultimates
-    for g in GEMS.iter().filter(|g| g.spell == g.id && !PEAK.contains(&g.id)) {
+    for g in GEMS
+        .iter()
+        .filter(|g| g.spell == g.id && !PEAK.contains(&g.id))
+    {
         let Some(power) = spell(g.id).and_then(|s| s.damage) else {
             continue;
         };

@@ -11,16 +11,27 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Act {
     /// Walk: `dir` -1 left, 1 right.
-    Move { dir: f64 },
+    Move {
+        dir: f64,
+    },
     Jump,
-    Duck { hold: f64 },
-    Guard { hold: f64 },
+    Duck {
+        hold: f64,
+    },
+    Guard {
+        hold: f64,
+    },
     /// Fly at `height` over the ground; 0 lands.
-    Fly { height: f64 },
+    Fly {
+        height: f64,
+    },
     Meditate,
     Wait,
     /// Use the skill of that name; `target` is an x for areas and blinks.
-    Cast { skill: String, target: Option<f64> },
+    Cast {
+        skill: String,
+        target: Option<f64>,
+    },
 }
 
 impl From<&Choice> for Act {

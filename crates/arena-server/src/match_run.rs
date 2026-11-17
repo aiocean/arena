@@ -4,11 +4,11 @@
 //! at a time, drain the recorders for the decisions and forfeits that tick produced, and hand them back as frames. The
 //! caller (the publisher) paces the stepping to the wall clock and writes the frames onto a MoQ track.
 
-use arena_link::{Act, Arena, Decision, Ended, Forfeit, Snapshot};
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::effects;
 use arena_duel::seat::{Brain, Log, MakeSeat, Recorder, Recording};
 use arena_duel::view::{DuelView, view};
+use arena_link::{Act, Arena, Decision, Ended, Forfeit, Snapshot};
 use arena_telemetry::duel::Observer;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -275,7 +275,11 @@ mod tests {
         );
         for (i, want) in fought.iter().enumerate() {
             replay.step(TICK);
-            assert_eq!(&view(replay.state()), want, "wire replay diverged at step {i}");
+            assert_eq!(
+                &view(replay.state()),
+                want,
+                "wire replay diverged at step {i}"
+            );
         }
     }
 }

@@ -3,11 +3,11 @@
 
 mod common;
 
-use common::{arena, common as held, on_bar, pinned};
 use arena_duel::bar::{draw, skill_bar, spend};
 use arena_duel::data::BAR;
 use arena_duel::fighter::Slot;
 use arena_duel::kit::Place;
+use common::{arena, common as held, on_bar, pinned};
 use serde_json::json;
 
 #[test]

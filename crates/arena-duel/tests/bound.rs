@@ -11,11 +11,7 @@ use common::{common, duel_of, idle, loadout};
 
 /// Fighter 0 holds `bar` on its bar, rich enough for anything; nobody's seat acts.
 fn duel(bar: [&'static str; 3]) -> Duel {
-    let mut d = duel_of(
-        1,
-        [idle(), idle()],
-        [loadout(&bar), loadout(&[])],
-    );
+    let mut d = duel_of(1, [idle(), idle()], [loadout(&bar), loadout(&[])]);
     let s = d.state_mut();
     s.fighters[0].bar = bar.iter().map(|&n| common(n)).collect();
     s.fighters[0].c.qi = 1e6;

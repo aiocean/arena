@@ -2,8 +2,8 @@
 //! looks, the brain's one temperament and the constants. The skills' damage, costs and timings are `arena-calc`'s
 //! (`crates/arena-calc/tests/gem.rs` pins them); here, that each skill the duel casts is its gem on its motion.
 
-use arena_mind::Rng;
 use arena_duel::data::{self, Kind, Look, block_chance, orb_offset};
+use arena_mind::Rng;
 use serde_json::{Map, Value, json};
 
 fn fixture() -> Value {

@@ -562,13 +562,21 @@ impl Fight {
     fn binds(&self, p: &Payload) -> bool {
         p.depth == 0
             && p.from_unit.is_none()
-            && self.f[p.by].slots.get(p.slot).is_some_and(|s| s.gem.binds())
+            && self.f[p.by]
+                .slots
+                .get(p.slot)
+                .is_some_and(|s| s.gem.binds())
     }
 
     /// Whether a blow seat `me` cast still plays out: a projectile in flight, a blow still due.
     pub fn bound(&self, me: usize) -> bool {
-        self.shots.iter().any(|s| s.payload.by == me && self.binds(&s.payload))
-            || self.pending.iter().any(|e| e.payload.by == me && self.binds(&e.payload))
+        self.shots
+            .iter()
+            .any(|s| s.payload.by == me && self.binds(&s.payload))
+            || self
+                .pending
+                .iter()
+                .any(|e| e.payload.by == me && self.binds(&e.payload))
     }
 
     /// The costs of `slot` as built now.

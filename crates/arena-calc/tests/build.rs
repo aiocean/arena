@@ -1292,8 +1292,8 @@ fn base_of(gem: &str) -> f64 {
 fn every_support_fits_some_skill_of_the_pool() {
     for s in SUPPORTS {
         assert!(
-            GEMS.iter().any(|g| !arena_calc::loadout::BASICS.contains(&g.id)
-                && s.fits(g.all_tags())),
+            GEMS.iter()
+                .any(|g| !arena_calc::loadout::BASICS.contains(&g.id) && s.fits(g.all_tags())),
             "{} fits no skill a loadout can take",
             s.id
         );

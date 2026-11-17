@@ -2,13 +2,13 @@
 
 mod common;
 
-use arena_mind::{Choice, Outcome};
-use common::{all_effects, config, pick};
 use arena_duel::bar::ready;
 use arena_duel::duel::Duel;
 use arena_duel::fighter::State;
 use arena_duel::scripted::Scripted;
 use arena_duel::seat::{BotSeat, MakeSeat, Seat};
+use arena_mind::{Choice, Outcome};
+use common::{all_effects, config, pick};
 use std::cell::Cell;
 use std::rc::Rc;
 

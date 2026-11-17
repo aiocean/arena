@@ -57,5 +57,3 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
     // 75% against the first mind: out
     assert!(!bar(rounds([8, 8], [2, 2]), rounds([7, 8], [3, 2])).passed());
 }
-
-

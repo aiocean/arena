@@ -204,7 +204,14 @@ impl Follow {
                 _ => Applied::Ignored,
             },
             Frame::Decision(d) => match &mut self.snapshot {
-                Some(s) if !s.decisions.iter().rev().take(8).any(|h| h.tick == d.tick && h.corner == d.corner) => {
+                Some(s)
+                    if !s
+                        .decisions
+                        .iter()
+                        .rev()
+                        .take(8)
+                        .any(|h| h.tick == d.tick && h.corner == d.corner) =>
+                {
                     s.decisions.push(d);
                     Applied::Taken
                 }

@@ -3,10 +3,10 @@
 
 mod common;
 
-use common::{all_effects, config};
 use arena_duel::duel::Duel;
 use arena_duel::seat::Brain;
 use arena_duel::sense::sense_of;
+use common::{all_effects, config};
 
 #[test]
 fn slots_are_the_basics_and_the_bar() {
@@ -59,8 +59,8 @@ fn a_skill_says_what_it_inflicts_by_its_kinds_of_damage_and_its_controls() {
 
 #[test]
 fn a_fighter_senses_its_own_act_and_the_foes() {
-    use arena_mind::{ActPhase, Doing};
     use arena_duel::fighter::{Act, Phase};
+    use arena_mind::{ActPhase, Doing};
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
     duel.state_mut().fighters[1].act = Some(Act {

@@ -387,7 +387,10 @@ fn hold(mut state: ResMut<State>) {
     let state = state.as_mut();
     for f in 0..2 {
         let bound = state.shots.iter().any(|s| s.binds && s.owner == f)
-            || state.pending.iter().any(|p| p.payload.by == f && p.payload.binds());
+            || state
+                .pending
+                .iter()
+                .any(|p| p.payload.by == f && p.payload.binds());
         state.fighters[f].bound = bound;
     }
 }

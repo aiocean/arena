@@ -8,10 +8,10 @@ use super::{PlayEffect, Played};
 use crate::layers::Z_FIGHTERS;
 use crate::layout::Layout;
 use crate::rules::{Fx, Pace, Shown};
+use arena_duel::out::{Out, PlayOpts};
 use arena_vfx::sheet::{Cell, Index};
 use arena_vfx::variant_key;
 use bevy::prelude::*;
-use arena_duel::out::{Out, PlayOpts};
 
 /// The sheets' layout, baked beside them.
 const INDEX: &str = include_str!("../../assets/vfx/index.txt");

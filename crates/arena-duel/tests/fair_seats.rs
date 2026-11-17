@@ -23,6 +23,14 @@ fn a_mirror_wins_as_often_in_either_seat_and_either_look() {
     let thunder = f64::from(r.by_look[0]) / f64::from((r.by_look[0] + r.by_look[1]).max(1));
     assert!(all > 200.0, "{all} rounds");
     let seat = seat0 / all;
-    assert!((0.45..=0.55).contains(&seat), "seat 0 won {:.1}% of {all} rounds", seat * 100.0);
-    assert!((0.45..=0.55).contains(&thunder), "Thunder won {:.1}%", thunder * 100.0);
+    assert!(
+        (0.45..=0.55).contains(&seat),
+        "seat 0 won {:.1}% of {all} rounds",
+        seat * 100.0
+    );
+    assert!(
+        (0.45..=0.55).contains(&thunder),
+        "Thunder won {:.1}%",
+        thunder * 100.0
+    );
 }

@@ -7,9 +7,9 @@ use crate::layers::Z_FIGHTERS;
 use crate::layout::Layout;
 use crate::rules::Shown;
 use arena_calc::device::Kind;
-use bevy::prelude::*;
 use arena_duel::data::{Look, T};
 use arena_duel::view::UnitView;
+use bevy::prelude::*;
 
 pub struct UnitsPlugin;
 

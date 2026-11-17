@@ -5,14 +5,14 @@
 use crate::feel::Jolts;
 use crate::layers::Z_FIGHTERS;
 use crate::layout::Layout;
-use arena_duel::pick::{Appearance, pick};
 use crate::rules::Shown;
 use crate::sheet::{self, Cell};
+use arena_duel::data::UNIT;
+use arena_duel::pick::{Appearance, pick};
+use arena_duel::view::FighterView;
 use bevy::asset::RenderAssetUsages;
 use bevy::image::{CompressedImageFormats, ImageSampler, ImageType};
 use bevy::prelude::*;
-use arena_duel::data::UNIT;
-use arena_duel::view::FighterView;
 
 /// A fighter's sheet: its layout and its pages as textures.
 pub struct Look {
