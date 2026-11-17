@@ -23,6 +23,7 @@ resolve it there.
 | hands the env to Python | `crates/arena-duel-py` (translation only) |
 | is a live match on the wire: the postcard frames a server publishes and a page folds, how they lie on MoQ | `crates/arena-link` (pure; `docs/specs/2026-11-17-live-matches-design.md`) |
 | fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`) |
+| checks the live site after a deploy: the page, the game, the relay's live match, the HUD, the fight moving | `crates/arena-smoke` (a headless Chrome; the page shows it `window.__arena.live`, set in `crates/arena-game/src/live.rs`) |
 | sets up a process's logs, traces and metrics, exports them over OTLP, or turns a duel step into telemetry events (the duel observer: it only reads) | `crates/arena-telemetry` (`init`, `duel::Observer`; a process calls `init` once in `main`, game code only uses `tracing` on the `arena::*` targets) |
 | runs or documents the telemetry store (OpenObserve), its streams, its retention and its queries | `ops/observe` (`compose.yaml`, `README.md`) |
 | records a corner's decisions or replays them (the server's side and the page's) | `crates/arena-duel` (`seat::Recorder`, `seat::Replay`) |
@@ -97,4 +98,15 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
 site/build.sh --serve                            # after a change the page sees: then look at it in a browser
 ARENA_SHOTS=/tmp/arena:4,8 cargo run -p arena-game -- --seed 7   # natively, screenshots to look at
+```
+
+After a deploy (the owner deploys: game-factory `backend/arena/README.md`), the smoke test of the live site: a headless
+Chrome (a system one, else Chrome for Testing fetched once into `~/.cache/arena-smoke`) loads https://arena.aiocean.io/
+and checks the page and the game's wasm load with no console errors, page errors or failed requests for its own
+assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come, the HUD is painted and
+the match moves. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
+exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs):
+
+```
+cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke   # https://arena.aiocean.io/review/smoke/
 ```

@@ -1,0 +1,23 @@
+[package]
+name = "arena-smoke"
+description = "A smoke test of the live arena site: a headless Chromium loads the page and checks the game starts, watches the relay's live match, draws the HUD and moves, with no errors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "arena-smoke"
+path = "src/main.rs"
+
+# the browser driver and its runtime are this crate's alone: nothing in the game or the rules depends on it
+[dependencies]
+chromiumoxide = { version = "0.9", default-features = false, features = ["fetcher", "rustls", "zip8"] }
+futures = "0.3"
+png = "0.18"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs"] }
+
+[lints]
+workspace = true
