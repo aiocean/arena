@@ -7,8 +7,7 @@ does is `docs/bot.md`.
 
 ## What you need
 
-- Rust (the toolchain in `rust-toolchain.toml`), `uv`, Python 3.12 or 3.13 (`train/.python-version` picks 3.13; torch 2.8 has
-  no wheels for 3.14).
+- Rust (the toolchain in `rust-toolchain.toml`), `uv`, Python 3.12 or 3.13 (`train/.python-version` picks 3.13).
 - A fast machine for long runs. The env is the cost, and the trainer runs on CPU (CPU beats MPS for this network).
   Measured: about 42K env steps a second on the Mac mini the shipped AI trained on (30K each with two runs side by
   side), 6K-12K on a MacBook Air. A fine-tune of 600 updates is about 20M steps, roughly 8 minutes at 42K; a run from
@@ -36,7 +35,8 @@ obs, mask = env.observe()                  # float32[n, 354], bool[n, 30]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 ```
 
-- `reset` starts env `i` on a fresh round. `learner` is the seat (0 left, 1 right; each fight draws both seats' loadouts); `style` and
+- `reset` starts env `i` on a fresh round. `learner` is the seat (0 left, 1 right; each fight draws both seats' loadouts, and the fighters' looks from its seed,
+apart from the seats: `ladder::looks_of`); `style` and
   `foe_style` are 0 aggressive, 1 balanced, 2 defensive; `opponent` is `"brain"`, `"first"`, `"aggressive"`,
   `"turtle"` or `"policy"` (then `model` is a `set_model` id, otherwise -1); `limit` is the round's time limit in
   seconds (the trainer uses 90).
@@ -95,8 +95,8 @@ pair 15%; seats, styles and both loadouts drawn per fight.
 
 **The shipped AI was trained on the old rules** (two schools, Thunder and Frost). The rules now play by the damage
 system (`docs/rules.md`) with random loadouts; the inputs kept their shape (`docs/bot.md`), so it still runs, but it
-needs a retrain: on the new rules it wins about 79% against the brain and 75% against the first mind. Watch the
-per-seat win rates in the log.
+needs a retrain: it learned to play its seat (which its inputs used to say) rather than its look, so in its own mirror
+one look now wins far more than the other. Watch the per-seat win rates in the log.
 
 ## Making it your own
 
@@ -161,7 +161,9 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --seed
 
 The ladder plays seeds 1-150, each both ways (in seat 0, then in seat 1) for 3 rounds, rounds cut at 120 s. The
 bot (the house AI unless `--onnx` or `--bot` names another) plays the balanced style against the brain, the first mind and the scripts; only the mirror draws styles. A cut
-ends that fight and shows in the `cut` column; win rates count finished rounds. It prints:
+ends that fight and shows in the `cut` column; win rates count finished rounds. `--rounds` and `--limit` change the
+rounds a fight and the seconds a round; `--telemetry-otlp` sends each row to the telemetry store (`ops/observe`). It
+prints:
 
 | Match | Bar |
 |---|---|
@@ -172,6 +174,7 @@ ends that fight and shows in the `cut` column; win rates count finished rounds. 
 
 (The shipped AI's numbers on the old rules no longer hold; they are measured again after its retrain.)
 
+Under the table it prints, for each mirror, the share of rounds each look won (each seed is fought in both looks).
 `--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
 
@@ -181,4 +184,4 @@ Drop your module into a corner on [arena.aiocean.io](https://arena.aiocean.io/#i
 (`site/build.sh --serve`, then http://127.0.0.1:8771/): it takes the corner at once, the other corner keeps the house
 bot or another module, and the seed box replays a fight. The same two modules and seed play the same fight anywhere.
 To make your model the bot the home page plays, export it over the house AI (`crates/arena-duel/weights/policy.onnx`)
-and build the site: `site/embed.sh` builds the house module from it.
+and build the site: `site/build.sh` builds the house module from it.
