@@ -42,3 +42,11 @@ opt-level = 3
 opt-level = 3
 [profile.dev.package.tract-onnx]
 opt-level = 3
+
+# The game for the browser (site/build.sh): small over fast, as a page loads it. Measured with wasm-opt -Oz after:
+# "z" 21.2 MB (8.7 MB gzipped), "s" 24.0 MB. Not stripped here: wasm-bindgen reads the features section; wasm-opt
+# strips after it.
+[profile.web]
+inherits = "release"
+opt-level = "z"
+panic = "abort"

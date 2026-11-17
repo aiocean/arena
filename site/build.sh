@@ -11,13 +11,13 @@ root="$(cd "$here/.." && pwd)"
 out="$here/dist"
 target="${CARGO_TARGET_DIR:-$root/target}"
 
-(cd "$root" && cargo build --release -p arena-game --lib --target wasm32-unknown-unknown)
+(cd "$root" && cargo build --profile web -p arena-game --lib --target wasm32-unknown-unknown)
 (cd "$root" && cargo run -q -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx site/assets/bots/policy.wasm)
 
 rm -rf "$out"
 mkdir -p "$out/assets" "$out/game" "$out/bots"
-wasm-bindgen --target web --no-typescript --out-dir "$out/game" "$target/wasm32-unknown-unknown/release/arena_game.wasm"
-wasm-opt -Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
+wasm-bindgen --target web --no-typescript --out-dir "$out/game" "$target/wasm32-unknown-unknown/web/arena_game.wasm"
+wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
   "$out/game/arena_game_bg.wasm" -o "$out/game/arena_game_bg.wasm"
 cp "$here"/*.html "$out/"
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"

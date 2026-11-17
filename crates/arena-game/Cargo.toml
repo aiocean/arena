@@ -14,7 +14,12 @@ path = "src/main.rs"
 
 [dependencies]
 arena-mind = { path = "../arena-mind" }
-bevy = { version = "0.20", default-features = false, features = ["2d", "ui"] }
+# only what the game uses (no 3D, scenes, picking, gizmos, post-processing, audio): the page loads less
+bevy = { version = "0.20", default-features = false, features = [
+    "std", "async_executor", "multi_threaded", "bevy_asset", "bevy_log", "bevy_window", "bevy_winit", "x11",
+    "bevy_render", "bevy_core_pipeline", "bevy_sprite", "bevy_sprite_render", "bevy_ui", "bevy_ui_render",
+    "bevy_text", "default_font", "png", "webgl2",
+] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 pixfx-duel = { path = "../pixfx-duel" }
 serde = { workspace = true }
