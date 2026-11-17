@@ -8,6 +8,9 @@
 //! screen pixels, and a fighter's sprite, `UNIT` times finer, a whole number too.
 
 #![forbid(unsafe_code)]
+// The workspace bans std's float rounding and transcendentals so the rules give the same bits everywhere; nothing
+// here decides the fight (it only draws it), so the game uses them freely.
+#![allow(clippy::disallowed_methods)]
 
 pub mod bots;
 pub mod feel;
@@ -24,6 +27,8 @@ pub mod sheet;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod shots;
 pub mod vfx;
+#[cfg(target_arch = "wasm32")]
+pub mod web;
 
 use bevy::prelude::*;
 
@@ -104,5 +109,7 @@ pub fn app(start: Start) -> App {
     ));
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(shots::ShotsPlugin);
+    #[cfg(target_arch = "wasm32")]
+    app.add_plugins(web::WebPlugin);
     app
 }

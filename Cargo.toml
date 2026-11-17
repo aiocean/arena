@@ -2,7 +2,7 @@
 resolver = "3"
 members = ["crates/*"]
 # pixfx-duel-py needs pyo3 and is built only by maturin for the trainer: its own workspace
-exclude = ["crates/pixfx-duel-py", "crates/arena-wasm", "crates/arena-fighter"]
+exclude = ["crates/pixfx-duel-py"]
 
 [workspace.package]
 version = "0.1.0"

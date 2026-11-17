@@ -135,9 +135,6 @@ impl std::fmt::Display for LayoutError {
 
 impl std::error::Error for LayoutError {}
 
-/// A sheet ready to draw from: each page's straight-alpha RGBA pixels and their layout, checked once when it is
-/// made.
-
 impl Layout {
     /// Frame `i` of animation `clip`, the last one past its end; none for an animation the sheet lacks.
     pub fn cell(&self, clip: &str, i: usize) -> Option<Cell> {

@@ -261,11 +261,7 @@ impl Canvas {
         let img = image::load_from_memory_with_format(bytes, image::ImageFormat::Png).ok()?;
         let rgba = img.to_rgba8();
         let (w, h) = (rgba.width() as i32, rgba.height() as i32);
-        let px = rgba
-            .into_raw()
-            .chunks_exact(4)
-            .map(|c| [c[0], c[1], c[2], c[3]])
-            .collect();
+        let px = rgba.into_raw().as_chunks::<4>().0.to_vec();
         Some(Canvas { w, h, px })
     }
 }
@@ -280,6 +276,7 @@ impl Dice {
     }
 
     /// A number in [0, 1).
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> f32 {
         self.0 = self.0.wrapping_add(0x6d2b79f5);
         let mut t = self.0;

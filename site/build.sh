@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-# Build the arena site into site/dist: its pages, the player docs rendered from docs/*.md, the duel's page kit
-# (site/embed.sh: page modules, the arena's wasm, the trained policies) and the pixfx engine in dist/pkg (the
-# pixfx-canvas2d bundle, its painting worker and the pixfx-web wasm), built from the engine at the pinned rev
-# (site/pixfx.sh puts it at .pixfx/), whose site.css and preload.js the site uses too.
+# Build the arena site into site/dist: its pages, the player docs rendered from docs/*.md, the game (the Bevy app in
+# crates/arena-game built for the browser, at dist/game) and the house bot module (dist/bots/policy.wasm, built from
+# the house AI's ONNX model with the bots/onnx template, as a player builds theirs).
 # Usage: site/build.sh            (from anywhere)
 #        site/build.sh --serve    (build, then serve dist on http://127.0.0.1:8771/)
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
-pixfx="$("$here/pixfx.sh")"
 out="$here/dist"
+target="${CARGO_TARGET_DIR:-$root/target}"
 
-(cd "$pixfx/packages/pixfx-web" && bun install && bun run build:wasm)
-(cd "$pixfx/packages/pixfx-canvas2d" && bun install && bun run build)
+(cd "$root" && cargo build --release -p arena-game --lib --target wasm32-unknown-unknown)
+(cd "$root" && cargo run -q -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx site/assets/bots/policy.wasm)
 
 rm -rf "$out"
-mkdir -p "$out/assets"
+mkdir -p "$out/assets" "$out/game" "$out/bots"
+wasm-bindgen --target web --no-typescript --out-dir "$out/game" "$target/wasm32-unknown-unknown/release/arena_game.wasm"
+wasm-opt -Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
+  "$out/game/arena_game_bg.wasm" -o "$out/game/arena_game_bg.wasm"
 cp "$here"/*.html "$out/"
-cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$pixfx/site/assets/site.css" "$out/assets/"
-"$here/embed.sh" "$out/assets"
-cp -R "$pixfx/packages/pixfx-canvas2d/dist" "$out/pkg"
+cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
+cp "$here"/assets/bots/policy.wasm "$out/bots/"
 bun "$here/docs.js" "$root/docs" "$out/docs"
-bun "$pixfx/site/preload.js" "$out"
 echo "arena site: $out"
 
 if [[ "${1:-}" == "--serve" ]]; then
