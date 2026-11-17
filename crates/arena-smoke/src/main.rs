@@ -15,8 +15,7 @@
 //!   (`frames`), and it is watching the server's match, not fighting on its own (the status line's `live`).
 //! - `hud`: the canvas is painted (many colours, most pixels not the background).
 //! - `weight` (never fails the run): what the first visit downloaded, bytes on the wire by kind and the heaviest
-//!   files, and the seconds to the game starting, to the first live frame and to the last download
-//!   (`arena_smoke::Weight`). The machine's own timings follow its load; `--mbps N` emulates a visitor's connection (N
+//!   files and when each finished, and when the last did (`arena_smoke::Weight`). The machine's own timings follow its load; `--mbps N` emulates a visitor's connection (N
 //!   megabits a second down, 40 ms latency), so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //!
@@ -582,9 +581,6 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     let mut live = Value::Null;
     while loaded.elapsed() < deadline.max(settle) {
         live = eval_json(&page, "window.__arena?.live ?? null").await;
-        if first_frame.is_none() && live.get("frames").and_then(Value::as_u64).unwrap_or(0) > 0 {
-            first_frame = Some(loaded.elapsed().as_secs_f64());
-        }
         status = eval_string(
             &page,
             "document.getElementById('status')?.textContent ?? ''",
@@ -736,7 +732,7 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
             },
         ),
     );
-    let mut weight = {
+    let weight = {
         let s = lock(&seen);
         let t0 = s.first_sent.unwrap_or(0.0);
         let since: Vec<_> = s
@@ -748,8 +744,6 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         w.all_loaded_s = s.first_sent.map(|t| s.last_done - t);
         w
     };
-    weight.game_start_s = started.then_some(start_secs);
-    weight.first_live_frame_s = first_frame;
     checks.push(Check::new("weight", true, weight.line()));
     let summary = Summary {
         checks,

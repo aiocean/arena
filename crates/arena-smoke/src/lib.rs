@@ -107,9 +107,10 @@ pub struct Summary {
     pub first_attempt: Option<Box<Summary>>,
 }
 
-/// A first visit's bytes and timings: every response's bytes on the wire (`encodedDataLength`: compressed, headers
-/// included) by kind, the largest files, the seconds from navigation to the game starting and to the first live
-/// frame. The relay's WebTransport stream is not an HTTP request and is not counted.
+/// A first visit's bytes: every response's bytes on the wire (`encodedDataLength`: compressed, headers included) by
+/// kind, the largest files and when each finished, and when the last did (the game's start and first live frame are
+/// the summary's `game_start_seconds` and `first_frame_seconds`). The relay's WebTransport stream is not an HTTP
+/// request and is not counted.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Weight {
     pub bytes: u64,
@@ -118,10 +119,6 @@ pub struct Weight {
     pub by_kind: Vec<(String, u64, u32)>,
     /// The ten heaviest responses: URL (path only), bytes, and seconds from the first request to its last byte.
     pub largest: Vec<(String, u64, f64)>,
-    /// Navigation to the status line saying `Seed ...` (the game's wasm fetched, compiled and running).
-    pub game_start_s: Option<f64>,
-    /// Navigation to the first match frame from the relay (`window.__arena.live.frames > 0`).
-    pub first_live_frame_s: Option<f64>,
     /// The first request to the last response finished (the pictures arrive after the game has started).
     #[serde(default)]
     pub all_loaded_s: Option<f64>,
@@ -164,15 +161,13 @@ impl Weight {
             .iter()
             .map(|(k, b, n)| format!("{k} {} ({n})", mb(*b)))
             .collect();
-        let secs = |s: Option<f64>| s.map_or("never".to_string(), |s| format!("{s:.1} s"));
         format!(
-            "{} in {} requests: {}; game started {}, first live frame {}, all loaded {}",
+            "{} in {} requests: {}; all loaded {}",
             mb(self.bytes),
             self.requests,
             kinds.join(", "),
-            secs(self.game_start_s),
-            secs(self.first_live_frame_s),
-            secs(self.all_loaded_s)
+            self.all_loaded_s
+                .map_or("never".to_string(), |s| format!("{s:.1} s"))
         )
     }
 }
