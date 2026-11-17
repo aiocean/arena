@@ -606,6 +606,38 @@ mod tests {
         assert!(rounds > 2, "only {rounds} rounds");
     }
 
+    /// A blast on the ground where a blow lands never hides the fighter it lands on, nor stands over the fight
+    /// after it: the dive's slam is at most about half a fighter tall (a fighter is drawn taller than its tile) and gone in about a second and a half, the small
+    /// explosion's held cloud in under two.
+    #[test]
+    fn ground_blasts_neither_hide_the_struck_fighter_nor_linger() {
+        let fighter = Layout::world(arena_duel::data::T);
+        let tallest = |d: &Drawn| {
+            d.layout
+                .clips
+                .values()
+                .flatten()
+                .map(|c| c.h as f32 * d.px())
+                .fold(0.0, f32::max)
+        };
+        let find = |fx: &str| all().iter().find(|d| d.fx == fx);
+        let Some(dirt) = find("explosions/dirt-explosion") else {
+            unreachable!("dirt-explosion is drawn")
+        };
+        assert!(
+            tallest(dirt) <= fighter * 0.6,
+            "the dive's slam is {} world pixels tall, a fighter's tile {fighter}",
+            tallest(dirt)
+        );
+        for (d, most) in [(Some(dirt), 1.6), (find("explosions/small-explosion"), 2.0)] {
+            let Some(d) = d else { continue };
+            for school in d.layout.clips.keys() {
+                let life = d.life(school).unwrap_or(f32::INFINITY);
+                assert!(life <= most, "{} plays {life} s in {school}", d.fx);
+            }
+        }
+    }
+
     #[test]
     fn a_shape_turning_carries_its_centre_round_the_anchor() {
         let cell = arena_vfx::drawn::Cell {

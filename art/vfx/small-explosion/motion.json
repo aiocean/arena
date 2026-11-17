@@ -10,7 +10,7 @@
   "idle": {
     "from": 4,
     "to": 5,
-    "secs": 3.0
+    "secs": 1.0
   },
   "exit": "disappear/fade"
 }

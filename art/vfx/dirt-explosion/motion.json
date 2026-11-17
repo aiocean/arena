@@ -6,11 +6,11 @@
     83,
     167
   ],
-  "px": 0.4545,
+  "px": 0.2273,
   "idle": {
     "from": 5,
     "to": 5,
-    "secs": 1.0
+    "secs": 0.4
   },
   "exit": "disappear/fade"
 }
