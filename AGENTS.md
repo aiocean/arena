@@ -60,9 +60,14 @@ resolve it there.
   in the same change.
 - A new house AI: `train/export.py` (writes `crates/arena-duel/weights/policy.onnx` and its check), then
   `cargo test -p arena-bot --features onnx --test house`, `site/build.sh` (builds the house module), and re-pin
-  `crates/arena-bot/tests/goldens/house_fight.json` (delete it, run `cargo test -p arena-bot --all-features`). CI does not run the `arena-bot` features (wasmtime and tract are
+  `crates/arena-bot/tests/goldens/house_fight.json` and `house_module.sha256` (delete them, run `cargo test -p arena-bot --all-features`). CI does not run the `arena-bot` features (wasmtime and tract are
   too heavy for it): run them locally before a push that touches a bot, the house AI or the rules. There is no weights file (`.bin`) any more: every bot is ONNX or
   a module.
+- The house module is byte-reproducible: any clone at any path builds the same `site/dist/bots/policy.wasm` on the pinned
+  toolchain (the `onnx` example builds `bots/onnx` through the fixed link `/tmp/arena-onnx-bot/repo` with its own
+  rustflags, paths remapped). `goldens/house_module.sha256` pins its bytes, `house_fight.rs` checks the built module
+  against it, and arena-smoke's `module` check the deployed one. A new model, a change to `bots/onnx`, `arena-mind`,
+  tract or the toolchain re-pins it; a deploy that ships another module fails the smoke.
 - Long training runs go on a desktop as launchd jobs, never on a laptop (`train/README.md`, "Training on a
   desktop").
 - Pixel is how the arena is shown, not how it is drawn (owner, 2026-11-17). Art is generated smooth, a clean

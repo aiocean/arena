@@ -1,6 +1,8 @@
 //! The house bot module's fights, pinned (`goldens/house_fight.json`): the module `site/build.sh` builds from
 //! `weights/policy.onnx` (`site/dist/bots/policy.wasm`), one instance in each corner, seeds 1-3, 60 s at 60 Hz, then
-//! the round, wins and each fighter's hp, qi, x and air.
+//! the round, wins and each fighter's hp, qi, x and air. The module's bytes are pinned too
+//! (`goldens/house_module.sha256`): what these fights pin is what the site deploys, and arena-smoke checks the
+//! deployed module against the same file.
 #![cfg(feature = "host")]
 
 use arena_bot::admit;
@@ -9,6 +11,7 @@ use arena_duel::data::UNIT;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::seat::BotSeat;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 const MODULE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -18,6 +21,33 @@ const GOLDEN: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/tests/goldens/house_fight.json"
 );
+const MODULE_GOLDEN: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/goldens/house_module.sha256"
+);
+
+/// The module's sha256, as `site/build.sh` builds it: the same bytes from any clone at any path (the `onnx` example).
+#[test]
+fn the_house_module_is_pinned() -> Result<(), Box<dyn std::error::Error>> {
+    let bytes =
+        std::fs::read(MODULE).map_err(|e| format!("{MODULE}: {e}; build it with site/build.sh"))?;
+    let got: String = Sha256::digest(&bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    match std::fs::read_to_string(MODULE_GOLDEN) {
+        Ok(text) => assert_eq!(
+            got,
+            text.trim(),
+            "the house module's bytes changed: if that was meant (a new model, a new template), delete {MODULE_GOLDEN} and run again"
+        ),
+        Err(_) => {
+            std::fs::write(MODULE_GOLDEN, format!("{got}\n"))?;
+            eprintln!("wrote {MODULE_GOLDEN}: the first run pins it");
+        }
+    }
+    Ok(())
+}
 
 #[test]
 fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error>> {

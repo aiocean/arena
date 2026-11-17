@@ -161,5 +161,7 @@ cargo run -p arena-bot --example onnx -- crates/arena-duel/weights/policy.onnx p
 
 The game on the page admits a dropped module the way a submission is admitted (`crates/arena-game/src/web.rs`) and
 runs it with the browser's own WebAssembly, on the same fuel as the tournament's native host; the house module's native
-fights are pinned by `crates/arena-bot/tests/house_fight.rs` (`goldens/house_fight.json`). Until a module is dropped
-in, the home page shows the arena server's live house matches; drop a `.wasm` into a corner and it fights at once.
+fights are pinned by `crates/arena-bot/tests/house_fight.rs` (`goldens/house_fight.json`), and its bytes too
+(`goldens/house_module.sha256`): the example builds the same module from any clone, so the module deployed is the one
+pinned. Until a module is dropped in, the home page shows the arena server's live house matches; drop a `.wasm` into a
+corner and it fights at once.
