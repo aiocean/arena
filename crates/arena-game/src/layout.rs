@@ -15,11 +15,16 @@ pub const BARS_TALL: f32 = 26.0;
 pub const LAMP_INSET: f32 = 14.0;
 /// The widest the arena gets.
 pub const SPAN_MAX: f32 = 420.0;
+/// The narrowest the world gets, in world pixels: the arena between its braziers and a margin. A window narrower than
+/// this at a texel a pixel (`UNIT` screen pixels a world pixel: a phone, whose canvas the browser may back at its CSS
+/// size) shows the whole world smaller, its sprites drawn below a pixel a texel, rather than a slice of the arena.
+pub const W_MIN: f32 = 320.0;
 
 /// The world in the window.
 #[derive(Resource, Clone, Copy, Debug, PartialEq)]
 pub struct Layout {
-    /// Screen (physical) pixels to a world pixel: a whole number, a multiple of `UNIT`.
+    /// Screen (physical) pixels to a world pixel: a whole number, a multiple of `UNIT`, except in a window too narrow
+    /// for `W_MIN` world pixels at `UNIT`.
     pub scale: f32,
     /// The window's scale factor (physical pixels to a logical one).
     pub dpr: f32,
@@ -57,7 +62,7 @@ impl Layout {
             4.0
         }) * dpr_whole;
         let unit = UNIT as f32;
-        scale = (scale - scale % unit).max(unit);
+        scale = (scale - scale % unit).max(unit).min(pw / W_MIN);
         let w = (pw / scale).ceil().max(64.0);
         let h = (ph / scale).ceil().max(64.0);
         let ground = h - if narrow { 14.0 } else { 22.0 };
@@ -160,5 +165,27 @@ fn follow_window(
         if let Projection::Orthographic(o) = projection.as_mut() {
             o.scale = dpr / layout.scale;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A phone's canvas backed at its CSS size (390 pixels across) shows the whole world, the arena and its braziers
+    /// inside it; a desktop window keeps a whole number of pixels a texel.
+    #[test]
+    fn a_narrow_canvas_shows_the_whole_arena() {
+        let phone = Layout::of(390.0, 293.0, 1.0, 0);
+        assert!(phone.w >= W_MIN, "{phone:?}");
+        assert!(
+            phone.lamps[0] >= 0.0 && phone.lamps[1] <= phone.w,
+            "{phone:?}"
+        );
+        let rules_arena = Layout::world(1104.0);
+        assert!(phone.right - phone.left >= rules_arena, "{phone:?}");
+        let desktop = Layout::of(1280.0, 800.0, 1.0, 0);
+        assert_eq!(desktop.scale, 4.0);
+        assert_eq!(Layout::of(1170.0, 879.0, 3.0, 0).scale, 1170.0 / W_MIN);
     }
 }

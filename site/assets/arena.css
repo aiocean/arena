@@ -260,6 +260,8 @@ h1, h2 { text-wrap: balance; }
 
 @media (max-width: 760px) {
   .arena-hero { min-height: 72svh; }
+  /* a phone held upright: the arena is wide, so a 4:3 stage shows all of it rather than a tall column of sky */
+  @media (orientation: portrait) { .arena-hero { min-height: 0; aspect-ratio: 4 / 3; } }
   .landing .topbar { flex-wrap: wrap; gap: 0.25rem 1rem; padding-top: 0.6rem; padding-bottom: 0.4rem; }
   .landing .topbar nav { margin-left: 0; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .topbar nav a { padding: 0.25rem 0.55rem; font-size: 0.9rem; }
