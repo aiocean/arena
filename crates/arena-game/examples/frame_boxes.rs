@@ -14,6 +14,8 @@
 //!   farther than `ARM` from it).
 //! - **hitbox**, on the active frame of a blade clip: what the body holds out ahead of the torso from the waist up,
 //!   the hand and the blade.
+//! - **wrist** and **hilt**, on a clip that strikes or casts: the hand held out ahead, found on its skin, its body side
+//!   and its far side. The arm's hurtbox ends at the wrist; a blade's hitbox starts at the hilt.
 //! - **hand**, on the active frame of a casting clip: the farthest point the body holds out in the torso's band,
 //!   where a bolt leaves.
 //! - **active window**: from the frame that reaches farthest ahead (at least `REACH_MIN` beyond the clip's least
@@ -72,21 +74,39 @@ const SHEETS: [(&str, &[&str]); 2] = [
 struct Figure {
     /// (x, y) of every opaque pixel's lower left corner.
     px: Vec<(i32, i32)>,
+    /// The skin-coloured ones among them (a face, a hand).
+    skin: Vec<(i32, i32)>,
+}
+
+/// A skin tone of these figures (sampled on both looks' faces and hands; a robe's brown, a sleeve's grey and a blade's
+/// steel all fall outside it).
+fn is_skin(c: &image::Rgba<u8>) -> bool {
+    let (r, g, b) = (c[0] as i32, c[1] as i32, c[2] as i32);
+    (150..=250).contains(&r)
+        && (95..=200).contains(&g)
+        && (70..=175).contains(&b)
+        && (25..=85).contains(&(r - g))
+        && (5..=50).contains(&(g - b))
 }
 
 fn figure(page: &RgbaImage, c: &Cell) -> Figure {
     let mut px = Vec::new();
+    let mut skin = Vec::new();
     for py in 0..c.h {
         for qx in 0..c.w {
-            if page.get_pixel(c.x + qx, c.y + py)[3] >= SOLID {
+            let colour = page.get_pixel(c.x + qx, c.y + py);
+            if colour[3] >= SOLID {
                 let x = qx as i32 + c.dx;
                 // row py's top is (py + dy) below the feet; its lower edge one pixel lower
                 let y = -(py as i32 + c.dy) - 1;
                 px.push((x, y));
+                if colour[3] > 200 && is_skin(colour) {
+                    skin.push((x, y));
+                }
             }
         }
     }
-    Figure { px }
+    Figure { px, skin }
 }
 
 /// The pixels of a row in runs, a gap of up to `GAP` pixels (an outline's seam) kept inside one run.
@@ -157,6 +177,56 @@ struct Boxes {
     hit: Option<[i32; 4]>,
     hand: Option<[i32; 2]>,
     reach: i32,
+    /// The hand held out ahead: its wrist (the body's side) and its far side (where a blade's hilt is held, or a
+    /// palm's fingertips), tracked per frame on the hand's skin.
+    wrist: Option<[i32; 2]>,
+    hilt: Option<[i32; 2]>,
+}
+
+/// The hand held out ahead of the torso (`edge`) in a frame: the skin below the head (the face is skin too) joined
+/// into groups, the one reaching farthest ahead. Its wrist and its far side.
+fn hand_of(f: &Figure, edge: i32, waist: i32, head: i32) -> Option<([i32; 2], [i32; 2])> {
+    use std::collections::{HashSet, VecDeque};
+    let set: HashSet<(i32, i32)> = f
+        .skin
+        .iter()
+        .copied()
+        .filter(|p| p.1 >= waist - 20 && p.1 < head)
+        .collect();
+    let mut seen: HashSet<(i32, i32)> = HashSet::new();
+    let mut best: Option<Vec<(i32, i32)>> = None;
+    for &start in &set {
+        if !seen.insert(start) {
+            continue;
+        }
+        let mut group = vec![start];
+        let mut queue = VecDeque::from([start]);
+        while let Some((x, y)) = queue.pop_front() {
+            for dy in -2..=2 {
+                for dx in -2..=2 {
+                    let q = (x + dx, y + dy);
+                    if set.contains(&q) && seen.insert(q) {
+                        group.push(q);
+                        queue.push_back(q);
+                    }
+                }
+            }
+        }
+        let far = group.iter().map(|p| p.0).max().unwrap_or(i32::MIN);
+        if group.len() >= 12
+            && far > edge - 6
+            && best
+                .as_ref()
+                .is_none_or(|b| far > b.iter().map(|p| p.0).max().unwrap_or(i32::MIN))
+        {
+            best = Some(group);
+        }
+    }
+    let g = best?;
+    let y = (g.iter().map(|p| p.1 as i64).sum::<i64>() / g.len() as i64) as i32;
+    let near = g.iter().map(|p| p.0).min()?;
+    let far = g.iter().map(|p| p.0).max()? + 1;
+    Some(([near, y], [far, y]))
 }
 
 /// The least reach ahead of the torso a frame needs to be a clip's active frame.
@@ -209,18 +279,29 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
             .filter(|&(x, y)| y >= lo && y < hi && x > edge + 2)
             .collect()
     };
+    let hand = REACHING
+        .contains(&clip)
+        .then(|| hand_of(f, edge, waist, ymax - (height * 0.2) as i32))
+        .flatten();
+    if let Some((wrist, hilt)) = hand {
+        out.wrist = Some(wrist);
+        out.hilt = Some(hilt);
+    }
     if REACHING.contains(&clip) {
-        // the arm and hand: columns ahead of the torso as thick as a limb, from the torso's edge out to the first
-        // thin one (where a blade starts)
+        // the arm: what is held out ahead of the torso up to the wrist (the hand found on its skin); with no hand
+        // found, columns as thick as a limb from the torso's edge out to the first thin one (where a blade starts)
         let band = ahead(waist, top);
-        // `ahead` starts two pixels out from the edge
         let mut x1 = edge + 2;
-        loop {
-            let col: Vec<_> = band.iter().filter(|p| p.0 == x1 + 1).collect();
-            if col.len() < LIMB || x1 - edge >= ARM as i32 {
-                break;
-            }
-            x1 += 1;
+        match hand {
+            // the box ends at the wrist (`x1 + 1` below)
+            Some((wrist, _)) => x1 = (wrist[0] - 1).max(edge + 2),
+            None => loop {
+                let col: Vec<_> = band.iter().filter(|p| p.0 == x1 + 1).collect();
+                if col.len() < LIMB || x1 - edge >= ARM as i32 {
+                    break;
+                }
+                x1 += 1;
+            },
         }
         let arm: Vec<_> = band.iter().filter(|p| p.0 <= x1).collect();
         if x1 - edge >= 6 && !arm.is_empty() {
@@ -240,19 +321,29 @@ fn boxes(f: &Figure, clip: &str) -> Boxes {
         // a cut at the body's height: what is held out from the waist up (a blade hanging down at rest is not)
         let cut = ahead(waist - 10, ymax);
         if cut.len() > 20 {
-            let y0 = cut.iter().map(|a| a.1).min().unwrap_or(waist);
-            let y1 = cut.iter().map(|a| a.1).max().unwrap_or(waist) + 1;
-            let x1 = cut.iter().map(|a| a.0).max().unwrap_or(edge) + 1;
-            out.hit = Some([edge, y0, x1, y1]);
+            // the blade starts at the hilt, where the hand holds it (the torso's edge when no hand was found)
+            let from = hand.map_or(edge, |(_, hilt)| hilt[0]);
+            let blade: Vec<_> = cut.iter().filter(|a| a.0 >= from).collect();
+            let blade = if blade.len() > 4 {
+                blade
+            } else {
+                cut.iter().collect()
+            };
+            let y0 = blade.iter().map(|a| a.1).min().unwrap_or(waist);
+            let y1 = blade.iter().map(|a| a.1).max().unwrap_or(waist) + 1;
+            let x1 = blade.iter().map(|a| a.0).max().unwrap_or(edge) + 1;
+            out.hit = Some([from.min(x1 - 1), y0, x1, y1]);
         }
         out.reach = farthest(waist - 10);
     }
     if CASTS.contains(&clip) {
-        let hand = body
+        let far = body
             .iter()
             .filter(|p| p.1 >= waist && p.1 < top)
-            .max_by_key(|p| (p.0, p.1));
-        out.hand = hand.map(|p| [p.0 + 1, p.1]);
+            .max_by_key(|p| (p.0, p.1))
+            .map(|p| [p.0 + 1, p.1]);
+        // a bolt leaves the palm: the hand's far side when the hand is found on its skin
+        out.hand = hand.map(|(_, tips)| tips).or(far);
         out.reach = farthest(waist);
     }
     out
@@ -357,9 +448,15 @@ fn main() -> Result<(), String> {
                 let hand = b.hand.map_or("None".into(), |h| {
                     format!("Some([{}, {}])", num(h[0]), num(h[1]))
                 });
+                let point = |p: Option<[i32; 2]>| {
+                    p.map_or("None".into(), |h| {
+                        format!("Some([{}, {}])", num(h[0]), num(h[1]))
+                    })
+                };
+                let (wrist, hilt) = (point(b.wrist), point(b.hilt));
                 let _ = writeln!(
                     src,
-                    "                Frame {{ hurt: &[{}], hit: {hit}, hand: {hand} }},",
+                    "                Frame {{ hurt: &[{}], hit: {hit}, hand: {hand}, wrist: {wrist}, hilt: {hilt} }},",
                     hurt.join(", ")
                 );
             }

@@ -233,7 +233,8 @@ pub fn strike_hits(
         .any(|h| crate::frames::overlap(bx, *h))
 }
 
-/// The box `strike_hits` tests: from `x` to `reach` ahead, `level` up from `air`, or a fighter's blade's hitbox.
+/// The box `strike_hits` tests: from `x` to `reach` ahead, `level` up from `air`, or a fighter's blade's hitbox (from
+/// the hilt in its hand out to the reach or the drawn tip).
 #[allow(clippy::too_many_arguments)]
 pub fn strike_box(
     state: &State,
@@ -256,12 +257,15 @@ pub fn strike_box(
         && caster
         && let Some(h) = crate::frames::strike_hitbox(state, me)
     {
+        // the blade from its hilt (where the hand holds it) out to the reach or the drawn blade's tip
         bx[1] = h[1];
         bx[3] = h[3];
         if ahead {
+            bx[0] = h[0];
             bx[2] = bx[2].max(h[2]);
         } else {
             bx[0] = bx[0].min(h[0]);
+            bx[2] = h[2];
         }
     }
     bx

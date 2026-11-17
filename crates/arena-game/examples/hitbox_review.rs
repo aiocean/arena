@@ -10,7 +10,7 @@
 //! active frame, a bolt leaving the hand), it writes `<look>-<moment>.png`: the fighters' frames (`pick`, placed as
 //! `fighters::placed` places them), each **hurtbox** (`frames::hurtboxes`) filled and outlined in the fighter's colour,
 //! the **hitbox** of a blade blow (`unit::strike_box`) in red, and the **launch** point of a bolt
-//! (`frames::cast_hand`).
+//! (`frames::cast_hand`), and the hand's **wrist** and **hilt** where the frame has them.
 
 #![allow(clippy::disallowed_methods)]
 
@@ -328,6 +328,43 @@ fn shoot(
             true,
         );
         note = format!("{} (reach {:.0})", act.spell, sp.range.unwrap_or(0.0));
+    }
+    // the hand held out ahead: its wrist (where the arm's hurtbox ends) and its hilt (where a blade's hitbox starts)
+    if let Some(fr) = arena_duel::frames::frame_of(state, f) {
+        let face = if b.face < 0.0 { -1.0 } else { 1.0 };
+        for (p, colour, label) in [
+            (fr.wrist, [80, 255, 120, 255], "wrist"),
+            (fr.hilt, [80, 200, 255, 255], "hilt"),
+        ] {
+            let Some(p) = p else { continue };
+            let (x, y) = v.px(b.x + face * p[0], b.air + p[1]);
+            for dy in -5..=5i64 {
+                for dx in -5..=5i64 {
+                    if dx * dx + dy * dy <= 25 {
+                        blend(
+                            &mut img,
+                            x + dx,
+                            y + dy,
+                            if dx * dx + dy * dy <= 9 {
+                                colour
+                            } else {
+                                [20, 20, 20, 255]
+                            },
+                        );
+                    }
+                }
+            }
+            text(
+                &mut img,
+                font,
+                x + 8,
+                y + if label == "wrist" { 6 } else { -24 },
+                13.0,
+                label,
+                colour,
+                true,
+            );
+        }
     }
     if m == Moment::Bolt {
         let launch = cast_hand(state, f);

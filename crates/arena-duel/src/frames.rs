@@ -20,6 +20,10 @@ pub struct Frame {
     pub hurt: &'static [[f64; 4]],
     pub hit: Option<[f64; 4]>,
     pub hand: Option<[f64; 2]>,
+    /// On a clip that strikes or casts, the hand held out ahead: its wrist (the arm's hurtbox ends there) and its far
+    /// side (a blade's hitbox starts there, the hilt; a palm's fingertips), tracked on the hand's skin.
+    pub wrist: Option<[f64; 2]>,
+    pub hilt: Option<[f64; 2]>,
 }
 
 /// One look's clips: the frames a second they play at, and each clip's active window (its first frame is where a
