@@ -3,6 +3,8 @@
 //! with (0, 0) at the top left and y down, as the page measured them.
 
 use bevy::camera::ScalingMode;
+use bevy::core_pipeline::tonemapping::{DebandDither, Tonemapping};
+use bevy::render::view::Msaa;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use pixfx_duel::data::UNIT;
@@ -115,6 +117,10 @@ fn camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         MainCamera,
+        // pixel art: no smoothing of edges, and the sprites' own colours (a tonemapper would shift them)
+        Msaa::Off,
+        Tonemapping::None,
+        DebandDither::Disabled,
         Projection::Orthographic(OrthographicProjection {
             scaling_mode: ScalingMode::WindowSize,
             ..OrthographicProjection::default_2d()
