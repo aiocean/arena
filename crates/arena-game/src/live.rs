@@ -189,6 +189,14 @@ fn start(start: Res<crate::Start>, mut live: NonSendMut<Live>) {
 /// How long the page waits for a live match before it fights on its own instead.
 const WAIT_SECONDS: f32 = 8.0;
 
+/// Whether the page stops waiting for the relay, `elapsed` seconds in: nothing has come over it in `WAIT_SECONDS`.
+/// Once a frame has come it never gives up: between two matches no match is current (`Watching::new_match`) while
+/// the server starts the next, and giving up there would leave the live matches for good and fetch and compile the
+/// house bot mid-fight.
+fn gives_up(live: &Live, elapsed: f32) -> bool {
+    live.on && live.frames == 0 && live.watching.current().is_none() && elapsed >= WAIT_SECONDS
+}
+
 /// No match on the relay (the server is down, the browser cannot reach it): the page seats the house bot in both
 /// corners and fights on its own, as it does without a relay.
 fn fall_back(
@@ -196,7 +204,7 @@ fn fall_back(
     mut live: NonSendMut<Live>,
     mut seat: MessageWriter<crate::bots::Seat>,
 ) {
-    if !live.on || live.watching.current().is_some() || time.elapsed_secs() < WAIT_SECONDS {
+    if !gives_up(&live, time.elapsed_secs()) {
         return;
     }
     live.on = false;
@@ -454,6 +462,37 @@ mod tests {
         let m = w.current().ok_or("no match")?;
         assert_ne!(Some(m.id), id, "a new seed is a new match");
         assert!(m.logs[0].borrow().decisions.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn the_page_gives_up_only_on_a_relay_that_never_sent_a_frame() -> Result<(), String> {
+        let mut live = Live {
+            on: true,
+            ..Live::default()
+        };
+        assert!(!gives_up(&live, WAIT_SECONDS - 1.0), "it waits");
+        assert!(
+            gives_up(&live, WAIT_SECONDS),
+            "nothing came: it fights on its own"
+        );
+        // a match came, then ended: between matches none is current, and the page keeps watching
+        live.watching.frame(Frame::Keyframe(Snapshot::new(
+            RULES_VERSION,
+            5,
+            ARENA,
+            ["a".into(), "b".into()],
+        )))?;
+        live.frames = 1;
+        live.watching.new_match();
+        assert!(live.watching.current().is_none());
+        assert!(
+            !gives_up(&live, 60.0),
+            "between two matches the page keeps watching"
+        );
+        live.on = false;
+        live.frames = 0;
+        assert!(!gives_up(&live, 60.0), "not watching: nothing to give up");
         Ok(())
     }
 
