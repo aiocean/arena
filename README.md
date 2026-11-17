@@ -4,10 +4,11 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Two cultivators fight in a pixel arena, each with a loadout from one shared pool of 168 skills, their supports and
-keystones, every blow worked out by a PoE-style damage system of ten kinds of damage (seat 0 is drawn as Vương Lâm,
-seat 1 as Thất Thải Đạo Tôn, the Seven-Colored Daoist), and a trained AI decides for each corner. Players train AIs of their own, any model of any size,
+keystones, every blow worked out by a PoE-style damage system of ten kinds of damage (each fighter looks as Vương Lâm
+or as Thất Thải Đạo Tôn, the Seven-Colored Daoist, drawn apart from its seat), and a trained AI decides for each
+corner. Players train AIs of their own, any model of any size,
 submit them as bot modules built from ONNX, and the arena runs a tournament between them to find the strongest. Watch it
-at [arena.aiocean.io](https://arena.aiocean.io).
+at [arena.aiocean.io](https://arena.aiocean.io): the page shows the matches the arena's server fights, live.
 
 Every fight is decided by a seed, the two bot modules and the rules at a commit, so anyone can replay any fight, frame
 for frame, on Linux, macOS or in the browser.
@@ -75,14 +76,19 @@ above.
 | `crates/arena-sim` | A headless simulator over `arena-calc` (two scripted fighters on a 1D field) that measures loadouts against each other for balance. Not the real fight. |
 | `crates/arena-duel` | The rules: two seats with loadouts, every blow through `arena-calc`, the rotating bar, traps, mines, totems and minions, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
 | `crates/arena-mind` | The minds: what a trained policy sees and may do and its timing (`policy`), and the rules' own utility brain. |
-| `crates/arena-vfx` | The spells' effects painted on the CPU, and the tool that bakes them into the sprite sheets the game plays (`examples/bake.rs`). |
-| `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell particles, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm). |
+| `crates/arena-vfx` | The spells' effects: painted on the CPU and baked into the sprite sheets the game plays (`examples/bake.rs`), and the effects drawn by an image model and moved by code (`drawn`, from `art/vfx/`). |
+| `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell effects, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm), where it also watches the server's live matches (`live.rs`). |
+| `crates/arena-link` | A live match on the wire: the frames the server publishes and a page folds, as they lie on the MoQ relay, and `RULES_VERSION`, which the page and the server must share. |
+| `crates/arena-server` | Fights the house AI's matches and publishes them live to the MoQ relay (`arena-server`), and replays a published match to check it (`arena-watch`). |
+| `crates/arena-telemetry` | Logs, traces and metrics over OTLP, and the duel observer that turns a fight's steps into telemetry events. The store is OpenObserve (`ops/observe`). |
+| `crates/arena-smoke` | The smoke test of the live site, run after each deploy: a headless Chrome checks the page, the game, the live match and the HUD. |
 | `crates/arena-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
 | `crates/arena-duel-py` | The rules as a Python module (`import arena_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
 | `crates/arena-bot` | A bot as a WebAssembly module: admits one (validate, meter, hash), runs it in a seat (`host`), runs an ONNX policy natively (`onnx`), and the commands a player builds, checks and measures a bot with (`onnx`, `check`, `match`, `ladder`). |
 | `bots/onnx` | The template that builds any ONNX policy into a bot module (its own workspace, wasm32 only). |
 | `train/` | The PPO trainer that made the house AI: the network (any size), the opponents it trains against, export to ONNX. |
-| `art/` | How the fighters are drawn (`art/README.md`, the art direction) and each character's PixelLab export and tools. |
+| `art/` | How the fighters are drawn (`art/README.md`, the art direction), each character's PixelLab export and tools, and the spell effects drawn by an image model (`art/vfx/<name>/`: prompts, pictures, frames, `motion.json`). |
+| `ops/observe` | The telemetry store (OpenObserve): how it runs, its streams, retention and queries. |
 | `docs/` | The docs above, and the design history (`docs/specs`, `docs/plans`). |
 | `site/` | The arena's site: the duel full-screen with a slot in each corner for a player's bot module, and the docs as pages. `site/build.sh` builds it into `site/dist`. |
 
@@ -92,7 +98,8 @@ natively: `cargo run --release -p arena-game -- --seed 7 --left house --right mi
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md): the checks a change passes and how a release is made. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
+[CONTRIBUTING.md](CONTRIBUTING.md): the checks a change passes (turn the pre-push hook on: `git config core.hooksPath
+.githooks`) and how a release is made. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
 
 ## License
 
