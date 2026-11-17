@@ -73,8 +73,8 @@ fn a_heavy_blow_throws_its_target_which_lands_lies_and_gets_up() {
     for f in &mut duel.state.fighters {
         f.stats.dodge = 0.0;
     }
-    duel.state.fighters[0].body.x = 100.0;
-    duel.state.fighters[1].body.x = 116.0;
+    duel.state.fighters[0].body.x = 400.0;
+    duel.state.fighters[1].body.x = 464.0;
     duel.state.fighters[0].body.face = 1.0;
     duel.state.fighters[1].body.face = -1.0;
     let windup = spell("palm").map_or(0.0, |s| s.windup);

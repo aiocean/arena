@@ -1,14 +1,15 @@
 # The bot
 
 What a bot sees, what it can do, when it decides, and the file a player submits. The code is the source of truth:
-`crates/pixfx-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`, `net.rs`) and
-`crates/pixfx-duel/src/seat.rs`.
+`crates/pixfx-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/pixfx-duel/src/seat.rs` and
+`crates/arena-bot`.
 
 ## What it sees: 354 numbers
 
 Each decision the bot gets `OBS` = 354 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
-unless a scale is given.
+unless a scale is given. Lengths are in the engine's pixels, `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
+sees the same numbers whatever the arena's pixel size, and the pixels below are the engine's too.
 
 **Seeing late.** A blow the foe winds up reaches the bot 0.16 s after it starts (`TEMPERAMENT.reaction`), and a
 threat in flight appears once it is 0.16 s old: that is the time to react to a danger. Everything else about the foe
@@ -82,44 +83,64 @@ it is played) is dropped, and the fighter keeps doing what it was doing.
 These are the same for every bot and every style, and the same as the hand-written brain's, so no bot is faster than
 another: the arena measures decisions, not reflexes.
 
-## How the network picks
+## What a player submits
 
-The network outputs one logit per act. Illegal acts are masked out, and the act is **sampled** from the softmax of
-the rest with the bot's own seeded dice (`net::sample`). A bot that wants to always play its best act trains its
-logits sharp.
-
-## The weights file
-
-A player submits one file, the format `train/export.py` writes and `pixfx_mind::policy::Net::load` reads:
+One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
+of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
+`[1, 354]`, output the 30 acts' logits, float32 `[1, 30]`. One command builds it into a module with the `bots/onnx`
+template ("Bring your own model" in `docs/training.md`):
 
 ```
-magic        8 bytes   "PXNET1\0\0"
-count        u32 LE    number of tensors
-per tensor:
-  name_len   u32 LE
-  name       UTF-8
-  rank       u32 LE
-  dims       rank x u32 LE
-  data       f32 LE, row-major
+cargo run -p arena-bot --example onnx -- mine.onnx mine.wasm
 ```
 
-The network is fixed for a season (`net.rs`): an input layer `relu(in · x)` to width 128; two residual blocks
-`h + down(relu(up(ln(h))))` with 256 inside; a final LayerNorm; a simplicial embedding (16 softmaxes of 8); the policy
-head `pi` to 30 logits. LayerNorms use eps 1e-5. The tensors (`net.rs`, `layout`):
+The template samples the act as the house bot does: illegal acts masked out, a softmax over the rest, read with the
+seat's draw `u`. A bot that wants to always play its best act trains its logits sharp, or picks otherwise in its own
+`arena_decide`.
 
-| Name | Shape |
-|---|---|
-| `in.w`, `in.b` | [128, 354], [128] |
-| `block{0,1}.ln.g`, `block{0,1}.ln.b` | [128], [128] |
-| `block{0,1}.up.w`, `block{0,1}.up.b` | [256, 128], [256] |
-| `block{0,1}.down.w`, `block{0,1}.down.b` | [128, 256], [128] |
-| `out.ln.g`, `out.ln.b` | [128], [128] |
-| `sem.w`, `sem.b` | [128, 128], [128] |
-| `pi.w`, `pi.b` | [30, 128], [30] |
+## The bot module
 
-A file with a missing tensor or a tensor of the wrong shape is refused, naming the tensor; extra tensors are ignored.
-The value head the trainer uses is not part of the file. The shipped file is 794,182 bytes.
+A WebAssembly module of the ABI `arena-bot-1` (`crates/arena-bot`; the design and its reasons:
+`docs/specs/2026-11-16-arena-wasm-bots-design.md`). It **imports nothing** and exports:
 
-The network runs in plain `f32` in one fixed order on every target (each row summed in 8 partial sums joined in a
-fixed tree, no FMA), so the same file gives the same bits natively and in wasm; `train/net.py` mirrors it in PyTorch
-within 1e-4.
+| Export | Signature | What |
+|---|---|---|
+| `memory` | memory | its linear memory |
+| `arena_abi` | `() -> i32` | returns `1` |
+| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 354 inputs as `f32` LE, then the 30 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
+| `arena_start` | `(seed: i32)` | a new fight of the match; `seed` is the bot's own dice for it |
+| `arena_round` | `()` | a new round, the first included |
+| `arena_decide` | `(u: f32) -> i32` | the act, 0..30, for the decision the buffer holds; `u` is the seat's draw in [0, 1) |
+
+- **One instance a match.** Its memory lives across every fight and round of a match (every seed, both ways), so a
+  bot may learn its foe; it is thrown away after the match.
+- **It picks its own act**: sampling with `u`, argmax, a search, rules. An act outside 0..30 is a wait, and an act
+  that is not legal is dropped.
+- **Budgets** (the season's): the module at most 32 MiB; memory at most 256 MiB (the arena caps the declared maximum);
+  20M fuel a decision, 200M for each `arena_start`, `arena_round` and the module's own start function. Fuel is about
+  one unit a WebAssembly instruction, counted by code the arena writes into the module, so it runs out on the same
+  decision on every machine and in the browser. The house AI as a module uses about 3M a decision; a network some 6
+  times its size still fits.
+- **A trap, or running out of fuel, loses the round** it happened in; the foe wins it at once. A fault in
+  `arena_start` loses that fight's first round. The instance plays on from the next round with its memory as the
+  fault left it.
+- **Features**: WebAssembly 2.0 with 128-bit SIMD, tail calls, exception handling (`exnref`), typed function
+  references and extended constants. Refused: relaxed SIMD, GC, memory64, multiple memories, threads, and every
+  proposal not shipped in all browsers. What gives different bits on different machines is refused.
+
+A bot can also be written by hand in any language that compiles to WebAssembly.
+
+## The house AI
+
+The AI the site plays is an ONNX model like any player's: `crates/pixfx-duel/weights/policy.onnx` (`train/export.py`
+writes it; 128 wide, two residual blocks of 256, a simplicial embedding, about 198K parameters). Natively it runs with
+tract (`arena_bot::onnx`: the ladder, the tests, a trainer's sparring partner, `pixfx_duel.HOUSE` in Python); on the
+site and in the tournament it is the module `bots/onnx` builds from it, `bots/policy.wasm`:
+
+```
+cargo run -p arena-bot --example onnx -- crates/pixfx-duel/weights/policy.onnx policy.wasm
+```
+
+The pages admit a module the way a submission is admitted, then run it with the browser's own WebAssembly, on the same
+fuel, and play the same fights bit for bit as the tournament's native host (`site/tests/policy.test.js` against
+`crates/arena-bot/tests/goldens/house_fight.json`). The watch page takes a `.wasm` for each corner.

@@ -12,9 +12,9 @@ pub fn arena(seed: u32) -> State {
     let mut state = State::new(
         seed,
         0.0,
-        220.0,
-        150.0,
-        96.0,
+        880.0,
+        600.0,
+        384.0,
         Vec::new(),
         [blank(0, School::Thunder), blank(1, School::Frost)],
     );
@@ -90,14 +90,14 @@ pub fn loops(fx: &str) -> bool {
         .any(|e| e.meta().id == fx && e.meta().looping)
 }
 
-/// The landing arena (0 to 220, ground 150) with effects `effects`.
+/// The landing arena (0 to 880, ground 600) with effects `effects`.
 pub fn config(seed: u32, effects: Vec<String>) -> pixfx_duel::duel::DuelConfig {
     pixfx_duel::duel::DuelConfig {
         seed,
         left: 0.0,
-        right: 220.0,
-        ground: 150.0,
-        sky: 96.0,
+        right: 880.0,
+        ground: 600.0,
+        sky: 384.0,
         effects,
     }
 }
@@ -172,4 +172,31 @@ pub fn pinned(name: &str, got: &serde_json::Value) {
             eprintln!("wrote {file}: the first run pins it");
         }
     }
+}
+
+/// A bot that plays any legal act, picked by the seat's draw: a decider with no model, for the seat's own tests.
+pub struct Pick;
+
+impl pixfx_duel::seat::Decider for Pick {
+    fn start(&mut self, _seed: u32) -> Result<(), pixfx_duel::seat::Fault> {
+        Ok(())
+    }
+    fn round(&mut self) -> Result<(), pixfx_duel::seat::Fault> {
+        Ok(())
+    }
+    fn decide(
+        &mut self,
+        _obs: &[f32; pixfx_mind::policy::OBS],
+        legal: &[bool; pixfx_mind::policy::ACTIONS],
+        u: f32,
+    ) -> Result<i32, pixfx_duel::seat::Fault> {
+        let ok: Vec<usize> = (0..legal.len()).filter(|&i| legal[i]).collect();
+        let at = ((u * ok.len() as f32) as usize).min(ok.len().saturating_sub(1));
+        Ok(ok.get(at).map_or(0, |&i| i as i32))
+    }
+}
+
+/// A fresh `Pick` for a seat.
+pub fn pick() -> pixfx_duel::seat::SharedDecider {
+    std::rc::Rc::new(std::cell::RefCell::new(Pick))
 }

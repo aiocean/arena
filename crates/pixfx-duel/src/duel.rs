@@ -143,9 +143,6 @@ impl Duel {
             state.fighters[f].bar.clear();
             let at = if f == 0 { 0.22 } else { 0.78 };
             state.fighters[f].body.start_round(state.left + span * at);
-            if let Some(key) = state.fighters[f].aura.take() {
-                state.emit(Out::Stop { key });
-            }
         }
         // the draws come once both fighters are fresh: nothing the last round left on a foe steers them
         for f in 0..2 {
@@ -189,8 +186,10 @@ impl Duel {
         for id in ids {
             shot(&mut self.state, id, dt);
         }
+        // a life at 0 ends the round, and so does a seat that gives it up (a bot module's fault)
         for f in 0..2 {
-            if self.state.fighters[f].hp <= 0.0 && self.state.winner.is_none() {
+            let out = self.state.fighters[f].hp <= 0.0 || self.seats[f].forfeit();
+            if out && self.state.winner.is_none() {
                 knock_out(&mut self.state, f);
             }
         }

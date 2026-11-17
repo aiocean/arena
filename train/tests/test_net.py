@@ -1,10 +1,11 @@
-"""The trainer's network mirrors pixfx-mind's, reads and writes its weights file, and trains its critic by HL-Gauss."""
+"""The trainer's network: any size, written to and read from ONNX, and a critic trained by HL-Gauss."""
 
 import numpy as np
+import pytest
 import torch
 
 import pixfx_duel as pd
-from net import Policy, hl_gauss, load_bin, to_bin
+from net import Policy, from_onnx, hl_gauss, load_onnx, to_onnx
 
 
 def test_forward_shapes_and_mask():
@@ -28,19 +29,22 @@ def test_hl_gauss_targets_sum_to_one_and_centre_on_the_return():
     assert torch.allclose((target * centres).sum(-1), torch.tensor([-1.0, 0.0, 0.37, 1.4]), atol=0.02)
 
 
-def test_a_weights_file_round_trips(tmp_path):
-    p = Policy(pd.OBS, pd.ACTIONS)
-    path = tmp_path / "p.bin"
-    path.write_bytes(to_bin(p))
-    q = Policy(pd.OBS, pd.ACTIONS)
-    load_bin(q, path.read_bytes())
-    obs = torch.randn(3, pd.OBS)
-    mask = torch.ones(3, pd.ACTIONS, dtype=torch.bool)
-    assert torch.equal(p(obs, mask)[0], q(obs, mask)[0])
+def test_an_onnx_model_round_trips_at_any_size():
+    for size in [{}, dict(width=64, hidden=96, blocks=3)]:
+        p = Policy(pd.OBS, pd.ACTIONS, **size)
+        q = from_onnx(to_onnx(p), pd.OBS, pd.ACTIONS)
+        assert [t.shape for t in q.parameters()] == [t.shape for t in p.parameters()]
+        obs = torch.randn(3, pd.OBS)
+        mask = torch.ones(3, pd.ACTIONS, dtype=torch.bool)
+        assert torch.equal(p(obs, mask)[0], q(obs, mask)[0])
 
 
-def test_the_rust_stand_in_loads():
-    q = Policy(pd.OBS, pd.ACTIONS)
-    load_bin(q, open("../crates/pixfx-duel/weights/policy.bin", "rb").read())
+def test_a_model_of_another_size_is_refused():
+    with pytest.raises(ValueError, match="tensor"):
+        load_onnx(Policy(pd.OBS, pd.ACTIONS), to_onnx(Policy(pd.OBS, pd.ACTIONS, width=64)))
+
+
+def test_the_house_ai_loads():
+    q = from_onnx(pd.HOUSE, pd.OBS, pd.ACTIONS)
     logits, _ = q(torch.zeros(1, pd.OBS), torch.ones(1, pd.ACTIONS, dtype=torch.bool))
     assert np.isfinite(logits.detach().numpy()).all()

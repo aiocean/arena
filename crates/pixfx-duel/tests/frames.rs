@@ -51,7 +51,7 @@ fn strike(s: &mut State, by: usize, name: &'static str) -> Vec<Out> {
         target: Some(fx),
         ..act(name, Phase::Windup, windup)
     });
-    s.fighters[by].body.x = fx - 20.0 * js_sign(or_one(fx - bx));
+    s.fighters[by].body.x = fx - 80.0 * js_sign(or_one(fx - bx));
     s.fighters[by].body.face = js_sign(fx - s.fighters[by].body.x);
     s.fighters[f].body.face = -s.fighters[by].body.face;
     s.out.clear();

@@ -5,15 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
   <title>Arena: train a bot, watch it fight</title>
-  <meta name="description" content="A pixel-art duel between two cultivators, Thunder and Frost, fought by trained AI bots. Train your own bot, submit its weights, and fight the others in the tournament.">
+  <meta name="description" content="A pixel-art duel between two cultivators, Thunder and Frost, fought by trained AI bots. Train your own bot, any model you like, submit it as ONNX, and fight the others in the tournament.">
   <link rel="stylesheet" href="assets/site.css">
   <link rel="stylesheet" href="assets/arena.css">
 </head>
 <body class="landing arena" data-page="home">
+  <section class="hero arena-hero" aria-labelledby="hero-title">
+    <canvas id="scene" aria-label="A live duel on a mountain dais at night: Thunder (Vương Lâm) on the left, Frost (Thất Thải Đạo Tôn, the Seven-Colored Daoist) on the right, each played by the trained bot that ships with the rules."></canvas>
+    <div class="loader" role="status" aria-live="polite">
+      <div class="loader-clash" aria-hidden="true"><span class="thunder-orb"></span><span class="spark"></span><span class="frost-orb"></span></div>
+      <p class="loader-text">Loading the arena</p>
+      <div class="loader-bar" aria-hidden="true"><span></span></div>
+    </div>
+  </section>
+
   <header class="topbar">
-    <a class="brand" href="./">arena</a>
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
       <a href="watch.html">Watch</a>
       <a href="docs/rules.html">Rules</a>
@@ -23,33 +32,100 @@
   </header>
 
   <main>
-    <section class="hero arena-hero" aria-labelledby="hero-title">
-      <h1 id="hero-title" class="sr-only">Arena</h1>
-      <canvas id="scene" aria-label="A live duel on a mountain dais at night: Thunder on the left, Frost on the right, each played by the trained bot that ships with the rules."></canvas>
-    </section>
-
-    <section class="intro-strip" aria-label="What the arena is">
+    <section class="intro-panel frame" aria-labelledby="hero-title">
       <div class="pitch">
-        <p class="lede">Two cultivators, Thunder and Frost, fight round after round. Neither is played by a person: each corner is a small neural network trained to win. Train your own, hand in its weights file, and it fights everyone else's.</p>
-        <p class="proof">The duel above is the house bot against itself, live, every frame decided by the network.</p>
-      </div>
+        <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above · the house bot against itself, every frame decided by the network</p>
+        <h1 id="hero-title">Train a bot.<br><span class="thunder">Thunder</span> or <span class="frost">Frost</span>, it fights for you.</h1>
+        <p class="lede">Two cultivators fight round after round. Neither is played by a person: each corner is a neural network trained to win. Train your own, any size, hand it in as ONNX, and it fights everyone else's.</p>      </div>
       <div class="actions">
         <a class="button" href="docs/training.html">Train a bot</a>
         <a class="button quiet" href="watch.html">Watch two bots</a>
       </div>
     </section>
 
+    <section class="section schools" aria-labelledby="schools-title">
+      <p class="eyebrow">The two schools</p>
+      <h2 id="schools-title">Pick a corner</h2>
+      <div class="versus">
+        <article class="school frame" data-school="thunder">
+          <header><span class="corner">Left corner · Vương Lâm</span><h3>Thunder</h3></header>
+          <p>Less hp and attack, a faster, more varied kit.</p>
+          <dl>
+            <div><dt>hp</dt><dd>2500</dd></div>
+            <div><dt>atk</dt><dd>345</dd></div>
+            <div><dt>pool</dt><dd>40 skills</dd></div>
+          </dl>
+          <ul>
+            <li><b>fury</b>: each blow it lands raises its attack 4%, up to 5 stacks.</li>
+            <li><b>unyielding</b>: once a round, a killing blow leaves it on its last sliver of life.</li>
+            <li><b>tribulation</b>, its ultimate: three thunderclaps fall where the foe will be.</li>
+          </ul>
+        </article>
+        <div class="vs" aria-hidden="true">VS</div>
+        <article class="school frame" data-school="frost">
+          <header><span class="corner">Right corner · Thất Thải Đạo Tôn</span><h3>Frost</h3></header>
+          <p>More hp and attack, against Thunder's speed.</p>
+          <dl>
+            <div><dt>hp</dt><dd>3300</dd></div>
+            <div><dt>atk</dt><dd>520</dd></div>
+            <div><dt>pool</dt><dd>46 skills</dd></div>
+          </dl>
+          <ul>
+            <li><b>attuned</b>: every second paid spell it casts earns a rage point.</li>
+            <li>Lotus, shatter, icicle, frostfire, mirror, ward and more on its bar.</li>
+            <li><b>prison</b>, its ultimate: a great collapse drags the foe in and freezes it.</li>
+          </ul>
+        </article>
+      </div>
+      <p class="muted balance">Played by the same trained AI, Thunder wins 49.1% of the mirror over 150 seeds. <a href="docs/rules.html#the-two-schools">The full rules</a></p>
+    </section>
+
+    <section class="section how" aria-labelledby="how-title">
+      <p class="eyebrow">From clone to the arena</p>
+      <h2 id="how-title">How a bot gets made</h2>
+      <ol class="how-steps">
+        <li class="frame">
+          <h3>Train</h3>
+          <p>Fine-tune from the shipped AI with PPO, or train any model you like, and export it as ONNX.</p>
+          <pre><code>uv run python ppo.py --run mine \
+  --init ../crates/pixfx-duel/weights/policy.onnx
+uv run python export.py runs/mine/last.pt --out mine.onnx</code></pre>
+          <a href="docs/training.html">Training</a>
+        </li>
+        <li class="frame">
+          <h3>Test</h3>
+          <p>Build it into a bot module, then run the submission checks and the entry bar.</p>
+          <pre><code>cargo run -p arena-bot --example onnx -- mine.onnx mine.wasm
+cargo run --release -p arena-bot --features host \
+  --example check -- mine.wasm</code></pre>
+          <a href="docs/bot.html">The bot</a>
+        </li>
+        <li class="frame">
+          <h3>Watch &amp; submit</h3>
+          <p>Load two files on the watch page with a seed. A seed is a replay: same files, same fight, every machine.</p>
+          <pre><code>mine.wasm  vs  rival.wasm
+seed 201521</code></pre>
+          <a href="docs/tournament.html">Tournament</a>
+        </li>
+      </ol>
+    </section>
+
     <section class="section" aria-labelledby="docs-title">
+      <p class="eyebrow">Read before you train</p>
       <h2 id="docs-title">For bot authors</h2>
       <ul class="cards arena-docs">
-        <li><a class="card" href="docs/rules.html"><span class="card-name">Rules</span><span class="card-id">Schools, skills, the bar, qi and rage, statuses, frame data, rounds.</span></a></li>
-        <li><a class="card" href="docs/bot.html"><span class="card-name">The bot</span><span class="card-id">What a bot sees, what it can do, when it decides, the weights file.</span></a></li>
-        <li><a class="card" href="docs/training.html"><span class="card-name">Training</span><span class="card-id">Setup, the environment, reward, opponents, export, measuring it.</span></a></li>
-        <li><a class="card" href="docs/tournament.html"><span class="card-name">Tournament</span><span class="card-id">Seasons, what you submit, how it is checked, played and ranked.</span></a></li>
-        <li><a class="card" href="docs/roadmap.html"><span class="card-name">Roadmap</span><span class="card-id">What the player kit still needs, in order.</span></a></li>
+        <li><a class="card" href="docs/rules.html"><span class="card-num">01</span><span class="card-name">Rules</span><span class="card-id">Schools, skills, the bar, qi and rage, statuses, frame data, rounds.</span></a></li>
+        <li><a class="card" href="docs/bot.html"><span class="card-num">02</span><span class="card-name">The bot</span><span class="card-id">What a bot sees (354 numbers), what it can do (30 acts), the bot module.</span></a></li>
+        <li><a class="card" href="docs/training.html"><span class="card-num">03</span><span class="card-name">Training</span><span class="card-id">Setup, the environment, reward, opponents, export, measuring it.</span></a></li>
+        <li><a class="card" href="docs/tournament.html"><span class="card-num">04</span><span class="card-name">Tournament</span><span class="card-id">Seasons, what you submit, how it is checked, played and ranked.</span></a></li>
+        <li><a class="card" href="docs/roadmap.html"><span class="card-num">05</span><span class="card-name">Roadmap</span><span class="card-id">What the player kit still needs, in order.</span></a></li>
       </ul>
     </section>
   </main>
+
+  <footer class="footer arena-footer">
+    <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel on the <a href="https://github.com/aiocean/pixfx-rs">pixfx</a> engine · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
+  </footer>
   <script type="module" src="assets/arena.js"></script>
 </body>
 </html>

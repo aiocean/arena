@@ -1,6 +1,7 @@
 target/
 site/dist/
 site/assets/wasm/
+site/assets/bots/
 .wrangler/
 .pixfx
 .cargo/config.toml

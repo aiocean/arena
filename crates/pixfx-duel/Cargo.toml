@@ -20,6 +20,7 @@ pixfx-effects.workspace = true
 # exact float parsing and the fixture's key order
 serde_json = { version = "=1.0.154", features = ["float_roundtrip", "preserve_order"] }
 
+# the trace compares whole fights, views and senses as JSON
 [features]
 # serde for the commands, events and views, in the shapes JS reads them (camelCase, tagged with "type")
 serde = ["dep:serde", "pixfx-mind/serde", "pixfx-fighter/serde"]

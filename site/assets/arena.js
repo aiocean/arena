@@ -3,25 +3,54 @@
 // is `duel-hero.js`, which the pixfx site embeds too; this file decides nothing about it.
 import { loadPixfx } from "../pkg/pixfx-canvas2d.js";
 import loadRules, * as rules from "./wasm/arena_wasm.js";
-import { usePolicies, useRules } from "./duel.js";
-import { createHero, loadIcons, loadPolicies } from "./duel-hero.js";
+import { useBots, useRules } from "./duel.js";
+import { createHero, loadBots, loadIcons } from "./duel-hero.js";
 
-/** The bot both corners play when the page is not told otherwise: the trained policy shipped with the rules. */
-const HOUSE = "policy.bin";
+/** The bot both corners play when the page is not told otherwise: the trained policy shipped with the rules, as the
+ *  bot module built from its ONNX model (`bots/onnx`), run the way a player's module is. */
+const HOUSE = "policy.wasm";
 
 const PAGES = { home: mountHome, watch: mountWatch };
-await PAGES[document.body.dataset.page]?.();
+try {
+  await PAGES[document.body.dataset.page]?.();
+} catch (err) {
+  loading(`The arena did not load: ${err?.message ?? err}`, 1, true);
+  throw err;
+}
 
 /** The engine, the rules and the skill icons, then the house bot. */
 async function start() {
+  loading("Loading the engine", 0.2);
   const [engine, icons] = await Promise.all([loadPixfx(), loadIcons([32, 24]), loadRules()]);
   useRules(rules);
-  const [house] = await loadPolicies([HOUSE]);
+  loading("Seating the bots", 0.55);
+  const [house] = await loadBots([HOUSE]);
+  loading("Drawing the fighters", 0.8);
   return { engine, icons, house };
+}
+
+/** The hero's loading overlay: what is loading and how far along (0 to 1), or that it failed. */
+function loading(text, progress, failed = false) {
+  const loader = document.querySelector(".loader");
+  if (!loader) return;
+  loader.querySelector(".loader-text").textContent = text;
+  loader.style.setProperty("--progress", String(progress));
+  loader.classList.toggle("failed", failed);
+}
+
+/** Take the overlay away once the duel shows its fighters. */
+function loaded() {
+  const loader = document.querySelector(".loader");
+  if (!loader || loader.classList.contains("done")) return;
+  loader.style.setProperty("--progress", "1");
+  loader.classList.add("done");
+  loader.addEventListener("transitionend", () => loader.remove(), { once: true });
+  setTimeout(() => loader.remove(), 1000);
 }
 
 /** Run `hero` each animation frame while its canvas is on screen and the tab is visible. */
 function run(hero, onFrame) {
+  const began = performance.now();
   let last = null;
   let visible = true;
   new IntersectionObserver(([e]) => {
@@ -32,6 +61,8 @@ function run(hero, onFrame) {
     last = now;
     if (visible && !document.hidden) {
       hero.step(dt);
+      // the fighters' sheets arrive last; a page whose sheets never come shows the stage after a while all the same
+      if (hero.fighters || now - began > 12000) loaded();
       onFrame?.();
     }
     requestAnimationFrame(frame);
@@ -41,13 +72,12 @@ function run(hero, onFrame) {
 
 async function mountHome() {
   const { engine, icons, house } = await start();
-  usePolicies([house, house]);
+  await useBots([house, house]);
   const hero = createHero(document.getElementById("scene"), new AbortController().signal, icons, engine);
   run(hero);
 }
 
-/** The watch page: a bot file for each corner (the house bot where none is chosen) and a seed. The same two files and
- *  the same seed play the same fight on every machine. */
+/** The watch page: a bot module (`.wasm`) for each corner (the house bot where none is chosen), and a seed. The same two files and the same seed play the same fight on every machine. */
 async function mountWatch() {
   const form = document.getElementById("match");
   const status = document.getElementById("status");
@@ -55,7 +85,7 @@ async function mountWatch() {
   const params = new URLSearchParams(location.search);
   const asked = Number.parseInt(params.get("seed") ?? "", 10);
   const { engine, icons, house } = await start();
-  usePolicies([house, house]);
+  await useBots([house, house]);
   const hero = createHero(document.getElementById("scene"), new AbortController().signal, icons, engine, {
     seed: Number.isSafeInteger(asked) && asked > 0 ? asked : undefined,
     replay: true,
@@ -74,15 +104,26 @@ async function mountWatch() {
     try {
       const files = [form.elements.left.files[0], form.elements.right.files[0]];
       const bytes = await Promise.all(files.map(async (f) => (f ? new Uint8Array(await f.arrayBuffer()) : house)));
-      usePolicies(bytes);
+      await useBots(bytes);
       files.forEach((f, i) => (names[i] = f ? f.name : "house bot"));
     } catch (err) {
       return say(`That file is not a bot for this season: ${err?.message ?? err}`, true);
     }
     hero.restart(seed);
     history.replaceState(null, "", `?seed=${seed}`);
+    // the new fight plays up in the hero: bring it into view
+    hero.canvas.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     say("");
   });
+  for (const seat of form.querySelectorAll(".seat")) {
+    const input = seat.querySelector("input[type=file]");
+    const shown = seat.querySelector(".seat-file");
+    input.addEventListener("change", () => {
+      const file = input.files[0];
+      shown.textContent = file ? file.name : shown.dataset.empty;
+      seat.classList.toggle("chosen", Boolean(file));
+    });
+  }
   form.querySelector("[data-random]").addEventListener("click", () => {
     seedInput.value = String(1 + Math.floor(Math.random() * 1e6));
   });

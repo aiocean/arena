@@ -5,8 +5,8 @@
 use crate::bar::{has_trait, slot_of, spend};
 use crate::data::{
     BLOOD_POWER, BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, KNOCKBACK, Kind,
-    LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance, payoff, school, spell,
-    tint,
+    LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance, body_spec, payoff, school,
+    spell, tint,
 };
 use crate::fighter::{Act, Burning, Phase, Slot, State, Told};
 use crate::out::{How, Note, Out, PlayOpts, Stop};
@@ -69,7 +69,7 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
 /// A streak of `me`'s qi from where it casts to (`x`, `y` up from the ground).
 pub fn streak(state: &mut State, me: usize, x: f64, y: f64) {
     let f = &state.fighters[me];
-    let (x0, y0) = (f.body.x + f.body.face * 6.0, f.chest());
+    let (x0, y0) = (f.body.x + f.body.face * 24.0, f.chest());
     state.emit(Out::Streak {
         by: me,
         x0,
@@ -216,7 +216,7 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
             slot: at,
             at: state.time,
         });
-        let (x, y) = (f.body.x, f.chest() + 10.0);
+        let (x, y) = (f.body.x, f.chest() + 40.0);
         state.emit(Out::Lucky { by: me, kind, x, y });
     }
     state.fighters[me].act = Some(act);
@@ -335,15 +335,15 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
     let fspec = state.fighters[foe].body.spec;
     match sp.kind {
         Kind::Melee => {
-            state.fighters[me].body.vx += face * 50.0;
+            state.fighters[me].body.vx += face * 200.0;
             if sp.dive {
                 state.fighters[me].fly = false;
                 // a dive that ends on the ground cracks it
                 if let Some(slam) = sp.slam_fx
-                    && mair < 2.0
+                    && mair < 8.0
                     && state.has(slam)
                 {
-                    cast(state, me, slam, mx + face * 6.0, g, PlayOpts::default());
+                    cast(state, me, slam, mx + face * 24.0, g, PlayOpts::default());
                     state.emit(Out::Land {
                         x: mx,
                         strength: 1.0,
@@ -357,7 +357,7 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
             );
             let range = sp.range.unwrap_or(0.0);
             if (fx - mx).abs() <= range + fspec.half_width
-                && (fair - mair).abs() < mspec.chest + 4.0
+                && (fair - mair).abs() < mspec.chest + 16.0
                 && fhp > 0.0
             {
                 let slash_windup = spell("slash").map_or(0.0, |s| s.windup);
@@ -394,7 +394,7 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
                 seed: Some(me as u32 + 7),
                 ..PlayOpts::default()
             };
-            let key = play(state, sp.fx.unwrap_or(""), mx + face * 8.0, g - y, opts);
+            let key = play(state, sp.fx.unwrap_or(""), mx + face * 32.0, g - y, opts);
             let vx = face * sp.speed.unwrap_or(0.0);
             push(
                 state,
@@ -404,14 +404,14 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
                 Some(key),
                 hit,
                 ShotKind::Bolt {
-                    x: mx + face * 8.0,
+                    x: mx + face * 32.0,
                     y,
                     vx,
                 },
             );
         }
         Kind::Orb => {
-            let x = mx + face * 10.0;
+            let x = mx + face * 40.0;
             let key = play(
                 state,
                 sp.fx.unwrap_or(""),
@@ -427,8 +427,8 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
         Kind::Zone => {
             let x = clamp(
                 act.target.unwrap_or(f64::NAN),
-                state.left + 6.0,
-                state.right - 6.0,
+                state.left + 24.0,
+                state.right - 24.0,
             );
             // what hangs in the air (a collapse) gathers at the foe's height; what falls (an icicle) hits the floor
             let air = if sp.grounded {
@@ -495,7 +495,7 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
             {
                 if !act.pierce && blocks(state, foe, mx, hit, blow, act.spell) {
                     guarded(state, me);
-                    clash(state, fx - face * 4.0, g - fspec.chest - fair, &[foe]);
+                    clash(state, fx - face * 16.0, g - fspec.chest - fair, &[foe]);
                 } else if hurt(state, foe, hit, face, act.spell, act.stacks) && sp.shock {
                     add_shock(state, foe, me, act.stacks);
                 }
@@ -504,8 +504,8 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
         Kind::Void => {
             let x = clamp(
                 state.fighters[foe].body.x,
-                state.left + 10.0,
-                state.right - 10.0,
+                state.left + 40.0,
+                state.right - 40.0,
             );
             let key = cast(
                 state,
@@ -528,7 +528,7 @@ pub fn release(state: &mut State, me: usize, sp: &'static Spell) {
                 ShotKind::Void { x, tick: 0.0 },
             );
             let height = sp.height.unwrap_or(0.0);
-            streak(state, me, x, if height != 0.0 { height } else { 4.0 });
+            streak(state, me, x, if height != 0.0 { height } else { 16.0 });
         }
         Kind::Dash => {
             // gone in a flash and back a stride past the foe, cutting through it on the way
@@ -745,7 +745,7 @@ pub fn turns_aside(state: &mut State, f: usize, dir: f64, name: &'static str) ->
         how: Stop::Barrier,
         chip: 0.0,
     });
-    turn_aside(state, f, x - dir * 8.0, state.ground - spec.chest - air);
+    turn_aside(state, f, x - dir * 32.0, state.ground - spec.chest - air);
     let me = &state.fighters[f];
     let Some(barrier_spell) = me.barrier_spell else {
         return true;
@@ -753,7 +753,7 @@ pub fn turns_aside(state: &mut State, f: usize, dir: f64, name: &'static str) ->
     let counter = spell(barrier_spell).and_then(|b| b.counter);
     let by = 1 - f;
     let other = &state.fighters[by];
-    let close = (other.body.x - x).abs() < 60.0 && (other.body.air - air).abs() < spec.body;
+    let close = (other.body.x - x).abs() < 240.0 && (other.body.air - air).abs() < spec.body;
     let struck_close = s.is_some_and(|s| matches!(s.kind, Kind::Melee | Kind::Blast | Kind::Dash));
     if let Some(counter) = counter
         && close
@@ -797,9 +797,9 @@ pub fn turn_aside(state: &mut State, f: usize, x: f64, y: f64) {
             f,
             CLASH,
             x,
-            y + 30.0,
+            y + 120.0,
             PlayOpts {
-                height: Some(30.0),
+                height: Some(120.0),
                 seed: Some(f as u32 + 31),
                 ..PlayOpts::default()
             },
@@ -861,7 +861,7 @@ pub fn hurt(
     if !ultimate && state.rng.next() < state.fighters[f].stats.dodge {
         let me = &mut state.fighters[f];
         me.dodged = 0.3;
-        me.body.vx -= dir * 40.0;
+        me.body.vx -= dir * 160.0;
         let (x, y) = (me.body.x, me.chest());
         state.emit(Out::Dodge { x, y });
         state.note(Note::Stopped {
@@ -924,7 +924,7 @@ pub fn hurt(
         freeze,
         flying: false,
     }
-    .heavy(&BodySpec::default());
+    .heavy(&body_spec());
     let kind = s.map(|s| s.kind);
     let ranged = matches!(kind, Some(Kind::Bolt | Kind::Orb));
     let (x, y) = (state.fighters[f].body.x, state.fighters[f].chest());
@@ -1035,9 +1035,9 @@ pub fn clash(state: &mut State, x: f64, y: f64, fighters: &[usize]) {
             state,
             CLASH,
             x,
-            y + 30.0,
+            y + 120.0,
             PlayOpts {
-                height: Some(30.0),
+                height: Some(120.0),
                 seed: Some(seed),
                 ..PlayOpts::default()
             },
@@ -1094,28 +1094,7 @@ pub fn settle(state: &mut State, f: usize, dt: f64) {
     }
 }
 
-/// Fighter `f` sits down to meditate, or gets up; it sits in a spirit flame while it does.
+/// Fighter `f` sits down to meditate, or gets up (the page draws it outlined while it sits).
 pub fn set_meditating(state: &mut State, f: usize, on: bool) {
-    if state.fighters[f].medit == on {
-        return;
-    }
     state.fighters[f].medit = on;
-    if on && state.has("fire/spirit-flame") {
-        let x = state.fighters[f].body.x;
-        let y = state.ground - 8.0;
-        let key = play(
-            state,
-            "fire/spirit-flame",
-            x,
-            y,
-            PlayOpts {
-                seed: Some(f as u32 + 11),
-                ..PlayOpts::default()
-            },
-        );
-        state.fighters[f].aura = Some(key);
-    } else if !on && let Some(key) = state.fighters[f].aura {
-        state.emit(Out::Stop { key });
-        state.fighters[f].aura = None;
-    }
 }

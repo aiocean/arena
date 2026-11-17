@@ -1,14 +1,35 @@
 //! What a brain is told: each spell as pixfx-mind reads it (`skill_of`), and what a fighter could perceive this tick
-//! (`sense_of`).
+//! (`sense_of`). The minds think in the engine's pixels, the rules in the arena's (`UNIT` of them to one of the
+//! engine's): every length and speed a mind is told is divided by it, and what it chooses multiplied back (`chosen`).
 
 use crate::act::{recover_of, stacks_in};
 use crate::bar::{ready, slot_of};
-use crate::data::{BAR, BURN, CHILL, DEF_DOWN, Kind, RAGE, SHOCK, Spell, school, spell};
+use crate::data::{BAR, BURN, CHILL, DEF_DOWN, Kind, RAGE, SHOCK, Spell, UNIT, school, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
 use crate::shot::{ShotKind, orb_at};
 use pixfx_mind::{
-    ActPhase, Acting, Arena, Doing, Foe, Inflicts, Me, Sense, Skill, SkillKind, Threat, ThreatShape,
+    ActPhase, Acting, Arena, Choice, Doing, Foe, Inflicts, Me, Sense, Skill, SkillKind, Threat,
+    ThreatShape,
 };
+
+/// A length or speed in the arena's pixels, in the engine's.
+fn seen(v: f64) -> f64 {
+    v / UNIT
+}
+
+/// What a mind chose, in the arena's pixels: the height it flies at and the x it aims at.
+pub fn chosen(c: Choice) -> Choice {
+    match c {
+        Choice::Fly { height } => Choice::Fly {
+            height: height * UNIT,
+        },
+        Choice::Cast { skill, target } => Choice::Cast {
+            skill,
+            target: target.map(|x| x * UNIT),
+        },
+        other => other,
+    }
+}
 
 /// Spell `name` as pixfx-mind reads it: what it does, never what it is called (a heal's `damage` is what it heals).
 pub fn skill_of(name: &str) -> Skill {
@@ -69,9 +90,9 @@ pub fn skill_of(name: &str) -> Skill {
         windup: s.windup,
         recover: s.recover,
         damage: damage.unwrap_or(0.0),
-        reach,
-        radius: s.radius.unwrap_or(0.0),
-        speed: s.speed.unwrap_or(0.0),
+        reach: seen(reach),
+        radius: seen(s.radius.unwrap_or(0.0)),
+        speed: seen(s.speed.unwrap_or(0.0)),
         lands,
         strikes: s.strikes.map_or(1, |n| n as u32),
         ultimate: s.ultimate,
@@ -102,7 +123,7 @@ fn inflicts_of(s: &Spell) -> Inflicts {
         shock_max: SHOCK.max * shock,
         shock_hold: SHOCK.hold * shock,
         shock_rate: SHOCK.share * shock,
-        pull: s.pull.unwrap_or(0.0),
+        pull: seen(s.pull.unwrap_or(0.0)),
         steal_rage: s.steal_rage.unwrap_or(0.0),
     }
 }
@@ -171,7 +192,11 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
             ShotKind::Bolt { x, y, vx } => Some(Threat {
                 age: s.t,
                 damage,
-                shape: ThreatShape::Projectile { x, y, vx },
+                shape: ThreatShape::Projectile {
+                    x: seen(x),
+                    y: seen(y),
+                    vx: seen(vx),
+                },
             }),
             ShotKind::Orb { .. } => {
                 let (x, y) = orb_at(s);
@@ -179,9 +204,9 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
                     age: s.t,
                     damage,
                     shape: ThreatShape::Seeker {
-                        x,
-                        y: -y,
-                        radius: sp.radius.unwrap_or(f64::NAN),
+                        x: seen(x),
+                        y: seen(-y),
+                        radius: seen(sp.radius.unwrap_or(f64::NAN)),
                     },
                 })
             }
@@ -203,9 +228,9 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
                 } else {
                     // a sealed spell is seen from the moment its seal shows, a falling one once it trembles
                     let shape = ThreatShape::Area {
-                        x,
-                        radius: sp.radius.unwrap_or(f64::NAN),
-                        reach: sp.reach.unwrap_or(0.0),
+                        x: seen(x),
+                        radius: seen(sp.radius.unwrap_or(f64::NAN)),
+                        reach: seen(sp.reach.unwrap_or(0.0)),
                         lands_in: sp.impact.unwrap_or(f64::NAN) - s.t,
                         grounded: sp.grounded,
                     };
@@ -220,8 +245,8 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
                 age: s.t,
                 damage,
                 shape: ThreatShape::Field {
-                    x,
-                    reach: sp.reach.unwrap_or(f64::NAN),
+                    x: seen(x),
+                    reach: seen(sp.reach.unwrap_or(f64::NAN)),
                 },
             }),
             ShotKind::Zone { .. } | ShotKind::Spray => None,
@@ -246,16 +271,16 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
     Sense {
         time: state.time,
         me: Me {
-            x: b.x,
-            air: b.air,
+            x: seen(b.x),
+            air: seen(b.air),
             face: b.face,
             hp: f.hp,
             qi: f.qi,
             rage: f.rage,
             rage_full: RAGE,
             flying: f.fly,
-            hover: f.hover,
-            vx: b.vx,
+            hover: seen(f.hover),
+            vx: seen(b.vx),
             can_act: free,
             silenced: f.silence > 0.0,
             sealed: f.sealed > 0.0,
@@ -268,8 +293,8 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             act: acting_of(f),
         },
         foe: Foe {
-            x: foe.body.x,
-            air: foe.body.air,
+            x: seen(foe.body.x),
+            air: seen(foe.body.air),
             flying: foe.fly,
             hp: foe.hp,
             qi: foe.qi,
@@ -282,9 +307,9 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             ready: foe.spells.iter().map(|n| ready(foe, n)).collect(),
         },
         arena: Arena {
-            left: state.left,
-            right: state.right,
-            top: state.top,
+            left: seen(state.left),
+            right: seen(state.right),
+            top: seen(state.top),
         },
         threats: threats_of(state, me),
         ready: f.spells.iter().map(|n| ready(f, n)).collect(),

@@ -1,0 +1,25 @@
+[package]
+name = "onnx-bot"
+description = "A bot module (arena-bot-1) that runs an ONNX policy with tract: build it with ARENA_ONNX set to the model"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# the arena's own sampling, so a model picks the way the shipped bot does
+pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
+tract-onnx = { version = "0.22", default-features = false }
+# tract reaches getrandom; a bot imports nothing, so it gets a source that always fails instead of the "js" one
+getrandom = { version = "0.2", features = ["custom"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# a module of its own, built only for wasm32 (`cargo run -p arena-bot --example onnx`)
+[workspace]

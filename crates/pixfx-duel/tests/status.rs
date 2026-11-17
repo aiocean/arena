@@ -14,7 +14,7 @@ fn still() -> State {
         Fighter::new(0, School::Thunder, Vec::new(), Vec::new()),
         Fighter::new(1, School::Frost, Vec::new(), Vec::new()),
     ];
-    State::new(1, 0.0, 220.0, 150.0, 96.0, Vec::new(), fighters)
+    State::new(1, 0.0, 880.0, 600.0, 384.0, Vec::new(), fighters)
 }
 
 #[test]

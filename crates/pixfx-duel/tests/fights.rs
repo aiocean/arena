@@ -85,7 +85,7 @@ fn cast_once(seed: u32, index: usize, name: &'static str, slot: Slot) -> Duel {
     }
     let x = me.body.x;
     let foe = &mut s.fighters[1 - index];
-    foe.body.x = x + if index == 0 { 30.0 } else { -30.0 };
+    foe.body.x = x + if index == 0 { 120.0 } else { -120.0 };
     let fx = foe.body.x;
     s.fighters[index].body.face = pixfx_draw::math::js_sign(fx - x);
     duel
@@ -141,7 +141,7 @@ fn payoff_blow(name: &'static str, set: impl Fn(&mut Duel)) -> (f64, Duel) {
     set(&mut duel);
     let fx = duel.state.fighters[f].body.x;
     duel.state.fighters[by].act = Some(act(name, fx, 0.0));
-    duel.state.fighters[by].body.x = fx - if by == 0 { 20.0 } else { -20.0 };
+    duel.state.fighters[by].body.x = fx - if by == 0 { 80.0 } else { -80.0 };
     duel.state.fighters[by].body.face = if by == 0 { 1.0 } else { -1.0 };
     let hp = duel.state.fighters[f].hp;
     let mut power = f64::NAN;
@@ -226,7 +226,7 @@ fn an_orb_that_lands_leaves_a_shock_stack() {
     }
     let fx = duel.state.fighters[1].body.x;
     duel.state.fighters[0].act = Some(act("orb", fx, 0.0));
-    duel.state.fighters[0].body.x = fx - 30.0;
+    duel.state.fighters[0].body.x = fx - 120.0;
     duel.state.fighters[0].body.face = 1.0;
     let landed = steps_until(&mut duel, 60 * 7, |_, out| {
         out.iter()
@@ -453,7 +453,7 @@ fn an_evolved_skill_inflicts_one_more_stack_of_what_it_inflicts() {
         if let Slot::Held { power, .. } = &mut f.bar[0] {
             *power = 1.0;
         }
-        f.body.x = tx + 30.0;
+        f.body.x = tx + 120.0;
         f.body.face = -1.0;
         run(&mut duel, 1.0);
         duel.state.fighters[0].chill
@@ -830,8 +830,8 @@ fn a_swap_blink_trades_places_with_the_foe_wherever_it_stands() {
             duel.state.fighters[1 - index].body.x,
         );
         let swapped = steps_until(&mut duel, 120, |d, _| {
-            (d.state.fighters[index].body.x - foe0).abs() < 0.5
-                && (d.state.fighters[1 - index].body.x - me0).abs() < 0.5
+            (d.state.fighters[index].body.x - foe0).abs() < 2.0
+                && (d.state.fighters[1 - index].body.x - me0).abs() < 2.0
         });
         assert!(
             swapped,

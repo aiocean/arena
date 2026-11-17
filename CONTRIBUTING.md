@@ -28,7 +28,7 @@ site/build.sh && (cd site && bun test tests)
 
 1. Set the season's version in `crates/pixfx-duel-py/pyproject.toml`.
 2. Tag the commit `arena-s<N>` and push the tag. `.github/workflows/release.yml` builds the wheels (Linux x86_64,
-   macOS arm64 and x86_64; Python 3.12 and 3.13) and makes the release: the wheels, `policy.bin` and `SHA256SUMS`.
+   macOS arm64 and x86_64; Python 3.12 and 3.13) and makes the release: the wheels, `policy.onnx` (the house AI) and `SHA256SUMS`.
 3. Players install the env without Rust:
    `pip install pixfx-duel --find-links https://github.com/aiocean/arena/releases/expanded_assets/arena-s<N>`.
 

@@ -4,17 +4,50 @@
 //! `pixfx_duel::train`'s.
 
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
-use pixfx_duel::ladder::{Bot, Match, Record, entry_bar as measure_bar};
+use arena_bot::host::Runner;
+use arena_bot::onnx::Onnx;
+use pixfx_duel::ladder::{Bot, Match, Record, entry_bar_of};
+use pixfx_duel::seat::SharedDecider;
 use pixfx_duel::style::Style;
 use pixfx_duel::train::{Env, EnvConfig, Opponent};
-use pixfx_mind::policy::{ACTIONS, Net, OBS};
+use pixfx_mind::policy::{ACTIONS, OBS};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyBytes, PyDict};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread::JoinHandle;
+
+/// A trained bot, ready to seat: an ONNX policy (run natively) or a bot module. Both cross threads.
+#[derive(Clone)]
+enum Model {
+    Onnx(Onnx),
+    Module(Runner),
+}
+
+impl Model {
+    /// An ONNX model's or a bot module's bytes (a module starts with `\0asm`).
+    fn load(bytes: &[u8]) -> Result<Model, String> {
+        if bytes.starts_with(b"\0asm") {
+            let admitted = arena_bot::admit(bytes).map_err(|e| e.to_string())?;
+            return Runner::new(&admitted).map(Model::Module).map_err(|e| e.0);
+        }
+        Onnx::load(bytes).map(Model::Onnx).map_err(|e| e.0)
+    }
+
+    /// A fresh decider: one match.
+    fn decider(&self) -> SharedDecider {
+        match self {
+            Model::Onnx(o) => o.decider(),
+            Model::Module(r) => r.decider(),
+        }
+    }
+
+    fn bot(self) -> Bot {
+        Bot::Decider(Rc::new(move || self.decider()))
+    }
+}
 
 /// How a reset names its opponent.
 #[derive(Clone, Copy, Debug)]
@@ -45,22 +78,22 @@ impl Out {
 
 /// What the main thread asks a worker.
 enum Wire {
-    Weights { id: u32, bytes: Vec<u8> },
+    Model { id: u32, model: Model },
     Reset { slot: usize, seed: u32, learner: usize, style: Style, foe_style: Style, foe: Foe, limit: f64, reply: Sender<Result<Out, String>> },
     Step { actions: Vec<i64>, shaping: f32, reply: Sender<Vec<Out>> },
 }
 
-/// A worker's envs and the networks it has been handed.
+/// A worker's envs and the models it has been handed.
 struct Worker {
     envs: Vec<Option<Env>>,
-    nets: HashMap<u32, Rc<Net>>,
+    models: HashMap<u32, Model>,
     effects: Vec<String>,
 }
 
 impl Worker {
     fn run(n: usize, rx: Receiver<Wire>) {
         let effects = pixfx_effects::EFFECTS.iter().map(|e| e.meta().id.to_string()).collect();
-        let mut w = Worker { envs: (0..n).map(|_| None).collect(), nets: HashMap::new(), effects };
+        let mut w = Worker { envs: (0..n).map(|_| None).collect(), models: HashMap::new(), effects };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
         }
@@ -68,10 +101,8 @@ impl Worker {
 
     fn answer(&mut self, msg: Wire) {
         match msg {
-            Wire::Weights { id, bytes } => {
-                if let Ok(net) = Net::load(&bytes) {
-                    self.nets.insert(id, Rc::new(net));
-                }
+            Wire::Model { id, model } => {
+                self.models.insert(id, model);
             }
             Wire::Reset { slot, seed, learner, style, foe_style, foe, limit, reply } => {
                 let _ = reply.send(self.reset(slot, seed, learner, style, foe_style, foe, limit));
@@ -110,7 +141,7 @@ impl Worker {
             Foe::First => Opponent::First,
             Foe::Aggressive => Opponent::Aggressive,
             Foe::Turtle => Opponent::Turtle,
-            Foe::Policy(id) => Opponent::Policy(self.nets.get(&id).cloned().ok_or(format!("no weights {id}: set_weights first"))?),
+            Foe::Policy(id) => Opponent::Bot(self.models.get(&id).ok_or(format!("no model {id}: set_model first"))?.decider()),
         };
         let cfg = EnvConfig { seed, learner, style, foe_style, opponent, limit, effects: self.effects.clone() };
         let env = Env::new(cfg);
@@ -171,26 +202,27 @@ impl VecEnv {
         Ok(VecEnv { n, workers, handles, outs: (0..n).map(|_| Out::blank()).collect() })
     }
 
-    /// Hand every worker a network as `id`, for `policy` opponents.
-    fn set_weights(&self, id: u32, data: Vec<u8>) -> PyResult<()> {
-        Net::load(&data).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    /// Hand every worker a model as `id`, for `policy` opponents: an ONNX policy's bytes (input float32 `[1, 354]`,
+    /// output the 30 acts' logits) or a bot module's.
+    fn set_model(&self, id: u32, data: Vec<u8>) -> PyResult<()> {
+        let model = Model::load(&data).map_err(PyValueError::new_err)?;
         for (tx, _, _) in &self.workers {
-            tx.send(Wire::Weights { id, bytes: data.clone() }).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            tx.send(Wire::Model { id, model: model.clone() }).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         }
         Ok(())
     }
 
     /// Start env `i` on a fresh round: the fight's `seed`, the learner's corner (0 Thunder, 1 Frost) and style
     /// (0 aggressive, 1 balanced, 2 defensive), the opponent's style, the opponent (`brain`, `first`, `aggressive`,
-    /// `turtle`, `policy`), the weights id of a `policy` opponent, and the seconds a round may last.
+    /// `turtle`, `policy`), the model id of a `policy` opponent (`set_model`), and the seconds a round may last.
     #[allow(clippy::too_many_arguments)]
-    fn reset(&mut self, i: usize, seed: u32, learner: usize, style_: usize, foe_style: usize, opponent: &str, weights: i64, limit: f64) -> PyResult<()> {
+    fn reset(&mut self, i: usize, seed: u32, learner: usize, style_: usize, foe_style: usize, opponent: &str, model: i64, limit: f64) -> PyResult<()> {
         let foe = match opponent {
             "brain" => Foe::Brain,
             "first" => Foe::First,
             "aggressive" => Foe::Aggressive,
             "turtle" => Foe::Turtle,
-            "policy" => Foe::Policy(u32::try_from(weights).map_err(|_| PyValueError::new_err("a policy opponent needs its weights id"))?),
+            "policy" => Foe::Policy(u32::try_from(model).map_err(|_| PyValueError::new_err("a policy opponent needs its model id"))?),
             other => return Err(PyValueError::new_err(format!("no opponent {other:?}"))),
         };
         if learner > 1 {
@@ -272,30 +304,33 @@ impl Drop for VecEnv {
     }
 }
 
-/// A contestant as Python names it, in a form that may cross to another thread: a built-in name or weights bytes.
+/// A contestant as Python names it, in a form that may cross to another thread: a built-in name or a model.
 enum Spec {
     Named(String),
-    Weights(Vec<u8>),
+    Model(Model),
 }
 
 impl Spec {
-    /// Read and check a contestant: a built-in name (`brain`, `first`, `aggressive`, `turtle`) or a weights file's bytes.
+    /// Read and check a contestant: a built-in name (`brain`, `first`, `aggressive`, `turtle`, `house`) or an ONNX
+    /// policy's or a bot module's bytes.
     fn of(x: &Bound<'_, PyAny>) -> PyResult<Spec> {
         if let Ok(name) = x.extract::<String>() {
+            if name == "house" {
+                return Onnx::house().map(|o| Spec::Model(Model::Onnx(o))).map_err(|e| PyValueError::new_err(e.0));
+            }
             return match Bot::named(&name) {
                 Some(_) => Ok(Spec::Named(name)),
-                None => Err(PyValueError::new_err(format!("no bot {name:?}: {} or a weights file's bytes", Bot::NAMES.join(", ")))),
+                None => Err(PyValueError::new_err(format!("no bot {name:?}: {}, house, or a model's bytes", Bot::NAMES.join(", ")))),
             };
         }
-        let bytes: Vec<u8> = x.extract().map_err(|_| PyValueError::new_err("a bot is a name or a weights file's bytes"))?;
-        Net::load(&bytes).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Spec::Weights(bytes))
+        let bytes: Vec<u8> = x.extract().map_err(|_| PyValueError::new_err("a bot is a name or a model's bytes"))?;
+        Model::load(&bytes).map(Spec::Model).map_err(PyValueError::new_err)
     }
 
-    fn bot(&self) -> Result<Bot, String> {
+    fn bot(self) -> Result<Bot, String> {
         match self {
-            Spec::Named(name) => Bot::named(name).ok_or(format!("no bot {name:?}")),
-            Spec::Weights(bytes) => Net::load(bytes).map(|n| Bot::Policy(Rc::new(n))).map_err(|e| e.to_string()),
+            Spec::Named(name) => Bot::named(&name).ok_or(format!("no bot {name:?}")),
+            Spec::Model(model) => Ok(model.bot()),
         }
     }
 }
@@ -321,7 +356,7 @@ fn record<'py>(py: Python<'py>, r: &Record) -> PyResult<Bound<'py, PyDict>> {
 }
 
 /// Bot `a` against bot `b`: each seed in `seeds` (`(first, past the last)`, like `range`) fought both ways, `rounds`
-/// rounds a fight, a round cut after `limit` seconds. A bot is a built-in name or a weights file's bytes. Returns `a`'s
+/// rounds a fight, a round cut after `limit` seconds. A bot is a built-in name, `house`, or a model's bytes. Returns `a`'s
 /// record: `win_rate`, `as_thunder`, `as_frost`, `won`, `lost`, `cut`, `mean_round`.
 #[pyfunction]
 #[pyo3(signature = (a, b, seeds = (1, 151), rounds = 3, limit = 120.0))]
@@ -331,17 +366,14 @@ fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seed
     record(py, &r.map_err(PyValueError::new_err)?)
 }
 
-/// Measure a weights file against the tournament's entry bar over `seeds` (the ladder's 1-150 by default): `passed`,
-/// and the records `vs_brain` and `vs_first`.
+/// Measure a bot (an ONNX policy's or a bot module's bytes, or `house`) against the tournament's entry bar over
+/// `seeds` (the ladder's 1-150 by default): `passed`, and the records `vs_brain` and `vs_first`.
 #[pyfunction]
-#[pyo3(signature = (weights, seeds = (1, 151)))]
-fn entry_bar<'py>(py: Python<'py>, weights: Vec<u8>, seeds: (u32, u32)) -> PyResult<Bound<'py, PyDict>> {
-    Net::load(&weights).map_err(|e| PyValueError::new_err(e.to_string()))?;
+#[pyo3(signature = (bot, seeds = (1, 151)))]
+fn entry_bar<'py>(py: Python<'py>, bot: &Bound<'py, PyAny>, seeds: (u32, u32)) -> PyResult<Bound<'py, PyDict>> {
+    let spec = Spec::of(bot)?;
     let m = fight_match(seeds, 3, 120.0)?;
-    let bar = py.detach(move || -> Result<_, String> {
-        let net = Rc::new(Net::load(&weights).map_err(|e| e.to_string())?);
-        Ok(measure_bar(&net, &m))
-    });
+    let bar = py.detach(move || -> Result<_, String> { Ok(entry_bar_of(&spec.bot()?, &m)) });
     let bar = bar.map_err(PyValueError::new_err)?;
     let d = PyDict::new(py);
     d.set_item("passed", bar.passed())?;
@@ -357,6 +389,8 @@ fn duel_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(bout, m)?)?;
     m.add_function(wrap_pyfunction!(entry_bar, m)?)?;
     m.add("BOTS", Bot::NAMES.to_vec())?;
+    // the house AI as ONNX (`weights/policy.onnx`): a trainer's head start and sparring partner
+    m.add("HOUSE", PyBytes::new(m.py(), arena_bot::onnx::HOUSE))?;
     m.add("OBS", OBS)?;
     m.add("ACTIONS", ACTIONS)?;
     Ok(())

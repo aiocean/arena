@@ -1,13 +1,13 @@
-//! The seats a duel can hold besides the brain: the trained policy and the scripted ladder rungs.
+//! The seats a duel can hold besides the brain: a bot and the scripted ladder rungs.
 
 mod common;
 
-use common::{all_effects, config};
+use common::{all_effects, config, pick};
 use pixfx_duel::bar::ready;
 use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::State;
 use pixfx_duel::scripted::Scripted;
-use pixfx_duel::seat::{MakeSeat, PolicySeat, Seat, shipped};
+use pixfx_duel::seat::{BotSeat, MakeSeat, Seat};
 use pixfx_mind::{Choice, Outcome};
 use std::cell::Cell;
 use std::rc::Rc;
@@ -57,15 +57,12 @@ fn checked(make: MakeSeat, casts: &Rc<Cell<u32>>) -> MakeSeat {
 }
 
 #[test]
-fn a_policy_seat_only_ever_makes_possible_choices() {
-    let net = shipped().map_err(|e| e.to_string());
-    assert!(net.is_ok(), "the shipped weights load: {net:?}");
-    let Ok(net) = net else { return };
+fn a_bot_seat_only_ever_makes_possible_choices() {
     let casts = Rc::new(Cell::new(0));
     for seed in 1..=4 {
         let seats = [
-            checked(PolicySeat::make(net.clone()), &casts),
-            checked(PolicySeat::make(net.clone()), &casts),
+            checked(BotSeat::make(pick(), None), &casts),
+            checked(BotSeat::make(pick(), None), &casts),
         ];
         let mut duel = Duel::new(config(seed, all_effects()), seats);
         for _ in 0..(60 * 60) {

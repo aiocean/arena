@@ -7,10 +7,11 @@ before changing anything here; this file only says what this crate holds. The de
 ## Job
 
 `import pixfx_duel` for the PPO trainer in `train/`: `VecEnv(n, threads)` runs `n` training episodes
-(`pixfx_duel::train::Env`) on worker threads and hands numpy arrays back: `set_weights(id, bytes)` for `policy`
-opponents, `reset(i, seed, learner, style, foe_style, opponent, weights_id, limit)`, `observe()` →
+(`pixfx_duel::train::Env`) on worker threads and hands numpy arrays back: `set_model(id, bytes)` for `policy`
+opponents (an ONNX model's bytes, run natively, or a bot module's), `reset(i, seed, learner, style, foe_style,
+opponent, model_id, limit)`, `observe()` →
 `(obs float32[n, OBS], mask bool[n, ACTIONS])`, `step(actions int64[n], shaping)` →
-`(reward, done, won, length)`; `OBS` and `ACTIONS`. Each env is built and stepped on one thread (it holds `Rc`s
+`(reward, done, won, length)`; `bout`, `entry_bar`; `OBS`, `ACTIONS` and `HOUSE` (the house AI's ONNX bytes). Each env is built and stepped on one thread (it holds `Rc`s
 and seats); only plain arrays cross threads.
 
 ## Belongs here
@@ -27,7 +28,8 @@ and seats); only plain arrays cross threads.
 
 ## Dependencies
 
-`pyo3`, `numpy`, `pixfx-duel`, `pixfx-mind`, `pixfx-effects` (the registry list only). It is its own workspace
+`pyo3`, `numpy`, `pixfx-duel`, `pixfx-mind`, `arena-bot` (`host`, `onnx`: a bot's model), `pixfx-effects` (the
+registry list only). It is its own workspace
 (excluded from the root, like `pixfx-gpui`), so pyo3 never builds with the rest.
 
 ## Traps

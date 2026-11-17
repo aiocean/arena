@@ -2,8 +2,8 @@
 // wasm (`duel.js`), drawn by pixfx-canvas2d (workers paint the effects), with the fighters, the scene's light, the HUD
 // and its tooltips. The page owns the animation-frame loop and calls `step(dt)` each frame.
 import { FightFeel, Lighting, Sprites, createPixfx, lookColors, putOutLight, stepLights } from "../pkg/pixfx-canvas2d.js";
-import { DECOR, RAGE, createDuel, freeDuel, step } from "./duel.js";
-import { BARS_TALL, actorOf, drawBars, drawNumbers, drawSkills, drawStreaks, hudAt, paintFighters } from "./duel-art.js";
+import { DECOR, RAGE, UNIT, createDuel, createFighters, freeDuel, step } from "./duel.js";
+import { BARS_TALL, actorOf, drawBars, drawFine, drawNumbers, drawSkills, drawStreaks, hudAt, paintFighters } from "./duel-art.js";
 import { buffInfo, skillInfo } from "./duel-info.js";
 import { createScene, drawScene } from "./duel-scene.js";
 import { kindle, lampGlows } from "./duel-light.js";
@@ -12,20 +12,61 @@ import { kindle, lampGlows } from "./duel-light.js";
 const BACKDROP = "#0b0a1c";
 /** How tall the film bars an ultimate brings in are, in game pixels, at the sky's darkest. */
 const LETTERBOX = 12;
-/** The effects that wrap a fighter's own sprite, while its ultimate is ready: a surge up its body when its rage fills,
- *  then a ring in its school's glow round every pose until it casts. */
+/** The effects that wrap a fighter's own sprite: a surge up its body when its rage fills, and a ring in its school's
+ *  glow round every pose while its ultimate is ready or it meditates. */
 const WRAP = { ring: "feedback/outline", surge: "feedback/power-up" };
 /** Where a fighter's ring plays, above its feet: about the middle of its body, so the ring's box holds it in any pose. */
 const RING_MID = 24;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Fetch each named weights file in `weights/` beside this module (`site/embed.sh` puts every
- *  `crates/pixfx-duel/weights/*.bin` there) as bytes, `[left, right]`; a file named twice is fetched once. */
-export async function loadPolicies(files) {
+/** The fighters' sprite sheets beside this module (`site/embed.sh` copies `site/assets/fighters/`): for each school,
+ *  the fighter drawn in its seat, its layout's JSON and its pages as RGBA bytes one after another
+ *  (`<fighter>-<school>.png`, then `-1.png` and on, as many as the layout has pages). Fetched once, for every hero.
+ *  Thunder is Vương Lâm (the cultivator), frost the Seven-Colored Daoist. */
+const FIGHTERS = { thunder: "cultivator", frost: "seven-colored-daoist" };
+let fighterSheets = null;
+function loadFighterSheets() {
+  fighterSheets ??= (async () => {
+    const url = (file) => new URL(`fighters/${file}`, import.meta.url);
+    const page = async (file) => {
+      const image = new Image();
+      image.src = url(file).href;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    };
+    const sheets = await Promise.all(Object.entries(FIGHTERS).map(async ([school, fighter]) => {
+      const layout = await fetch(url(`${fighter}.json`)).then((r) =>
+        r.ok ? r.text() : Promise.reject(new Error(`${fighter}.json: HTTP ${r.status}`)),
+      );
+      const { pages = [], size } = JSON.parse(layout);
+      const count = Math.max(1, pages.length || (size ? 1 : 0));
+      const files = Array.from({ length: count }, (_, i) => (i === 0 ? `${fighter}-${school}.png` : `${fighter}-${school}-${i}.png`));
+      const parts = await Promise.all(files.map(page));
+      const rgba = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+      let at = 0;
+      for (const p of parts) {
+        rgba.set(p, at);
+        at += p.length;
+      }
+      return [school, { layout, rgba }];
+    }));
+    return { schools: Object.fromEntries(sheets) };
+  })();
+  return fighterSheets;
+}
+
+/** Fetch each named bot module beside this module as bytes, `[left, right]`, from `bots/` (`site/embed.sh` puts the
+ *  house bot there, `policy.wasm`). A file named twice is fetched once. */
+export async function loadBots(files) {
   const names = [...new Set(files)];
   const buffers = await Promise.all(
     names.map((name) =>
-      fetch(new URL(`weights/${name}`, import.meta.url)).then((r) =>
+      fetch(new URL(`bots/${name}`, import.meta.url)).then((r) =>
         r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${name}: HTTP ${r.status}`)),
       ),
     ),
@@ -40,17 +81,21 @@ export async function loadPolicies(files) {
  * The live duel on `canvas`: the arena sized to the canvas, the rules from `duel.js`, the fighters, effects, light, HUD
  * and tooltips. `seed` is the first duel's (a random one when left out); each later rebuild, on a resize, takes the
  * next, or the same one again with `replay` (a page that shows one seed's fight). Returns the view: `step(dt)` draws a frame, `restart(seed)` begins a fresh duel on that seed (with the
- * policies `usePolicies` seated last), `seed()` is the seed of the duel now playing, `free()` lets it all go.
+ * bots `useBots` seated last), `seed()` is the seed of the duel now playing, `free()` lets it all go.
  */
 export function createHero(canvas, signal, icons, engine, { seed: first, replay = false } = {}) {
-  const view = { canvas, icons, stage: null, duel: null, feel: null, sprites: null, lighting: null, lights: [], layout: null, handles: new Map(), wrapped: [] };
+  const view = { canvas, icons, stage: null, duel: null, feel: null, sprites: null, fighters: null, lighting: null, lights: [], layout: null, handles: new Map(), wrapped: [] };
   const have = new Set(engine.effects());
-  // a picture Rust painted (fighters, faces, light), drawn and let go at once
+  // a picture Rust painted (fighters, faces, light), drawn and let go at once: the fighters and faces in their own
+  // finer pixels, the rest in the world's
   const show = (picture) => {
-    view.stage.drawPicture(picture);
+    if (picture?.unit > 1) drawFine(canvas.getContext("2d"), view.layout.scale, picture);
+    else view.stage.drawPicture(picture);
     picture?.free();
   };
   let seed = first ?? 1 + Math.floor(Math.random() * 1e6);
+  // how many times the view was built: sheets that arrive for an older build are not used
+  let builds = 0;
   let playing = seed;
 
   function build() {
@@ -59,11 +104,14 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     view.wrapped = [];
     view.lights = [];
     const narrow = innerWidth < 760;
-    // the fighters stay big enough to read their poses: bigger pixels on a wider screen
-    const scale = narrow ? 2 : innerWidth < 1200 ? 3 : 4;
+    // the fighters stay big enough to read their poses: bigger pixels on a wider screen. The canvas is in the
+    // screen's own pixels, and a fighter's pixel (a `UNIT`th of the world's) is a whole number of them.
+    const dpr = Math.min(2, Math.max(1, Math.round(devicePixelRatio || 1)));
+    let scale = (narrow ? 2 : innerWidth < 1200 ? 3 : 4) * dpr;
+    scale = Math.max(UNIT, scale - (scale % UNIT));
     const rect = canvas.getBoundingClientRect();
-    const w = Math.ceil(rect.width / scale);
-    const h = Math.ceil(rect.height / scale);
+    const w = Math.ceil((rect.width * dpr) / scale);
+    const h = Math.ceil((rect.height * dpr) / scale);
     canvas.width = w * scale;
     canvas.height = h * scale;
     const ground = h - (narrow ? 14 : 22);
@@ -82,13 +130,22 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     if (have.has(DECOR.lamp)) for (const x of [arena.left, arena.right]) view.stage.play(DECOR.lamp, x, ground, { seed: x });
     view.feel = new FightFeel();
     view.sprites = new Sprites(w, h);
+    // the fighters are drawn from the arena's sprite sheets, once they have arrived (the first frames show the stage)
+    const built = ++builds;
+    loadFighterSheets().then((sheets) => {
+      if (built === builds && !view.fighters) view.fighters = createFighters(w, h, sheets);
+    }).catch((e) => console.error("duel: the fighters' sheets did not load:", e));
     view.lighting = new Lighting(w, h);
-    // the bars go just under the page's top bar, which lies over the hero
-    // (its links can wrap past its own box on a narrow screen, so measure what is in it)
-    const topbar = Math.max(0, ...[...document.querySelectorAll(".topbar, .topbar *")].map((el) => el.getBoundingClientRect().bottom));
-    const barTop = Math.max(6, Math.ceil((topbar - rect.top) / scale) + 6);
-    // fighters fly no higher than keeps their heads (about 44 pixels tall) under the bars
-    const sky = ground - (barTop + BARS_TALL + 13) - 46;
+    // the bars go just under the page's top bar when it lies over the hero (positioned absolute or fixed, as on the
+    // pixfx site); a top bar in the page's flow (the arena's own pages, where it sits under the hero) leaves the bars
+    // at the top, wherever the page is scrolled (its links can wrap past its own box on a narrow screen, so measure
+    // what is in it)
+    const overlays = [...document.querySelectorAll(".topbar")].filter((bar) => ["absolute", "fixed"].includes(getComputedStyle(bar).position));
+    // (both measured from the viewport, so the bar's bottom less the canvas's top holds however far the page is scrolled)
+    const bottoms = overlays.flatMap((bar) => [bar, ...bar.querySelectorAll("*")]).map((el) => el.getBoundingClientRect().bottom);
+    const barTop = bottoms.length ? Math.max(6, Math.ceil(((Math.max(...bottoms) - rect.top) * dpr) / scale) + 6) : 6;
+    // fighters fly no higher than keeps their heads (about 62 pixels tall) under the bars
+    const sky = ground - (barTop + BARS_TALL + 13) - 64;
     if (view.duel) freeDuel(view.duel);
     playing = seed;
     view.duel = createDuel({ seed: replay ? seed : seed++, left: arena.left + lampInset, right: arena.right - lampInset, ground, effects: [...have], sky });
@@ -98,7 +155,7 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     });
     // each fighter's skills, on the floor under its own side: bigger icons where the floor has the room
     const icon = h - ground >= 20 ? 16 : 12;
-    view.layout = { scale, w, h, ground, barTop, icon, lamps: [arena.left, arena.right], scene: createScene(w, h, ground, barTop + BARS_TALL) };
+    view.layout = { scale, dpr, w, h, ground, barTop, icon, lamps: [arena.left, arena.right], scene: createScene(w, h, ground, barTop + BARS_TALL) };
     // a still frame shows the fight under way
     if (reduceMotion) {
       for (let i = 0; i < 6 * 30; i++) play(step(view.duel, 1 / 30));
@@ -118,14 +175,14 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     }
   }
 
-  /** Hand each fighter's new pose to the effects wrapped on it and keep them on it. When its rage fills: a surge, and a
-   *  ring that stays until the rage is spent or the fighter is down. */
+  /** Hand each fighter's new pose to the effects wrapped on it and keep them on it. When its rage fills: a surge. A ring
+   *  while its rage is full or it meditates, until neither holds or the fighter is down. */
   function wrapFighters(pictures) {
     const { ground } = view.layout;
     for (const f of view.duel.fighters) {
       const one = view.wrapped[f.index];
       if (!one) continue;
-      one.body = actorOf(pictures[f.index]);
+      one.body = actorOf(pictures[f.index]?.body);
       const feet = ground - f.air;
       const ready = f.rage >= RAGE && f.hp > 0;
       if (ready && one.rage < RAGE && have.has(WRAP.surge)) {
@@ -136,10 +193,11 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
         });
         one.surge = surge;
       }
-      if (ready && !one.ring && have.has(WRAP.ring)) {
+      const ringed = (ready || f.pose === "meditate") && f.hp > 0;
+      if (ringed && !one.ring && have.has(WRAP.ring)) {
         one.ring = view.stage.play(WRAP.ring, f.x, feet - RING_MID, { palette: [lookColors(f.school).glow] });
         one.ring.wrap(() => one.body);
-      } else if (!ready && one.ring) {
+      } else if (!ringed && one.ring) {
         one.ring.stop();
         one.ring = null;
       }
@@ -158,7 +216,7 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
     view.feel.react(commands);
     view.lights = stepLights(kindle(view.lights, commands, ground, (fx) => engine.meta(fx).loop, putOutLight), run);
     // the fighters are painted before the effects play, so an effect wrapped on one grips this frame's pose
-    const painted = paintFighters(view.sprites, view.duel, view.feel, ground, view.feel.jolts());
+    const painted = paintFighters(view.sprites, view.fighters, view.duel, view.feel, ground, view.feel.jolts());
     wrapFighters(painted.fighters);
     view.stage.update(reduceMotion ? 0 : run);
     const ctx = canvas.getContext("2d");
@@ -176,7 +234,12 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
       ctx.fillRect(-scale * 4, -scale * 4, (w + 8) * scale, (h + 8) * scale);
     }
     // the one a blow struck shudders through the hit-stop
-    for (const picture of painted.fighters) show(picture);
+    for (const p of painted.fighters) {
+      if (!p) continue;
+      show(p.sprite);
+      show(p.marks);
+      p.body?.free();
+    }
     show(painted.dust);
     // the magic lights the dais, the peaks and the fighters in its own colour
     show(view.lighting.paint(view.lights, lampGlows(view.layout.lamps, ground, view.duel.time)));
@@ -191,7 +254,7 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
       ctx.fillRect(0, 0, w * scale, band * scale);
       ctx.fillRect(0, (h - band) * scale, w * scale, band * scale);
     }
-    drawBars(ctx, view.sprites, show, view.duel, scale, view.layout.barTop);
+    drawBars(ctx, view.fighters, show, view.duel, scale, view.layout.barTop);
     // each fighter's skills, from the atlas whose pixels land on whole screen pixels
     const { icon } = view.layout;
     drawSkills(ctx, view.duel, scale, h, icon, (icon * scale) % 32 === 0 ? view.icons[32] : view.icons[24]);
@@ -208,6 +271,8 @@ export function createHero(canvas, signal, icons, engine, { seed: first, replay 
   view.free = () => {
     view.stage?.destroy();
     view.sprites?.free();
+    view.fighters?.free();
+    view.fighters = null;
     view.feel?.free();
     view.lighting?.free();
     if (view.duel) freeDuel(view.duel);

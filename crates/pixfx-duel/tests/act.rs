@@ -41,7 +41,7 @@ fn strike(s: &mut State, by: usize, name: &'static str) -> Vec<Out> {
         circle: None,
         blocked: false,
     });
-    s.fighters[by].body.x = fx - 20.0 * js_sign(or_one(fx - bx));
+    s.fighters[by].body.x = fx - 80.0 * js_sign(or_one(fx - bx));
     s.fighters[by].body.face = js_sign(fx - s.fighters[by].body.x);
     s.out.clear();
     advance(s, by, 1.0 / 60.0);
@@ -153,11 +153,11 @@ fn clash_at_equal_x_pushes_as_js() {
     s.fighters[1].body.x = x;
     let (v0, v1) = (s.fighters[0].body.vx, s.fighters[1].body.vx);
     s.out.clear();
-    clash(&mut s, x, 100.0, &[0, 1]);
+    clash(&mut s, x, 400.0, &[0, 1]);
     // JS: Math.sign(f.x - x || 1) is 1 when they stand on the spot
     assert_eq!(s.fighters[0].body.vx, v0 + KNOCKBACK);
     assert_eq!(s.fighters[1].body.vx, v1 + KNOCKBACK);
-    assert!(matches!(s.out.first(), Some(Out::Clash { y, .. }) if *y == s.ground - 100.0));
+    assert!(matches!(s.out.first(), Some(Out::Clash { y, .. }) if *y == s.ground - 400.0));
 }
 
 #[test]
@@ -179,7 +179,7 @@ fn a_cast_still_gathering_in_its_rune_circle_when_the_foe_falls_loses_its_circle
 #[test]
 fn a_bolt_flies_strikes_and_ends_its_effect() {
     let mut s = still(4);
-    s.fighters[1].body.x = s.fighters[0].body.x + 60.0;
+    s.fighters[1].body.x = s.fighters[0].body.x + 240.0;
     let windup = spell("bolt").map_or(0.0, |sp| sp.windup);
     s.fighters[0].body.face = 1.0;
     s.fighters[0].act = Some(Act {
@@ -270,8 +270,8 @@ fn two_bolts_meeting_head_on_are_both_spent() {
 #[test]
 fn a_bolt_spent_in_a_clash_neither_lands_nor_takes_another_shot_with_it() {
     let mut s = still(5);
-    s.fighters[0].body.x = 60.0;
-    s.fighters[1].body.x = 160.0;
+    s.fighters[0].body.x = 240.0;
+    s.fighters[1].body.x = 640.0;
     s.fighters[0].body.face = 1.0;
     s.fighters[1].body.face = -1.0;
     for (me, name) in [(0, "bolt"), (1, "shard")] {
@@ -293,23 +293,23 @@ fn a_bolt_spent_in_a_clash_neither_lands_nor_takes_another_shot_with_it() {
     // the two bolts meet right at Thunder's body, and a third shot flies last in the list, far above it all
     let y = s.fighters[0].body.spec.chest;
     s.shots[0].kind = ShotKind::Bolt {
-        x: 100.0,
+        x: 400.0,
         y,
-        vx: 60.0,
+        vx: 240.0,
     };
     s.shots[1].kind = ShotKind::Bolt {
-        x: 104.0,
+        x: 416.0,
         y,
-        vx: -60.0,
+        vx: -240.0,
     };
-    s.fighters[0].body.x = 103.0;
-    s.fighters[1].body.x = 200.0;
+    s.fighters[0].body.x = 412.0;
+    s.fighters[1].body.x = 800.0;
     let mut third = s.shots[0];
     third.id = 99;
     third.key = Some(999);
     third.kind = ShotKind::Bolt {
-        x: 10.0,
-        y: 500.0,
+        x: 40.0,
+        y: 2000.0,
         vx: 0.0,
     };
     s.shots.push(third);

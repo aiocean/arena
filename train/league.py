@@ -1,9 +1,9 @@
 """Who the learner fights: its latest self, its past selves, the brain, the first mind and the scripted fighters.
-Snapshots are handed to the envs as weights ids (`VecEnv.set_weights`)."""
+Snapshots are handed to the envs as ONNX models under an id (`VecEnv.set_model`)."""
 
 import numpy as np
 
-from net import to_bin
+from net import to_onnx
 
 # opponent shares: latest self, a past self, the brain, the first mind, the scripted pair
 MIX = {"latest": 0.35, "past": 0.25, "brain": 0.15, "first": 0.10, "scripted": 0.15}
@@ -14,7 +14,7 @@ class League:
     def __init__(self, env, rng, limit=90.0, seed=1_000_000, thunder=0.5):
         """`thunder`: the share of fights in which the learner plays Thunder (corner 0); Frost the rest."""
         self.env, self.rng, self.limit, self.thunder = env, rng, limit, thunder
-        self.snapshots = []  # weights ids, oldest first
+        self.snapshots = []  # model ids, oldest first
         self.next_seed = seed  # training fights never use the ladder's seeds (1-150)
         self.kinds = list(MIX)
         self.p = np.array([MIX[k] for k in self.kinds])
@@ -22,7 +22,7 @@ class League:
     def snapshot(self, policy):
         """Freeze the policy as it is now: the latest self from here on."""
         wid = len(self.snapshots)
-        self.env.set_weights(wid, to_bin(policy))
+        self.env.set_model(wid, to_onnx(policy))
         self.snapshots.append(wid)
 
     def reset(self, i):

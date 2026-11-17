@@ -82,13 +82,13 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 }
                 match o.kind {
                     ShotKind::Bolt { x: ox, y: oy, .. }
-                        if (ox - x).abs() < 6.0 && (oy - y).abs() < 8.0 =>
+                        if (ox - x).abs() < 24.0 && (oy - y).abs() < 32.0 =>
                     {
                         Some((*o, None))
                     }
                     ShotKind::Orb { .. } => {
                         let (bx, by) = orb_at(o);
-                        (libm::hypot(bx - x, by + y) < 10.0).then_some((*o, Some((bx, by))))
+                        (libm::hypot(bx - x, by + y) < 40.0).then_some((*o, Some((bx, by))))
                     }
                     _ => None,
                 }
@@ -107,7 +107,7 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
             let f = &state.fighters[foe];
             let reflects =
                 f.barrier > 0.0 && f.barrier_spell.and_then(spell).is_some_and(|b| b.reflect);
-            if reflects && overlaps(state, foe, x, y, 9.0) {
+            if reflects && overlaps(state, foe, x, y, 36.0) {
                 state.note(Note::Stopped {
                     by: s.owner,
                     spell: s.name,
@@ -116,7 +116,7 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 });
                 s.owner = foe;
                 vx = -vx;
-                x += js_sign(vx) * 10.0;
+                x += js_sign(vx) * 40.0;
                 s.kind = ShotKind::Bolt { x, y, vx };
                 turn_aside(state, foe, x, g - y);
                 // the effect cannot turn round in flight: the old bolt goes out and a new one flies back, facing its
@@ -131,7 +131,7 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 s.key = Some(play(state, sp.fx.unwrap_or(""), x, g - y, opts));
                 return true;
             }
-            if overlaps(state, foe, x, y, 3.0) {
+            if overlaps(state, foe, x, y, 12.0) {
                 if !s.pierce && blocks(state, foe, x - vx, s.power, blow, s.name) {
                     clash(state, x, g - y, &[]);
                 } else if hurt(state, foe, s.power, js_sign(vx), s.name, s.stacks) && sp.shock {
@@ -140,7 +140,7 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 end_shot(state, s);
                 return false;
             }
-            if x < state.left - 40.0 || x > state.right + 40.0 {
+            if x < state.left - 160.0 || x > state.right + 160.0 {
                 end_shot(state, s);
                 return false;
             }
@@ -188,8 +188,8 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 aimed = true;
                 x = crate::act::clamp(
                     state.fighters[foe].body.x,
-                    state.left + 6.0,
-                    state.right - 6.0,
+                    state.left + 24.0,
+                    state.right - 24.0,
                 );
                 air = if sp.grounded {
                     0.0
@@ -255,9 +255,9 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
                 let f = &state.fighters[foe];
                 let near = (f.body.x - x).abs() < sp.radius.unwrap_or(0.0) + fspec.half_width;
                 let level = if sp.grounded {
-                    f.body.air < 10.0
+                    f.body.air < 40.0
                 } else {
-                    (f.body.air - air).abs() < 22.0
+                    (f.body.air - air).abs() < 88.0
                 };
                 let dir = or_one(js_sign(f.body.x - x));
                 if near && level && hurt(state, foe, s.power, dir, s.name, s.stacks) {

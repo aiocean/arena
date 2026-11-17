@@ -13,10 +13,11 @@ license = "MIT"
 # The pixfx engine, pinned to one commit: a season's rules are this repo's tag plus this rev. Bump all of them
 # together, and the same rev in crates/pixfx-duel-py/Cargo.toml (its own workspace); site/pixfx.sh checks the
 # engine out at this rev for the site. To work on the engine beside the arena, see CONTRIBUTING.md.
-pixfx-draw = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
-pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
-pixfx-fighter = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
-pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "e6f64856377e90683530cf76548c860980bc2ce2" }
+pixfx-core = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
+pixfx-draw = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
+pixfx-effects = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
+pixfx-fighter = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
+pixfx-mind = { git = "https://github.com/aiocean/pixfx-rs", rev = "2b9db8ebcedafb0559a903d2c80a92c7860588d6" }
 # The same pins as the pixfx engine's Cargo.toml: the arena's wasm and the engine's are built with the same
 # wasm-bindgen, and serde shapes match on both sides.
 js-sys = "=0.3.107"
@@ -41,3 +42,18 @@ unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
 disallowed_methods = "deny"
+
+# The machinery that runs bots (wasmtime's compiler, tract's kernels) optimised in test builds too: a bot module of
+# the house AI's size compiles and plays in seconds instead of minutes.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+[profile.dev.package.wasmtime-internal-cranelift]
+opt-level = 3
+[profile.dev.package.regalloc2]
+opt-level = 3
+[profile.dev.package.tract-linalg]
+opt-level = 3
+[profile.dev.package.tract-core]
+opt-level = 3
+[profile.dev.package.tract-onnx]
+opt-level = 3

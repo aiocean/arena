@@ -9,11 +9,12 @@ here; this file only says what this crate holds. The design is
 The landing duel's rules: two cultivators, Thunder and Frost, their stats and skills (`data`), the seeded dice every
 roll comes from (`pixfx_mind::Rng`), the fighters (`fighter`), statuses (`status`), the rotating bar (`bar`), casts
 and blows (`act`), shots (`shot`), the round loop (`duel`), the seats that decide for each corner (`seat`: the brain from
-`pixfx-mind`, the trained policy (`PolicySeat`, weights in `weights/policy.bin`), `first_mind`, the yardstick a brain is
+`pixfx-mind`, a bot (`BotSeat` over a `Decider`: a module or an ONNX policy, run by `crates/arena-bot`), `first_mind`, the yardstick a brain is
 measured against, or the scripted fighters in `scripted`), each fighter's style (`style`), what a mind senses
-(`sense`), and the duel as the page reads it (`view`). For training and measuring the policy: the trainer's episodes
+(`sense`), and the duel as the page reads it (`view`). For training and measuring a bot: the trainer's episodes
 and rewards (`train`, driven from Python through `crates/pixfx-duel-py`) and the ladder (`ladder`, printed by
-`examples/ladder.rs`). A seed replays the same fight on every target. The page (`site/assets/duel.js`, a
+`crates/arena-bot/examples/ladder.rs`). `weights/policy.onnx` is the house AI; this crate never reads it (`arena-bot`
+does), so it does not depend on an ONNX runtime or a wasm host. A seed replays the same fight on every target. The page (`site/assets/duel.js`, a
 wrapper over the wasm `Duel`) plays the effect commands and feels the events the duel returns; it decides nothing.
 
 ## Belongs here
@@ -47,10 +48,11 @@ wrapper over the wasm `Duel`) plays the effect commands and feels the events the
   the tests once to rewrite them.
 - `tests/fixtures/js_numbers.json` pins the tables, dice and formulas (`tests/data.rs`), one key per number: a
   deliberate change to a number edits its key there too.
-- `weights/policy.bin` is the trained policy (`train/export.py` writes it). A new one must pass
-  `tests/policy_export.rs` (Rust's forward pass against PyTorch's, `tests/fixtures/policy_check.json`, written with it)
-  and re-pins `goldens/policy_fight.json` (delete it and run the tests), which `site/tests/policy.test.js` checks
-  the wasm build against.
+- `weights/policy.onnx` is the house AI (`train/export.py` writes it, with `tests/fixtures/policy_check.json`). A new
+  one must pass `crates/arena-bot/tests/house.rs` (tract's forward pass against PyTorch's) and re-pins
+  `crates/arena-bot/tests/goldens/house_fight.json` (the house module's fights; delete it and run
+  `cargo test -p arena-bot --all-features` after `site/build.sh`), which `site/tests/policy.test.js` checks the page
+  against. A rule change re-pins it too.
 - A school's pool (`data::SchoolData::pool`) is larger than a fight's 8: `bar::fight_pool` draws 8 of it and guarantees a skill of the signature kind, a payoff skill, and a skill that lays the status that payoff spends. A new skill goes in four places: `data::SPELLS` and the school's `pool` (and `evolves`, `PAYOFF`, `FRAMES.unsafe_on_block` where it applies), its key in `tests/fixtures/js_numbers.json`, a tooltip in `site/assets/duel-info.js` and a cell in `site/assets/skill-icons.js`. An effect a spell plays once through `cast` must be a one-shot effect: the duel never stops a looping one.
 - Styles are drawn on dice of their own (`style::draw`), never the rules' `Rng`: drawing them must not move a fight.
 - One extra or missing roll of the dice changes every fight after it.

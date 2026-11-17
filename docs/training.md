@@ -20,7 +20,7 @@ does is `docs/bot.md`.
 cd train
 uv sync
 uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # again after any change to the Rust rules
-uv run pytest                                                            # 12 tests
+uv run pytest
 ```
 
 ## The environment
@@ -29,15 +29,15 @@ uv run pytest                                                            # 12 te
 import pixfx_duel as pd
 
 env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker threads
-env.set_weights(0, open("policy.bin", "rb").read())   # a weights file an opponent can fight with, as id 0
-env.reset(i, seed, learner, style, foe_style, opponent, weights, limit)
+env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes or a bot module's
+env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
 obs, mask = env.observe()                  # float32[n, 354], bool[n, 30]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 ```
 
 - `reset` starts env `i` on a fresh round. `learner` is the corner and so the school (0 Thunder, 1 Frost); `style` and
   `foe_style` are 0 aggressive, 1 balanced, 2 defensive; `opponent` is `"brain"`, `"first"`, `"aggressive"`,
-  `"turtle"` or `"policy"` (then `weights` is a `set_weights` id, otherwise -1); `limit` is the round's time limit in
+  `"turtle"` or `"policy"` (then `model` is a `set_model` id, otherwise -1); `limit` is the round's time limit in
   seconds (the trainer uses 90).
 - One step runs the duel to the learner's next decision. `done` marks the round's end; `won` is 1, -1, or 0 for a cut
   round; `length` is the round's seconds.
@@ -82,7 +82,8 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--gamma`, `--lam` | 0.995, 0.95 | discount and GAE lambda |
 | `--clip`, `--epochs`, `--minibatches` | 0.2, 4, 8 | PPO clip, passes over each rollout, minibatches per pass |
 | `--device`, `--seed` | cpu, 1 | torch device; the seed for torch, numpy and the fight seeds |
-| `--init` | | start from a `.pt` checkpoint or a `.bin` weights file, with a fresh schedule |
+| `--init` | | start from a `.pt` checkpoint or an ONNX model (the house AI's: `../crates/pixfx-duel/weights/policy.onnx`), at its size, with a fresh schedule |
+| `--width`, `--hidden`, `--blocks` | 128, 256, 2 | the network's size for a run from scratch (any size a bot's fuel allows) |
 | `--resume` | | continue a run, optimiser and schedule included; the league restarts with only the current policy (past selves are not saved) |
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
@@ -93,54 +94,81 @@ pair 15%; schools and styles drawn per fight.
 
 **A lesson from the shipped AI.** Trained with each school half the time, it played Thunder worse: Thunder won 40% of
 its own mirror while the rules were even (the brain's mirror: 50.9%). Fine-tuned with `--thunder 0.9`, Thunder won
-49.1%. Watch the per-school win rates in the log; a school you lose with needs more of the training.
+49.1%. Retrained for the HD rules (`UNIT` 4), 600 updates from it at `--thunder 0.9` overshot (Thunder 60% of the
+mirror), and 200 more from there at 0.5 or 0.7 undershot (43-44%); 200 at `--thunder 0.8` shipped (48.9%). Watch the
+per-school win rates in the log; a school you lose with needs more of the training.
 
 ## Making it your own
 
 | You want | Change |
 |---|---|
 | A different style of play | the reward (`train.rs` today) |
-| Different sparring partners | `MIX` in `league.py`, or other weights files through `set_weights` |
-| Another algorithm | anything that drives `VecEnv` and ends in a weights file (`net.py`'s `to_bin`) |
-| A head start | `--init ../crates/pixfx-duel/weights/policy.bin` |
+| Different sparring partners | `MIX` in `league.py`, or other models (ONNX or modules) through `set_model` |
+| Another algorithm or model | anything that drives `VecEnv` and ends in an ONNX model (`net.py`'s `to_onnx`) |
+| A bigger network | `--width`, `--hidden`, `--blocks` |
+| A head start | `--init ../crates/pixfx-duel/weights/policy.onnx` |
 | More of one school | `--thunder` |
 
-The network's shape and its inputs are fixed for a season (`docs/bot.md`).
+The inputs and acts are fixed for a season (`docs/bot.md`); the model is yours.
 
 ## Export and check
 
 ```sh
-uv run python export.py runs/<run>/last.pt
+uv run python export.py runs/<run>/last.pt --out mine.onnx
 ```
 
-It writes the weights file to `crates/pixfx-duel/weights/policy.bin` (in your clone, the AI the page and
-the ladder use) and `tests/fixtures/policy_check.json`: 32 observations from real fights and PyTorch's logits for
-them. Then check that Rust computes the same:
+It writes the policy as an ONNX model and `crates/pixfx-duel/tests/fixtures/policy_check.json`: 32 observations from
+real fights and PyTorch's logits for them. Left without `--out`, it replaces the house AI
+(`crates/pixfx-duel/weights/policy.onnx`, in your clone the AI the page and the ladder play); then check that Rust
+computes what PyTorch did:
 
 ```sh
-cargo test -p pixfx-duel --test policy_export
+cargo test -p arena-bot --features onnx --test house
 ```
 
-`--out FILE` writes the weights elsewhere and `--check FILE` the check beside it. The Rust test checks the file built
-into the crate (`weights/policy.bin`), so pass both when you keep the shipped file: an `--out` alone leaves a check
-that no longer matches it, and the test fails.
+`--check FILE` writes the check elsewhere: pass it with `--out` when you keep the house AI, or the test compares the
+house AI with your model's logits and fails.
+
+## Bring your own model (ONNX)
+
+Any model that maps the 354 inputs to the 30 acts' logits can be a bot, whatever its size or shape, trained with
+any library. Export it to ONNX: input float32 `[1, 354]`, output float32 `[1, 30]` (opset 17 with PyTorch's legacy
+exporter is what tract reads best). `export.py` does it for the trainer's network; for your own model:
+
+```python
+torch.onnx.export(model, (torch.zeros(1, 354),), "mine.onnx", opset_version=17, dynamo=False)
+```
+
+Build it into a bot module, then run the submission checks on it:
+
+```sh
+cargo run -p arena-bot --example onnx -- mine.onnx mine.wasm
+cargo run --release -p arena-bot --features host --example check -- mine.wasm
+```
+
+The module (`bots/onnx`) runs the model with tract and samples the act as the shipped bot does (a softmax over the
+legal acts with the arena's draw). To pick otherwise, keep memory between decisions or run something that is not
+ONNX, change `bots/onnx/src/lib.rs` or write your own module (`docs/bot.md`, "The bot module"). The check prints the
+fuel the module uses a decision; the budget is 20M (the house AI: about 3M).
+
+To fight your model in training, hand its ONNX bytes (or its module's) to `set_model`.
 
 ## Measure it
 
 ```sh
-cargo run --release -p pixfx-duel --example ladder -- --seeds 150 --telemetry [--weights FILE]
+cargo run --release -p arena-bot --features host,onnx --example ladder -- --seeds 150 --telemetry [--onnx FILE | --bot FILE.wasm]
 ```
 
 The ladder plays seeds 1-150, each both ways (as Thunder, then as Frost) for 3 rounds, rounds cut at 120 s. The
-policy plays the balanced style against the brain, the first mind and the scripts; only the mirror draws styles. A cut
+bot (the house AI unless `--onnx` or `--bot` names another) plays the balanced style against the brain, the first mind and the scripts; only the mirror draws styles. A cut
 ends that fight and shows in the `cut` column; win rates count finished rounds. It prints:
 
 | Match | The shipped AI | Bar |
 |---|---|---|
-| vs the brain | 95.9% | at least 75%, 65% each school |
-| vs the first mind | 95.4% | at least 80% |
-| vs the aggressive and turtle scripts | 91.1%, 100% | |
-| its own mirror, Thunder's share | 49.1% | 45-55% |
+| vs the brain | 92.0% (Thunder 91.1%, Frost 92.9%) | at least 75%, 65% each school |
+| vs the first mind | 90.4% | at least 80% |
+| vs the aggressive and turtle scripts | 85.2%, 99.6% | |
+| its own mirror, Thunder's share | 48.9% | 45-55% |
 
 `--telemetry` adds what each school's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
@@ -148,6 +176,6 @@ final blows.
 ## Watch it
 
 Build the site and open the watch page (`site/build.sh --serve`, then http://127.0.0.1:8771/watch.html): choose your
-file for one corner, the shipped bot or another file for the other, and a seed. The same two files and seed play the
-same fight anywhere. To make it the bot the home page plays, put it in `crates/pixfx-duel/weights/` and name it in
-`HOUSE` (`site/assets/arena.js`).
+module for one corner, the house bot or another module for the other, and a seed. The same two modules and seed play
+the same fight anywhere. To make your model the bot the home page plays, export it over the house AI
+(`crates/pixfx-duel/weights/policy.onnx`) and build the site: `site/embed.sh` builds the house module from it.

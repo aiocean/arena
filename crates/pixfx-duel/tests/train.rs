@@ -139,12 +139,9 @@ fn shaping_pays_for_damage() {
 }
 
 #[test]
-fn a_policy_opponent_plays_from_its_weights() {
-    let net = pixfx_duel::seat::shipped();
-    assert!(net.is_ok(), "weights load");
-    let Ok(net) = net else { return };
+fn a_bot_opponent_plays_its_answers() {
     let mut rng = Rng::new(5);
-    let mut env = Env::new(cfg(9, 1, Opponent::Policy(net)));
+    let mut env = Env::new(cfg(9, 1, Opponent::Bot(common::pick())));
     let steps = play(&mut env, 0.0, |e| random_legal(e, &mut rng));
     assert!(steps.last().is_some_and(|s| s.done));
 }

@@ -1,13 +1,15 @@
 //! `pixfx-duel` for JS: the arena duel's rules ([`Duel`]) and the tables the page reads. It translates only: every
 //! rule is the crate's.
 
+use crate::bot::Corner;
 use crate::js::{parse, to_js};
-use pixfx_duel::data::{Blow, DECOR, RAGE, Rarity, STALE, School, Stats, TRAITS, spells, stats};
+use pixfx_duel::data::{
+    Blow, DECOR, RAGE, Rarity, STALE, School, Stats, TRAITS, UNIT, spells, stats,
+};
 use pixfx_duel::duel::{self as d, DuelConfig};
 use pixfx_duel::first_mind::FirstMind;
-use pixfx_duel::seat::{Brain, MakeSeat, PolicySeat};
+use pixfx_duel::seat::{BotSeat, Brain, MakeSeat, SharedDecider};
 use pixfx_duel::status::damage;
-use pixfx_mind::policy::Net;
 use serde::ser::{SerializeMap, Serializer};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -26,8 +28,7 @@ struct Config {
     effects: Vec<String>,
 }
 
-/// Who sits in a corner: the trained policy (in the style the fight drew), the utility brain, or the duel's first
-/// mind.
+/// Who sits in a corner: its bot module (in the style the fight drew), the utility brain, or the duel's first mind.
 #[derive(Clone, Copy, Deserialize)]
 #[serde(rename_all = "lowercase")]
 enum SeatKind {
@@ -37,36 +38,19 @@ enum SeatKind {
 }
 
 impl SeatKind {
-    fn make(self, policy: Option<&Policy>) -> Result<MakeSeat, JsError> {
+    fn make(self, bot: Option<&SharedDecider>) -> Result<MakeSeat, JsError> {
         Ok(match self {
-            SeatKind::Policy => {
-                let Some(p) = policy else {
+            SeatKind::Policy => match bot {
+                Some(decider) => BotSeat::make(Rc::clone(decider), None),
+                None => {
                     return Err(JsError::new(
-                        "Duel: a \"policy\" seat needs a trained policy for its corner: Duel.withPolicies(config, seats, left, right)",
+                        "Duel: a \"policy\" seat needs a bot module for its corner: Duel.withCorners(config, seats, left, right)",
                     ));
-                };
-                PolicySeat::make(Rc::clone(&p.net))
-            }
+                }
+            },
             SeatKind::Brain => Brain::make(),
             SeatKind::First => FirstMind::make(),
         })
-    }
-}
-
-/// A trained policy, read from the bytes of a weights file (`crates/pixfx-duel/weights/*.bin`), which the page fetches
-/// beside the wasm instead of carrying it inside. Read once, shared by every duel and every corner it seats.
-#[wasm_bindgen]
-pub struct Policy {
-    net: Rc<Net>,
-}
-
-#[wasm_bindgen]
-impl Policy {
-    /// The policy in `bytes` (a `Uint8Array` of a weights file); throws when they are not a policy of this duel's shape.
-    #[wasm_bindgen(constructor)]
-    pub fn new(bytes: &[u8]) -> Result<Policy, JsError> {
-        let net = Net::load(bytes).map_err(|e| JsError::new(&e.to_string()))?;
-        Ok(Policy { net: Rc::new(net) })
     }
 }
 
@@ -77,17 +61,17 @@ pub struct Duel {
 }
 
 impl Duel {
-    /// The duel `config` says, its corners seated by `seats`, or by each corner's policy when given and the brain when
+    /// The duel `config` says, its corners seated by `seats`, or by each corner's mind when given and the brain when
     /// not.
     fn seated(
         config: &JsValue,
         seats: &JsValue,
-        policies: Option<[&Policy; 2]>,
+        bots: Option<[&SharedDecider; 2]>,
     ) -> Result<Duel, JsError> {
         let c: Config = parse("config", config)?;
         let [a, b] = if !(seats.is_undefined() || seats.is_null()) {
             parse("seats", seats)?
-        } else if policies.is_some() {
+        } else if bots.is_some() {
             [SeatKind::Policy, SeatKind::Policy]
         } else {
             [SeatKind::Brain, SeatKind::Brain]
@@ -103,10 +87,7 @@ impl Duel {
         Ok(Duel {
             inner: d::Duel::new(
                 config,
-                [
-                    a.make(policies.map(|[l, _]| l))?,
-                    b.make(policies.map(|[_, r]| r))?,
-                ],
+                [a.make(bots.map(|[l, _]| l))?, b.make(bots.map(|[_, r]| r))?],
             ),
         })
     }
@@ -115,8 +96,8 @@ impl Duel {
 #[wasm_bindgen]
 impl Duel {
     /// A duel fought where `config` says (`{seed, left, right, ground, sky, effects}`), its corners seated by `seats`
-    /// (`["brain" | "first", ...]`, the brain when left out), its first round begun. A duel with the trained policy is
-    /// `Duel.withPolicies`.
+    /// (`["brain" | "first", ...]`, the brain when left out), its first round begun. A duel with bot modules is
+    /// `Duel.withCorners`.
     #[wasm_bindgen(constructor)]
     pub fn new(
         #[wasm_bindgen(
@@ -131,11 +112,11 @@ impl Duel {
         Duel::seated(config, seats, None)
     }
 
-    /// As `new Duel`, with a trained policy for each corner, `left` and `right` (the same one twice for a mirror):
-    /// `seats` are `["policy" | "brain" | "first", ...]`, each corner's policy when left out. A corner seated by the
-    /// brain or the first mind ignores its policy.
-    #[wasm_bindgen(js_name = withPolicies)]
-    pub fn with_policies(
+    /// As `new Duel`, with a bot module for each corner, `left` and `right` (`Corner`; a mirror takes two, as an
+    /// instance remembers): `seats` are `["policy" | "brain" | "first", ...]`, each corner's bot when left out. A
+    /// corner seated by the brain or the first mind ignores its bot.
+    #[wasm_bindgen(js_name = withCorners)]
+    pub fn with_corners(
         #[wasm_bindgen(
             unchecked_param_type = "{ seed: number, left: number, right: number, ground: number, sky: number, effects: string[] }"
         )]
@@ -144,10 +125,10 @@ impl Duel {
             unchecked_param_type = "[\"policy\" | \"brain\" | \"first\", \"policy\" | \"brain\" | \"first\"] | undefined"
         )]
         seats: &JsValue,
-        left: &Policy,
-        right: &Policy,
+        left: &Corner,
+        right: &Corner,
     ) -> Result<Duel, JsError> {
-        Duel::seated(config, seats, Some([left, right]))
+        Duel::seated(config, seats, Some([&left.bot, &right.bot]))
     }
 
     /// Advance by `dt` seconds: the effect commands and events of this step.
@@ -205,7 +186,7 @@ pub fn duel_traits() -> Result<JsValue, JsError> {
 pub fn duel_constants() -> Result<JsValue, JsError> {
     let [lamp, night] = DECOR;
     to_js(
-        &serde_json::json!({ "RAGE": RAGE, "STALE": STALE, "DECOR": { "lamp": lamp, "night": night }, "TIERS": Rarity::ALL }),
+        &serde_json::json!({ "RAGE": RAGE, "STALE": STALE, "DECOR": { "lamp": lamp, "night": night }, "TIERS": Rarity::ALL, "UNIT": UNIT }),
     )
 }
 

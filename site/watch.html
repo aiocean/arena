@@ -5,15 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
   <title>Watch two bots · Arena</title>
-  <meta name="description" content="Load two bots' weights files and a seed, and watch them fight. The same files and seed give the same fight on every machine.">
+  <meta name="description" content="Load two bots (bot modules) and a seed, and watch them fight. The same files and seed give the same fight on every machine.">
   <link rel="stylesheet" href="assets/site.css">
   <link rel="stylesheet" href="assets/arena.css">
 </head>
 <body class="landing arena" data-page="watch">
+  <section class="hero arena-hero" aria-labelledby="watch-title">
+    <h1 id="watch-title" class="sr-only">Watch two bots</h1>
+    <canvas id="scene" aria-label="The duel between the two bots chosen below."></canvas>
+    <div class="loader" role="status" aria-live="polite">
+      <div class="loader-clash" aria-hidden="true"><span class="thunder-orb"></span><span class="spark"></span><span class="frost-orb"></span></div>
+      <p class="loader-text">Loading the arena</p>
+      <div class="loader-bar" aria-hidden="true"><span></span></div>
+    </div>
+  </section>
+
   <header class="topbar">
-    <a class="brand" href="./">arena</a>
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
       <a href="watch.html" aria-current="page">Watch</a>
       <a href="docs/rules.html">Rules</a>
@@ -23,22 +33,35 @@
   </header>
 
   <main>
-    <section class="hero arena-hero" aria-labelledby="watch-title">
-      <h1 id="watch-title" class="sr-only">Watch two bots</h1>
-      <canvas id="scene" aria-label="The duel between the two bots chosen below."></canvas>
-    </section>
-
-    <section class="section watch">
-      <form id="match" class="match">
-        <label>Thunder (left) <input type="file" name="left" accept=".bin"></label>
-        <label>Frost (right) <input type="file" name="right" accept=".bin"></label>
-        <label>Seed <span class="seed"><input type="number" name="seed" min="1" step="1" required><button type="button" data-random>Random</button></span></label>
-        <button class="button" type="submit">Fight</button>
-      </form>
+    <section class="watch frame" aria-label="Choose the fight">
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <p class="muted">A corner with no file plays the house bot. A bot is the <code>.bin</code> weights file <code>train/export.py</code> writes (<a href="docs/bot.html#the-weights-file">the weights file</a>). Nothing leaves your browser: the fight runs here. The same two files and the same seed play the same fight on every machine, so a seed is a replay.</p>
+      <form id="match" class="match">
+        <label class="seat" data-school="thunder">
+          <span class="seat-side">Thunder · Vương Lâm · left</span>
+          <input type="file" name="left" accept=".wasm">
+          <span class="seat-file" data-empty="house bot">house bot</span>
+          <span class="seat-pick">Choose a .wasm</span>
+        </label>
+        <div class="vs" aria-hidden="true">VS</div>
+        <label class="seat" data-school="frost">
+          <span class="seat-side">Frost · Thất Thải Đạo Tôn · right</span>
+          <input type="file" name="right" accept=".wasm">
+          <span class="seat-file" data-empty="house bot">house bot</span>
+          <span class="seat-pick">Choose a .wasm</span>
+        </label>
+        <div class="seed-row">
+          <label for="seed">Seed</label>
+          <span class="seed"><input id="seed" type="number" name="seed" min="1" step="1" required><button type="button" data-random>Random</button></span>
+          <button class="button" type="submit">Fight</button>
+        </div>
+      </form>
+      <p class="muted note">A corner with no file plays the house bot. A bot is a <code>.wasm</code> bot module (<a href="docs/bot.html">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). Nothing leaves your browser: the fight runs here. The same two files and the same seed play the same fight on every machine, so a seed is a replay.</p>
     </section>
   </main>
+
+  <footer class="footer arena-footer">
+    <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel on the <a href="https://github.com/aiocean/pixfx-rs">pixfx</a> engine · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
+  </footer>
   <script type="module" src="assets/arena.js"></script>
 </body>
 </html>

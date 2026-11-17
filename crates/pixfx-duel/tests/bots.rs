@@ -1,7 +1,6 @@
-//! Contestants by name or weights file, a bout between two of them, and the entry bar.
+//! Contestants by name, a bout between two of them, and the entry bar.
 
-use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar};
-use pixfx_duel::seat::shipped;
+use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout};
 
 fn quick(seeds: u32) -> Match {
     Match {
@@ -27,7 +26,7 @@ fn every_built_in_name_seats_a_bot_and_nothing_else_does() {
 #[test]
 fn a_bout_plays_every_seed_both_ways_and_a_seed_replays_the_same()
 -> Result<(), Box<dyn std::error::Error>> {
-    let me = Bot::Policy(shipped()?);
+    let me = Bot::First;
     let m = quick(2);
     let r = bout(&me, &Bot::Brain, &m);
     // 2 seeds x 2 corners, each fight to 2 round wins of 3, some rounds cut
@@ -61,19 +60,4 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
     assert!(!bar(rounds([7, 7], [3, 3]), rounds([8, 8], [2, 2])).passed());
     // 75% against the first mind: out
     assert!(!bar(rounds([8, 8], [2, 2]), rounds([7, 8], [3, 2])).passed());
-}
-
-#[test]
-fn the_shipped_policy_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>> {
-    // 6 seeds: 2 are 12 rounds, too few to tell a 93% bot from the 80% bar (the full ladder is 150)
-    let bar = entry_bar(&shipped()?, &quick(6));
-    assert!(
-        bar.passed(),
-        "vs brain {:.3} (thunder {:.3}, frost {:.3}), vs first {:.3}",
-        bar.vs_brain.win_rate(),
-        bar.vs_brain.as_school(0),
-        bar.vs_brain.as_school(1),
-        bar.vs_first.win_rate()
-    );
-    Ok(())
 }

@@ -4,7 +4,9 @@
     uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0
 
 `--resume` continues a run where it stopped (its optimiser and its place in the schedule); `--init` starts a new run,
-with its own schedule, from another run's network (a `.pt` checkpoint, critic included, or a `.bin` weights file).
+with its own schedule, from another run's network (a `.pt` checkpoint, critic included, or an ONNX model such as the
+house AI's, `../crates/pixfx-duel/weights/policy.onnx`, at that model's size). The network's size is yours:
+`--width`, `--hidden`, `--blocks` (a bot may be any size within its fuel; the house AI is 128, 256, 2).
 
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end).
 """
@@ -21,7 +23,7 @@ from torch.distributions import Categorical
 
 import pixfx_duel as pd
 from league import League
-from net import Policy, hl_gauss, load_bin
+from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss
 
 
 def schedule(update, updates, lr, ent, shaping_until):
@@ -52,7 +54,10 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--thunder", type=float, default=0.5, help="share of fights in which the learner plays Thunder")
     ap.add_argument("--resume")
-    ap.add_argument("--init", help="start from this network (.pt or .bin) with a fresh schedule")
+    ap.add_argument("--init", help="start from this network (.pt or .onnx) with a fresh schedule")
+    ap.add_argument("--width", type=int, default=WIDTH)
+    ap.add_argument("--hidden", type=int, default=HIDDEN)
+    ap.add_argument("--blocks", type=int, default=BLOCKS)
     args = ap.parse_args()
 
     out = pathlib.Path(__file__).parent / "runs" / args.run
@@ -62,17 +67,26 @@ def main():
     dev = torch.device(args.device)
     n, T = args.envs, args.steps
 
-    policy = Policy(pd.OBS, pd.ACTIONS).to(dev)
+    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks)
+    if args.resume:
+        size = torch.load(args.resume, map_location="cpu", weights_only=True).get("size", size)
+    elif args.init and pathlib.Path(args.init).suffix == ".pt":
+        size = torch.load(args.init, map_location="cpu", weights_only=True).get("size", size)
+    elif args.init:
+        init = from_onnx(pathlib.Path(args.init).read_bytes(), pd.OBS, pd.ACTIONS)
+        size = dict(width=init.width, hidden=init.blocks[0].up.out_features, blocks=len(init.blocks))
+    policy = Policy(pd.OBS, pd.ACTIONS, **size).to(dev)
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
     start = 0
     env = pd.VecEnv(n, args.threads)
     league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, thunder=args.thunder)
-    if args.init:
+    # a resumed run takes its network from its checkpoint (long-run.sh passes the run's --init again on a resume)
+    if args.init and not args.resume:
         path = pathlib.Path(args.init)
         if path.suffix == ".pt":
             policy.load_state_dict(torch.load(path, map_location=dev, weights_only=True)["model"])
         else:
-            load_bin(policy, path.read_bytes())
+            policy.load_state_dict(init.state_dict())
     if args.resume:
         ck = torch.load(args.resume, map_location=dev, weights_only=True)
         policy.load_state_dict(ck["model"])
@@ -187,7 +201,7 @@ def main():
             log.flush()
         if (update + 1) % 25 == 0 or update + 1 == args.updates:
             torch.save(
-                {"model": policy.state_dict(), "optim": opt.state_dict(), "update": update + 1, "next_seed": league.next_seed},
+                {"model": policy.state_dict(), "optim": opt.state_dict(), "update": update + 1, "next_seed": league.next_seed, "size": size},
                 out / "last.pt",
             )
 

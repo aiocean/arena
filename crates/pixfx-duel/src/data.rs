@@ -2,6 +2,7 @@
 //! `tests/data.rs` pins each against `tests/fixtures/js_numbers.json`.
 
 use pixfx_draw::math::js_min;
+use pixfx_fighter::body::BodySpec;
 
 /// Effects the arena itself shows when they are in the registry: the lamps and the night.
 pub const DECOR: [&str; 2] = ["fire/brazier", "weather/fireflies"];
@@ -12,7 +13,7 @@ pub struct Fly {
     pub cost: f64,
 }
 pub const FLY: Fly = Fly {
-    top: 96.0,
+    top: 384.0,
     cost: 3.0,
 };
 
@@ -487,7 +488,40 @@ pub fn block_chance(power: f64) -> f64 {
     js_min(js_min(1.0, 0.5 * r), 0.5 * libm::sqrt(r))
 }
 
-pub const KNOCKBACK: f64 = 130.0;
+pub const KNOCKBACK: f64 = 520.0;
+
+/// The arena's pixels to the engine's: every length, speed and pull in these rules is four times the engine's site
+/// duel, so an HD fighter (a 256-pixel canvas, about 240 pixels tall) stands its full height. The minds still think in the engine's pixels
+/// (`sense`).
+pub const UNIT: f64 = 4.0;
+
+/// A fighter's body: the engine's site duel ([`BodySpec::default`]) in the arena's pixels; its times and shares as
+/// they are.
+pub fn body_spec() -> BodySpec {
+    let d = BodySpec::default();
+    BodySpec {
+        body: d.body * UNIT,
+        chest: d.chest * UNIT,
+        half_width: d.half_width * UNIT,
+        room: d.room * UNIT,
+        walk: d.walk * UNIT,
+        jump_speed: d.jump_speed * UNIT,
+        gravity: d.gravity * UNIT,
+        apex_speed: d.apex_speed * UNIT,
+        fly_max: d.fly_max * UNIT,
+        launch_speed: d.launch_speed * UNIT,
+        launch_per_damage: d.launch_per_damage * UNIT,
+        launch_pop: d.launch_pop * UNIT,
+        knockdown_bounce: d.knockdown_bounce * UNIT,
+        knockdown_roll_distance: d.knockdown_roll_distance * UNIT,
+        duck: d.duck * UNIT,
+        bounce: d.bounce * UNIT,
+        hard_landing: d.hard_landing * UNIT,
+        knockback: d.knockback * UNIT,
+        soft_landing: d.soft_landing * UNIT,
+        ..d
+    }
+}
 pub const ROUND_PAUSE: f64 = 3.2;
 pub const CAST_CIRCLE: &str = "arcane/rune-circle";
 /// How long a barrier flares after it turns a blow aside, in seconds.
@@ -775,7 +809,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.2,
         recover: 0.32,
         cooldown: 0.7,
-        range: Some(24.0),
+        range: Some(96.0),
         damage: Some(5.0),
         ..BASE
     },
@@ -789,7 +823,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.26,
         recover: 0.45,
         cooldown: 3.4,
-        distance: Some(72.0),
+        distance: Some(288.0),
         damage: Some(15.0),
         ..BASE
     },
@@ -805,7 +839,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.4,
         sigil: Some(0.4),
         impact: Some(0.08),
-        radius: Some(16.0),
+        radius: Some(64.0),
         damage: Some(22.0),
         notice: Some(0.0),
         shock: true,
@@ -821,7 +855,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.3,
         recover: 0.45,
         cooldown: 2.2,
-        range: Some(40.0),
+        range: Some(160.0),
         damage: Some(18.0),
         def_down: Some(3.0),
         ..BASE
@@ -839,8 +873,8 @@ static SPELLS: [Spell; 99] = [
         life: Some(2.6),
         height: Some(0.0),
         pull: Some(0.0),
-        reach: Some(18.0),
-        under: Some(18.0),
+        reach: Some(72.0),
+        under: Some(72.0),
         tick: Some(5.0),
         damage: Some(8.0),
         chill: true,
@@ -858,7 +892,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         sigil: Some(0.35),
         impact: Some(0.08),
-        radius: Some(16.0),
+        radius: Some(64.0),
         damage: Some(25.0),
         notice: Some(0.0),
         freeze: Some(0.6),
@@ -874,9 +908,9 @@ static SPELLS: [Spell; 99] = [
         windup: 0.22,
         recover: 0.5,
         cooldown: 1.6,
-        range: Some(26.0),
+        range: Some(104.0),
         damage: Some(11.0),
-        speed: Some(260.0),
+        speed: Some(1040.0),
         slam_fx: Some("explosions/dirt-explosion"),
         ..BASE
     },
@@ -889,7 +923,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.28,
         recover: 0.22,
         cooldown: 1.3,
-        speed: Some(230.0),
+        speed: Some(920.0),
         damage: Some(13.0),
         shock: true,
         ..BASE
@@ -906,10 +940,10 @@ static SPELLS: [Spell; 99] = [
         windup: 0.6,
         recover: 0.3,
         cooldown: 4.5,
-        speed: Some(26.0),
+        speed: Some(104.0),
         life: Some(5.5),
         damage: Some(14.0),
-        radius: Some(10.0),
+        radius: Some(40.0),
         ..BASE
     },
     // icicle-fall drops its icicle at 0.944 s and only starts to tremble, which is when a fighter notices it, at 0.3 s
@@ -924,7 +958,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.28,
         cooldown: 2.2,
         impact: Some(0.944),
-        radius: Some(16.0),
+        radius: Some(64.0),
         damage: Some(28.0),
         notice: Some(0.3),
         grounded: true,
@@ -943,11 +977,11 @@ static SPELLS: [Spell; 99] = [
         recover: 0.3,
         cooldown: 2.4,
         impact: Some(1.02),
-        radius: Some(18.0),
+        radius: Some(72.0),
         damage: Some(25.0),
         notice: Some(0.15),
-        pull: Some(60.0),
-        reach: Some(52.0),
+        pull: Some(240.0),
+        reach: Some(208.0),
         pull_until: Some(0.8),
         ..BASE
     },
@@ -962,7 +996,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.32,
         recover: 0.5,
         cooldown: 2.8,
-        range: Some(38.0),
+        range: Some(152.0),
         damage: Some(20.0),
         shock: true,
         ..BASE
@@ -979,7 +1013,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.8,
         cooldown: 0.0,
         impact: Some(0.08),
-        radius: Some(12.0),
+        radius: Some(48.0),
         damage: Some(14.0),
         notice: Some(0.0),
         strikes: Some(3.0),
@@ -1000,11 +1034,11 @@ static SPELLS: [Spell; 99] = [
         recover: 0.8,
         cooldown: 0.0,
         impact: Some(1.02),
-        radius: Some(26.0),
+        radius: Some(104.0),
         damage: Some(31.0),
         notice: Some(0.1),
-        pull: Some(70.0),
-        reach: Some(110.0),
+        pull: Some(280.0),
+        reach: Some(440.0),
         pull_until: Some(0.9),
         seals: true,
         freeze: Some(FREEZE * 1.4),
@@ -1022,10 +1056,10 @@ static SPELLS: [Spell; 99] = [
         recover: 0.45,
         cooldown: 11.0,
         life: Some(3.2),
-        height: Some(62.0),
-        pull: Some(34.0),
-        reach: Some(90.0),
-        under: Some(22.0),
+        height: Some(248.0),
+        pull: Some(136.0),
+        reach: Some(360.0),
+        under: Some(88.0),
         tick: Some(4.0),
         damage: Some(14.0),
         ..BASE
@@ -1088,7 +1122,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.06,
         recover: 0.12,
         cooldown: 1.8,
-        distance: Some(56.0),
+        distance: Some(224.0),
         ..BASE
     },
     // Thunder: a quick spark off the fingertips, light but fast
@@ -1101,7 +1135,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.18,
         recover: 0.18,
         cooldown: 0.9,
-        speed: Some(300.0),
+        speed: Some(1200.0),
         damage: Some(8.0),
         shock: true,
         ..BASE
@@ -1116,7 +1150,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.36,
         recover: 0.5,
         cooldown: 3.0,
-        range: Some(30.0),
+        range: Some(120.0),
         damage: Some(24.0),
         ..BASE
     },
@@ -1132,7 +1166,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.6,
         sigil: Some(0.3),
         impact: Some(0.05),
-        radius: Some(14.0),
+        radius: Some(56.0),
         damage: Some(18.0),
         notice: Some(0.0),
         grounded: true,
@@ -1160,7 +1194,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.18,
         recover: 0.18,
         cooldown: 0.9,
-        speed: Some(300.0),
+        speed: Some(1200.0),
         damage: Some(7.0),
         chill: true,
         ..BASE
@@ -1176,7 +1210,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.3,
         recover: 0.35,
         cooldown: 2.4,
-        range: Some(56.0),
+        range: Some(224.0),
         damage: Some(14.0),
         chill: true,
         ..BASE
@@ -1194,8 +1228,8 @@ static SPELLS: [Spell; 99] = [
         life: Some(1.2),
         height: Some(0.0),
         pull: Some(0.0),
-        reach: Some(22.0),
-        under: Some(22.0),
+        reach: Some(88.0),
+        under: Some(88.0),
         tick: Some(3.0),
         damage: Some(10.0),
         chill: true,
@@ -1212,7 +1246,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.24,
         cooldown: 1.5,
         damage: Some(12.0),
-        speed: Some(210.0),
+        speed: Some(840.0),
         burn: true,
         ..BASE
     },
@@ -1228,10 +1262,10 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.6,
         damage: Some(20.0),
         impact: Some(0.35),
-        radius: Some(14.0),
+        radius: Some(56.0),
         notice: Some(0.1),
-        pull: Some(50.0),
-        reach: Some(46.0),
+        pull: Some(200.0),
+        reach: Some(184.0),
         pull_until: Some(0.3),
         ..BASE
     },
@@ -1248,7 +1282,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(26.0),
         sigil: Some(0.35),
         impact: Some(0.05),
-        radius: Some(18.0),
+        radius: Some(72.0),
         notice: Some(0.0),
         def_down: Some(3.0),
         grounded: true,
@@ -1265,7 +1299,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.3,
         cooldown: 3.5,
         damage: Some(21.0),
-        speed: Some(380.0),
+        speed: Some(1520.0),
         ..BASE
     },
     // Thunder: Ji Thunder: A heavy bolt of the Ji Realm that shocks.
@@ -1279,7 +1313,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.25,
         cooldown: 2.0,
         damage: Some(15.0),
-        speed: Some(260.0),
+        speed: Some(1040.0),
         shock: true,
         ..BASE
     },
@@ -1296,7 +1330,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(34.0),
         sigil: Some(0.3),
         impact: Some(0.08),
-        radius: Some(20.0),
+        radius: Some(80.0),
         notice: Some(0.0),
         shock: true,
         ..BASE
@@ -1311,7 +1345,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.5,
         recover: 0.55,
         cooldown: 5.0,
-        range: Some(40.0),
+        range: Some(160.0),
         damage: Some(28.0),
         ..BASE
     },
@@ -1325,7 +1359,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.3,
         recover: 0.5,
         cooldown: 3.8,
-        distance: Some(90.0),
+        distance: Some(360.0),
         damage: Some(22.0),
         ..BASE
     },
@@ -1342,10 +1376,10 @@ static SPELLS: [Spell; 99] = [
         cooldown: 9.0,
         damage: Some(12.0),
         life: Some(3.0),
-        height: Some(40.0),
+        height: Some(160.0),
         pull: Some(0.0),
-        reach: Some(40.0),
-        under: Some(26.0),
+        reach: Some(160.0),
+        under: Some(104.0),
         tick: Some(9.0),
         ..BASE
     },
@@ -1358,7 +1392,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.06,
         recover: 0.12,
         cooldown: 3.0,
-        distance: Some(92.0),
+        distance: Some(368.0),
         ..BASE
     },
     // Thunder: One Step Tread the Heaven: One stride that carries the caster through the foe, a long way, cutting it on the way.
@@ -1371,7 +1405,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.2,
         recover: 0.4,
         cooldown: 4.0,
-        distance: Some(120.0),
+        distance: Some(480.0),
         damage: Some(14.0),
         ..BASE
     },
@@ -1388,7 +1422,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(34.0),
         sigil: Some(0.4),
         impact: Some(0.05),
-        radius: Some(26.0),
+        radius: Some(104.0),
         notice: Some(0.0),
         grounded: true,
         ..BASE
@@ -1403,7 +1437,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.24,
         recover: 0.35,
         cooldown: 2.0,
-        range: Some(44.0),
+        range: Some(176.0),
         damage: Some(12.0),
         shock: true,
         ..BASE
@@ -1431,7 +1465,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.85,
         recover: 0.5,
         cooldown: 6.5,
-        range: Some(46.0),
+        range: Some(184.0),
         damage: Some(34.0),
         ..BASE
     },
@@ -1469,7 +1503,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.35,
         recover: 0.4,
         cooldown: 3.0,
-        range: Some(52.0),
+        range: Some(208.0),
         damage: Some(18.0),
         burn: true,
         ..BASE
@@ -1488,8 +1522,8 @@ static SPELLS: [Spell; 99] = [
         life: Some(2.0),
         height: Some(0.0),
         pull: Some(0.0),
-        reach: Some(30.0),
-        under: Some(30.0),
+        reach: Some(120.0),
+        under: Some(120.0),
         tick: Some(3.0),
         chill: true,
         ..BASE
@@ -1504,7 +1538,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.3,
         recover: 0.4,
         cooldown: 3.0,
-        range: Some(58.0),
+        range: Some(232.0),
         damage: Some(12.0),
         chill: true,
         ..BASE
@@ -1522,9 +1556,9 @@ static SPELLS: [Spell; 99] = [
         damage: Some(8.0),
         life: Some(3.2),
         height: Some(0.0),
-        pull: Some(12.0),
-        reach: Some(44.0),
-        under: Some(24.0),
+        pull: Some(48.0),
+        reach: Some(176.0),
+        under: Some(96.0),
         tick: Some(6.0),
         ..BASE
     },
@@ -1540,7 +1574,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.4,
         damage: Some(20.0),
         impact: Some(0.45),
-        radius: Some(18.0),
+        radius: Some(72.0),
         notice: Some(0.15),
         def_down: Some(5.0),
         ..BASE
@@ -1555,7 +1589,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.4,
         recover: 0.4,
         cooldown: 4.0,
-        range: Some(44.0),
+        range: Some(176.0),
         damage: Some(8.0),
         silence: Some(1.2),
         steal_rage: Some(1.0),
@@ -1572,7 +1606,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.25,
         cooldown: 3.0,
         damage: Some(6.0),
-        speed: Some(260.0),
+        speed: Some(1040.0),
         silence: Some(1.4),
         ..BASE
     },
@@ -1589,7 +1623,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(10.0),
         sigil: Some(0.35),
         impact: Some(0.08),
-        radius: Some(14.0),
+        radius: Some(56.0),
         notice: Some(0.0),
         freeze: Some(0.8),
         ..BASE
@@ -1606,9 +1640,9 @@ static SPELLS: [Spell; 99] = [
         cooldown: 5.0,
         damage: Some(26.0),
         impact: Some(0.9),
-        radius: Some(22.0),
+        radius: Some(88.0),
         notice: Some(0.1),
-        reach: Some(50.0),
+        reach: Some(200.0),
         grounded: true,
         seals: true,
         ..BASE
@@ -1625,7 +1659,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.6,
         damage: Some(24.0),
         impact: Some(0.5),
-        radius: Some(20.0),
+        radius: Some(80.0),
         notice: Some(0.15),
         def_down: Some(3.0),
         ..BASE
@@ -1642,7 +1676,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.6,
         damage: Some(28.0),
         impact: Some(0.5),
-        radius: Some(16.0),
+        radius: Some(64.0),
         notice: Some(0.15),
         freeze: Some(0.5),
         ..BASE
@@ -1685,7 +1719,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.4,
         recover: 0.4,
         cooldown: 3.6,
-        range: Some(52.0),
+        range: Some(208.0),
         damage: Some(10.0),
         silence: Some(1.6),
         ..BASE
@@ -1714,7 +1748,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 6.0,
         damage: Some(30.0),
         impact: Some(1.78),
-        radius: Some(24.0),
+        radius: Some(96.0),
         notice: Some(0.12),
         silence: Some(1.0),
         grounded: true,
@@ -1732,7 +1766,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 7.5,
         damage: Some(32.0),
         impact: Some(0.5),
-        radius: Some(30.0),
+        radius: Some(120.0),
         notice: Some(0.15),
         def_down: Some(4.0),
         ..BASE
@@ -1749,7 +1783,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.4,
         damage: Some(12.0),
         def_down: Some(3.0),
-        speed: Some(340.0),
+        speed: Some(1360.0),
         ..BASE
     },
     // Frost: Seven-Colored Dao Spear: A spear of seven-coloured light that carries the caster through the foe.
@@ -1762,7 +1796,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.28,
         recover: 0.45,
         cooldown: 3.6,
-        distance: Some(84.0),
+        distance: Some(336.0),
         damage: Some(17.0),
         ..BASE
     },
@@ -1779,7 +1813,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(22.0),
         sigil: Some(0.3),
         impact: Some(0.45),
-        radius: Some(22.0),
+        radius: Some(88.0),
         notice: Some(0.0),
         burn: true,
         ..BASE
@@ -1794,7 +1828,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.35,
         recover: 0.4,
         cooldown: 3.2,
-        range: Some(40.0),
+        range: Some(160.0),
         damage: Some(16.0),
         steal_rage: Some(1.0),
         ..BASE
@@ -1812,7 +1846,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(15.0),
         sigil: Some(0.3),
         impact: Some(0.08),
-        radius: Some(12.0),
+        radius: Some(48.0),
         notice: Some(0.0),
         strikes: Some(2.0),
         every: Some(0.5),
@@ -1830,7 +1864,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.25,
         cooldown: 3.2,
         damage: Some(6.0),
-        speed: Some(280.0),
+        speed: Some(1120.0),
         steal_rage: Some(1.0),
         ..BASE
     },
@@ -1844,7 +1878,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.3,
         recover: 0.4,
         cooldown: 2.4,
-        range: Some(50.0),
+        range: Some(200.0),
         damage: Some(14.0),
         chill: true,
         ..BASE
@@ -1862,7 +1896,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(16.0),
         sigil: Some(0.3),
         impact: Some(0.08),
-        radius: Some(14.0),
+        radius: Some(56.0),
         notice: Some(0.0),
         strikes: Some(2.0),
         every: Some(0.45),
@@ -1881,7 +1915,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.25,
         cooldown: 2.8,
         damage: Some(12.0),
-        speed: Some(300.0),
+        speed: Some(1200.0),
         silence: Some(1.0),
         ..BASE
     },
@@ -1895,7 +1929,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.32,
         recover: 0.4,
         cooldown: 3.0,
-        range: Some(56.0),
+        range: Some(224.0),
         damage: Some(13.0),
         silence: Some(0.8),
         shock: true,
@@ -1912,7 +1946,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.3,
         cooldown: 3.0,
         damage: Some(17.0),
-        speed: Some(300.0),
+        speed: Some(1200.0),
         ..BASE
     },
     // Frost: Time Restriction: A restriction of time round the foe: locks blinking while it runs, then closes and holds the foe. Only hits on the ground.
@@ -1927,9 +1961,9 @@ static SPELLS: [Spell; 99] = [
         cooldown: 5.5,
         damage: Some(20.0),
         impact: Some(1.2),
-        radius: Some(20.0),
+        radius: Some(80.0),
         notice: Some(0.1),
-        reach: Some(60.0),
+        reach: Some(240.0),
         freeze: Some(0.4),
         grounded: true,
         seals: true,
@@ -1949,8 +1983,8 @@ static SPELLS: [Spell; 99] = [
         life: Some(3.0),
         height: Some(0.0),
         pull: Some(0.0),
-        reach: Some(34.0),
-        under: Some(34.0),
+        reach: Some(136.0),
+        under: Some(136.0),
         tick: Some(5.0),
         burn: true,
         ..BASE
@@ -1968,9 +2002,9 @@ static SPELLS: [Spell; 99] = [
         damage: Some(8.0),
         life: Some(3.0),
         height: Some(0.0),
-        pull: Some(24.0),
-        reach: Some(80.0),
-        under: Some(22.0),
+        pull: Some(96.0),
+        reach: Some(320.0),
+        under: Some(88.0),
         tick: Some(5.0),
         ..BASE
     },
@@ -1986,10 +2020,10 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.5,
         damage: Some(18.0),
         impact: Some(0.7),
-        radius: Some(18.0),
+        radius: Some(72.0),
         notice: Some(0.1),
-        pull: Some(40.0),
-        reach: Some(60.0),
+        pull: Some(160.0),
+        reach: Some(240.0),
         silence: Some(1.0),
         pull_until: Some(0.6),
         ..BASE
@@ -2006,7 +2040,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.5,
         damage: Some(20.0),
         def_down: Some(4.0),
-        speed: Some(420.0),
+        speed: Some(1680.0),
         ..BASE
     },
     // Thunder: Finger of Death / 100 Fingers of Death: Three fingers of death fall one after another where the foe will be.
@@ -2022,7 +2056,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(9.0),
         sigil: Some(0.25),
         impact: Some(0.08),
-        radius: Some(11.0),
+        radius: Some(44.0),
         notice: Some(0.0),
         strikes: Some(3.0),
         every: Some(0.25),
@@ -2039,7 +2073,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.45,
         recover: 0.5,
         cooldown: 4.5,
-        range: Some(56.0),
+        range: Some(224.0),
         damage: Some(26.0),
         ..BASE
     },
@@ -2053,7 +2087,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.22,
         recover: 0.4,
         cooldown: 3.6,
-        distance: Some(80.0),
+        distance: Some(320.0),
         damage: Some(10.0),
         burn: true,
         ..BASE
@@ -2071,7 +2105,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(19.0),
         sigil: Some(0.35),
         impact: Some(0.4),
-        radius: Some(20.0),
+        radius: Some(80.0),
         notice: Some(0.0),
         burn: true,
         ..BASE
@@ -2086,7 +2120,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.4,
         recover: 0.5,
         cooldown: 4.0,
-        range: Some(46.0),
+        range: Some(184.0),
         damage: Some(22.0),
         def_down: Some(3.0),
         ..BASE
@@ -2100,7 +2134,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.06,
         recover: 0.1,
         cooldown: 1.4,
-        distance: Some(40.0),
+        distance: Some(160.0),
         ..BASE
     },
     // Thunder: Celestial Slaughter Art (All Seer spell): A bolt of slaughter intent, slow to gather and heavy.
@@ -2114,7 +2148,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.35,
         cooldown: 4.5,
         damage: Some(26.0),
-        speed: Some(360.0),
+        speed: Some(1440.0),
         ..BASE
     },
     // Frost: Ghost Summoning Technique: Ghosts rise round the foe and drag it in while they cut it.
@@ -2130,9 +2164,9 @@ static SPELLS: [Spell; 99] = [
         damage: Some(7.0),
         life: Some(2.6),
         height: Some(0.0),
-        pull: Some(8.0),
-        reach: Some(50.0),
-        under: Some(28.0),
+        pull: Some(32.0),
+        reach: Some(200.0),
+        under: Some(112.0),
         tick: Some(5.0),
         ..BASE
     },
@@ -2148,10 +2182,10 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.6,
         damage: Some(16.0),
         impact: Some(0.5),
-        radius: Some(16.0),
+        radius: Some(64.0),
         notice: Some(0.1),
-        pull: Some(45.0),
-        reach: Some(56.0),
+        pull: Some(180.0),
+        reach: Some(224.0),
         pull_until: Some(0.45),
         ..BASE
     },
@@ -2180,7 +2214,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(11.0),
         sigil: Some(0.25),
         impact: Some(0.08),
-        radius: Some(11.0),
+        radius: Some(44.0),
         notice: Some(0.0),
         strikes: Some(3.0),
         every: Some(0.35),
@@ -2223,7 +2257,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.0,
         damage: Some(20.0),
         impact: Some(0.5),
-        radius: Some(16.0),
+        radius: Some(64.0),
         notice: Some(0.1),
         def_down: Some(2.0),
         silence: Some(0.8),
@@ -2239,7 +2273,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.2,
         recover: 0.3,
         cooldown: 4.5,
-        distance: Some(40.0),
+        distance: Some(160.0),
         ..BASE
     },
     // Thunder: Eight Extremes Dao: Eight Dao paths fall on the foe one after another, four strikes that burn.
@@ -2255,7 +2289,7 @@ static SPELLS: [Spell; 99] = [
         damage: Some(11.0),
         sigil: Some(0.2),
         impact: Some(0.08),
-        radius: Some(11.0),
+        radius: Some(44.0),
         notice: Some(0.0),
         strikes: Some(4.0),
         every: Some(0.3),
@@ -2273,7 +2307,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.8,
         recover: 0.5,
         cooldown: 7.0,
-        range: Some(54.0),
+        range: Some(216.0),
         damage: Some(36.0),
         shock: true,
         ..BASE
@@ -2292,8 +2326,8 @@ static SPELLS: [Spell; 99] = [
         life: Some(3.0),
         height: Some(0.0),
         pull: Some(0.0),
-        reach: Some(34.0),
-        under: Some(34.0),
+        reach: Some(136.0),
+        under: Some(136.0),
         tick: Some(5.0),
         chill: true,
         ..BASE
@@ -2309,7 +2343,7 @@ static SPELLS: [Spell; 99] = [
         recover: 0.3,
         cooldown: 3.0,
         damage: Some(14.0),
-        speed: Some(170.0),
+        speed: Some(680.0),
         chill: true,
         ..BASE
     },
@@ -2323,7 +2357,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.45,
         recover: 0.4,
         cooldown: 4.5,
-        range: Some(46.0),
+        range: Some(184.0),
         damage: Some(12.0),
         steal_rage: Some(1.0),
         ..BASE
@@ -2340,7 +2374,7 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.5,
         damage: Some(14.0),
         impact: Some(0.3),
-        radius: Some(12.0),
+        radius: Some(48.0),
         notice: Some(0.0),
         strikes: Some(2.0),
         every: Some(0.4),
@@ -2358,7 +2392,7 @@ static SPELLS: [Spell; 99] = [
         windup: 0.1,
         recover: 0.2,
         cooldown: 2.5,
-        distance: Some(40.0),
+        distance: Some(160.0),
         ..BASE
     },
 ];
@@ -2812,8 +2846,8 @@ static FROST: SchoolData = SchoolData {
         (
             "weather/snow",
             Tint {
-                width: Some(48.0),
-                height: Some(72.0),
+                width: Some(192.0),
+                height: Some(288.0),
                 ..TINT
             },
         ),
@@ -2855,8 +2889,8 @@ pub fn tint(s: School, fx: &str) -> Option<&'static Tint> {
 pub fn orb_offset(t: f64) -> (f64, f64) {
     let a = (t / 4.0) * core::f64::consts::PI * 2.0;
     (
-        38.0 * libm::sin(a) + 9.0 * libm::sin(2.0 * a + 1.0),
-        -42.0 + 13.0 * libm::sin(2.0 * a + 0.4) + 6.0 * libm::sin(3.0 * a + 0.5),
+        152.0 * libm::sin(a) + 36.0 * libm::sin(2.0 * a + 1.0),
+        -168.0 + 52.0 * libm::sin(2.0 * a + 0.4) + 24.0 * libm::sin(3.0 * a + 0.5),
     )
 }
 

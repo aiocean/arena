@@ -12,11 +12,12 @@ uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --e
                                                   # a fine-tune: a new run from v1's network
 uv run python ppo.py --run v3 --init runs/v2/last.pt ... --thunder 0.9
                                                   # the learner plays Thunder in 90% of its fights (0.5 by default)
-uv run python export.py runs/v1/last.pt           # crates/pixfx-duel/weights/policy.bin + its Rust check
-cargo run --release -p pixfx-duel --example ladder -- --seeds 150
+uv run python export.py runs/v1/last.pt           # crates/pixfx-duel/weights/policy.onnx + its Rust check
+cargo run --release -p arena-bot --features host,onnx --example ladder -- --seeds 150
 ```
 
-- `net.py`: the network, mirroring `crates/pixfx-mind/src/policy/net.rs`, and its weights file; the HL-Gauss critic.
+- `net.py`: the network (any size: `--width`, `--hidden`, `--blocks`), its export to ONNX and back; the HL-Gauss
+  critic.
 - `league.py`: who the learner fights (latest self 35%, a past self 25%, brain 15%, first mind 10%, scripted 15%),
   and in which school. The shipped policy was fine-tuned with `--thunder 0.9`: at an even share it played Thunder
   worse and won only about 40% of the mirror as Thunder.

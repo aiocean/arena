@@ -48,13 +48,13 @@ export function docPage(name, markdown) {
   <meta name="description" content="${escape(lead)}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
   <link rel="stylesheet" href="../assets/site.css">
   <link rel="stylesheet" href="../assets/arena.css">
 </head>
 <body class="docs-page arena">
   <header class="topbar">
-    <a class="brand" href="../">arena</a>
+    <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
       <a href="../watch.html">Watch</a>
       <a href="rules.html"${name === "rules" ? ' aria-current="page"' : ""}>Rules</a>
@@ -64,13 +64,16 @@ export function docPage(name, markdown) {
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar">Menu</button>
   </header>
   <div class="docs-shell">
-    <nav class="sidebar" id="sidebar" aria-label="Docs"><h4>For bot authors</h4><ul>${menu}</ul></nav>
+    <nav class="sidebar" id="sidebar" aria-label="Docs"><h4>For bot authors</h4><ul>${menu}</ul><a class="sidebar-watch" href="../watch.html">Watch two bots</a></nav>
     <main class="doc">
 ${body}
 <nav class="pager" aria-label="Pages">${pager(DOCS[i - 1], "Previous")}${pager(DOCS[i + 1], "Next")}</nav>
     </main>
     <aside class="toc">${toc.length > 1 ? `<h4>On this page</h4><ul>${toc.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join("")}</ul>` : ""}</aside>
   </div>
+  <footer class="footer arena-footer">
+    <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel on the <a href="https://github.com/aiocean/pixfx-rs">pixfx</a> engine · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
+  </footer>
   <script type="module" src="../assets/menu.js"></script>
 </body>
 </html>

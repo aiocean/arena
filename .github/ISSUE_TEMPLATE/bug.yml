@@ -15,7 +15,7 @@ body:
     id: repro
     attributes:
       label: How to see it
-      description: The command, or the seed and the two bots (weights files or built-in names), and what you ran.
+      description: The command, or the seed and the two bots (bot modules or built-in names), and what you ran.
     validations:
       required: true
   - type: textarea

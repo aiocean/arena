@@ -1,8 +1,9 @@
-"""Write a policy as the weights file pixfx-duel ships, and the check its Rust test reads: 32 observations from
-real fights, their masks, and PyTorch's logits for them.
+"""Write a policy as the ONNX model the arena ships (`crates/pixfx-duel/weights/policy.onnx`: the house AI, the
+model `bots/onnx` builds into the house bot module) and the check its Rust test reads: 32 observations from real
+fights, their masks, and PyTorch's logits for them.
 
-    uv run python export.py runs/<run>/last.pt            # a checkpoint
-    uv run python export.py ../crates/pixfx-duel/weights/policy.bin   # re-check a weights file as it is
+    uv run python export.py runs/<run>/last.pt                               # a checkpoint
+    uv run python export.py ../crates/pixfx-duel/weights/policy.onnx         # re-check a model as it is
 """
 
 import argparse
@@ -13,10 +14,10 @@ import numpy as np
 import torch
 
 import pixfx_duel as pd
-from net import Policy, load_bin, to_bin
+from net import Policy, from_onnx, to_onnx
 
 HERE = pathlib.Path(__file__).parent
-WEIGHTS = HERE / "../crates/pixfx-duel/weights/policy.bin"
+HOUSE = HERE / "../crates/pixfx-duel/weights/policy.onnx"
 CHECK = HERE / "../crates/pixfx-duel/tests/fixtures/policy_check.json"
 
 
@@ -35,23 +36,25 @@ def observations(n=32, seed=424242):
 
 
 def load(path):
-    policy = Policy(pd.OBS, pd.ACTIONS)
+    """A checkpoint's policy (at the size it was trained) or an ONNX model's."""
     path = pathlib.Path(path)
     if path.suffix == ".pt":
-        policy.load_state_dict(torch.load(path, map_location="cpu", weights_only=True)["model"])
+        ck = torch.load(path, map_location="cpu", weights_only=True)
+        policy = Policy(pd.OBS, pd.ACTIONS, **ck.get("size", {}))
+        policy.load_state_dict(ck["model"])
     else:
-        load_bin(policy, path.read_bytes())
+        policy = from_onnx(path.read_bytes(), pd.OBS, pd.ACTIONS)
     return policy.eval()
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source")
-    ap.add_argument("--out", default=str(WEIGHTS))
+    ap.add_argument("--out", default=str(HOUSE), help="the ONNX model's path")
     ap.add_argument("--check", default=str(CHECK))
     args = ap.parse_args()
     policy = load(args.source)
-    data = to_bin(policy)
+    data = to_onnx(policy)
     pathlib.Path(args.out).write_bytes(data)
     obs, mask = observations()
     with torch.no_grad():

@@ -10,9 +10,8 @@ use crate::fighter::State;
 use crate::first_mind::FirstMind;
 use crate::out::{Note, Out, Stop};
 use crate::scripted::Scripted;
-use crate::seat::{Brain, MakeSeat, PolicySeat, Seat};
+use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider};
 use crate::style::Style;
-use pixfx_mind::policy::Net;
 use pixfx_mind::{Choice, Outcome, Posture};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -205,6 +204,9 @@ impl Seat for Counted {
     fn hold(&mut self, seconds: f64) {
         self.inner.hold(seconds);
     }
+    fn forfeit(&self) -> bool {
+        self.inner.forfeit()
+    }
 }
 
 /// A seat that writes its school's casts, what they cost, and the moves it was told were punished.
@@ -244,6 +246,9 @@ impl Seat for Watched {
     }
     fn hold(&mut self, seconds: f64) {
         self.inner.hold(seconds);
+    }
+    fn forfeit(&self) -> bool {
+        self.inner.forfeit()
     }
     fn posture(&self) -> Option<Posture> {
         self.inner.posture()
@@ -387,9 +392,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             let config = DuelConfig {
                 seed,
                 left: 0.0,
-                right: 220.0,
-                ground: 150.0,
-                sky: 96.0,
+                right: 880.0,
+                ground: 600.0,
+                sky: 384.0,
                 effects: m.effects.clone(),
             };
             let mut duel = Duel::new(config, seats);
@@ -441,16 +446,16 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
     r
 }
 
-/// A contestant: a seat the rules ship (the brain, the first mind, the two scripted fighters) or a trained network
-/// from a weights file.
+/// A contestant: a seat the rules ship (the brain, the first mind, the two scripted fighters) or a bot (a module,
+/// or an ONNX policy run natively: `arena-bot`).
 #[derive(Clone)]
 pub enum Bot {
     Brain,
     First,
     Aggressive,
     Turtle,
-    /// The network plays the style each fight draws for its fighter.
-    Policy(Rc<Net>),
+    /// A bot module or an ONNX policy (`arena-bot`): each call makes a fresh decider, which plays one match.
+    Decider(Rc<dyn Fn() -> SharedDecider>),
 }
 
 impl Bot {
@@ -475,18 +480,33 @@ impl Bot {
             Bot::First => FirstMind::make(),
             Bot::Aggressive => Scripted::aggressive(),
             Bot::Turtle => Scripted::turtle(),
-            Bot::Policy(net) => PolicySeat::make(Rc::clone(net)),
+            Bot::Decider(new) => BotSeat::make(new(), None),
+        }
+    }
+
+    /// The seat makers for one match, in `style` or the style each fight draws: a module's one instance plays
+    /// every fight of the match.
+    pub fn contestant(&self, style: Option<Style>) -> Box<dyn Fn() -> MakeSeat> {
+        match (self, style) {
+            (Bot::Decider(new), _) => {
+                let decider = new();
+                Box::new(move || BotSeat::make(Rc::clone(&decider), style))
+            }
+            (bot, _) => {
+                let bot = bot.clone();
+                Box::new(move || bot.maker())
+            }
         }
     }
 }
 
 /// Bot `a` against bot `b` over `m`, from `a`'s side: each seed fought with `a` as Thunder, then as Frost.
 pub fn bout(a: &Bot, b: &Bot, m: &Match) -> Record {
-    match_up(&|| a.maker(), &|| b.maker(), m)
+    match_up(&*a.contestant(None), &*b.contestant(None), m)
 }
 
 /// The tournament's entry bar (`docs/tournament.md`, "Checks on submission"), measured as the ladder does: the
-/// network in the balanced style against the brain and against the first mind.
+/// bot in the balanced style against the brain and against the first mind.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EntryBar {
     pub vs_brain: Record,
@@ -499,7 +519,7 @@ impl EntryBar {
     pub const BRAIN_EACH_SCHOOL: f64 = 0.65;
     pub const FIRST: f64 = 0.80;
 
-    /// Whether the network clears every part of the bar.
+    /// Whether the bot clears every part of the bar.
     pub fn passed(&self) -> bool {
         self.vs_brain.win_rate() >= Self::BRAIN
             && self.vs_brain.as_school(0) >= Self::BRAIN_EACH_SCHOOL
@@ -508,11 +528,11 @@ impl EntryBar {
     }
 }
 
-/// Measure `net` against the entry bar over `m`.
-pub fn entry_bar(net: &Rc<Net>, m: &Match) -> EntryBar {
-    let me = || PolicySeat::with_style(Rc::clone(net), Style::Balanced);
+/// Measure `bot` in the balanced style against the entry bar over `m`: two matches, so a module plays each with a
+/// fresh instance.
+pub fn entry_bar_of(bot: &Bot, m: &Match) -> EntryBar {
     EntryBar {
-        vs_brain: match_up(&me, &Brain::make, m),
-        vs_first: match_up(&me, &FirstMind::make, m),
+        vs_brain: match_up(&*bot.contestant(Some(Style::Balanced)), &Brain::make, m),
+        vs_first: match_up(&*bot.contestant(Some(Style::Balanced)), &FirstMind::make, m),
     }
 }

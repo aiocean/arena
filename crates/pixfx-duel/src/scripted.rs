@@ -5,7 +5,7 @@ use crate::bar::ready;
 use crate::data::TEMPERAMENT;
 use crate::fighter::State;
 use crate::seat::{MakeSeat, Seat};
-use crate::sense::{sense_of, skill_of};
+use crate::sense::{chosen, sense_of, skill_of};
 use pixfx_mind::{ActPhase, Choice, Delayed, Doing, Outcome, SkillKind};
 
 /// How a scripted fighter plays.
@@ -50,6 +50,25 @@ impl Scripted {
 
 impl Seat for Scripted {
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
+        self.decide(state, me, dt).map(chosen)
+    }
+
+    fn tell(&mut self, _outcome: &Outcome) {}
+
+    fn reset(&mut self) {
+        self.view.clear();
+        self.clock = 0.0;
+        self.hold = 0.0;
+    }
+
+    fn hold(&mut self, seconds: f64) {
+        self.hold = seconds;
+    }
+}
+
+impl Scripted {
+    /// What it does this tick, in the engine's pixels, as it sees the fight.
+    fn decide(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         let sense = sense_of(state, me);
         if dt > 0.0 {
             self.clock -= dt;
@@ -120,17 +139,5 @@ impl Seat for Scripted {
                 }
             }
         }
-    }
-
-    fn tell(&mut self, _outcome: &Outcome) {}
-
-    fn reset(&mut self) {
-        self.view.clear();
-        self.clock = 0.0;
-        self.hold = 0.0;
-    }
-
-    fn hold(&mut self, seconds: f64) {
-        self.hold = seconds;
     }
 }

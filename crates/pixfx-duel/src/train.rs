@@ -12,10 +12,10 @@ use crate::duel::{Duel, DuelConfig, TICK};
 use crate::fighter::State;
 use crate::first_mind::FirstMind;
 use crate::scripted::Scripted;
-use crate::seat::{Brain, MakeSeat, PolicySeat, Seat, policy_mind};
-use crate::sense::sense_of;
+use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider, policy_mind};
+use crate::sense::{chosen, sense_of};
 use crate::style::Style;
-use pixfx_mind::policy::{ACTIONS, Due, Net, OBS, PolicyMind};
+use pixfx_mind::policy::{ACTIONS, Due, OBS, PolicyMind};
 use pixfx_mind::{Choice, Outcome};
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -33,14 +33,26 @@ const HABITS: usize = 40;
 const SHARE: f64 = 0.4;
 
 /// Who the learner fights.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Opponent {
     Brain,
     First,
     Aggressive,
     Turtle,
-    /// A policy (the learner's past or present self) in `EnvConfig::foe_style`.
-    Policy(Rc<Net>),
+    /// A bot (the learner's past or present self as ONNX, or a module) in `EnvConfig::foe_style`.
+    Bot(SharedDecider),
+}
+
+impl std::fmt::Debug for Opponent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Opponent::Brain => "Brain",
+            Opponent::First => "First",
+            Opponent::Aggressive => "Aggressive",
+            Opponent::Turtle => "Turtle",
+            Opponent::Bot(_) => "Bot",
+        })
+    }
 }
 
 /// One episode: the fight's seed, the learner's corner (0 Thunder, 1 Frost) and style, the opponent and its style,
@@ -92,7 +104,7 @@ impl Seat for Learner {
         if let Some(due) = self.mind.due(&sense) {
             wire.ask = Some(due);
         }
-        now
+        now.map(chosen)
     }
 
     fn tell(&mut self, _outcome: &Outcome) {}
@@ -138,7 +150,7 @@ impl Env {
             Opponent::First => FirstMind::make(),
             Opponent::Aggressive => Scripted::aggressive(),
             Opponent::Turtle => Scripted::turtle(),
-            Opponent::Policy(net) => PolicySeat::with_style(net, cfg.foe_style),
+            Opponent::Bot(bot) => BotSeat::make(bot, Some(cfg.foe_style)),
         };
         let me = cfg.learner.min(1);
         let seats = if me == 0 {
@@ -149,9 +161,9 @@ impl Env {
         let config = DuelConfig {
             seed: cfg.seed,
             left: 0.0,
-            right: 220.0,
-            ground: 150.0,
-            sky: 96.0,
+            right: 880.0,
+            ground: 600.0,
+            sky: 384.0,
             effects: cfg.effects,
         };
         let blank = Due {

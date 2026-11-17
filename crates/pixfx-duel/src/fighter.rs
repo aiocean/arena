@@ -1,6 +1,6 @@
 //! A fighter of the duel and the duel's whole state.
 
-use crate::data::{Luck, Rarity, School, Stats, Trait, stats};
+use crate::data::{Luck, Rarity, School, Stats, Trait, body_spec, stats};
 use crate::out::{Note, Out};
 use crate::shot::Shot;
 use crate::style::Style;
@@ -130,8 +130,6 @@ pub struct Fighter {
     pub cool_full: Vec<(&'static str, f64)>,
     /// The way it walks: -1, 0 or 1.
     pub intent: f64,
-    /// The flame it stands in while it burns.
-    pub aura: Option<u32>,
     pub attune: f64,
     pub body: Body,
     /// How it fights, drawn once a fight (its seat reads it; the rules do not).
@@ -182,15 +180,14 @@ impl Fighter {
             cool: Vec::new(),
             cool_full: Vec::new(),
             intent: 0.0,
-            aura: None,
             attune: 0.0,
-            body: Body::new(0.0),
+            body: Body::with_spec(0.0, body_spec()),
             style: Style::Balanced,
         }
     }
 
-    /// The round's fresh state (`startRound`'s `Object.assign`): everything but the fighter's school, spells, body,
-    /// bar and aura, which the round start handles itself.
+    /// The round's fresh state (`startRound`'s `Object.assign`): everything but the fighter's school, spells, body
+    /// and bar, which the round start handles itself.
     pub fn refresh(&mut self) {
         let fresh = Fighter::new(self.index, self.school, Vec::new(), Vec::new());
         *self = Fighter {
@@ -198,7 +195,6 @@ impl Fighter {
             pool: core::mem::take(&mut self.pool),
             bar: core::mem::take(&mut self.bar),
             stats: self.stats,
-            aura: self.aura,
             attune: self.attune,
             body: self.body.clone(),
             style: self.style,

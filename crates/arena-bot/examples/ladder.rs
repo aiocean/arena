@@ -1,19 +1,22 @@
-//! The ladder: the trained policy against the brain, the first mind, the scripted fighters and itself, printed as
+//! The ladder: a bot (the house AI by default) against the brain, the first mind, the scripted fighters and itself, printed as
 //! the "Done when" table of `docs/specs/2026-11-15-duel-rules-in-rust-design.md`.
 //!
-//! `cargo run --release -p pixfx-duel --example ladder -- [--seeds 150] [--rounds 3] [--limit 120] [--weights FILE]
-//! [--telemetry]`
+//! `cargo run --release -p arena-bot --features host,onnx --example ladder -- [--seeds 150] [--rounds 3] [--limit 120]
+//! [--onnx FILE | --bot FILE.wasm] [--telemetry]`
+//!
+//! The bot is the house AI (`weights/policy.onnx`) unless `--onnx` names another ONNX policy or `--bot` a bot module.
 //!
 //! `--telemetry` adds, for each mirror, what each school's skills did, Thunder beside Frost.
 
+use arena_bot::host::Runner;
+use arena_bot::onnx::Onnx;
 use pixfx_duel::duel::{Duel, DuelConfig, TICK};
 use pixfx_duel::first_mind::FirstMind;
 use pixfx_duel::ladder::{Match, Record, SchoolLog, SkillLog, match_up};
 use pixfx_duel::scripted::Scripted;
-use pixfx_duel::seat::{Brain, MakeSeat, PolicySeat, policy_mind, shipped};
+use pixfx_duel::seat::{BotSeat, Brain, MakeSeat, SharedDecider, policy_mind};
 use pixfx_duel::sense::sense_of;
 use pixfx_duel::style::Style;
-use pixfx_mind::policy::Net;
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -32,9 +35,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rounds: u32 = arg("--rounds").map_or(Ok(3), |s| s.parse())?;
     let limit: f64 = arg("--limit").map_or(Ok(120.0), |s| s.parse())?;
     let telemetry = args.iter().any(|a| a == "--telemetry");
-    let net: Rc<Net> = match arg("--weights") {
-        Some(path) => Rc::new(Net::load(&std::fs::read(&path)?)?),
-        None => shipped()?,
+    let new: Rc<dyn Fn() -> SharedDecider> = match (arg("--bot"), arg("--onnx")) {
+        (Some(path), _) => {
+            let admitted =
+                arena_bot::admit(&std::fs::read(&path)?).map_err(|e| format!("{path}: {e}"))?;
+            let runner = Runner::new(&admitted).map_err(|e| format!("{path}: {}", e.0))?;
+            Rc::new(move || runner.decider())
+        }
+        (None, path) => {
+            let onnx = match path {
+                Some(path) => {
+                    Onnx::load(&std::fs::read(&path)?).map_err(|e| format!("{path}: {}", e.0))?
+                }
+                None => Onnx::house().map_err(|e| e.0)?,
+            };
+            Rc::new(move || onnx.decider())
+        }
     };
     let effects: Vec<String> = pixfx_effects::EFFECTS
         .iter()
@@ -46,11 +62,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         limit,
         effects: effects.clone(),
     };
+    // one instance a row (a match), as the tournament plays a module
     let styled = |s: Style| {
-        let n = net.clone();
-        move || PolicySeat::with_style(n.clone(), s)
+        let bot = new();
+        move || BotSeat::make(Rc::clone(&bot), Some(s))
     };
-    let drawn = || PolicySeat::make(net.clone());
+    let drawn = || {
+        let bot = new();
+        move || BotSeat::make(Rc::clone(&bot), None)
+    };
 
     println!("ladder: {seeds} seeds x both ways x {rounds} rounds, rounds cut at {limit} s\n");
     println!(
@@ -85,8 +105,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
         (
             "mirror, styles drawn (45-55%)",
-            Box::new(drawn),
-            Box::new(drawn),
+            Box::new(drawn()),
+            Box::new(drawn()),
             true,
         ),
         (
@@ -116,7 +136,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             print_telemetry(name, r);
         }
     }
-    decision_cost(&net, &effects);
+    decision_cost(&*new, &effects);
     Ok(())
 }
 
@@ -289,14 +309,14 @@ fn pct(a: f64, b: f64) -> f64 {
     if b == 0.0 { 0.0 } else { a / b * 100.0 }
 }
 
-/// The time one policy decision takes, natively, over 5,000 decisions of a real fight.
-fn decision_cost(net: &Rc<Net>, effects: &[String]) {
+/// The time one decision of the bot takes, natively, over 5,000 ticks of a real fight.
+fn decision_cost(new: &dyn Fn() -> SharedDecider, effects: &[String]) {
     let config = DuelConfig {
         seed: 1,
         left: 0.0,
-        right: 220.0,
-        ground: 150.0,
-        sky: 96.0,
+        right: 880.0,
+        ground: 600.0,
+        sky: 384.0,
         effects: effects.to_vec(),
     };
     let mut duel = Duel::new(config, [Brain::make(), Brain::make()]);
@@ -306,20 +326,17 @@ fn decision_cost(net: &Rc<Net>, effects: &[String]) {
         senses.push(sense_of(&duel.state, 0));
     }
     let mut mind = policy_mind(&duel.state, 0, Style::Balanced);
-    // the decisions a pass makes, counted apart from the timing
-    let mut counter = mind.clone();
-    let decided_per_pass = senses
-        .iter()
-        .filter(|s| {
-            let _ = counter.begin(s, TICK);
-            counter.due(s).is_some()
-        })
-        .count() as u32;
+    let bot = new();
+    let mut decided = 0_u32;
     let start = Instant::now();
-    let decided = decided_per_pass * 20;
     for _ in 0..20 {
         for s in &senses {
-            let _ = mind.think(net, s, TICK);
+            let _ = mind.begin(s, TICK);
+            if let Some(d) = mind.due(s) {
+                let act = bot.borrow_mut().decide(&d.obs, &d.legal, d.u).unwrap_or(0);
+                mind.queue(usize::try_from(act).unwrap_or(0));
+                decided += 1;
+            }
         }
         mind.reset();
     }

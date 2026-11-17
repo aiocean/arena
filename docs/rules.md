@@ -11,6 +11,8 @@ where they explain a mechanic. When a number here and `data.rs` disagree, `data.
 - A round ends when one fighter's hp reaches 0. A round that passes the time limit is **cut**. In training a cut
   round counts as lost for the learner, so stalling never pays. In the ladder a cut ends that fight: it shows in the
   `cut` column, and its unplayed rounds count neither way.
+- A bot module that traps or runs out of fuel **gives up the round** it happened in: the foe wins it at once, as by a
+  knockout (`docs/bot.md`, "The bot module"). Only a module's seat can give a round up.
 - The simulation runs at 60 ticks a second (`duel::TICK`). A seed decides every roll, so the same seed and the same
   two bots give the same fight on every machine.
 
@@ -25,7 +27,7 @@ where they explain a mechanic. When a number here and `data.rs` disagree, `data.
 | Ultimate (full rage) | tribulation: three thunderclaps fall one after another where the foe will be | prison: a great collapse drags the foe in from far off and freezes it |
 
 Frost's bigger stats are balanced by Thunder's faster, more varied kit. With both sides played by the same trained
-AI, Thunder wins 49.1% of the mirror over 150 seeds (the target is 45-55%).
+AI, Thunder wins 48.9% of the mirror over 150 seeds (the target is 45-55%).
 
 ## Skills
 
@@ -34,6 +36,10 @@ cooldown, a reach, a damage, and two timings:
 
 - **windup**: from the cast until the blow comes out;
 - **recover**: after the blow, before the fighter can act again.
+
+Reaches, speeds and places are in the arena's pixels, which are finer than the engine's: `UNIT` (4) of them make one
+of the engine's, so an HD fighter (a 256-pixel canvas, about 240 pixels tall) stands its full height. A bot is told every length in the
+engine's pixels (`docs/bot.md`), and an aim it gives is read in them too.
 
 Areas and blinks can be aimed (`docs/bot.md` gives where each aim lands; a swap blink, which trades places with the foe, ignores its aim). Everything else aims at the foe. A skill that spends life (`blood`) pays it when the cast begins, never down to the last point, and each point paid adds 3% to its power (`BLOOD_POWER`).
 

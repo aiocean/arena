@@ -1,0 +1,48 @@
+[package]
+name = "arena-bot"
+description = "A bot as a WebAssembly module (the arena-bot-1 ABI): admit one (validate, meter, hash) and, with `host`, run it in a duel seat"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sha2 = "0.11"
+wasm-encoder = { version = "0.263", features = ["wasmparser"] }
+wasmparser = "0.263"
+# the host: wasmtime, and the seat the duel asks
+pixfx-duel = { path = "../pixfx-duel", optional = true }
+pixfx-mind = { workspace = true, optional = true }
+wasmtime = { version = "40", optional = true, default-features = false, features = ["cranelift", "runtime", "std"] }
+# an ONNX policy run natively (the house AI in the ladder and the tests, a trainer's opponents)
+tract-onnx = { version = "0.22", optional = true, default-features = false }
+
+[dev-dependencies]
+# the check: the fixed observations, and the effects the ladder plays with
+pixfx-effects.workspace = true
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+wat = "1"
+
+[features]
+host = ["dep:pixfx-duel", "dep:pixfx-mind", "dep:wasmtime"]
+onnx = ["dep:pixfx-duel", "dep:pixfx-mind", "dep:tract-onnx"]
+# the trace example: every tick as JSON, the rules' serde shapes
+trace = ["onnx", "pixfx-duel/serde"]
+
+[[example]]
+name = "check"
+required-features = ["host"]
+
+[[example]]
+name = "ladder"
+required-features = ["host", "onnx"]
+
+[[example]]
+name = "match"
+required-features = ["host", "onnx"]
+
+[[example]]
+name = "trace"
+required-features = ["trace"]
+
+[lints]
+workspace = true

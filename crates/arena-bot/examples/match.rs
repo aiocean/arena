@@ -1,31 +1,37 @@
-//! Two bots fight a match and the first one's record is printed: each a weights file or a built-in seat
-//! (`brain`, `first`, `aggressive`, `turtle`, or `shipped` for the trained policy in `weights/policy.bin`).
-//! Every seed is fought both ways, so neither school's edge decides it. With `--bar`, the first bot (a weights file)
-//! is measured against the tournament's entry bar instead.
+//! Two bots fight a match and the first one's record is printed. A bot is a built-in seat (`brain`, `first`,
+//! `aggressive`, `turtle`), `house` for the house AI (`weights/policy.onnx`), an ONNX policy (`.onnx`, run natively)
+//! or a bot module (`.wasm`, run as the tournament runs it). Every seed is fought both ways, so neither school's edge
+//! decides it. With `--bar`, the first bot is measured against the tournament's entry bar instead.
 //!
-//! `cargo run --release -p pixfx-duel --example match -- A [B] [--seeds 150] [--from 1] [--rounds 3] [--limit 120] [--bar]`
+//! `cargo run --release -p arena-bot --features host,onnx --example match -- A [B] [--seeds 150] [--from 1]
+//! [--rounds 3] [--limit 120] [--bar]`
 
-use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar};
-use pixfx_duel::seat::shipped;
-use pixfx_mind::policy::Net;
+use arena_bot::host::Runner;
+use arena_bot::onnx::Onnx;
+use pixfx_duel::ladder::{Bot, EntryBar, Match, Record, bout, entry_bar_of};
 use std::rc::Rc;
 
 fn bot(spec: &str) -> Result<Bot, Box<dyn std::error::Error>> {
-    if spec == "shipped" {
-        return Ok(Bot::Policy(shipped()?));
-    }
     if let Some(b) = Bot::named(spec) {
         return Ok(b);
     }
+    if spec == "house" {
+        let onnx = Onnx::house().map_err(|e| e.0)?;
+        return Ok(Bot::Decider(Rc::new(move || onnx.decider())));
+    }
     let bytes = std::fs::read(spec).map_err(|e| {
         format!(
-            "{spec}: not a built-in bot ({}, shipped) nor a file: {e}",
+            "{spec}: not a built-in bot ({}, house) nor a file: {e}",
             Bot::NAMES.join(", ")
         )
     })?;
-    Ok(Bot::Policy(Rc::new(
-        Net::load(&bytes).map_err(|e| format!("{spec}: {e}"))?,
-    )))
+    if spec.ends_with(".wasm") {
+        let admitted = arena_bot::admit(&bytes).map_err(|e| format!("{spec}: {e}"))?;
+        let runner = Runner::new(&admitted).map_err(|e| format!("{spec}: {}", e.0))?;
+        return Ok(Bot::Decider(Rc::new(move || runner.decider())));
+    }
+    let onnx = Onnx::load(&bytes).map_err(|e| format!("{spec}: {}", e.0))?;
+    Ok(Bot::Decider(Rc::new(move || onnx.decider())))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,10 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     match (bots.as_slice(), bar) {
         ([a], true) => {
-            let Bot::Policy(net) = bot(a)? else {
-                return Err(format!("{a}: the entry bar measures a weights file").into());
-            };
-            let b = entry_bar(&net, &m);
+            let b = entry_bar_of(&bot(a)?, &m);
             print_record("vs brain", &b.vs_brain);
             print_record("vs first mind", &b.vs_first);
             println!(

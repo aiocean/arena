@@ -41,9 +41,9 @@ def test_same_seeds_same_rewards():
     assert np.array_equal(a, b)
 
 
-def test_a_policy_opponent_from_weights():
+def test_a_policy_opponent_from_an_onnx_model():
     env = pd.VecEnv(2, 1)
-    env.set_weights(3, open("../crates/pixfx-duel/weights/policy.bin", "rb").read())
+    env.set_model(3, pd.HOUSE)
     env.reset(0, 1, 0, 1, 1, "policy", 3, 90.0)
     env.reset(1, 2, 1, 1, 0, "policy", 3, 90.0)
     obs, _ = env.observe()
@@ -55,7 +55,7 @@ def test_a_policy_opponent_from_weights():
     assert done.all()
 
 
-def test_unknown_opponent_or_weights_is_an_error():
+def test_unknown_opponent_or_model_is_an_error():
     env = pd.VecEnv(1, 1)
     for args in [("nobody", -1), ("policy", 99)]:
         try:
@@ -63,3 +63,12 @@ def test_unknown_opponent_or_weights_is_an_error():
         except ValueError:
             continue
         raise AssertionError(f"{args} accepted")
+
+
+def test_a_model_that_is_not_a_policy_is_refused():
+    env = pd.VecEnv(1, 1)
+    try:
+        env.set_model(0, b"not a model")
+    except ValueError:
+        return
+    raise AssertionError("accepted")

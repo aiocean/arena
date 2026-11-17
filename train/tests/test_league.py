@@ -9,7 +9,7 @@ class Recorder:
     def __init__(self):
         self.corners = []
 
-    def set_weights(self, wid, data):
+    def set_model(self, wid, data):
         pass
 
     def reset(self, i, seed, learner, style, foe_style, name, wid, limit):

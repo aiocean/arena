@@ -1,7 +1,8 @@
 // How the duel looks around its fighters: the qi streaks and numbers of the fight, and the fight's bars. The
-// fighters themselves (their poses, the marks that hang on them, the fire, lightning and frost over them, the dust
-// they raise) are drawn by the engine (pixfx-fighter, through the wasm `Sprites`); this module tells it what each
-// fighter is doing, in the duel's own terms. Everything is in game pixels times `s`, the canvas scale.
+// fighters themselves are drawn from the arena's sprite sheets (arena-fighter, through the arena wasm's `Fighters`),
+// with the engine's marks over them (the fire, lightning and frost, the wards); the dust they raise is the engine's
+// (pixfx-fighter, through its wasm `Sprites`). This module tells both what each fighter is doing, in the duel's own
+// terms. Everything is in game pixels times `s`, the canvas scale.
 import { lookColors } from "../pkg/pixfx-canvas2d.js";
 import { RAGE, SPELLS, buffsOf, skillBar } from "./duel.js";
 
@@ -67,19 +68,50 @@ function marks(f, time) {
 }
 
 /**
- * Each fighter on a picture of its own, feet on row `ground`, and then the dust of the fight (`feel`); `jolts` from
- * `feel.jolts()`. Returns the pictures to draw (`pixfx.drawPicture`), the fighters' by their index: an effect that
- * wraps a fighter reads its picture.
+ * Each fighter on a picture of its own, drawn by `fighters` (the arena's sprite sheets, `createFighters`; none
+ * until the sheets have arrived) with feet on row `ground`, and then the dust of the fight (`feel`, the engine's
+ * `sprites`); `jolts` from `feel.jolts()`. Returns the pictures to draw, the fighters' by their index: each its
+ * `sprite` (finer than the world, `drawFine`), the `marks` on it and its `body` in the world's pixels, which an effect
+ * that wraps the fighter reads.
  */
-export function paintFighters(sprites, duel, feel, ground, jolts) {
-  const fighters = duel.fighters.map((f) => {
-    sprites.begin();
-    sprites.fighter(f.school, appearance(f, jolts[f.index]), ground, marks(f, duel.time));
-    return sprites.picture();
+export function paintFighters(sprites, fighters, duel, feel, ground, jolts) {
+  const painted = duel.fighters.map((f) => {
+    if (!fighters) return undefined;
+    fighters.begin();
+    fighters.fighter(f.school, appearance(f, jolts[f.index]), ground, marks(f, duel.time));
+    return { sprite: fighters.picture(), marks: fighters.marks(), body: fighters.body() };
   });
   sprites.begin();
   sprites.dust(feel, ground);
-  return { fighters, dust: sprites.picture() };
+  return { fighters: painted, dust: sprites.picture() };
+}
+
+/** Where a picture finer than the world (a fighter or a face) is put together before it is drawn, its colour beside
+ *  its light. */
+let fine = null;
+
+/**
+ * Draw `picture`, `picture.unit` times finer than the world, on `ctx` whose world pixel is `s` of its own: its colour
+ * normally, then its light added (as the engine's `drawPicture` draws a picture in the world's pixels).
+ */
+export function drawFine(ctx, s, picture) {
+  const { x, y, w, h, unit } = picture;
+  if (w === 0 || h === 0) return;
+  fine ??= document.createElement("canvas");
+  if (fine.width < w * 2 || fine.height < h) {
+    fine.width = Math.max(fine.width, w * 2);
+    fine.height = Math.max(fine.height, h);
+  }
+  const fctx = fine.getContext("2d");
+  fctx.putImageData(new ImageData(new Uint8ClampedArray(picture.color), w, h), 0, 0);
+  fctx.putImageData(new ImageData(new Uint8ClampedArray(picture.light), w, h), w, 0);
+  const k = s / unit;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(fine, 0, 0, w, h, x * k, y * k, w * k, h * k);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.drawImage(fine, w, 0, w, h, x * k, y * k, w * k, h * k);
+  ctx.restore();
 }
 
 /** A fighter's picture as the sprite an effect wraps (`effect.wrap`): where it shows and its colour bytes. */
@@ -196,9 +228,9 @@ export const BARS_TALL = 26;
  * just took drains away behind it), its qi in a blue bar of its own under that, its rage in a red bar of segments
  * that blaze once full (its ultimate is ready), and its buffs in tiles under it all. Between the two, a bronze plaque
  * with the rounds each has won. `top` is the bars' top edge in game pixels; `show(picture)` draws the faces
- * `sprites` painted (`pixfx.drawPicture`).
+ * `fighters` painted (`pixfx.drawPicture`; no faces until the fighters' sheets have arrived).
  */
-export function drawBars(ctx, sprites, show, duel, s, top) {
+export function drawBars(ctx, fighters, show, duel, s, top) {
   const faces = [];
   const span = duel.right - duel.left;
   const medal = BARS_TALL;
@@ -286,12 +318,10 @@ export function drawBars(ctx, sprites, show, duel, s, top) {
         for (let k = 0; k < 3; k++) if (row[k] === "#") box(x0 + i * 4 + k, top + 4 + r, 1, 1, col);
       }));
   }
-  sprites.begin();
-  for (const m of faces) {
-    const look = { ...appearance(m.f, [0, 0]), pose: "idle", face: m.f.index === 0 ? 1 : -1, flash: false, vx: 0, act: null };
-    sprites.portrait(m.f.school, look, m.x, m.y, m.size, m.f.hp <= 0 ? 0.35 : 1);
-  }
-  show(sprites.picture());
+  if (!fighters) return;
+  fighters.begin();
+  for (const m of faces) fighters.portrait(m.f.school, m.x, m.y, m.size, m.f.hp <= 0 ? 0.35 : 1, m.f.index === 0 ? 1 : -1);
+  show(fighters.picture());
 }
 
 /** Fighter f's buffs (`buffsOf`) as 9 by 9 tiles in a row under its bars (`buffRect`; the bars start at row `top`):
