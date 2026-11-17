@@ -1,0 +1,794 @@
+{
+  "created": "2026-11-18T00:00:00Z",
+  "dashboardId": "7528523175043268608",
+  "defaultDatetimeDuration": {
+    "endTime": 0,
+    "relativeTimePeriod": "7d",
+    "startTime": 0,
+    "type": "relative"
+  },
+  "description": "Bot modules in the host (wasmtime): think time, fuel, faults and forfeits.",
+  "owner": "owner@aiocean.io",
+  "role": "",
+  "tabs": [
+    {
+      "name": "Default",
+      "panels": [
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "unit": "seconds",
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "The bucket bound it falls under.",
+          "htmlContent": "",
+          "id": "Panel_1",
+          "layout": {
+            "h": 6,
+            "i": 1,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_think_seconds_bucket",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "p50"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT min(CAST(le AS DOUBLE)) AS y_axis_1 FROM (SELECT le, sum(value) AS c FROM arena_bot_think_seconds_bucket WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY le) b WHERE c >= 0.5 * (SELECT sum(value) FROM arena_bot_think_seconds_count WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA')",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time p50",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "unit": "seconds",
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "The bucket bound it falls under.",
+          "htmlContent": "",
+          "id": "Panel_2",
+          "layout": {
+            "h": 6,
+            "i": 2,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_think_seconds_bucket",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "p95"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT min(CAST(le AS DOUBLE)) AS y_axis_1 FROM (SELECT le, sum(value) AS c FROM arena_bot_think_seconds_bucket WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY le) b WHERE c >= 0.95 * (SELECT sum(value) FROM arena_bot_think_seconds_count WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA')",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time p95",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Over the bot instances that ended (bot.end).",
+          "htmlContent": "",
+          "id": "Panel_3",
+          "layout": {
+            "h": 6,
+            "i": 3,
+            "w": 12,
+            "x": 24,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "ms"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT avg(think_mean_ms) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Mean think (ms)",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_4",
+          "layout": {
+            "h": 6,
+            "i": 4,
+            "w": 12,
+            "x": 36,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Decisions"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT sum(decisions) AS y_axis_1 FROM arena_bot WHERE body = 'bot.end'",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Decisions",
+          "type": "metric"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Decisions that took up to each bound, seconds.",
+          "htmlContent": "",
+          "id": "Panel_5",
+          "layout": {
+            "h": 9,
+            "i": 5,
+            "w": 24,
+            "x": 0,
+            "y": 6
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_think_seconds_bucket",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Seconds"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Decisions"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT concat('≤ ', le) AS x_axis_1, c - coalesce(lag(c) OVER (ORDER BY CAST(le AS DOUBLE)), 0) AS y_axis_1 FROM (SELECT le, sum(value) AS c FROM arena_bot_think_seconds_bucket WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY le) b ORDER BY CAST(le AS DOUBLE)",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Think time",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "Decisions that burned up to each bound of fuel (the cap is 2e7).",
+          "htmlContent": "",
+          "id": "Panel_6",
+          "layout": {
+            "h": 9,
+            "i": 6,
+            "w": 24,
+            "x": 24,
+            "y": 6
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_fuel_bucket",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Fuel"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Decisions"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT concat('≤ ', le) AS x_axis_1, c - coalesce(lag(c) OVER (ORDER BY CAST(le AS DOUBLE)), 0) AS y_axis_1 FROM (SELECT le, sum(value) AS c FROM arena_bot_fuel_bucket WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY le) b ORDER BY CAST(le AS DOUBLE)",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Fuel a decision",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_7",
+          "layout": {
+            "h": 9,
+            "i": 7,
+            "w": 24,
+            "x": 0,
+            "y": 15
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": ""
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "mean",
+                    "color": null,
+                    "column": "mean",
+                    "label": "Mean"
+                  },
+                  {
+                    "alias": "most",
+                    "color": null,
+                    "column": "most",
+                    "label": "Most"
+                  },
+                  {
+                    "alias": "cap",
+                    "color": null,
+                    "column": "cap",
+                    "label": "Cap"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, avg(fuel_mean) AS mean, max(fuel_most) AS most, max(fuel_cap) AS cap FROM arena_bot WHERE body = 'bot.end' GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Fuel per instance: mean and most",
+          "type": "line"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "trap: the module failed; out_of_fuel: it thought too long.",
+          "htmlContent": "",
+          "id": "Panel_8",
+          "layout": {
+            "h": 10,
+            "i": 8,
+            "w": 12,
+            "x": 24,
+            "y": 15
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_faults_total",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Kind"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Faults"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT kind AS x_axis_1, sum(value) AS y_axis_1 FROM arena_bot_faults_total WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Faults by kind",
+          "type": "pie"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_9",
+          "layout": {
+            "h": 10,
+            "i": 9,
+            "w": 12,
+            "x": 36,
+            "y": 15
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [
+                  {
+                    "alias": "k",
+                    "color": null,
+                    "column": "k",
+                    "label": "Kind"
+                  }
+                ],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_bot_faults_total",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Call"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Faults"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT call AS x_axis_1, kind AS k, sum(value) AS y_axis_1 FROM arena_bot_faults_total WHERE aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA' GROUP BY x_axis_1, k",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Faults by call",
+          "type": "bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "A seat that gave up: its bot faulted out.",
+          "htmlContent": "",
+          "id": "Panel_10",
+          "layout": {
+            "h": 10,
+            "i": 10,
+            "w": 24,
+            "x": 0,
+            "y": 25
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_match",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "t",
+                    "color": null,
+                    "column": "t",
+                    "label": "Time"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "bot",
+                    "color": null,
+                    "column": "bot",
+                    "label": "Bot"
+                  },
+                  {
+                    "alias": "seat",
+                    "color": null,
+                    "column": "seat",
+                    "label": "Seat"
+                  },
+                  {
+                    "alias": "match_id",
+                    "color": null,
+                    "column": "match_id",
+                    "label": "Match"
+                  },
+                  {
+                    "alias": "round",
+                    "color": null,
+                    "column": "round",
+                    "label": "Round"
+                  },
+                  {
+                    "alias": "service_name",
+                    "color": null,
+                    "column": "service_name",
+                    "label": "Service"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT to_timestamp_micros(_timestamp) AS t, bot, seat, match_id, round, service_name FROM arena_match WHERE body = 'forfeit' ORDER BY _timestamp DESC LIMIT 50",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Forfeits",
+          "type": "table"
+        }
+      ],
+      "tabId": "default"
+    }
+  ],
+  "title": "Arena: bots",
+  "variables": {
+    "list": [],
+    "showDynamicFilters": true
+  },
+  "version": 5
+}

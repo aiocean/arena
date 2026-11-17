@@ -1,0 +1,598 @@
+{
+  "created": "2026-11-18T00:00:00Z",
+  "dashboardId": "7528523174950993920",
+  "defaultDatetimeDuration": {
+    "endTime": 0,
+    "relativeTimePeriod": "7d",
+    "startTime": 0,
+    "type": "relative"
+  },
+  "description": "The latest balance run (gems, supports, keystones: arena-sim's balance example) and ladder run (arena-bot's ladder example), from arena_ladder.",
+  "owner": "owner@aiocean.io",
+  "role": "",
+  "tabs": [
+    {
+      "name": "Default",
+      "panels": [
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_1",
+          "layout": {
+            "h": 12,
+            "i": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Keystone"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Win %"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT id AS x_axis_1, win AS y_axis_1 FROM (SELECT *, max(run_id) OVER () AS latest FROM arena_ladder WHERE body = 'balance.row' AND kind = 'keystone') t WHERE run_id = latest ORDER BY y_axis_1 DESC",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Keystones: win rate (latest balance run)",
+          "type": "h-bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_2",
+          "layout": {
+            "h": 12,
+            "i": 2,
+            "w": 24,
+            "x": 24,
+            "y": 0
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Skill"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Damage a game"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT id AS x_axis_1, damage_per_game AS y_axis_1 FROM (SELECT *, max(run_id) OVER () AS latest FROM arena_ladder WHERE body = 'balance.row' AND kind = 'gem') t WHERE run_id = latest ORDER BY y_axis_1 DESC LIMIT 25",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Damage per game per skill (top 25, latest balance run)",
+          "type": "h-bar"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_3",
+          "layout": {
+            "h": 14,
+            "i": 3,
+            "w": 24,
+            "x": 0,
+            "y": 12
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "id",
+                    "color": null,
+                    "column": "id",
+                    "label": "Id"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "tier",
+                    "color": null,
+                    "column": "tier",
+                    "label": "Tier"
+                  },
+                  {
+                    "alias": "win",
+                    "color": null,
+                    "column": "win",
+                    "label": "Win %"
+                  },
+                  {
+                    "alias": "games",
+                    "color": null,
+                    "column": "games",
+                    "label": "Games"
+                  },
+                  {
+                    "alias": "picks",
+                    "color": null,
+                    "column": "picks",
+                    "label": "Picks"
+                  },
+                  {
+                    "alias": "used_rate",
+                    "color": null,
+                    "column": "used_rate",
+                    "label": "Used"
+                  },
+                  {
+                    "alias": "damage_per_game",
+                    "color": null,
+                    "column": "damage_per_game",
+                    "label": "Damage a game"
+                  },
+                  {
+                    "alias": "casts",
+                    "color": null,
+                    "column": "casts",
+                    "label": "Casts"
+                  },
+                  {
+                    "alias": "hits",
+                    "color": null,
+                    "column": "hits",
+                    "label": "Hits"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT id, tier, win, games, picks, used_rate, damage_per_game, casts, hits FROM (SELECT *, max(run_id) OVER () AS latest FROM arena_ladder WHERE body = 'balance.row' AND kind = 'gem') t WHERE run_id = latest ORDER BY win DESC",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Gems (latest balance run)",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "",
+          "htmlContent": "",
+          "id": "Panel_4",
+          "layout": {
+            "h": 14,
+            "i": 4,
+            "w": 24,
+            "x": 24,
+            "y": 12
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "id",
+                    "color": null,
+                    "column": "id",
+                    "label": "Id"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "tier",
+                    "color": null,
+                    "column": "tier",
+                    "label": "Tier"
+                  },
+                  {
+                    "alias": "win",
+                    "color": null,
+                    "column": "win",
+                    "label": "Win %"
+                  },
+                  {
+                    "alias": "games",
+                    "color": null,
+                    "column": "games",
+                    "label": "Games"
+                  },
+                  {
+                    "alias": "picks",
+                    "color": null,
+                    "column": "picks",
+                    "label": "Picks"
+                  },
+                  {
+                    "alias": "used_rate",
+                    "color": null,
+                    "column": "used_rate",
+                    "label": "Used"
+                  },
+                  {
+                    "alias": "damage_per_game",
+                    "color": null,
+                    "column": "damage_per_game",
+                    "label": "Damage a game"
+                  },
+                  {
+                    "alias": "casts",
+                    "color": null,
+                    "column": "casts",
+                    "label": "Casts"
+                  },
+                  {
+                    "alias": "hits",
+                    "color": null,
+                    "column": "hits",
+                    "label": "Hits"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT id, tier, win, games, picks, used_rate, damage_per_game, casts, hits FROM (SELECT *, max(run_id) OVER () AS latest FROM arena_ladder WHERE body = 'balance.row' AND kind = 'support') t WHERE run_id = latest ORDER BY win DESC",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Supports (latest balance run)",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": true,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "win: the row's first bot's share of the rounds; seat0 / seat1: its share from each seat.",
+          "htmlContent": "",
+          "id": "Panel_5",
+          "layout": {
+            "h": 10,
+            "i": 5,
+            "w": 24,
+            "x": 0,
+            "y": 26
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "row",
+                    "color": null,
+                    "column": "row",
+                    "label": "Row"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "win",
+                    "color": null,
+                    "column": "win",
+                    "label": "Win"
+                  },
+                  {
+                    "alias": "seat0",
+                    "color": null,
+                    "column": "seat0",
+                    "label": "As seat 0"
+                  },
+                  {
+                    "alias": "seat1",
+                    "color": null,
+                    "column": "seat1",
+                    "label": "As seat 1"
+                  },
+                  {
+                    "alias": "round_seconds",
+                    "color": null,
+                    "column": "round_seconds",
+                    "label": "Round s"
+                  },
+                  {
+                    "alias": "timeouts",
+                    "color": null,
+                    "column": "timeouts",
+                    "label": "Timeouts"
+                  },
+                  {
+                    "alias": "top",
+                    "color": null,
+                    "column": "top",
+                    "label": "Top act"
+                  },
+                  {
+                    "alias": "attack_share",
+                    "color": null,
+                    "column": "attack_share",
+                    "label": "Attack share"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT row, win, seat0, seat1, round_seconds, timeouts, top, attack_share FROM (SELECT *, max(run_id) OVER () AS latest FROM arena_ladder WHERE body = 'ladder.row') t WHERE run_id = latest ORDER BY row",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Ladder rows: seat win rates (latest ladder run)",
+          "type": "table"
+        },
+        {
+          "config": {
+            "axis_border_show": false,
+            "base_map": null,
+            "connect_nulls": true,
+            "decimals": 2.0,
+            "legends_position": null,
+            "map_view": null,
+            "mark_line": [],
+            "no_value_replacement": "",
+            "override_config": [],
+            "show_legends": false,
+            "table_dynamic_columns": false,
+            "table_transpose": false,
+            "unit": "percent-1",
+            "wrap_table_cells": false
+          },
+          "customChartContent": "",
+          "description": "arena-sim's duel example, over the range.",
+          "htmlContent": "",
+          "id": "Panel_6",
+          "layout": {
+            "h": 10,
+            "i": 6,
+            "w": 24,
+            "x": 24,
+            "y": 26
+          },
+          "markdownContent": "",
+          "queries": [
+            {
+              "config": {
+                "layer_type": "scatter",
+                "limit": 0.0,
+                "max": 100.0,
+                "min": 0.0,
+                "promql_legend": "",
+                "time_shift": [],
+                "weight_fixed": 1.0
+              },
+              "customQuery": true,
+              "fields": {
+                "breakdown": [],
+                "filter": {
+                  "conditions": [],
+                  "filterType": "group",
+                  "logicalOperator": "AND"
+                },
+                "stream": "arena_ladder",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "alias": "x_axis_1",
+                    "color": null,
+                    "column": "x_axis_1",
+                    "label": "Seat"
+                  }
+                ],
+                "y": [
+                  {
+                    "alias": "y_axis_1",
+                    "color": null,
+                    "column": "y_axis_1",
+                    "label": "Won"
+                  }
+                ],
+                "z": []
+              },
+              "query": "SELECT seat AS x_axis_1, avg(CASE WHEN won THEN 1.0 ELSE 0.0 END) AS y_axis_1 FROM arena_ladder WHERE body = 'sim.match' GROUP BY x_axis_1 ORDER BY x_axis_1",
+              "vrlFunctionQuery": ""
+            }
+          ],
+          "queryType": "sql",
+          "title": "Sim matches: wins by seat",
+          "type": "bar"
+        }
+      ],
+      "tabId": "default"
+    }
+  ],
+  "title": "Arena: balance",
+  "variables": {
+    "list": [],
+    "showDynamicFilters": true
+  },
+  "version": 5
+}

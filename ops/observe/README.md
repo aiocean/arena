@@ -96,6 +96,37 @@ Metrics are sent as deltas (since 2026-11-18; `aggregation_temporality` = `AGGRE
 is its ten seconds' own counts, so `sum(value)` over any range is what happened in it, and a histogram's `_max` is its
 interval's. The few cumulative points from before are left out by the dashboards.
 
+## Dashboards
+
+Open https://arena-obs.aiocean.io, log in with the root user's email and password from
+`~/projects/game-factory/ops/arena/observe.env` (never paste them anywhere), then Dashboards, folder `default`:
+
+| Dashboard | What it shows |
+|---|---|
+| Arena: live matches | matches in progress, played, mean length and rounds; matches per hour, results (seat0, seat1, cut, abandoned), match length, rounds per match, the latest 50 matches |
+| Arena: game events | casts per skill, damage per skill (dots by cause) and per kind, hits by how, blows stopped by how, ailments laid, units spawned / acted / hurt / killed, KOs per round, events per minute |
+| Arena: server health | step time (buckets; mean and most per minute), publish time, how far behind the wall clock, errors and warnings per hour, relay subscription changes, panics, server starts, the latest errors |
+| Arena: balance | the latest balance run (keystones, gems, supports: win, damage a game) and ladder run (seat win rates), sim wins by seat |
+| Arena: bots | think time p50 and p95, think and fuel buckets, fuel per instance, faults by kind and call, forfeits |
+
+The live and game-event panels read only the live server's rows (`service_name = 'arena-server'`); the metric panels
+only delta points. They are made in code, `crates/arena-telemetry/examples/dashboards.rs`, and what the store exports of
+them is kept in `dashboards/`:
+
+```
+cargo run -p arena-telemetry --example dashboards -- --check     # every panel's SQL against the store
+cargo run -p arena-telemetry --example dashboards -- --push      # create or update them; re-export into dashboards/
+cargo run -p arena-telemetry --example dashboards -- --from ops/observe/dashboards   # restore them to a fresh store
+```
+
+(with `ARENA_OTLP_ENDPOINT` and `ARENA_OTLP_AUTH_FILE` as above). A dashboard edited in the UI is lost at the next
+`--push`: change it in the example. A panel that names a field the stream has never had (`watched`, a panic's `reason`)
+fails until one arrives, so those fields are left to Logs.
+
+There are no alerts yet: OpenObserve sends them to a destination (email or a webhook) and none is set up. With one,
+the two to add are errors per hour in `arena_server` above zero, and no `match.start` from `arena-server` in ten
+minutes.
+
 ## Queries
 
 In the UI (Logs, pick the stream, SQL mode) or `cargo run -p arena-telemetry --example query -- "<sql>" [--hours 24]
