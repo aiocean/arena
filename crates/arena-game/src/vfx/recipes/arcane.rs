@@ -4,8 +4,8 @@
 //! here.
 
 mod bagua_mirror;
-mod hex_shield;
 mod common;
+mod hex_shield;
 mod restriction;
 mod rune_circle;
 mod seals;
@@ -14,7 +14,12 @@ mod tone;
 use crate::vfx::kit::Recipe;
 
 pub static ALL: &[Recipe] = &[
-    Recipe::new("arcane/rune-circle", true, rune_circle::D, rune_circle::make),
+    Recipe::new(
+        "arcane/rune-circle",
+        true,
+        rune_circle::D,
+        rune_circle::make,
+    ),
     Recipe::new("arcane/hex-shield", false, 3.9, hex_shield::make),
     Recipe::new("arcane/restriction", false, 3.8, restriction::make),
     Recipe::new("arcane/bagua-mirror", false, 3.6, bagua_mirror::make),

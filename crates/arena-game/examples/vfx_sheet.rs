@@ -25,11 +25,7 @@ fn main() {
         match a.as_str() {
             "--seed" => seed = it.next().and_then(|s| s.parse().ok()).unwrap_or(7),
             "--scale" => scale = it.next().and_then(|s| s.parse().ok()).unwrap_or(2),
-            "--palette" => {
-                palette = it
-                    .next()
-                    .map(|s| s.split(',').map(hex).collect::<Vec<_>>())
-            }
+            "--palette" => palette = it.next().map(|s| s.split(',').map(hex).collect::<Vec<_>>()),
             _ if first && a.ends_with(".png") => out = a,
             _ => filters.push(a),
         }
@@ -41,15 +37,28 @@ fn main() {
     let (w, h) = (CW * SHOTS as i32, CH * list.len().max(1) as i32);
     let mut sheet = Canvas::new(w, h);
     for (row, r) in list.iter().enumerate() {
-        println!("row {row}: {} ({}, {:.2} s)", r.id, if r.looping { "loop" } else { "once" }, r.duration);
-        let span = if r.looping { r.duration.clamp(1.0, 3.0) } else { r.duration };
+        println!(
+            "row {row}: {} ({}, {:.2} s)",
+            r.id,
+            if r.looping { "loop" } else { "once" },
+            r.duration
+        );
+        let span = if r.looping {
+            r.duration.clamp(1.0, 3.0)
+        } else {
+            r.duration
+        };
         for shot in 0..SHOTS {
             let t = span * (0.04 + 0.92 * shot as f64 / (SHOTS - 1) as f64);
             let (mut back, mut front) = (stage(), Canvas::new(CW, CH));
             let weather = r.id.starts_with("weather/");
             let at = Spawn {
                 x: OX,
-                y: if weather || r.id == "fire/brazier" { GROUND } else { OY },
+                y: if weather || r.id == "fire/brazier" {
+                    GROUND
+                } else {
+                    OY
+                },
                 ground: GROUND,
                 palette: palette.clone(),
                 width: weather.then_some(CW as f32),
@@ -112,7 +121,12 @@ fn stage() -> Canvas {
     }
     // a figure's height for scale: a dim post as tall as a fighter (61 px)
     for y in (GROUND as i32 - 61)..GROUND as i32 {
-        c.put(CW - 12, y, [50, 50, 64, 255], arena_game::raster::Blend::Set);
+        c.put(
+            CW - 12,
+            y,
+            [50, 50, 64, 255],
+            arena_game::raster::Blend::Set,
+        );
     }
     c
 }

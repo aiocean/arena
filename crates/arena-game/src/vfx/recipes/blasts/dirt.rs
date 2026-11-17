@@ -5,7 +5,9 @@
 use super::common::{
     OUTLINE, Stone, crater, cull, dome, draw_dirt, fade_edges, pool, rock, seed_of,
 };
-use crate::vfx::kit::sim::{Bit, BitKind, Bits, Flags, Kind, Lights, Particles, ParticlesOpts, Spawn, band};
+use crate::vfx::kit::sim::{
+    Bit, BitKind, Bits, Flags, Kind, Lights, Particles, ParticlesOpts, Spawn, band,
+};
 use crate::vfx::kit::{
     Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, ease, js_max, js_min, js_round, libm, mix,
     ramp, rgb, smooth,
@@ -181,7 +183,19 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let col = if r.chance(0.6) { soil } else { dust };
         let size = r.range(9.0, 14.0);
         let delay = r.range(0.0, 0.14);
-        smoke(&mut ps, &mut r, x, y, vx, vy, life, col, size, delay, Flags::BIG);
+        smoke(
+            &mut ps,
+            &mut r,
+            x,
+            y,
+            vx,
+            vy,
+            life,
+            col,
+            size,
+            delay,
+            Flags::BIG,
+        );
     }
     for _ in 0..14 {
         let side = r.sign();
@@ -194,7 +208,19 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let size = r.range(8.0, 12.0);
         let delay = r.range(0.02, 0.1);
         let (vx, vy) = (libm::cos(a) * sp, libm::sin(a) * sp);
-        smoke(&mut ps, &mut r, x, y, vx, vy, life, col, size, delay, Flags::BIG);
+        smoke(
+            &mut ps,
+            &mut r,
+            x,
+            y,
+            vx,
+            vy,
+            life,
+            col,
+            size,
+            delay,
+            Flags::BIG,
+        );
     }
     for _ in 0..16 {
         let s = r.sign();
@@ -205,7 +231,19 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let life = r.range(1.4, 2.2);
         let size = r.range(6.0, 9.0);
         let delay = r.range(0.02, 0.1);
-        smoke(&mut ps, &mut r, x, y, vx, vy, life, dust, size, delay, Flags::BIG);
+        smoke(
+            &mut ps,
+            &mut r,
+            x,
+            y,
+            vx,
+            vy,
+            life,
+            dust,
+            size,
+            delay,
+            Flags::BIG,
+        );
     }
     // dark soil thrown up with it, heavier and lower
     for _ in 0..8 {
@@ -216,7 +254,19 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let life = r.range(1.2, 1.8);
         let size = r.range(6.0, 9.0);
         let delay = r.range(0.0, 0.05);
-        smoke(&mut ps, &mut r, x, y, vx, vy, life, dark, size, delay, Flags::NONE);
+        smoke(
+            &mut ps,
+            &mut r,
+            x,
+            y,
+            vx,
+            vy,
+            life,
+            dark,
+            size,
+            delay,
+            Flags::NONE,
+        );
     }
     Box::new(Dirt {
         e,

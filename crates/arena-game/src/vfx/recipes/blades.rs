@@ -20,9 +20,27 @@ pub static ALL: &[Recipe] = &[
     .intro(sword::FAN_END),
     Recipe::new("arcane/sword-strike", false, 0.45, sword::strike),
     Recipe::new("arcane/sword-slash", false, sword::SLASH_SECS, sword::slash),
-    Recipe::new("arcane/twin-shuriken", false, marks::SECS, marks::twin_shuriken).fps(50),
-    Recipe::new("impacts/star-converge", false, marks::SECS, marks::star_converge).fps(50),
-    Recipe::new("impacts/twin-converge", false, marks::SECS, marks::twin_converge).fps(50),
+    Recipe::new(
+        "arcane/twin-shuriken",
+        false,
+        marks::SECS,
+        marks::twin_shuriken,
+    )
+    .fps(50),
+    Recipe::new(
+        "impacts/star-converge",
+        false,
+        marks::SECS,
+        marks::star_converge,
+    )
+    .fps(50),
+    Recipe::new(
+        "impacts/twin-converge",
+        false,
+        marks::SECS,
+        marks::twin_converge,
+    )
+    .fps(50),
     Recipe::new("impacts/parry", false, 1.0, clash::parry),
     Recipe::new("impacts/hit", false, 0.45, clash::hit),
 ];

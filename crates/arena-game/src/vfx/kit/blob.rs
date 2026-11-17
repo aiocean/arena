@@ -3,8 +3,8 @@
 //! the body, and a deeper tone where it is thick. Points close together merge into one body; a point alone is a
 //! round drop. Whatever moves the points (a fluid solver, particles, a formula) is the caller's.
 
-use super::{Painter, libm};
 use super::Rgba;
+use super::{Painter, libm};
 
 /// The colours and levels a [`Blob`] is painted with.
 #[derive(Clone, Copy, Debug, PartialEq)]

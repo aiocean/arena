@@ -11,8 +11,8 @@ use crate::vfx::kit::{Layer, Opts, PI, Painter, Rgba, Show, TAU, clamp, libm, ra
 
 /// The sword pointing up, tip first, a row a pixel. The guard's middle (`PIVOT_ROW`, column 2) is where it turns.
 const SPRITE: [&[u8; 5]; 18] = [
-    b"..W..", b"..Wm.", b".bWm.", b".bWz.", b".bWz.", b".bWb.", b".bWb.", b".bWc.", b".bWc.", b".bWp.",
-    b".bWp.", b"rhrhr", b"jhrhj", b"k.j.k", b"..d..", b"..e..", b"..d..", b".jhj.",
+    b"..W..", b"..Wm.", b".bWm.", b".bWz.", b".bWz.", b".bWb.", b".bWb.", b".bWc.", b".bWc.",
+    b".bWp.", b".bWp.", b"rhrhr", b"jhrhj", b"k.j.k", b"..d..", b"..e..", b"..d..", b".jhj.",
 ];
 const PIVOT_ROW: f64 = 11.0;
 /// From the pivot to the tip, and to the far side of the sprite.
@@ -108,7 +108,10 @@ fn sword_at(p: &mut Painter, s: &Pose, scale: f64) {
             let across = (-dx * sa + dy * ca) / scale;
             let row = libm::floor(PIVOT_ROW - along + 0.5);
             let col = libm::floor(across + 2.5);
-            if !(0.0..SPRITE.len() as f64).contains(&row) || !(0.0..5.0).contains(&col) || row < shown {
+            if !(0.0..SPRITE.len() as f64).contains(&row)
+                || !(0.0..5.0).contains(&col)
+                || row < shown
+            {
                 continue;
             }
             let Some(mut c) = SPRITE
@@ -132,7 +135,15 @@ fn sword_at(p: &mut Painter, s: &Pose, scale: f64) {
     }
     let k = s.alpha * (0.35 + 0.5 * s.hot);
     let reach = TIP * scale * s.grown;
-    p.glow_line(s.x, s.y, s.x + ca * reach, s.y + sa * reach, 3.0 * scale, GLOW, k);
+    p.glow_line(
+        s.x,
+        s.y,
+        s.x + ca * reach,
+        s.y + sa * reach,
+        3.0 * scale,
+        GLOW,
+        k,
+    );
 }
 
 // ---------------------------------------------------------------------------------------------------------------

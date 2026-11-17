@@ -143,7 +143,16 @@ impl Show for State {
                 self.point(p, t);
                 shards(p, bx, by, since, 10, self.seed, 0.45, dir);
                 let (cx, cy) = centre();
-                shards(p, cx, cy, t - BREAK - SHRINK * 0.6, 16, self.seed + 7.0, 0.7, 0.0);
+                shards(
+                    p,
+                    cx,
+                    cy,
+                    t - BREAK - SHRINK * 0.6,
+                    16,
+                    self.seed + 7.0,
+                    0.7,
+                    0.0,
+                );
             }
         }
     }
@@ -181,7 +190,11 @@ fn knock(since: f64, dir: f64) -> (f64, f64, f64) {
     let x = libm::floor(-dir * KNOCK * fade(8.0) * libm::cos(22.0 * since) + 0.5);
     let frame = libm::floor(since * 30.0);
     let shiver = libm::floor(TREMOR * fade(9.0) + 0.5);
-    let y = if frame.rem_euclid(2.0) == 0.0 { shiver } else { -shiver };
+    let y = if frame.rem_euclid(2.0) == 0.0 {
+        shiver
+    } else {
+        -shiver
+    };
     let scale = 1.0 - SQUASH * fade(14.0) * libm::cos(25.0 * since);
     (x, y, scale)
 }
@@ -207,7 +220,10 @@ impl State {
         let bob = libm::floor(libm::sin(TAU * t / 1.6) + 0.5) * held;
         let (cx, cy) = centre();
         let (lit, lit_k) = if t > GROWN && t < BREAK {
-            ((libm::floor((t - GROWN) / LIGHT) as i64).rem_euclid(8) as usize, 1.0)
+            (
+                (libm::floor((t - GROWN) / LIGHT) as i64).rem_euclid(8) as usize,
+                1.0,
+            )
         } else {
             (0, 0.0)
         };
@@ -554,9 +570,17 @@ fn ripple(p: &mut Painter, x: f64, y: f64, k: f64, max: f64) {
     let a = 1.0 - k;
     for i in 0..n {
         let t = f64::from(i) / f64::from(n) * TAU;
-        let (px, py) = (libm::floor(x + rx * libm::cos(t)), libm::floor(y + ry * libm::sin(t)));
+        let (px, py) = (
+            libm::floor(x + rx * libm::cos(t)),
+            libm::floor(y + ry * libm::sin(t)),
+        );
         let far = libm::sin(t) < 0.0;
-        p.dot(px, py, if far { JADE } else { JADE_HI }, a * if far { 0.5 } else { 1.0 });
+        p.dot(
+            px,
+            py,
+            if far { JADE } else { JADE_HI },
+            a * if far { 0.5 } else { 1.0 },
+        );
         p.light(px, py, GLOW, 0.2 * a);
     }
 }

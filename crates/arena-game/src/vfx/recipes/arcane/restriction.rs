@@ -160,8 +160,16 @@ impl Show for State {
             return;
         }
         let back_layer = layer == Layer::Back;
-        let mut back = if back_layer { Halo::new(W, H, OX, OY) } else { Halo::none() };
-        let mut front = if back_layer { Halo::none() } else { Halo::new(W, H, OX, OY) };
+        let mut back = if back_layer {
+            Halo::new(W, H, OX, OY)
+        } else {
+            Halo::none()
+        };
+        let mut front = if back_layer {
+            Halo::none()
+        } else {
+            Halo::new(W, H, OX, OY)
+        };
         if back_layer {
             self.pillars(&mut back, t);
         }
@@ -283,9 +291,11 @@ impl State {
         };
         let hot = flash.max(flare);
         let far = near < 0.0;
-        let heat = ((f64::from(RUNE) + pulse + 2.0 * hot) * fade - if far { 0.5 } else { 0.0 }) as f32;
+        let heat =
+            ((f64::from(RUNE) + pulse + 2.0 * hot) * fade - if far { 0.5 } else { 0.0 }) as f32;
         let kind = if hot > 0.3 { 2 } else { 3 };
-        let pick = (rand(&[r as f64, k as f64, self.seed, 7.0]) * GLYPHS.len() as f64) as usize % GLYPHS.len();
+        let pick = (rand(&[r as f64, k as f64, self.seed, 7.0]) * GLYPHS.len() as f64) as usize
+            % GLYPHS.len();
         let Some(glyph) = GLYPHS.get(pick) else {
             return;
         };

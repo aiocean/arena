@@ -423,7 +423,13 @@ const OUTER_TONE: [(f64, f64); 8] = [
     (13.0, 0.3),
 ];
 const OUTER_TURN: [(f64, f64); 2] = [(0.0, -70.0), (13.0, 60.0)];
-const RIPPLE: [(f64, f64); 5] = [(8.0, -1.0), (9.0, 3.0), (10.0, 2.5), (11.0, 1.5), (12.5, -1.0)];
+const RIPPLE: [(f64, f64); 5] = [
+    (8.0, -1.0),
+    (9.0, 3.0),
+    (10.0, 2.5),
+    (11.0, 1.5),
+    (12.5, -1.0),
+];
 const INNER_TONE: [(f64, f64); 4] = [(0.0, 2.0), (3.0, 3.0), (8.0, 3.0), (9.5, -1.0)];
 const CORE_TONE: [(f64, f64); 4] = [(2.0, -1.0), (3.0, 2.0), (6.0, 2.0), (7.0, -1.0)];
 const COMET_OUT: [(f64, f64); 4] = [(3.5, -1.0), (4.5, 14.0), (8.0, 14.0), (9.0, -1.0)];
@@ -436,7 +442,14 @@ fn comet(p: &mut Painter, ramp: &[Rgba], s: f64) {
     let mut ink = Ink::new(4).grain(0.2, 0.75, 26.0);
     let hoop = curve(&C_HOOP, s);
     if hoop >= 0.0 {
-        ink.arc((0.0, 0.0), 24.0, -45.0 * DEG, 45.0 * DEG, (0.5, 0.5), (hoop, hoop));
+        ink.arc(
+            (0.0, 0.0),
+            24.0,
+            -45.0 * DEG,
+            45.0 * DEG,
+            (0.5, 0.5),
+            (hoop, hoop),
+        );
     }
     let (or, ov) = (curve(&OUTER_R, s), curve(&OUTER_TONE, s));
     let turn = curve(&OUTER_TURN, s) * DEG;
@@ -454,14 +467,35 @@ fn comet(p: &mut Painter, ramp: &[Rgba], s: f64) {
     if rip >= 0.0 {
         for (k, dr) in [5.0, 10.0].iter().enumerate() {
             let a = turn - 35.0 * DEG - k as f64 * 15.0 * DEG;
-            ink.arc((0.0, 0.0), or - dr, a - 18.0 * DEG, a + 18.0 * DEG, (0.5, 0.5), (rip, rip));
+            ink.arc(
+                (0.0, 0.0),
+                or - dr,
+                a - 18.0 * DEG,
+                a + 18.0 * DEG,
+                (0.5, 0.5),
+                (rip, rip),
+            );
         }
     }
     let iv = curve(&INNER_TONE, s);
     if iv >= 0.0 {
         let a = -turn * 0.6 + 20.0 * DEG;
-        ink.arc((0.0, 0.0), 13.5, a - 25.0 * DEG, a + 25.0 * DEG, (0.5, 0.5), (iv, iv));
-        ink.arc((0.0, 0.0), 18.5, -a - 20.0 * DEG, -a + 20.0 * DEG, (0.5, 0.5), (iv, iv));
+        ink.arc(
+            (0.0, 0.0),
+            13.5,
+            a - 25.0 * DEG,
+            a + 25.0 * DEG,
+            (0.5, 0.5),
+            (iv, iv),
+        );
+        ink.arc(
+            (0.0, 0.0),
+            18.5,
+            -a - 20.0 * DEG,
+            -a + 20.0 * DEG,
+            (0.5, 0.5),
+            (iv, iv),
+        );
     }
     let cv = curve(&CORE_TONE, s);
     if cv >= 0.0 {
@@ -529,8 +563,21 @@ const V_ARM: [[Knot; 6]; 5] = [
     ],
 ];
 const RING_FROM: f64 = 4.4;
-const RING_R: [(f64, f64); 5] = [(4.0, 22.0), (5.0, 20.5), (6.0, 21.0), (8.0, 21.0), (9.0, 22.0)];
-const RING_W: [(f64, f64); 6] = [(4.0, 1.0), (5.0, 6.0), (6.0, 5.0), (7.0, 4.0), (8.0, 2.5), (8.8, 0.0)];
+const RING_R: [(f64, f64); 5] = [
+    (4.0, 22.0),
+    (5.0, 20.5),
+    (6.0, 21.0),
+    (8.0, 21.0),
+    (9.0, 22.0),
+];
+const RING_W: [(f64, f64); 6] = [
+    (4.0, 1.0),
+    (5.0, 6.0),
+    (6.0, 5.0),
+    (7.0, 4.0),
+    (8.0, 2.5),
+    (8.8, 0.0),
+];
 const RING_TONE: [(f64, f64); 6] = [
     (4.0, 10.0),
     (5.0, 15.0),
@@ -576,7 +623,14 @@ fn vortex(p: &mut Painter, ramp: &[Rgba], s: f64) {
     let loops = curve(&LOOPS, s);
     if loops >= 0.0 {
         ink.seg((-10.0, -10.0), (10.0, -10.0), (0.8, 0.8), (loops, loops));
-        ink.arc((0.0, 0.0), 7.0, -150.0 * DEG, -30.0 * DEG, (0.6, 0.6), (loops, loops));
+        ink.arc(
+            (0.0, 0.0),
+            7.0,
+            -150.0 * DEG,
+            -30.0 * DEG,
+            (0.6, 0.6),
+            (loops, loops),
+        );
     }
     if s >= SHARDS_FROM {
         let (len, v) = (curve(&SHARD_LEN, s), curve(&SHARD_TONE, s));

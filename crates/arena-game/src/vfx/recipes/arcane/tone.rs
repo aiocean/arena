@@ -95,7 +95,15 @@ impl Ink {
     }
 
     /// An arc of radius `radius` round `centre` from angle `a0` to `a1`, in segments about 3 px long.
-    pub fn arc(&mut self, centre: (f64, f64), radius: f64, a0: f64, a1: f64, r: (f64, f64), tone: (f64, f64)) {
+    pub fn arc(
+        &mut self,
+        centre: (f64, f64),
+        radius: f64,
+        a0: f64,
+        a1: f64,
+        r: (f64, f64),
+        tone: (f64, f64),
+    ) {
         let n = (libm::fabs(a1 - a0) * radius / 3.0).clamp(1.0, 64.0) as usize;
         let at = |k: usize| {
             let f = k as f64 / n as f64;
@@ -153,7 +161,11 @@ impl Ink {
         // only the box the strokes (and their folded copies) cover
         let mut m: f64 = 0.0;
         for s in &self.segs {
-            m = m.max(s.lo.0.abs()).max(s.lo.1.abs()).max(s.hi.0.abs()).max(s.hi.1.abs());
+            m = m
+                .max(s.lo.0.abs())
+                .max(s.lo.1.abs())
+                .max(s.hi.0.abs())
+                .max(s.hi.1.abs());
         }
         let h = js_round(m + 1.0).min(half);
         p.shade(-h, -h, h - 1.0, h - 1.0, |x, y, o| {
@@ -213,7 +225,9 @@ pub fn pose<const N: usize>(keys: &[[Knot; N]], s: f64) -> [Knot; N] {
     let i = (libm::floor(s) as usize).min(last);
     let f = s - i as f64;
     let at = |k: usize| keys.get(k.min(last));
-    let (Some(p), Some(a), Some(b), Some(q)) = (at(i.saturating_sub(1)), at(i), at(i + 1), at(i + 2)) else {
+    let (Some(p), Some(a), Some(b), Some(q)) =
+        (at(i.saturating_sub(1)), at(i), at(i + 1), at(i + 2))
+    else {
         return [(0.0, 0.0, 0.0, 0.0); N];
     };
     let (first, end) = (i == 0, i + 1 >= last);
@@ -243,7 +257,10 @@ fn slope(before: f64, after: f64) -> f64 {
 
 fn ease(a: f64, b: f64, m0: f64, m1: f64, f: f64) -> f64 {
     let (f2, f3) = (f * f, f * f * f);
-    (2.0 * f3 - 3.0 * f2 + 1.0) * a + (f3 - 2.0 * f2 + f) * m0 + (3.0 * f2 - 2.0 * f3) * b + (f3 - f2) * m1
+    (2.0 * f3 - 3.0 * f2 + 1.0) * a
+        + (f3 - 2.0 * f2 + f) * m0
+        + (3.0 * f2 - 2.0 * f3) * b
+        + (f3 - f2) * m1
 }
 
 /// A value keyed at moments `(s, value)`, on a smooth curve through the keys, held past either end.
@@ -266,7 +283,11 @@ pub fn curve(keys: &[(f64, f64)], s: f64) -> f64 {
             if width <= 0.0 {
                 return b.1;
             }
-            let m0 = if k == 0 { 0.0 } else { slope(span(k - 1), span(k)) };
+            let m0 = if k == 0 {
+                0.0
+            } else {
+                slope(span(k - 1), span(k))
+            };
             let m1 = if k + 2 >= keys.len() {
                 0.0
             } else {

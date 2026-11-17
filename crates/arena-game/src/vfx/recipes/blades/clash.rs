@@ -5,7 +5,8 @@
 
 use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn};
 use crate::vfx::kit::{
-    Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, libm, smooth,
+    Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, libm,
+    smooth,
 };
 
 /// One spike of a hit star: angle, length and root half-width.
@@ -208,7 +209,14 @@ pub fn parry(o: &Opts) -> Box<dyn Show> {
             col,
             size: 0.6,
             delay,
-            ..spawn(Kind::Mote, 0.0, y, libm::cos(a) * v, libm::sin(a) * v - 20.0, life)
+            ..spawn(
+                Kind::Mote,
+                0.0,
+                y,
+                libm::cos(a) * v,
+                libm::sin(a) * v - 20.0,
+                life,
+            )
         };
         ps.spawn(&mut r, sp);
     }
@@ -221,7 +229,14 @@ pub fn parry(o: &Opts) -> Box<dyn Show> {
         let sp = Spawn {
             size,
             delay,
-            ..spawn(Kind::Star, libm::cos(a) * d, y + libm::sin(a) * d, 0.0, -3.0, life)
+            ..spawn(
+                Kind::Star,
+                libm::cos(a) * d,
+                y + libm::sin(a) * d,
+                0.0,
+                -3.0,
+                life,
+            )
         };
         ps.spawn(&mut r, sp);
     }
@@ -392,7 +407,14 @@ pub fn hit(o: &Opts) -> Box<dyn Show> {
             col,
             size: 0.6,
             delay,
-            ..spawn(Kind::Mote, 0.0, 0.0, libm::cos(a) * v, libm::sin(a) * v, life)
+            ..spawn(
+                Kind::Mote,
+                0.0,
+                0.0,
+                libm::cos(a) * v,
+                libm::sin(a) * v,
+                life,
+            )
         };
         ps.spawn(&mut r, q);
     }
@@ -445,7 +467,15 @@ impl Blow {
             }
             u += 0.04;
         }
-        p.glow_line(-half * ca, -half * sa, half * ca, half * sa, 4.0, c[5], 0.3 * k);
+        p.glow_line(
+            -half * ca,
+            -half * sa,
+            half * ca,
+            half * sa,
+            4.0,
+            c[5],
+            0.3 * k,
+        );
     }
 
     fn draw_hit(&self, p: &mut Painter) {

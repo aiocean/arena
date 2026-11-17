@@ -237,8 +237,8 @@ fn draw(p: &mut Painter, t: f64, o: &Spirit) {
         let mut r = 4.0;
         while r < h0 * 0.72 {
             let v = r / h0;
-            let x = wave(v, r, 0.0)
-                + libm::sin(r * 0.35 - ph * TAU * 3.0 + k * PI) * 2.2 * (1.0 - v);
+            let x =
+                wave(v, r, 0.0) + libm::sin(r * 0.35 - ph * TAU * 3.0 + k * PI) * 2.2 * (1.0 - v);
             if libm::sin(r * 0.2 - ph * TAU * 4.0 + k * 2.0) > 0.2 {
                 p.px(x, y0 - r, if k != 0.0 { h[2] } else { h[1] });
             }

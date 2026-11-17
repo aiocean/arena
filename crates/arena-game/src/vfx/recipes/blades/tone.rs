@@ -221,7 +221,10 @@ fn slope(before: f64, after: f64) -> f64 {
 
 fn ease(a: f64, b: f64, m0: f64, m1: f64, f: f64) -> f64 {
     let (f2, f3) = (f * f, f * f * f);
-    (2.0 * f3 - 3.0 * f2 + 1.0) * a + (f3 - 2.0 * f2 + f) * m0 + (3.0 * f2 - 2.0 * f3) * b + (f3 - f2) * m1
+    (2.0 * f3 - 3.0 * f2 + 1.0) * a
+        + (f3 - 2.0 * f2 + f) * m0
+        + (3.0 * f2 - 2.0 * f3) * b
+        + (f3 - f2) * m1
 }
 
 /// A value keyed at moments `(s, value)`, on a smooth curve through the keys and held past either end.

@@ -243,7 +243,10 @@ impl Body {
         if i < 0 || j < 0 || i >= w || j >= h {
             return false;
         }
-        self.mask.get((j * w + i) as usize).copied().unwrap_or(false)
+        self.mask
+            .get((j * w + i) as usize)
+            .copied()
+            .unwrap_or(false)
     }
 
     /// A random cell of the body: up to `tries` cells drawn, the first it covers.

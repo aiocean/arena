@@ -4,8 +4,8 @@
 //! plumes and the specks over them.
 
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Show, PI, TAU, clamp, cycle, js_max, js_min, js_round, js_sign, libm, ramp, rng, smooth,
-    tile_noise,
+    Layer, Opts, PI, Painter, Rgba, Show, TAU, clamp, cycle, js_max, js_min, js_round, js_sign,
+    libm, ramp, rng, smooth, tile_noise,
 };
 
 const PALETTE: [Rgba; 8] = [
@@ -103,7 +103,8 @@ fn tongues(sh: &Sheet, si: usize, e: f64, ph: f64) -> Vec<Tongue> {
     for s in [-1.0, 1.0] {
         for i in 0..sh.n {
             let n = sh.n as f64;
-            let q = (ph + i as f64 / n + si as f64 * 0.17 + if s > 0.0 { 0.5 / n } else { 0.0 }) % 1.0;
+            let q =
+                (ph + i as f64 / n + si as f64 * 0.17 + if s > 0.0 { 0.5 / n } else { 0.0 }) % 1.0;
             out.push(Tongue {
                 s,
                 q,
@@ -120,7 +121,13 @@ fn tongues(sh: &Sheet, si: usize, e: f64, ph: f64) -> Vec<Tongue> {
 fn height(sh: &Sheet, si: usize, e: f64, x: f64, ph: f64, tg: &[Tongue], seed: f64) -> f64 {
     let ax = libm::fabs(x);
     let env = 1.0 - smooth(0.5, 1.0, ax / (e * sh.e));
-    let r = tile_noise(ax * 0.07 - ph * sh.flow, si as f64 * 3.7, sh.flow, 0.0, seed + si as f64);
+    let r = tile_noise(
+        ax * 0.07 - ph * sh.flow,
+        si as f64 * 3.7,
+        sh.flow,
+        0.0,
+        seed + si as f64,
+    );
     let mut h = sh.h * env * (0.55 + 0.45 * r);
     for g in tg {
         let behind = g.s * (g.x - x);
@@ -183,7 +190,11 @@ fn sheet(p: &mut Painter, c: &[Rgba; 8], sh: &Sheet, si: usize, e: f64, t: f64, 
             } else {
                 c3
             };
-            let a = if y == top { 0.65 } else { (0.6 + 0.4 * (1.0 - v)) * streak };
+            let a = if y == top {
+                0.65
+            } else {
+                (0.6 + 0.4 * (1.0 - v)) * streak
+            };
             p.blend(x, y, col, sh.a * a);
             y += 1.0;
         }
@@ -207,7 +218,12 @@ fn sheet(p: &mut Painter, c: &[Rgba; 8], sh: &Sheet, si: usize, e: f64, t: f64, 
             let mut o = -w;
             while o <= w {
                 let col = if o > w * 0.4 { c5 } else { c4 };
-                p.blend(px + g.s * cs * o, py + sn * o, col, sh.a * 0.75 * k * (1.0 - a / 5.5));
+                p.blend(
+                    px + g.s * cs * o,
+                    py + sn * o,
+                    col,
+                    sh.a * 0.75 * k * (1.0 - a / 5.5),
+                );
                 o += 0.8;
             }
             a += 0.1;
@@ -290,13 +306,20 @@ fn draw_back(p: &mut Painter, t: f64, o: &State) {
     // lit from within, low down: a soft line of light along the floor under it all
     let mut x = -e;
     while x <= e {
-        p.glow(x, -3.0, 30.0, c[5], 0.14 * pulse * (1.0 - libm::fabs(x) / (e * 1.3)));
+        p.glow(
+            x,
+            -3.0,
+            30.0,
+            c[5],
+            0.14 * pulse * (1.0 - libm::fabs(x) / (e * 1.3)),
+        );
         x += 22.0;
     }
     // pockets of light wandering inside it, low down
     for i in 0..6 {
         let mut r = rng(&[o.seed, f64::from(i), 7.0]);
-        let x = libm::sin((TAU * t) / D + r.range(0.0, TAU)) * e * r.range(0.2, 0.7) + r.range(-0.3, 0.3) * e;
+        let x = libm::sin((TAU * t) / D + r.range(0.0, TAU)) * e * r.range(0.2, 0.7)
+            + r.range(-0.3, 0.3) * e;
         let k = 0.6 + 0.4 * libm::sin((TAU * t * 3.0) / D + f64::from(i));
         let y = -r.range(4.0, 10.0);
         let rad = r.range(14.0, 22.0);

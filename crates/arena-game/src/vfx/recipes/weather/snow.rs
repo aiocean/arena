@@ -8,7 +8,8 @@
 
 use super::sky::{Cv, clip, count, pass, sized, trips};
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, clamp, js_min, js_round, libm, mix, ramp, rand, smooth, wrap,
+    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, clamp, js_min, js_round, libm, mix, ramp, rand,
+    smooth, wrap,
 };
 
 /// The effect's own canvas, which `width` and `height` default to.
@@ -47,7 +48,9 @@ struct State {
 
 /// The drift's top edge.
 fn bank(x: f64) -> f64 {
-    -3.0 + 1.6 * libm::sin(x * 0.045 + 1.3) + 1.1 * libm::sin(x * 0.12 + 0.4) + 0.6 * libm::sin(x * 0.31 + 2.0)
+    -3.0 + 1.6 * libm::sin(x * 0.045 + 1.3)
+        + 1.1 * libm::sin(x * 0.12 + 0.4)
+        + 0.6 * libm::sin(x * 0.31 + 2.0)
 }
 
 /// The gusts: a sway of the whole snowfall, periodic so the loop closes.
@@ -152,7 +155,11 @@ fn depth(q: &mut Painter, st: &State, t: f64, l: usize) {
         };
         let (x, xl) = (x_at(age), x_at(tf));
         let y0 = cv.y0 - 6.0;
-        let y1 = if l != 0 { bank(xl) - 0.5 } else { -110.0 + r(1.0) * 106.0 };
+        let y1 = if l != 0 {
+            bank(xl) - 0.5
+        } else {
+            -110.0 + r(1.0) * 106.0
+        };
         let y = y0 + (y1 - y0) * (age / tf);
         let rest = u * dur - tf;
         if l == 0 {
@@ -161,7 +168,11 @@ fn depth(q: &mut Painter, st: &State, t: f64, l: usize) {
             q.dot(x, y, if r(6.0) < 0.5 { c[4] } else { c[5] }, a);
             return;
         }
-        let fade = if rest > 0.0 { 1.0 - rest / (dur - tf) } else { 1.0 };
+        let fade = if rest > 0.0 {
+            1.0 - rest / (dur - tf)
+        } else {
+            1.0
+        };
         if l == 1 {
             // a drifting flake: a point with a smaller one beside it, a plus when it's big
             let big = r(6.0) < 0.3;
@@ -215,7 +226,12 @@ fn crystal(q: &mut Painter, x: f64, y: f64, r: i32, turn: bool, c: &[Rgba; 8]) {
     let px = |q: &mut Painter, x: i32, y: i32, col: Rgba| q.px(f64::from(x), f64::from(y), col);
     for (dx, dy) in long {
         for d in 1..=arm {
-            px(q, xi + dx * d, yi + dy * d, if d == arm { WHITE } else { c[6] });
+            px(
+                q,
+                xi + dx * d,
+                yi + dy * d,
+                if d == arm { WHITE } else { c[6] },
+            );
         }
         let nubs: &[i32] = if turn {
             if arm >= 3 { &[arm - 1] } else { &[] }
@@ -228,7 +244,12 @@ fn crystal(q: &mut Painter, x: f64, y: f64, r: i32, turn: bool, c: &[Rgba; 8]) {
         };
         for &n in nubs {
             let (ox, oy) = if turn { (dx, -dy) } else { (dy, -dx) };
-            px(q, xi + dx * n + if turn { 0 } else { ox }, yi + dy * n + oy, c[4]);
+            px(
+                q,
+                xi + dx * n + if turn { 0 } else { ox },
+                yi + dy * n + oy,
+                c[4],
+            );
             px(
                 q,
                 xi + dx * n + if turn { -dx } else { -ox } + if turn { dx } else { 0 },
@@ -240,7 +261,12 @@ fn crystal(q: &mut Painter, x: f64, y: f64, r: i32, turn: bool, c: &[Rgba; 8]) {
     let reach = if turn { 1 } else { (arm / 2).max(1) };
     for (dx, dy) in short {
         for d in 1..=reach {
-            px(q, xi + dx * d, yi + dy * d, if d == 1 { c[6] } else { c[5] });
+            px(
+                q,
+                xi + dx * d,
+                yi + dy * d,
+                if d == 1 { c[6] } else { c[5] },
+            );
         }
     }
     px(q, xi, yi, WHITE);

@@ -17,12 +17,38 @@ mod small;
 mod swirl;
 
 pub static ALL: &[Recipe] = &[
-    Recipe::new("explosions/dirt-explosion", false, dirt::DURATION, dirt::make),
-    Recipe::new("explosions/implosion", false, implosion::DURATION, implosion::make),
-    Recipe::new("explosions/plasma-explosion", false, plasma::DURATION, plasma::make),
+    Recipe::new(
+        "explosions/dirt-explosion",
+        false,
+        dirt::DURATION,
+        dirt::make,
+    ),
+    Recipe::new(
+        "explosions/implosion",
+        false,
+        implosion::DURATION,
+        implosion::make,
+    ),
+    Recipe::new(
+        "explosions/plasma-explosion",
+        false,
+        plasma::DURATION,
+        plasma::make,
+    ),
     Recipe::new("explosions/puff-burst", false, puff::DURATION, puff::make).fps(50),
-    Recipe::new("explosions/small-explosion", false, small::DURATION, small::make),
-    Recipe::new("explosions/swirl-blast", false, swirl::DURATION, swirl::make).fps(50),
+    Recipe::new(
+        "explosions/small-explosion",
+        false,
+        small::DURATION,
+        small::make,
+    ),
+    Recipe::new(
+        "explosions/swirl-blast",
+        false,
+        swirl::DURATION,
+        swirl::make,
+    )
+    .fps(50),
     Recipe::new("spawn/poof", false, poof::DURATION, poof::make),
     Recipe::new("spawn/swirl-portal", false, portal::DURATION, portal::make).fps(50),
 ];

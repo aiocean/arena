@@ -9,7 +9,8 @@
 
 use super::sky::{Cv, clip, count, sized};
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, js_max, js_min, js_round, libm, loop_noise, mix, ramp, rand,
+    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, js_max, js_min, js_round, libm, loop_noise, mix,
+    ramp, rand,
 };
 
 /// The effect's own canvas, which `width` and `height` default to.
@@ -179,7 +180,12 @@ fn firefly(q: &mut Painter, t: f64, f: &Fly, c: &[Rgba; 6]) {
         if g < 0.08 {
             return;
         }
-        q.dot(xi, yi, if g > 0.6 { c[4] } else { c[3] }, js_min(1.0, g * 1.6));
+        q.dot(
+            xi,
+            yi,
+            if g > 0.6 { c[4] } else { c[3] },
+            js_min(1.0, g * 1.6),
+        );
         q.glow(x, y, 6.0, c[2], 0.45 * g);
         return;
     }
@@ -288,7 +294,11 @@ fn grass(q: &mut Painter, st: &State, t: f64, lit: &[(f64, f64, f64)], front: bo
         while row < h {
             let u = row / h;
             let col = if u > 0.8 && tip_light > 0.2 {
-                if tip_light > 0.55 && u > 0.9 { c[3] } else { c[2] }
+                if tip_light > 0.55 && u > 0.9 {
+                    c[3]
+                } else {
+                    c[2]
+                }
             } else if u > 0.7 {
                 high
             } else {

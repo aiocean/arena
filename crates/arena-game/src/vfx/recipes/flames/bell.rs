@@ -156,10 +156,8 @@ impl Bell {
                     return;
                 }
                 let u = x / w;
-                let edge = x.abs() > w - 1.0
-                    || y < -BODY + 1.0
-                    || y > -1.0
-                    || x.abs() > half(y - 1.0);
+                let edge =
+                    x.abs() > w - 1.0 || y < -BODY + 1.0 || y > -1.0 || x.abs() > half(y - 1.0);
                 // flat bands lit from the upper left
                 let mut i = if u < -0.72 {
                     BASE
@@ -236,27 +234,33 @@ impl Bell {
     fn crown(&self, p: &mut Painter, n: &Now) {
         let (cx, cy) = (n.dx, -BODY - n.up - 4.0);
         let shown = smooth(0.0, 0.12, n.t);
-        p.each(cx - 5.0, cy - 5.0, cx + 5.0, cy + 5.0, |p, lx, ly, sx, sy| {
-            let (x, y) = (lx - cx, ly - cy);
-            let r = libm::sqrt(x * x + y * y);
-            let stem = x.abs() < 2.0 && y > 2.5 && y < 5.0;
-            if !stem && !(1.5..=4.5).contains(&r) {
-                return;
-            }
-            let edge = if stem {
-                x.abs() > 1.0
-            } else {
-                !(2.5..=3.5).contains(&r)
-            };
-            let c = if edge {
-                self.c(OUTLINE)
-            } else if x < 0.0 && y < 0.0 {
-                self.c(HIGHLIGHT)
-            } else {
-                self.c(BASE)
-            };
-            p.blend_px(sx, sy, c, shown);
-        });
+        p.each(
+            cx - 5.0,
+            cy - 5.0,
+            cx + 5.0,
+            cy + 5.0,
+            |p, lx, ly, sx, sy| {
+                let (x, y) = (lx - cx, ly - cy);
+                let r = libm::sqrt(x * x + y * y);
+                let stem = x.abs() < 2.0 && y > 2.5 && y < 5.0;
+                if !stem && !(1.5..=4.5).contains(&r) {
+                    return;
+                }
+                let edge = if stem {
+                    x.abs() > 1.0
+                } else {
+                    !(2.5..=3.5).contains(&r)
+                };
+                let c = if edge {
+                    self.c(OUTLINE)
+                } else if x < 0.0 && y < 0.0 {
+                    self.c(HIGHLIGHT)
+                } else {
+                    self.c(BASE)
+                };
+                p.blend_px(sx, sy, c, shown);
+            },
+        );
     }
 
     /// A soft warm glow round the bell and a pool of light under it.

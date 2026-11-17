@@ -8,8 +8,8 @@ use crate::vfx::kit::sim::{
     Bit, BitKind, Bits, Blazes, Flags, Kind, Lights, Particles, ParticlesOpts, Spawn, band,
 };
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round,
-    libm, mix, ramp, rand, rgb, scale, smooth,
+    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round, libm,
+    mix, ramp, rand, rgb, scale, smooth,
 };
 use core::f64::consts::FRAC_PI_2;
 
@@ -222,7 +222,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let vy = r.range(-40.0, -10.0);
         let life = r.range(0.18, 0.3);
         let size = r.range(rad * 0.4, rad * 0.55);
-        puff(&mut ps, &mut r, Kind::Fire, x, py, vx, vy, life, None, size, 0.0, Flags::NONE);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Fire,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            None,
+            size,
+            0.0,
+            Flags::NONE,
+        );
     }
     let mut i = 0.0;
     while i < js_round(28.0 * power) {
@@ -238,7 +251,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         };
         let (x, py) = (libm::cos(a) * d, y + libm::sin(a) * d);
         let (vx, vy) = (libm::cos(a) * sp, libm::sin(a) * sp * 0.8 - 40.0);
-        puff(&mut ps, &mut r, Kind::Fire, x, py, vx, vy, life, None, size, 0.0, flags);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Fire,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            None,
+            size,
+            0.0,
+            flags,
+        );
         i += 1.0;
     }
     for _ in 0..5 {
@@ -250,7 +276,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let (x, py) = (libm::cos(a) * d, y + libm::sin(a) * d);
         let (vx, vy) = (libm::cos(a) * 30.0, libm::sin(a) * 20.0 - 30.0);
         let col = Some(rgb(34.0, 29.0, 38.0));
-        puff(&mut ps, &mut r, Kind::Smoke, x, py, vx, vy, life, col, size, delay, Flags::BIG);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Smoke,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            col,
+            size,
+            delay,
+            Flags::BIG,
+        );
     }
     for _ in 0..5 {
         let x = r.range(-rad * 0.25, rad * 0.25);
@@ -264,7 +303,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         } else {
             Flags::NONE
         };
-        puff(&mut ps, &mut r, Kind::Fire, x, y, vx, vy, life, None, size, delay, flags);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Fire,
+            x,
+            y,
+            vx,
+            vy,
+            life,
+            None,
+            size,
+            delay,
+            flags,
+        );
     }
     let mut i = 0.0;
     while i < js_round(10.0 * power) {
@@ -276,7 +328,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let delay = r.range(0.12, 0.45);
         let (x, py) = (libm::cos(a) * d, y + libm::sin(a) * d);
         let (vx, vy) = (libm::cos(a) * sp, libm::sin(a) * sp * 0.6 - 35.0);
-        puff(&mut ps, &mut r, Kind::Smoke, x, py, vx, vy, life, None, size, delay, Flags::BIG);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Smoke,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            None,
+            size,
+            delay,
+            Flags::BIG,
+        );
         i += 1.0;
     }
     let mut i = 0.0;
@@ -348,7 +413,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let life = r.range(1.1, 2.0);
         let size = r.range(4.0, 7.0) + rad / 6.0;
         let delay = r.range(0.0, 0.06);
-        puff(&mut ps, &mut r, Kind::Smoke, x, py, vx, vy, life, Some(dust), size, delay, Flags::BIG);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Smoke,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            Some(dust),
+            size,
+            delay,
+            Flags::BIG,
+        );
         i += 1.0;
     }
     let mut i = 0.0;
@@ -408,7 +486,20 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
         let life = r.range(1.6, 2.6);
         let size = r.range(5.0, 9.0) * libm::sqrt(s) + rad / 7.0;
         let delay = r.range(0.0, 0.15);
-        puff(&mut ps, &mut r, Kind::Smoke, x, py, vx, vy, life, Some(dust), size, delay, Flags::BIG);
+        puff(
+            &mut ps,
+            &mut r,
+            Kind::Smoke,
+            x,
+            py,
+            vx,
+            vy,
+            life,
+            Some(dust),
+            size,
+            delay,
+            Flags::BIG,
+        );
         i += 1.0;
     }
 

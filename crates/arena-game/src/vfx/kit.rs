@@ -15,8 +15,8 @@
 pub mod blob;
 pub mod halo;
 pub mod shapes;
-pub mod sweep;
 pub mod sim;
+pub mod sweep;
 
 use super::{Effect, Instance, Paint, Spawn};
 use crate::raster::Canvas;
@@ -706,7 +706,12 @@ impl<'a> Painter<'a> {
 
     /// Where the origin is and how it is placed: (x, y, flip, angle).
     pub fn placement(&self) -> (f64, f64, bool, f64) {
-        (self.tx, self.ty, self.fx < 0.0, libm::atan2(self.sn, self.cs))
+        (
+            self.tx,
+            self.ty,
+            self.fx < 0.0,
+            libm::atan2(self.sn, self.cs),
+        )
     }
 
     /// Keep writes inside the local box [x0, x1) x [y0, y1) (`None` to stop clipping).
@@ -728,7 +733,10 @@ impl<'a> Painter<'a> {
         match self.clip {
             None => false,
             Some([x0, y0, x1, y1]) => {
-                let (lx, ly) = (self.from_x(sx + 0.5, sy + 0.5), self.from_y(sx + 0.5, sy + 0.5));
+                let (lx, ly) = (
+                    self.from_x(sx + 0.5, sy + 0.5),
+                    self.from_y(sx + 0.5, sy + 0.5),
+                );
                 !(lx >= x0 && lx < x1 && ly >= y0 && ly < y1)
             }
         }
@@ -1378,7 +1386,17 @@ pub fn looped<Q: Life>(
 
 /// Where a body is t seconds after leaving (x, y) at (vx, vy), under acceleration (ax, ay) and linear drag kx, ky:
 /// [x, y, vx, vy].
-pub fn drift(x: f64, y: f64, vx: f64, vy: f64, t: f64, ax: f64, ay: f64, kx: f64, ky: f64) -> [f64; 4] {
+pub fn drift(
+    x: f64,
+    y: f64,
+    vx: f64,
+    vy: f64,
+    t: f64,
+    ax: f64,
+    ay: f64,
+    kx: f64,
+    ky: f64,
+) -> [f64; 4] {
     let along = |x: f64, v: f64, a: f64, k: f64| {
         if k <= 0.0 {
             return (x + v * t + 0.5 * a * t * t, v + a * t);
@@ -1577,7 +1595,11 @@ impl Play {
             match self.recipe.intro {
                 Some(intro) => {
                     let ki = (js_round(intro * f64::from(self.recipe.fps)) as u64).min(n - 1);
-                    if k < n { k } else { ki + (k - ki) % (n - ki).max(1) }
+                    if k < n {
+                        k
+                    } else {
+                        ki + (k - ki) % (n - ki).max(1)
+                    }
                 }
                 None => k % n,
             }
@@ -1652,7 +1674,10 @@ impl Instance for Play {
             js_min(self.tick_t, d)
         };
         let (x, y, flip) = (self.opts.x, self.opts.y, self.opts.flip);
-        for (layer, canvas) in [(Layer::Back, &mut *paint.back), (Layer::Front, &mut *paint.front)] {
+        for (layer, canvas) in [
+            (Layer::Back, &mut *paint.back),
+            (Layer::Front, &mut *paint.front),
+        ] {
             let mut p = Painter::new(canvas);
             p.place(x, y, flip, 0.0);
             p.fade = fade;

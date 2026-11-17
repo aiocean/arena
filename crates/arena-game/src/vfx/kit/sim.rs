@@ -6,11 +6,11 @@
 //! MIT License, Copyright (c) 2026 Hugo Duprez. Units here are art pixels and seconds; draw through a Painter,
 //! so effects stay in local space and mirror or rotate like any other.
 
+use super::Painter;
 use super::{Layer, libm};
-use core::ops::BitOr;
 use super::{Rgba, WHITE, mix, scale, step_at};
 use super::{Rng, TAU, clamp, js_max, js_min, js_round, or_one};
-use super::Painter;
+use core::ops::BitOr;
 
 /// Downward acceleration of falling particles, px/s².
 pub const GRAVITY: f64 = 950.0;

@@ -141,7 +141,9 @@ pub fn make(o: &Opts) -> Box<dyn Show> {
             let k = 1.0 - a.abs();
             let jit = 0.8 + 0.4 * dice(1.0);
             let vx = a * RIM_OUT * jit + (dice(4.0) - 0.5) * 16.0;
-            let vy = -(RIM_UP + COLUMN * k * k) * (0.85 + 0.3 * dice(2.0)) * (0.6 + 0.4 * (-my / (2.0 * R)));
+            let vy = -(RIM_UP + COLUMN * k * k)
+                * (0.85 + 0.3 * dice(2.0))
+                * (0.6 + 0.4 * (-my / (2.0 * R)));
             drops.push(Drop {
                 x,
                 y,

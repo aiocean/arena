@@ -5,7 +5,8 @@
 
 use super::splash::{WATER, bead};
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, cycle, js_max, js_min, libm, ramp, smooth, tile_noise,
+    Layer, Opts, Painter, Rgba, Show, TAU, WHITE, cycle, js_max, js_min, libm, ramp, smooth,
+    tile_noise,
 };
 
 const D: f64 = 1.0;
@@ -75,7 +76,13 @@ fn draw(p: &mut Painter, t: f64, o: &State) {
                     && tile_noise(x * 0.12 - ph * 25.0, (y - yc) * 0.25, 25.0, 0.0, s + 2.0)
                         < -0.9 + 1.6 * smooth(0.55, 1.0, u))
             {
-                let streak = tile_noise(x * 0.06 - ph * 40.0, libm::floor(y - yc + 20.0) * 1.7, 40.0, 0.0, s);
+                let streak = tile_noise(
+                    x * 0.06 - ph * 40.0,
+                    libm::floor(y - yc + 20.0) * 1.7,
+                    40.0,
+                    0.0,
+                    s,
+                );
                 let mut lvl: usize = if aq < 0.2 {
                     0
                 } else if aq < 0.48 {
@@ -118,10 +125,23 @@ fn draw(p: &mut Painter, t: f64, o: &State) {
         let kf = f64::from(k);
         let x = l * 0.82 + ((kf * 13.0 + ph * SPEED) % 78.0);
         let y = sag(js_min(x, l), l)
-            + if x > l { libm::pow((x - l) / 60.0, 2.0) * 10.0 } else { 0.0 }
+            + if x > l {
+                libm::pow((x - l) / 60.0, 2.0) * 10.0
+            } else {
+                0.0
+            }
             + libm::sin(kf * 2.1) * 1.5;
         if x < l + 34.0 {
-            bead(p, x, y, SPEED, 40.0, if k % 3 == 0 { 3.0 } else { 2.0 }, c, 1.0);
+            bead(
+                p,
+                x,
+                y,
+                SPEED,
+                40.0,
+                if k % 3 == 0 { 3.0 } else { 2.0 },
+                c,
+                1.0,
+            );
         }
     }
     // spray: a widening cone of drops shed from the stream and torn off its end, arcing down
@@ -170,7 +190,13 @@ fn draw(p: &mut Painter, t: f64, o: &State) {
     // light: down the core, brightest near the nozzle
     let mut x = 0.0;
     while x < l {
-        p.glow(x, sag(x, l), 14.0 + x * 0.1, c[4], 0.26 * (1.0 - (x / l) * 0.5));
+        p.glow(
+            x,
+            sag(x, l),
+            14.0 + x * 0.1,
+            c[4],
+            0.26 * (1.0 - (x / l) * 0.5),
+        );
         x += 10.0;
     }
     p.glow(l * 0.9, sag(l * 0.9, l), 26.0, c[5], 0.22);

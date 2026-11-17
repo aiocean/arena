@@ -4,8 +4,8 @@
 
 use super::firelib::{Burn, Hot, LoopNoise, Tongue, burn, ember, hot_first, spark};
 use crate::vfx::kit::{
-    Layer, Life, Opts, PI, Painter, Rgba, Show, WHITE, js_max, js_min, js_round, libm, looped, mix,
-    drift, rand, ramp,
+    Layer, Life, Opts, PI, Painter, Rgba, Show, WHITE, drift, js_max, js_min, js_round, libm,
+    looped, mix, ramp, rand,
 };
 
 pub const D: f64 = 3.0;

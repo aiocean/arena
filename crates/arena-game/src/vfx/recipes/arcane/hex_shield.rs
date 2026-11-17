@@ -7,8 +7,8 @@ use core::f64::consts::{FRAC_PI_2, PI};
 
 use crate::vfx::kit::sim::{Kind, Lights, Particle, Particles, ParticlesOpts, Spawn};
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, fract, js_max, js_min, js_round, libm, scale, smooth,
-    to_int32,
+    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, fract, js_max, js_min, js_round,
+    libm, scale, smooth, to_int32,
 };
 
 /// Dome radius in px.
@@ -34,7 +34,12 @@ const YELLOW: Rgba = Rgba::hex24(0xffe26b);
 const ORANGE: Rgba = Rgba::hex24(0xff8a2a);
 const DEEP_ORANGE: Rgba = Rgba::hex24(0xf2561d);
 /// The blows: when, and where on the dome (longitude, latitude).
-const HITS: [(f64, f64, f64); 4] = [(1.05, 0.75, 0.55), (1.38, 1.05, 0.95), (1.62, 0.5, 0.25), (2.05, 0.9, 1.2)];
+const HITS: [(f64, f64, f64); 4] = [
+    (1.05, 0.75, 0.55),
+    (1.38, 1.05, 0.95),
+    (1.62, 0.5, 0.25),
+    (2.05, 0.9, 1.2),
+];
 const GRID: f64 = 6.2;
 const BAYER: [f64; 16] = [
     0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0,
@@ -145,7 +150,8 @@ impl State {
                 continue;
             }
             let d = libm::acos(clamp(
-                libm::cos(lat) * libm::cos(hh.lat) * libm::cos(lon - hh.lon) + libm::sin(lat) * libm::sin(hh.lat),
+                libm::cos(lat) * libm::cos(hh.lat) * libm::cos(lon - hh.lon)
+                    + libm::sin(lat) * libm::sin(hh.lat),
                 -1.0,
                 1.0,
             ));
@@ -208,7 +214,12 @@ impl State {
             }
             return;
         }
-        let (age, end, rim, hit) = (t - appear, gone - t, 1.0 - libm::fabs(z), self.ripple(lon, lat));
+        let (age, end, rim, hit) = (
+            t - appear,
+            gone - t,
+            1.0 - libm::fabs(z),
+            self.ripple(lon, lat),
+        );
         let flash = age < 0.1 || end < 0.08;
         let sweep = libm::fabs(fract(lon * 0.35 + lat * 0.45 - t * 0.55) - 0.5) < 0.04;
         if e > 0.8 {
@@ -332,7 +343,14 @@ impl State {
 
 /// A line with its ends rounded to whole pixels.
 fn line(p: &mut Painter, x0: f64, y0: f64, x1: f64, y1: f64, c: Rgba) {
-    p.line(js_round(x0), js_round(y0), js_round(x1), js_round(y1), c, 1.0);
+    p.line(
+        js_round(x0),
+        js_round(y0),
+        js_round(x1),
+        js_round(y1),
+        c,
+        1.0,
+    );
 }
 
 /// A solid disc of pixels whose centres fall within `r`.
@@ -443,7 +461,11 @@ impl Show for State {
                 let lon = r.range(-1.4, 1.4);
                 let lat = r.range(0.0, 1.4);
                 let (x, y) = surf(rad, lon, lat);
-                let kind = if r.chance(0.5) { Kind::Star } else { Kind::Mote };
+                let kind = if r.chance(0.5) {
+                    Kind::Star
+                } else {
+                    Kind::Mote
+                };
                 let vx = r.range(-30.0, 30.0) / 2.0;
                 let vy = -r.range(20.0, 80.0) / 2.0;
                 let life = r.range(0.3, 0.7);

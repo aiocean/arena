@@ -50,7 +50,15 @@ pub fn count(n: usize, span: f64, own: f64) -> usize {
 
 /// Falling things for a loop of `d` s: `n` slots, each falling `m` whole times a loop (`m0..=m1`), each fall somewhere
 /// new: `f(u, k, m, i)`, `u` 0..1 through the fall, `k` its number (`wrap(k, m)` names it).
-pub fn trips(t: f64, d: f64, n: usize, seed: f64, m0: f64, m1: f64, mut f: impl FnMut(f64, f64, f64, f64)) {
+pub fn trips(
+    t: f64,
+    d: f64,
+    n: usize,
+    seed: f64,
+    m0: f64,
+    m1: f64,
+    mut f: impl FnMut(f64, f64, f64, f64),
+) {
     for i in 0..n {
         let i = i as f64;
         let m = m0 + libm::floor(rand(&[seed, i, 72.0]) * (m1 - m0 + 1.0));

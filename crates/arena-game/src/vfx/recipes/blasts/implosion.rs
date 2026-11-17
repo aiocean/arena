@@ -234,7 +234,14 @@ impl Show for Implosion {
                 let x2 = libm::cos(a - q.spin * 0.1) * (d + 4.0 * u * u + 0.5);
                 let y2 = libm::sin(a - q.spin * 0.1) * (d + 4.0 * u * u + 0.5);
                 let (tail, col) = (mix(q.c, VOID, 0.4), q.c);
-                p.line(x2, y2, x, y, move |v: f64| if v < 0.5 { tail } else { col }, 1.0);
+                p.line(
+                    x2,
+                    y2,
+                    x,
+                    y,
+                    move |v: f64| if v < 0.5 { tail } else { col },
+                    1.0,
+                );
             }
             // the core: hotter as it is crushed, then a white point trembling in the stillness
             let still = t > SUCK;

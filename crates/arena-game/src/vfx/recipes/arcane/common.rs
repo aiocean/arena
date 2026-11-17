@@ -17,7 +17,17 @@ pub const ARCANE: [Rgba; 8] = [
 
 /// A drifting mote at (x, y) moving (vx, vy) px/s: bright head, darker tail, light.
 #[allow(clippy::too_many_arguments)]
-pub fn mote(p: &mut Painter, x: f64, y: f64, vx: f64, vy: f64, c: Rgba, size: f64, k: f64, glow: f64) {
+pub fn mote(
+    p: &mut Painter,
+    x: f64,
+    y: f64,
+    vx: f64,
+    vy: f64,
+    c: Rgba,
+    size: f64,
+    k: f64,
+    glow: f64,
+) {
     let h = libm::hypot(vx, vy);
     let sp = or_one(h);
     let (ux, uy) = (vx / sp, vy / sp);
@@ -56,25 +66,31 @@ pub fn floor_ring(
         return;
     }
     let ry = r * sy;
-    p.shade(cx - r - 1.0, cy - ry - 1.0, cx + r + 1.0, cy + ry + 1.0, |x, y, o| {
-        let nx = (x - cx) / r;
-        let ny = (y - cy) / js_max(0.3, ry);
-        let d = libm::hypot(nx, ny);
-        if d < 1e-6 {
-            return None;
-        }
-        let g = libm::hypot(nx / r, ny / js_max(0.3, ry)) / d;
-        if (d - 1.0).abs() / g > 0.5 {
-            return None;
-        }
-        let ang = libm::atan2(ny, nx);
-        if !keep(ang) {
-            return None;
-        }
-        o.c = c(ang);
-        o.a = a;
-        None
-    });
+    p.shade(
+        cx - r - 1.0,
+        cy - ry - 1.0,
+        cx + r + 1.0,
+        cy + ry + 1.0,
+        |x, y, o| {
+            let nx = (x - cx) / r;
+            let ny = (y - cy) / js_max(0.3, ry);
+            let d = libm::hypot(nx, ny);
+            if d < 1e-6 {
+                return None;
+            }
+            let g = libm::hypot(nx / r, ny / js_max(0.3, ry)) / d;
+            if (d - 1.0).abs() / g > 0.5 {
+                return None;
+            }
+            let ang = libm::atan2(ny, nx);
+            if !keep(ang) {
+                return None;
+            }
+            o.c = c(ang);
+            o.a = a;
+            None
+        },
+    );
 }
 
 /// An original rune alphabet: angular 3 x 5 glyphs.

@@ -6,8 +6,8 @@ use super::common::{cull, draw_both, seed_of};
 use crate::vfx::kit::shapes::{bolt, forks};
 use crate::vfx::kit::sim::{Kind, Lights, Particles, ParticlesOpts, Spawn, band, flare};
 use crate::vfx::kit::{
-    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round,
-    libm, noise, ramp, rng, smooth,
+    Layer, Opts, Painter, Rgba, Rng, Show, TAU, WHITE, clamp, ease, js_max, js_min, js_round, libm,
+    noise, ramp, rng, smooth,
 };
 
 pub const DURATION: f64 = 1.7;

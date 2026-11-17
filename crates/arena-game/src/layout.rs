@@ -4,8 +4,8 @@
 
 use bevy::camera::ScalingMode;
 use bevy::core_pipeline::tonemapping::{DebandDither, Tonemapping};
-use bevy::render::view::Msaa;
 use bevy::prelude::*;
+use bevy::render::view::Msaa;
 use bevy::window::PrimaryWindow;
 use pixfx_duel::data::UNIT;
 

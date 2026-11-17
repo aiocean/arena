@@ -5,7 +5,9 @@
 
 use super::common::{ARCANE, floor_ring, glyph, mote};
 use crate::vfx::kit::sim::sparkle;
-use crate::vfx::kit::{Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, cycle, ease, js_min, libm, ramp, smooth};
+use crate::vfx::kit::{
+    Layer, Opts, PI, Painter, Rgba, Rng, Show, TAU, WHITE, cycle, ease, js_min, libm, ramp, smooth,
+};
 
 /// One loop, seconds: turning a quarter a loop keeps every part seamless.
 pub const D: f64 = 4.0;
@@ -90,7 +92,8 @@ fn circle(p: &mut Painter, c: &[Rgba; 8], t: f64, far: bool) {
         }
     }
     // a square turning the other way inside the inner ring, its corners touching it
-    let pts: [(f64, f64); 4] = core::array::from_fn(|k| at(-spin + (k as f64 * TAU) / 4.0 + PI / 4.0, RI));
+    let pts: [(f64, f64); 4] =
+        core::array::from_fn(|k| at(-spin + (k as f64 * TAU) / 4.0 + PI / 4.0, RI));
     for k in 0..4 {
         let (mut ax, mut ay) = pts[k];
         let (mut bx, mut by) = pts[(k + 1) % 4];
