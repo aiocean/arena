@@ -36,7 +36,7 @@ obs, mask = env.observe()                  # float32[n, 354], bool[n, 30]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
 ```
 
-- `reset` starts env `i` on a fresh round. `learner` is the corner and so the school (0 Thunder, 1 Frost); `style` and
+- `reset` starts env `i` on a fresh round. `learner` is the seat (0 left, 1 right; each fight draws both seats' loadouts); `style` and
   `foe_style` are 0 aggressive, 1 balanced, 2 defensive; `opponent` is `"brain"`, `"first"`, `"aggressive"`,
   `"turtle"` or `"policy"` (then `model` is a `set_model` id, otherwise -1); `limit` is the round's time limit in
   seconds (the trainer uses 90).
@@ -78,7 +78,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--lr` | 3e-4 | learning rate, falling linearly to 0 |
 | `--ent` | 0.01 0.002 | entropy weight, from the first to the second over the run |
 | `--shaping-until` | 0.6 | share of the run over which the damage term falls to 0 (0: none at all) |
-| `--thunder` | 0.5 | share of fights in which the learner plays Thunder |
+| `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--snapshot-every` | 20 | how often the latest self joins the league |
 | `--gamma`, `--lam` | 0.995, 0.95 | discount and GAE lambda |
 | `--clip`, `--epochs`, `--minibatches` | 0.2, 4, 8 | PPO clip, passes over each rollout, minibatches per pass |
@@ -88,16 +88,15 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--resume` | | continue a run, optimiser and schedule included; the league restarts with only the current policy (past selves are not saved) |
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
-each opponent, overall and per school: `win/brain`, `win/latest/thunder`, ...) and `runs/<run>/last.pt` every 25.
+each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...) and `runs/<run>/last.pt` every 25.
 
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
-pair 15%; schools and styles drawn per fight.
+pair 15%; seats, styles and both loadouts drawn per fight.
 
-**A lesson from the shipped AI.** Trained with each school half the time, it played Thunder worse: Thunder won 40% of
-its own mirror while the rules were even (the brain's mirror: 50.9%). Fine-tuned with `--thunder 0.9`, Thunder won
-49.1%. Retrained for the HD rules (`UNIT` 4), 600 updates from it at `--thunder 0.9` overshot (Thunder 60% of the
-mirror), and 200 more from there at 0.5 or 0.7 undershot (43-44%); 200 at `--thunder 0.8` shipped (48.9%). Watch the
-per-school win rates in the log; a school you lose with needs more of the training.
+**The shipped AI was trained on the old rules** (two schools, Thunder and Frost). The rules now play by the damage
+system (`docs/rules.md`) with random loadouts; the inputs kept their shape (`docs/bot.md`), so it still runs, but it
+needs a retrain: on the new rules it wins about 79% against the brain and 75% against the first mind. Watch the
+per-seat win rates in the log.
 
 ## Making it your own
 
@@ -108,7 +107,7 @@ per-school win rates in the log; a school you lose with needs more of the traini
 | Another algorithm or model | anything that drives `VecEnv` and ends in an ONNX model (`net.py`'s `to_onnx`) |
 | A bigger network | `--width`, `--hidden`, `--blocks` |
 | A head start | `--init ../crates/pixfx-duel/weights/policy.onnx` |
-| More of one school | `--thunder` |
+| More of one seat | `--seat0` |
 
 The inputs and acts are the arena's (`docs/bot.md`); the model is yours.
 
@@ -160,18 +159,20 @@ To fight your model in training, hand its ONNX bytes to `set_model`.
 cargo run --release -p arena-bot --features host,onnx --example ladder -- --seeds 150 --telemetry [--onnx FILE | --bot FILE.wasm]
 ```
 
-The ladder plays seeds 1-150, each both ways (as Thunder, then as Frost) for 3 rounds, rounds cut at 120 s. The
+The ladder plays seeds 1-150, each both ways (in seat 0, then in seat 1) for 3 rounds, rounds cut at 120 s. The
 bot (the house AI unless `--onnx` or `--bot` names another) plays the balanced style against the brain, the first mind and the scripts; only the mirror draws styles. A cut
 ends that fight and shows in the `cut` column; win rates count finished rounds. It prints:
 
-| Match | The shipped AI | Bar |
-|---|---|---|
-| vs the brain | 92.0% (Thunder 91.1%, Frost 92.9%) | at least 75%, 65% each school |
-| vs the first mind | 90.4% | at least 80% |
-| vs the aggressive and turtle scripts | 85.2%, 99.6% | |
-| its own mirror, Thunder's share | 48.9% | 45-55% |
+| Match | Bar |
+|---|---|
+| vs the brain | at least 75%, 65% in each seat |
+| vs the first mind | at least 80% |
+| vs the aggressive and turtle scripts | |
+| its own mirror, seat 0's share | 45-55% |
 
-`--telemetry` adds what each school's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
+(The shipped AI's numbers on the old rules no longer hold; they are measured again after its retrain.)
+
+`--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
 
 ## Watch it

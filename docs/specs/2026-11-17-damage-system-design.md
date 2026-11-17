@@ -711,6 +711,64 @@ Kích thước đầu vào đổi, nên `pixfx-mind` (`policy`) và mọi bot đ
 5. **Huấn luyện và vòng cân bằng** (mục 12.3).
 6. Sau cùng: effect riêng cho từng chiêu, UI.
 
+### 14.1 Nối vào trận (bước 2): đã làm, và quyết định khi thiết kế im lặng
+
+Trận thật (`crates/pixfx-duel`, bản Bevy) giờ đánh bằng `arena-calc`, gọi như `arena-sim` gọi
+(`crates/arena-sim/src/fight.rs` là mẫu): bỏ `School`, chill, freeze và sáu chiêu băng; hai ghế giống hệt nhau, khác
+nhau ở bộ đồ (ngẫu nhiên theo seed trên xúc xắc riêng, hoặc truyền vào `Duel::with_loadouts`); Thunder và Frost chỉ còn
+là hình vẽ (`data::Look`). Mọi đòn qua `build_skill` + `resolve_with` (né, chí mạng, nhân đôi, tinh theo thứ tự);
+`tick_with` mỗi tick; hàng đợi sự kiện chạy sau mỗi lượt đòn và kích chiêu ngay; đạn là `projectile::Flight`; đẩy lùi,
+tốc chạy, tầm lướt từ `motion`; hồi chiêu là `charge::Uses`; vùng và thời gian từ `play`; bẫy, mìn, đàn, triệu hồi là
+thực thể trong world, xét theo id.
+
+Những chỗ thiết kế không nói, trận chọn thế này (mỗi cái một dòng, đổi được):
+
+- Chiêu đi theo **motion** nó mượn (`Gem::spell`): Melee, Dash, Blast, Bolt, Orb, Zone, Void, Heal, Ward, Barrier,
+  Blink. Vai trò theo tag đứng trước motion (`kit::Way`): ý cảnh, lĩnh vực, nguyền không sát thương, buff (tư thế: nhân
+  +25% sát thương; khác: nhận −20%, 8 s), bẫy/mìn/đàn/triệu hồi. Chiêu Thuấn vẫn bay theo motion của nó; Thuấn chỉ đổi
+  né và chí mạng.
+- `Hits` của gem thành **đòn lặp** cách nhau 0,15 s (phần lẻ đánh cuối với hệ số lẻ); Zone có nhiều nhát và Void đã tự
+  đếm nhát của mình. Nhát Void = đòn × `tick/damage` của motion.
+- **Nộ**: một điểm mỗi lần thi triển có đòn trúng (đòn đầu), không phải mỗi đòn, để chiêu nhiều nhát không đầy nộ ngay.
+- **Hồi chiêu** tính từ lúc bắt đầu thi triển (`Uses`), không cộng windup như luật cũ.
+- **Guard**: 8 linh lực, xác suất đỡ theo cỡ đòn như cũ; phần lọt 20% đi qua `resolve_with` không xúc xắc.
+- **Khống chế lên thân**: choáng và quật ngã giữ thân (hitstun) và ngắt windup; định thân và giật giữ thân (shocked) và
+  ngắt windup; trói = không đi, không độn; thất hồn = câm (chỉ Đòn).
+- **Bay** dừng hồi linh lực và tốn 3 linh lực/s.
+- **Hồi máu** và **ward** xóa mọi ailment (như cleanse cũ).
+- **Chuông** (bell) phản đòn gần bằng `counter.damage × POWER` sát thương Lực, choáng như cũ.
+- **Sức** của đòn cho thân (bị hất, hitstun) = sát thương gây ra / `data::POWER` (≈ 33,9, một điểm power cũ).
+- **Triệu hồi** đi bằng tốc đi của đấu sĩ tới tầm kiếm (`slash`), đánh 1 lần/s như nhát kiếm. **Đàn** phóng chiêu từ chỗ
+  nó đứng theo motion của chiêu. **Bẫy**: chiêu vùng nổ quanh bẫy, chiêu khác đánh kẻ đạp. **Mìn**: luật tự cho nổ thay
+  chủ khi đối thủ đứng trong tầm nổ (ABI bot chưa có hành động kích mìn); mọi mìn đã gài nổ cùng tick, không cách 0,1 s.
+- **Hồn**: +1 mỗi 100 sát thương Hồn gây ra, +1 mỗi mạng có hồn giết (kể cả triệu hồi), +1 mỗi triệu hồi chết trong 4T
+  (`RES.souls_*`, `Gains::souls`, `Cultivator::minion_died`); Nạp Hồn cho thêm một lần nữa.
+- **Pháp đàn**: nhịp = max(windup + recover, hồi chiêu) nhưng không quá ¼ đời đàn (`TOTEM_CADENCE_SHARE`), nên Vạn Kiếm
+  Trận (hồi 9 s, đàn sống 8 s) phóng bốn lần.
+- **Liên Hoàn Suy Yếu** giữ đòn liên kết (Chưởng, gốc = phần khiên hút), không bị nhắm lại vào chiêu hộ thể nó gắn.
+- **Lưu Nguyệt** tốn thọ nguyên: để nguyên (chiêu Tuế nguyệt).
+- DoT gây mỗi tick, hiện (`Out::Tick`) mỗi 0,5 s.
+- Tâm tính bộ não chung: trung bình của hai phái cũ (`data::MIND`).
+
+### 14.2 Trận chưa kích hoạt (vẫn gọi được trong `arena-calc`)
+
+- Kênh (Kênh, Kênh Dẫn Pháp) và Tích (giữ nạp tầng, Cửu Chuyển): không có phím giữ; chiêu kênh thành chiêu thường,
+  `turns` luôn 0.
+- Bước 9 (phẩm chặn khiên, `grade`), Lộ bài và đòn dọa (`card`), các luật đạo riêng (`dao`: Sinh tử, Nhân quả, Chân giả,
+  Tuế nguyệt quay lui...), tranh đạo niệm giữa hai ý cảnh (`aura::Contest`), luật đạn trong lĩnh vực, số phận triệu hồi
+  và sụp lĩnh vực (`domain::Field::shot`, `minion_dies`, `Collapse`), vật dẫn và tầm nguyền (`curse::Conduits`),
+  bài xích (`cast_school`).
+- Hậu quả dung hợp: nổ lần hai của Lôi hỏa, vùng Dung nham (như `arena-sim`).
+- Trên đường bay: tản lôi qua vùng Thủy, Tuế Nguyệt làm chậm đạn; Trọng làm rơi người đang bay; Lôi ×1,5 lên triệu hồi
+  Âm/Trùng (`Situation::target_tags` của đơn vị).
+- Hành vi bí quyết chỉ trận làm được, trừ NoBlink, NoEscape, NoGuard, LifeOnKill, SoulsFromSoul, StoredForce, Rejection,
+  Triggered và Device: TurnsOnBlock, Fuse (đã gộp ở `kit`), MinionsBurst, TreasureBreak, PierceLayer, LeapToTarget,
+  Recall, MineOnBlock, Bait, CastOnGuardBreak (kích bằng `ShieldBroke` của hộ thân), AbsorbAndReturn, ReflectBreaker,
+  SelfDestruct, GrowOnKill, DevourField, CopyLast, Grounds, SlowShots, SacrificeMinion, DrainQi, CurseOnHit, CurseAura,
+  NotOnSelf, SummonPhantasm, CastWhileChannelling, Seals.
+- Quả cầu (Orb) vẫn là đạn dò của duel, chỉ trúng đối thủ, không phải `Flight`.
+- Bot chưa chọn bộ đồ (ABI, mục 13) và chưa thấy trạng thái mới (mục 16). Bot nhà phải huấn luyện lại.
+
 ---
 
 ## 15. Bộ tính trong code
@@ -744,6 +802,39 @@ module mang số của nó dưới dạng `pub const`; bản này và bản lu�
 | `device` | Bẫy, mìn, đàn, triệu hồi: `spawn`, `Placed` | — |
 
 Test: `crates/arena-calc/tests/*.rs`.
+
+---
+
+## 16. Bot inputs, next (đầu vào bot, bước sau)
+
+Trận đã đánh bằng bộ tính nhưng vector quan sát của policy (`arena-mind`, `policy::observe`, 354 số) và ABI bot giữ
+nguyên, để bot nhà, module và trang vẫn chạy. Trạng thái mới được đặt vào ô cũ nào hợp, còn lại là 0 (`docs/bot.md`):
+
+| Ô cũ | Giờ đọc |
+|---|---|
+| hp, qi (mình, đối thủ) | máu, linh lực theo phần trăm của tối đa |
+| silenced | thất hồn |
+| sealed | khóa độn (Không Khóa, Chặn Lui) hoặc bị trói |
+| foe frozen | số giây bị trói còn lại (không còn đóng băng) |
+| foe shocked | số giây bị giữ thân (định thân, giật, choáng) |
+| slot damage, power | sát thương mong đợi theo đơn vị power cũ (`data::POWER`); power = 1 |
+| inflicts: freeze, stun, silence | định thân; choáng, quật ngã, giật; thất hồn (giây, từ `Effect::Control`) |
+| inflicts: def_down, def_loss | Phá (theo phần Kim) |
+| inflicts: burn, burn_rate | Thiêu (theo phần Hỏa) |
+| inflicts: chill, chill_max, slow | Thấm (phần Thủy, trần 6); chậm của Triền (phần Mộc) |
+| inflicts: shock... | Tê (phần Lôi, trần 5, giật 0,3 s, +4% nhận mỗi tầng) |
+| inflicts: steal_rage, sense.power, sense.stacks | 0 (không còn) |
+| tag: school (2) | ghế (0 trái, 1 phải) |
+
+**Cần ô riêng** (mùa sau, kèm huấn luyện lại, đổi `OBS` và `docs/bot.md`):
+
+- Mỗi đấu sĩ: hộ thân và thần thức (phần trăm), hồn, sát khí, thọ nguyên, tinh điểm (3), 11 ailment (tầng hoặc số vết, và
+  khóa), Kiên, bản mệnh (8 one-hot), kháng 10 loại, hộ thể, cửa sổ dung hợp (10), ý cảnh đang bật, nguyền đang dính,
+  lĩnh vực đang đứng (mục 13).
+- Mỗi slot: tag one-hot (3 + 18 + 13), tỉ lệ 10 loại sau chuyển hoá, sát thương mong đợi qua bộ tính với mục tiêu
+  hiện tại, lượt dùng tích còn và tối đa, tầm thật, chi phí theo từng tài nguyên.
+- Trên sân: bẫy, mìn, đàn, triệu hồi của hai bên (loại, vị trí, máu, đã gài), như threats.
+- Hành động: kích mìn (nay luật tự kích thay chủ), chọn bộ đồ lúc vào giải (export ABI mới, `loadout::check`).
 
 ---
 

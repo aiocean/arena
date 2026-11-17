@@ -3,8 +3,9 @@
 [![ci](https://github.com/aiocean/arena/actions/workflows/ci.yml/badge.svg)](https://github.com/aiocean/arena/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Two cultivators fight in a pixel arena, Thunder (drawn as Vương Lâm) against Frost (drawn as Thất Thải Đạo Tôn, the
-Seven-Colored Daoist), and a trained AI decides for each corner. Players train AIs of their own, any model of any size,
+Two cultivators fight in a pixel arena, each with a loadout from one shared pool of 168 skills, their supports and
+keystones, every blow worked out by a PoE-style damage system of ten kinds of damage (seat 0 is drawn as Vương Lâm,
+seat 1 as Thất Thải Đạo Tôn, the Seven-Colored Daoist), and a trained AI decides for each corner. Players train AIs of their own, any model of any size,
 submit them as bot modules built from ONNX, and the arena runs a tournament between them to find the strongest. Watch it
 at [arena.aiocean.io](https://arena.aiocean.io).
 
@@ -20,9 +21,9 @@ cd train
 uv sync
 uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml   # the rules as a Python module
 uv run pytest
-# fine-tune from the shipped AI: 600 updates, about 8 minutes at 40K steps a second
+# fine-tune from the shipped AI (trained on the old rules: it needs a retrain on the damage system)
 uv run python ppo.py --run mine --init ../crates/pixfx-duel/weights/policy.onnx --updates 600 --lr 1e-4 \
-  --ent 0.003 0.002 --shaping-until 0 --thunder 0.9
+  --ent 0.003 0.002 --shaping-until 0
 uv run python export.py runs/mine/last.pt --out mine.onnx --check runs/mine/check.json
 cd .. && cargo run -p arena-bot --example onnx -- train/mine.onnx mine.wasm   # the bot you submit
 ```
@@ -48,7 +49,7 @@ The same from Python (an ONNX model's bytes):
 ```python
 import pixfx_duel as pd
 mine = open("mine.onnx", "rb").read()
-pd.bout(mine, "brain", seeds=(1, 151))   # {'win_rate': ..., 'as_thunder': ..., 'as_frost': ..., ...}
+pd.bout(mine, "brain", seeds=(1, 151))   # {'win_rate': ..., 'as_seat0': ..., 'as_seat1': ..., ...}
 pd.entry_bar(mine)                       # {'passed': True, 'vs_brain': {...}, 'vs_first': {...}}
 ```
 
@@ -60,7 +61,7 @@ above.
 
 | Doc | For |
 |---|---|
-| [docs/rules.md](docs/rules.md) | How a fight works: schools, skills, the bar, qi and rage, statuses, frame data, rounds. |
+| [docs/rules.md](docs/rules.md) | How a fight works: loadouts, skills, the bar, resources, blows through the damage system, units, frame data, rounds. |
 | [docs/bot.md](docs/bot.md) | What a bot sees (354 numbers), what it can do (30 acts), when it decides, the bot module. |
 | [docs/training.md](docs/training.md) | How to train a bot: setup, the environment, reward, opponents, export, measuring it. |
 | [docs/tournament.md](docs/tournament.md) | The test season, what a player submits, how it is checked, how matches are played and ranked. |
@@ -70,7 +71,9 @@ above.
 
 | Path | What it holds |
 |---|---|
-| `crates/pixfx-duel` | The rules: the two schools, their stats and skills, the rotating bar, statuses, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
+| `crates/arena-calc` | The damage system, pure and deterministic: ten kinds of damage, ailments, fusion, ranks, daos, curses, intents, domains, supports, keystones, the shared pool of skills and loadouts, and what the field-bound stats do (projectiles, motion, stored uses, devices). Design: `docs/specs/2026-11-17-damage-system-design.md`. |
+| `crates/arena-sim` | A headless simulator over `arena-calc` (two scripted fighters on a 1D field) that measures loadouts against each other for balance. Not the real fight. |
+| `crates/pixfx-duel` | The rules: two seats with loadouts, every blow through `arena-calc`, the rotating bar, traps, mines, totems and minions, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
 | `crates/arena-mind` | The minds: what a trained policy sees and may do and its timing (`policy`), and the rules' own utility brain. |
 | `crates/arena-vfx` | The spells' effects painted on the CPU, and the tool that bakes them into the sprite sheets the game plays (`examples/bake.rs`). |
 | `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell particles, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm). |

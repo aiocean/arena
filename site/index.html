@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
   <title>Arena: train a bot, watch it fight</title>
-  <meta name="description" content="A pixel-art duel between two cultivators, Thunder and Frost, fought by trained AI bots. Train your own bot, any model you like, submit it as ONNX, and fight the others in the tournament.">
+  <meta name="description" content="A pixel-art duel between two cultivators with loadouts from one shared pool of skills, fought by trained AI bots. Train your own bot, any model you like, submit it as ONNX, and fight the others in the tournament.">
   <link rel="modulepreload" href="game/arena_game.js">
   <link rel="preload" href="game/arena_game_bg.wasm" as="fetch" type="application/wasm" crossorigin>
   <link rel="stylesheet" href="assets/site.css">
@@ -75,40 +75,28 @@
     </section>
 
     <section class="section schools" aria-labelledby="schools-title">
-      <p class="eyebrow">The two schools</p>
-      <h2 id="schools-title">Pick a corner</h2>
+      <p class="eyebrow">No classes</p>
+      <h2 id="schools-title">Two seats, two loadouts</h2>
       <div class="versus">
         <article class="school frame" data-school="thunder">
-          <header><span class="corner">Left corner · Vương Lâm</span><h3>Thunder</h3></header>
-          <p>Less hp and attack, a faster, more varied kit.</p>
-          <dl>
-            <div><dt>hp</dt><dd>2500</dd></div>
-            <div><dt>atk</dt><dd>345</dd></div>
-            <div><dt>pool</dt><dd>40 skills</dd></div>
-          </dl>
+          <header><span class="corner">Left corner · Vương Lâm</span><h3>Seat 0</h3></header>
+          <p>3000 life, a 600 shield, 100 qi: the same base as the right corner.</p>
           <ul>
-            <li><b>fury</b>: each blow it lands raises its attack 4%, up to 5 stacks.</li>
-            <li><b>unyielding</b>: once a round, a killing blow leaves it on its last sliver of life.</li>
-            <li><b>tribulation</b>, its ultimate: three thunderclaps fall where the foe will be.</li>
+            <li>8 skills of a shared pool of 168, up to 3 supports each, one ultimate.</li>
+            <li>Up to 2 keystones and a root element, within 50 points.</li>
           </ul>
         </article>
         <div class="vs" aria-hidden="true">VS</div>
         <article class="school frame" data-school="frost">
-          <header><span class="corner">Right corner · Thất Thải Đạo Tôn</span><h3>Frost</h3></header>
-          <p>More hp and attack, against Thunder's speed.</p>
-          <dl>
-            <div><dt>hp</dt><dd>3300</dd></div>
-            <div><dt>atk</dt><dd>520</dd></div>
-            <div><dt>pool</dt><dd>46 skills</dd></div>
-          </dl>
+          <header><span class="corner">Right corner · Thất Thải Đạo Tôn</span><h3>Seat 1</h3></header>
+          <p>Ten kinds of damage, their ailments, fusion and the five phases decide every blow.</p>
           <ul>
-            <li><b>attuned</b>: every second paid spell it casts earns a rage point.</li>
-            <li>Lotus, shatter, icicle, frostfire, mirror, ward and more on its bar.</li>
-            <li><b>prison</b>, its ultimate: a great collapse drags the foe in and freezes it.</li>
+            <li>Traps, mines, totems and minions stand on the field and can be struck down.</li>
+            <li>Each fight draws both loadouts from its seed.</li>
           </ul>
         </article>
       </div>
-      <p class="muted balance">Played by the same trained AI, Thunder wins 49.1% of the mirror over 150 seeds. <a href="docs/rules.html#the-two-schools">The full rules</a></p>
+      <p class="muted balance">Both seats start equal; a fight is won by the loadout and how it is played. <a href="docs/rules.html#loadouts">The full rules</a></p>
     </section>
 
     <section class="section how" aria-labelledby="how-title">

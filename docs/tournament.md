@@ -41,15 +41,15 @@ A bot module enters the season only if:
 3. it is good enough to be worth a slot (below).
 
 Good enough: over a fixed set of seeds, both ways, in the balanced style, it wins at least 75% against the brain (65%
-as each school) and at least 80% against the first mind, as the ladder measures.
+in each seat) and at least 80% against the first mind, as the ladder measures.
 
 A module with the same hash as one already entered is refused.
 
 ## How a match is played
 
-- A **match** between bots A and B is a set of seeds; each seed is played **both ways**: A as Thunder and B as
-  Frost, then swapped, 3 rounds each. So a school's edge cancels out, and the bot that wins is the bot that plays both
-  schools better.
+- A **match** between bots A and B is a set of seeds; each seed is played **both ways**: A in seat 0 and B in seat
+  1, then swapped, 3 rounds each. Each seed draws both seats' loadouts, so a seat's edge and a seed's lucky loadout
+  cancel out, and the bot that wins is the bot that plays both sides of each pair of loadouts better.
 - A match is one sequence: a bot module keeps one instance, and its memory, through every fight of it, so a
   match runs on one machine, in the order its seeds are listed. Each fight's act log is published, so any one fight
   can be checked alone by playing its log.
@@ -76,6 +76,6 @@ seeds and the hashes of both files; the results are checkable without trusting t
 
 ## What a player sees
 
-- Their bot's results per opponent and per school, with the ladder's telemetry (what each skill did, punishes,
+- Their bot's results per opponent and per seat, with the ladder's telemetry (what each skill did, punishes,
   counters).
 - Any fight replayed on the page, both bots seated by their files.

@@ -7,13 +7,16 @@ what is here and `docs/` for the game, the bot interface, training and the tourn
 are a `bevy_ecs` world whose tick is one single-threaded schedule; the game (`crates/arena-game`) is a Bevy app that
 runs them, natively and in the browser. Nothing depends on the pixfx engine any more: what the arena took from it
 (the mind and the policy, the body, the JS number helpers, the effect ids) lives in this repo, taken at pixfx-rs rev
-ad1612b.
+ad1612b. How much a blow deals is the damage system, `crates/arena-calc`; the rules build every blow there and
+resolve it there.
 
 ## Where code goes
 
 | If the code... | It goes to |
 |---|---|
-| is a rule of the fight: a number, a skill, a status, frame data, a round | `crates/pixfx-duel` (`data.rs` for numbers) |
+| is how damage is worked out: the kinds of damage and which beats which, ailments, fusion, ranks, daos, curses, intents, domains, supports, keystones, the shared skill pool, loadouts, and what the field-bound stats do on plain geometry (projectiles, motion, stored uses, devices) | `crates/arena-calc` (pure, no fight in it; `docs/specs/2026-11-17-damage-system-design.md`) |
+| measures loadouts, skills, supports and keystones against each other without the real fight (a headless 1D simulator for balance) | `crates/arena-sim` (`fight`, `units`, `balance`; it calls `arena-calc` as the fight does) |
+| is a rule of the fight: how a skill travels, a body, a cast, a unit on the field, frame data, a round | `crates/pixfx-duel` (`data.rs` for numbers; `strike` calls `arena-calc`, `unit` holds traps, mines, totems and minions) |
 | is the training env, its reward, an opponent, the ladder | `crates/pixfx-duel` (`train`, `seat`, `scripted`, `ladder`) |
 | admits, meters or runs a bot module, or builds one from a model | `crates/arena-bot` (the duel's side is `seat::Decider` / `BotSeat` in `pixfx-duel`); templates in `bots/` |
 | hands the env to Python | `crates/pixfx-duel-py` (translation only) |
@@ -74,6 +77,7 @@ or `.go` unless a tool forces it (a hook that must be a shell one-liner). `train
 ## Before you finish
 
 ```
+cargo test -p arena-calc && cargo test -p arena-sim
 cargo test -p pixfx-duel --all-targets
 cargo clippy -p pixfx-duel --all-targets -- -D warnings
 (cd train && uv run maturin develop --release -m ../crates/pixfx-duel-py/Cargo.toml && uv run pytest)
