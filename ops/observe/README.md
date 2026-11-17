@@ -92,6 +92,10 @@ Metrics (type `metrics`, one stream each; a histogram also has `_bucket`, `_coun
 track), `arena_server_late_seconds` (how far a tick runs behind the wall clock), `arena_bot_think_seconds`,
 `arena_bot_fuel`, `arena_bot_faults_total` (`call`, `kind`).
 
+Metrics are sent as deltas (since 2026-11-18; `aggregation_temporality` = `AGGREGATION_TEMPORALITY_DELTA`): each point
+is its ten seconds' own counts, so `sum(value)` over any range is what happened in it, and a histogram's `_max` is its
+interval's. The few cumulative points from before are left out by the dashboards.
+
 ## Queries
 
 In the UI (Logs, pick the stream, SQL mode) or `cargo run -p arena-telemetry --example query -- "<sql>" [--hours 24]

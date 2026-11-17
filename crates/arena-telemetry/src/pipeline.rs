@@ -13,7 +13,7 @@ use opentelemetry_otlp::{
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::logs::SdkLoggerProvider;
 use opentelemetry_sdk::metrics::{
-    Aggregation, Instrument, PeriodicReader, SdkMeterProvider, Stream,
+    Aggregation, Instrument, PeriodicReader, SdkMeterProvider, Stream, Temporality,
 };
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::collections::HashMap;
@@ -370,7 +370,10 @@ fn exporting(
     );
     guard.traces = Some(tracer_provider);
 
+    // delta: each point is its interval's own counts (and a histogram's min and max its interval's), so the store's
+    // SQL sums points over any range and a restart starts no new cumulative series to stitch
     let metrics = MetricExporter::builder()
+        .with_temporality(Temporality::Delta)
         .with_http()
         .with_protocol(Protocol::HttpBinary)
         .with_endpoint(endpoint.signal("metrics"))
