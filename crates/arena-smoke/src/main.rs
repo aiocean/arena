@@ -18,6 +18,10 @@
 //!   files and when each finished, and when the last did (`arena_smoke::Weight`). The machine's own timings follow its load; `--mbps N` emulates a visitor's connection (N
 //!   megabits a second down, 40 ms latency), so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
+//! - `build`: the page's build (`window.__arena.build`, stamped by `site/build.sh`) against the live server's (the
+//!   commit on its newest `match.start` in the telemetry store, read with `ARENA_OTLP_ENDPOINT` and its credentials)
+//!   and their rules builds (`window.__arena.rules`, `window.__arena.live.rules`). It fails only when the rules builds
+//!   differ; other commits on one rules build (a docs-only site deploy) or a build not known is a `WARN` line.
 //!
 //! The wait for the game to start is a fixed 30 s (`--wait`), never stretched for a busy machine: a slow start is what
 //! the run is there to see. When the game does not start within it, and only then, the whole run is tried once more
@@ -253,9 +257,14 @@ fn run(a: &Args) -> ExitCode {
         println!("retried: {why}");
     }
     println!(
-        "deployed commit: {}",
-        summary.deployed_commit.as_deref().unwrap_or("none named")
+        "deployed commit: {}{} · server build: {}",
+        summary.deployed_commit.as_deref().unwrap_or("none named"),
+        if summary.deployed_dirty { "+dirty" } else { "" },
+        summary.server_build.as_deref().unwrap_or("unknown")
     );
+    if let Some(w) = &summary.build_warning {
+        println!("WARN {w}");
+    }
     let json = serde_json::to_string_pretty(&summary).unwrap_or_default();
     let write = || -> Result<(), String> {
         std::fs::create_dir_all(&a.out).map_err(|e| format!("{}: {e}", a.out.display()))?;
@@ -316,6 +325,7 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         check_live = s.check("live"),
         check_hud = s.check("hud"),
         check_advances = s.check("advances"),
+        check_build = s.check("build"),
         failed = %failed.join(","),
         game_start_seconds = s.game_start_seconds,
         first_frame_seconds = s.first_frame_seconds,
@@ -327,6 +337,11 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         // always set, so the stream always has the fields a dashboard names
         retry_reason = s.retry_reason.as_deref().unwrap_or(""),
         deployed_commit = s.deployed_commit.as_deref().unwrap_or("none"),
+        deployed_dirty = s.deployed_dirty,
+        server_build = s.server_build.as_deref().unwrap_or("unknown"),
+        page_rules = s.page_rules,
+        server_rules = s.server_rules,
+        build_warning = s.build_warning.as_deref().unwrap_or(""),
         errors = s.errors.len(),
         seconds = s.seconds,
         // the connection emulated (`--mbps`), 0 for the machine's own: the timings follow it
@@ -539,18 +554,21 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     let lj = eval_json(
         &page,
         "fetch('live.json', {cache: 'no-store'}).then(async r => { let url = null, commit = null; \
-         try { const j = await r.json(); url = j.url; commit = j.commit ?? j.version ?? null } catch {} \
+         try { const j = await r.json(); url = j.url; commit = j.build?.commit ?? j.commit ?? j.version ?? null } catch {} \
          return {status: r.status, url: typeof url === 'string' && url.length > 0, host: typeof url === 'string' ? new URL(url).host : null, \
          commit: commit == null ? null : String(commit)} })",
     )
     .await;
-    // the deployed commit, if the page or live.json names one (today neither does)
+    // the deployed commit: the page's build stamp (site/build.sh), else what live.json names
     let named = eval_json(
         &page,
-        "(() => { const v = document.querySelector('meta[name=\"arena-commit\"], meta[name=\"version\"]')?.content \
-         ?? window.__arena?.commit ?? window.__arena?.version; return v == null ? null : String(v) })()",
+        "(() => { const v = window.__arena?.build?.commit ?? window.__arena?.commit; return v == null ? null : String(v) })()",
     )
     .await;
+    let deployed_dirty = eval_json(&page, "window.__arena?.build?.dirty === true")
+        .await
+        .as_bool()
+        .unwrap_or(false);
     let deployed_commit = named
         .as_str()
         .or_else(|| lj.get("commit").and_then(Value::as_str))
@@ -604,6 +622,19 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         .and_then(Value::as_bool)
         .unwrap_or(false);
     let stale = live.get("stale").and_then(Value::as_bool).unwrap_or(false);
+    // the rules builds: the page's own, and the one the server's keyframe was fought on (0 before one came)
+    let page_rules = eval_json(&page, "window.__arena?.rules ?? null")
+        .await
+        .as_u64()
+        .and_then(|r| u32::try_from(r).ok());
+    let server_rules = live
+        .get("rules")
+        .and_then(Value::as_u64)
+        .and_then(|r| u32::try_from(r).ok())
+        .filter(|&r| r > 0);
+    let server_build = tokio::task::spawn_blocking(server_build)
+        .await
+        .unwrap_or(None);
 
     // the HUD, and the fight moving: two pictures of the canvas a few seconds apart, the frames counted between
     let rect = eval_json(
@@ -745,6 +776,13 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         w
     };
     checks.push(Check::new("weight", true, weight.line()));
+    let (build, build_warning) = arena_smoke::compare_builds(
+        deployed_commit.as_deref(),
+        server_build.as_deref(),
+        page_rules,
+        server_rules,
+    );
+    checks.push(build);
     let summary = Summary {
         checks,
         status_line: redact(&status),
@@ -755,9 +793,41 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         game_start_seconds: started.then_some(start_secs),
         first_frame_seconds: first_frame,
         deployed_commit,
+        deployed_dirty,
+        server_build,
+        page_rules,
+        server_rules,
+        build_warning,
         ..Summary::default()
     };
     Ok((summary, full))
+}
+
+/// The live server's build: the `build` on its newest `match.start` of the last half hour in the telemetry store
+/// (OpenObserve's `_search`, with `ARENA_OTLP_ENDPOINT` and its credentials), or None when there is no store, no such
+/// row, or it could not be read.
+fn server_build() -> Option<String> {
+    let endpoint = arena_telemetry::Endpoint::from_env().ok()??;
+    let now = SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_micros() as i64;
+    let sql = "SELECT build FROM arena_match WHERE body = 'match.start' AND service_name = 'arena-server' \
+               AND build IS NOT NULL ORDER BY _timestamp DESC LIMIT 1";
+    let body = serde_json::json!({"query": {"sql": sql, "start_time": now - 1_800_000_000, "end_time": now, "from": 0, "size": 1}});
+    let url = format!("{}/_search?type=logs", endpoint.url);
+    let mut req = ureq::post(&url)
+        .config()
+        .timeout_global(Some(Duration::from_secs(10)))
+        .build();
+    if let Some(auth) = &endpoint.auth {
+        req = req.header("Authorization", auth);
+    }
+    let v: Value = req.send_json(&body).ok()?.body_mut().read_json().ok()?;
+    v["hits"][0]["build"]
+        .as_str()
+        .map(str::to_string)
+        .filter(|b| !b.is_empty())
 }
 
 fn lock(seen: &Arc<Mutex<Seen>>) -> std::sync::MutexGuard<'_, Seen> {

@@ -46,12 +46,21 @@ game="$(cat "$staged/arena_game_bg.wasm" "$staged/arena_game.js" | hash)"
 mv "$staged" "$out/game/$game"
 cp -R "$pictures" "$out/game/$assets"
 printf '/*\n  Cache-Control: public, max-age=31536000, immutable\n' > "$out/game/_headers"
-cp "$here"/*.html "$out/"
+# the build stamp: the commit this site is built from (12 hex digits, as arena-server's ARENA_GIT_HASH) and whether
+# tracked files differed from it; the page gets it as window.__arena.build and a footer line, live.json as "build"
+commit="$(git -C "$root" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+dirty=false
+if [[ -n "$(git -C "$root" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then dirty=true; fi
+stamp="$commit"; [[ "$dirty" == true ]] && stamp="$commit+dirty"
+for page in "$here"/*.html; do
+  sed -e "s/@ARENA_COMMIT@/$commit/g" -e "s/@ARENA_DIRTY@/$dirty/g" -e "s/@ARENA_STAMP@/$stamp/g" \
+    "$page" > "$out/$(basename "$page")"
+done
 sed -i.bak "s#\"game/arena_game#\"game/$game/arena_game#g" "$out/index.html" && rm "$out/index.html.bak"
 # where the page watches the server's live matches (crates/arena-server): the relay's URL with a subscribe-only token,
 # from the environment, never from the repo. Without it the page fights on its own, as before.
 if [[ -n "${ARENA_LIVE_URL:-}" ]]; then
-  printf '{"url":"%s"}\n' "$ARENA_LIVE_URL" > "$out/live.json"
+  printf '{"url":"%s","build":{"commit":"%s","dirty":%s}}\n' "$ARENA_LIVE_URL" "$commit" "$dirty" > "$out/live.json"
 fi
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
 sed -i.bak "s#\"../game/arena_game.js\"#\"../game/$game/arena_game.js\"#" "$out/assets/arena.js" && rm "$out/assets/arena.js.bak"

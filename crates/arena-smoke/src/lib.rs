@@ -99,8 +99,18 @@ pub struct Summary {
     pub first_frame_seconds: Option<f64>,
     /// The machine's load averages when the attempt began.
     pub load: Option<Load>,
-    /// The deployed commit, when the page or `live.json` names one.
+    /// The deployed commit, when the page or `live.json` names one: the page's build (`window.__arena.build`).
     pub deployed_commit: Option<String>,
+    /// Whether the page was built from a tree with uncommitted changes.
+    pub deployed_dirty: bool,
+    /// The live server's build: the commit on its newest `match.start` in the telemetry store, when it could be read.
+    pub server_build: Option<String>,
+    /// The page's rules build (`window.__arena.rules`) and the one the server's matches are fought on
+    /// (`window.__arena.live.rules`, from its keyframe), when the page says.
+    pub page_rules: Option<u32>,
+    pub server_rules: Option<u32>,
+    /// A warning that does not fail the run: the page and the server built from different commits on one rules build.
+    pub build_warning: Option<String>,
     /// Why the run was retried, when it was.
     pub retry_reason: Option<String>,
     /// The first attempt, when the run was retried (this summary is the second's).
@@ -276,6 +286,54 @@ impl Summary {
             self.attempt.max(1)
         )
     }
+}
+
+/// Whether two builds name one commit: the same hex, either one written longer (`1a2b3c4` and `1a2b3c4d5e6f`).
+pub fn same_commit(a: &str, b: &str) -> bool {
+    let (a, b) = (a.trim().to_ascii_lowercase(), b.trim().to_ascii_lowercase());
+    !a.is_empty() && !b.is_empty() && a != "unknown" && (a.starts_with(&b) || b.starts_with(&a))
+}
+
+/// The page's build against the server's: the `build` check and, when it passes with a doubt, a warning.
+///
+/// The page and the server must fight on one rules build (the page replays the server's decisions on its own copy of
+/// the rules). Built from different commits on the same `RULES_VERSION` is fine (a docs-only site deploy leaves the
+/// server older): a warning. Different rules builds fail: the deploy did not ship the page and the server together.
+pub fn compare_builds(
+    page: Option<&str>,
+    server: Option<&str>,
+    page_rules: Option<u32>,
+    server_rules: Option<u32>,
+) -> (Check, Option<String>) {
+    let shown = |b: Option<&str>| b.unwrap_or("unknown").to_string();
+    let rules = |r: Option<u32>| r.map_or("?".to_string(), |r| r.to_string());
+    let detail = format!(
+        "page {} (rules {}), server {} (rules {})",
+        shown(page),
+        rules(page_rules),
+        shown(server),
+        rules(server_rules)
+    );
+    if let (Some(p), Some(s)) = (page_rules, server_rules)
+        && p != s
+    {
+        return (
+            Check::new(
+                "build",
+                false,
+                format!("{detail}: other rules builds, ship the page and arena-server together"),
+            ),
+            None,
+        );
+    }
+    let warning = match (page, server) {
+        (Some(p), Some(s)) if same_commit(p, s) => None,
+        (Some(_), Some(_)) => Some(format!(
+            "the page and the server are built from different commits on one rules build ({detail})"
+        )),
+        _ => Some(format!("a build is not known ({detail})")),
+    };
+    (Check::new("build", true, detail), warning)
 }
 
 /// A request the run lets fail, and why: other sites' (the page's fonts) and the icon the browser asks for unasked.
@@ -524,7 +582,7 @@ pub fn run_page(s: &Summary) -> String {
 <p><a href=\"../\">all runs</a></p>
 <h1>Arena smoke test, {at}: {v}</h1>
 <p>{url} · {secs:.1} s · status line: <code>{status}</code></p>
-<p>{timings} · deployed commit: {commit}</p>
+<p>{timings} · deployed commit: {commit} · server build: {server}</p>
 {retry}
 <table><tr><th></th><th>check</th><th>what was seen</th></tr>{rows}</table>
 <h2>Errors</h2>{errors}
@@ -540,6 +598,7 @@ pub fn run_page(s: &Summary) -> String {
         status = esc(&s.status_line),
         timings = esc(&s.timings()),
         commit = s.deployed_commit.as_deref().map_or("<span class=\"muted\">none named</span>".to_string(), |c| format!("<code>{}</code>", esc(c))),
+        server = s.server_build.as_deref().map_or("<span class=\"muted\">unknown</span>".to_string(), |c| format!("<code>{}</code>", esc(c))),
         retry = match (&s.retry_reason, &s.first_attempt) {
             (Some(why), Some(first)) => format!(
                 "<p class=\"fail\">Retried: {}</p><p class=\"muted\">The first attempt: {} · {} · its checks: {} · <a href=\"attempt-1.png\">its screenshot</a></p>",
@@ -866,6 +925,32 @@ mod tests {
         let page = run_page(&run);
         assert!(page.contains("Retried: attempt 1 timed out"), "{page}");
         assert!(index_page(&[run]).contains("attempt 2 (retried"));
+    }
+
+    #[test]
+    fn builds_fail_only_on_other_rules() {
+        assert!(same_commit("1a2b3c4", "1a2b3c4d5e6f"));
+        assert!(!same_commit("1a2b3c4", "9a2b3c4d5e6f"));
+        assert!(!same_commit("unknown", "unknown"));
+        // one commit: pass, nothing to say
+        let (c, w) = compare_builds(Some("1a2b3c4d5e6f"), Some("1a2b3c4d5e6f"), Some(9), Some(9));
+        assert!(c.pass && w.is_none(), "{c:?} {w:?}");
+        // other commits, one rules build (a docs-only deploy): pass with a warning
+        let (c, w) = compare_builds(Some("1a2b3c4d5e6f"), Some("0000000aaaaa"), Some(9), Some(9));
+        assert!(c.pass && w.is_some(), "{c:?} {w:?}");
+        // other rules builds: fail
+        let (c, _) = compare_builds(
+            Some("1a2b3c4d5e6f"),
+            Some("0000000aaaaa"),
+            Some(10),
+            Some(9),
+        );
+        assert!(!c.pass, "{c:?}");
+        let (c, _) = compare_builds(Some("1a2b3c4d5e6f"), None, Some(10), Some(9));
+        assert!(!c.pass, "{c:?}");
+        // the server's build unknown (no telemetry store): pass with a warning
+        let (c, w) = compare_builds(Some("1a2b3c4d5e6f"), None, Some(9), None);
+        assert!(c.pass && w.is_some(), "{c:?} {w:?}");
     }
 
     #[test]

@@ -131,6 +131,8 @@ h1, h2 { text-wrap: balance; }
 .arena-footer p { margin: 0 auto; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 0.4rem; }
 .arena-footer a { color: var(--ash); }
 .arena-footer a:hover { color: var(--wax); }
+.arena-footer .build { margin-top: 0.4rem; font-size: 0.75rem; opacity: 0.7; }
+.arena-footer .build code { font-family: "IBM Plex Mono", monospace; }
 
 /* ---------- your bot: a file in a corner ---------- */
 

@@ -79,9 +79,9 @@ above.
 | `crates/arena-vfx` | The spells' effects: painted on the CPU and baked into the sprite sheets the game plays (`examples/bake.rs`), and the effects drawn by an image model and moved by code (`drawn`, from `art/vfx/`). |
 | `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell effects, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm), where it also watches the server's live matches (`live.rs`). |
 | `crates/arena-link` | A live match on the wire: the frames the server publishes and a page folds, as they lie on the MoQ relay, and `RULES_VERSION`, which the page and the server must share. |
-| `crates/arena-server` | Fights the house AI's matches and publishes them live to the MoQ relay (`arena-server`), and replays a published match to check it (`arena-watch`). |
+| `crates/arena-server` | Fights the live matches, the house AI (its ONNX model, natively) against the built-in minds in turn, and publishes them to the MoQ relay (`arena-server`; `--version` prints its commit), and replays a published match to check it (`arena-watch`). |
 | `crates/arena-telemetry` | Logs, traces and metrics over OTLP, and the duel observer that turns a fight's steps into telemetry events. The store is OpenObserve (`ops/observe`). |
-| `crates/arena-smoke` | The smoke test of the live site, run after each deploy: a headless Chrome checks the page, the game, the live match and the HUD. |
+| `crates/arena-smoke` | The smoke test of the live site, run after each deploy: a headless Chrome checks the page, the game, the live match and the HUD, and the page's build (`window.__arena.build`, stamped by `site/build.sh`, shown in the home page's footer) against the server's. |
 | `crates/arena-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
 | `crates/arena-duel-py` | The rules as a Python module (`import arena_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
 | `crates/arena-bot` | A bot as a WebAssembly module: admits one (validate, meter, hash), runs it in a seat (`host`), runs an ONNX policy natively (`onnx`), and the commands a player builds, checks and measures a bot with (`onnx`, `check`, `match`, `ladder`). |

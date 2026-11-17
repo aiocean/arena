@@ -22,8 +22,8 @@ resolve it there.
 | admits, meters or runs a bot module, or builds one from a model | `crates/arena-bot` (the duel's side is `seat::Decider` / `BotSeat` in `arena-duel`); templates in `bots/` |
 | hands the env to Python | `crates/arena-duel-py` (translation only) |
 | is a live match on the wire: the postcard frames a server publishes and a page folds, how they lie on MoQ | `crates/arena-link` (pure; `docs/specs/2026-11-17-live-matches-design.md`) |
-| fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`) |
-| checks the live site after a deploy: the page, the game, the relay's live match, the HUD, the fight moving | `crates/arena-smoke` (a headless Chrome; the page shows it `window.__arena.live`, set in `crates/arena-game/src/live.rs`) |
+| fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`). Who sits in a live corner is `match_run::Bot` and the seat factory `Seats` (the house AI on ONNX against brain, first, aggressive, turtle in turn; its seat from the seed): a new kind of bot (an uploaded module) is a new `Bot` there |
+| checks the live site after a deploy: the page, the game, the relay's live match, the HUD, the fight moving, the page's build against the server's | `crates/arena-smoke` (a headless Chrome; the page shows it `window.__arena.live` and `rules`, set in `crates/arena-game/src/live.rs`, and `window.__arena.build`, stamped into `index.html` by `site/build.sh`) |
 | sets up a process's logs, traces and metrics, exports them over OTLP, or turns a duel step into telemetry events (the duel observer: it only reads) | `crates/arena-telemetry` (`init`, `duel::Observer`; a process calls `init` once in `main`, game code only uses `tracing` on the `arena::*` targets) |
 | runs or documents the telemetry store (OpenObserve), its streams, its retention and its queries | `ops/observe` (`compose.yaml`, `README.md`) |
 | records a corner's decisions or replays them (the server's side and the page's) | `crates/arena-duel` (`seat::Recorder`, `seat::Replay`) |
@@ -151,7 +151,10 @@ The smoke test of the live site: a headless
 Chrome (a system one, else Chrome for Testing fetched once into `~/.cache/arena-smoke`) loads https://arena.aiocean.io/
 and checks the page and the game's wasm load with no console errors, page errors or failed requests for its own
 assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come (a page on other rules than the
-server's fails here as stale), the HUD is painted and the match moves. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
+server's fails here as stale), the HUD is painted and the match moves, and the page's build (`window.__arena.build`, the
+commit `site/build.sh` stamped, "+dirty" for a tree with changes, also in the footer and in `live.json`) against the
+server's (the `build` on its newest `match.start` in the telemetry store, so with `ARENA_OTLP_ENDPOINT` set): it fails
+only when their rules builds differ, and other commits on one rules build (a docs-only site deploy) are a `WARN` line. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
 exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs). The game gets a fixed 30 s to
 start (never stretched for load); if it does not start, and only then, the whole run is tried once more, and it fails
 only when both attempts fail (the report and the review say it was retried and why). Each run records the time to the

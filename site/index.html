@@ -12,6 +12,8 @@
   <link rel="preload" href="game/arena_game_bg.wasm" as="fetch" type="application/wasm" crossorigin>
   <link rel="stylesheet" href="assets/site.css">
   <link rel="stylesheet" href="assets/arena.css">
+  <!-- the build stamp: site/build.sh writes the commit (git rev-parse --short=12) and whether the tree was dirty -->
+  <script>window.__arena = Object.assign(window.__arena || {}, { build: { commit: "@ARENA_COMMIT@", dirty: "@ARENA_DIRTY@" === "true" } });</script>
 </head>
 <body class="landing arena" data-page="home">
   <section class="hero arena-hero" aria-labelledby="hero-title">
@@ -153,6 +155,7 @@ seed 201521</code></pre>
 
   <footer class="footer arena-footer">
     <p><span class="brand-mark" aria-hidden="true"></span>arena · a duel made with <a href="https://bevy.org">Bevy</a> · <a href="https://github.com/aiocean/arena">source</a> (MIT)</p>
+    <p class="build">build <code>@ARENA_STAMP@</code></p>
   </footer>
   <script type="module" src="assets/arena.js"></script>
 </body>

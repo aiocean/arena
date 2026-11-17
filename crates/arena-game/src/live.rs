@@ -48,11 +48,18 @@ pub struct Watching {
     follow: Follow,
     current: Option<LiveMatch>,
     next_id: u32,
+    /// The rules build of the last keyframe received (`Snapshot::rules`), this page's or not.
+    server_rules: Option<u32>,
 }
 
 impl Watching {
     pub fn current(&self) -> Option<&LiveMatch> {
         self.current.as_ref()
+    }
+
+    /// The rules build the server's last keyframe was fought on, once one has come.
+    pub fn server_rules(&self) -> Option<u32> {
+        self.server_rules
     }
 
     /// Forget the match: the next keyframe starts a new one.
@@ -63,6 +70,9 @@ impl Watching {
 
     /// Take in a frame. `Err` when the match was fought on rules other than this build's (the page must reload).
     pub fn frame(&mut self, frame: Frame) -> Result<(), String> {
+        if let Frame::Keyframe(k) = &frame {
+            self.server_rules = Some(k.rules);
+        }
         if let Applied::OtherRules(theirs) = self.follow.apply(frame) {
             let ours = arena_link::RULES_VERSION;
             return Err(if theirs > ours {
@@ -214,12 +224,15 @@ fn pull(mut live: NonSendMut<Live>) {
     }
 }
 
-/// How watching stands: on, connected, frames, the ticks through, the match's id, and whether the relay's matches are
-/// on other rules than this build's (the page must reload).
-type Standing = (bool, bool, u64, u32, u32, bool);
+/// How watching stands: on, connected, frames, the ticks through, the match's id, whether the relay's matches are on
+/// other rules than this build's (the page must reload), and the rules the server's last keyframe was fought on (0
+/// before one).
+type Standing = (bool, bool, u64, u32, u32, bool, u32);
 
-/// How watching stands, on the page as `window.__arena.live` (`on`, `connected`, `frames`, `through`, `match`, `stale`), so a
-/// smoke test can tell the relay is reached and the match moves. It is set only when it changes; nothing reads it.
+/// How watching stands, on the page as `window.__arena.live` (`on`, `connected`, `frames`, `through`, `match`, `stale`,
+/// `rules`: the server's), with `window.__arena.rules` this page's own rules build, so a smoke test can tell the relay
+/// is reached, the match moves and the page and the server fight on one rules build. It is set only when it changes;
+/// nothing reads it. Whatever else the page keeps on `window.__arena` (its `build`) is left be.
 fn publish(live: NonSend<Live>) {
     let now: Standing = (
         live.on,
@@ -228,6 +241,7 @@ fn publish(live: NonSend<Live>) {
         live.watching.current().map_or(0, |m| m.through),
         live.watching.current().map_or(0, |m| m.id),
         live.stale.is_some(),
+        live.watching.server_rules().unwrap_or(0),
     );
     #[cfg(target_arch = "wasm32")]
     {
@@ -254,7 +268,7 @@ mod net {
     use wasm_bindgen_futures::spawn_local;
 
     /// Set `window.__arena.live` to how watching stands.
-    pub fn show((on, connected, frames, through, id, stale): super::Standing) {
+    pub fn show((on, connected, frames, through, id, stale, rules): super::Standing) {
         use js_sys::{Object, Reflect};
         use wasm_bindgen::JsValue;
         let Some(window) = web_sys::window() else {
@@ -270,9 +284,20 @@ mod net {
         set("through", through.into());
         set("match", id.into());
         set("stale", stale.into());
-        let arena = Object::new();
+        set("rules", rules.into());
+        // the page's own object (its build stamp, set by index.html) is kept: only `live` and `rules` are ours
+        let key = JsValue::from_str("__arena");
+        let arena = Reflect::get(&window, &key)
+            .ok()
+            .filter(|v| v.is_object())
+            .map_or_else(Object::new, Object::from);
         let _ = Reflect::set(&arena, &JsValue::from_str("live"), &live);
-        let _ = Reflect::set(&window, &JsValue::from_str("__arena"), &arena);
+        let _ = Reflect::set(
+            &arena,
+            &JsValue::from_str("rules"),
+            &arena_link::RULES_VERSION.into(),
+        );
+        let _ = Reflect::set(&window, &key, &arena);
     }
 
     /// Watch the matches on the relay at `url` (a subscribe token in its path), one after another, until the page goes.
@@ -437,5 +462,6 @@ mod tests {
         let mut w = Watching::default();
         let key = Snapshot::new(RULES_VERSION + 1, 5, ARENA, ["a".into(), "b".into()]);
         assert!(w.frame(Frame::Keyframe(key)).is_err());
+        assert_eq!(w.server_rules(), Some(RULES_VERSION + 1));
     }
 }
