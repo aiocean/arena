@@ -46,7 +46,7 @@ cooldown and uncast for 6 s leaves for another draw (`STALE`), whether or not th
 - **Tiers and traits.** Each draw rolls a tier (common, rare, epic; legendary only through duplicates) and traits
   (swift, heavy, piercing, lingering, cheap) that change its power, cost and timings (`data.rs`, `bar.rs`).
 - **Evolving pairs.** Casting one skill of a pair while its partner is on the bar refills that slot at once with the
-  partner evolved (x1.5 power). Thunder: bolt + seal, palm + step, quake + burst, fireball + vermilion, jithunder + finger, gravity + earthsplit, gather + heartbeat, slashluo + onestep, mountain + ancientgod, ancientthunder + tigerflag, demonfinger + kunjiwhip, fireescape + flameorigin, warprint + heavenlychop, fingerdeath + celestialslaughter. Frost: shard + icicle, shatter + flurry, lotus + jet, summonrain + summonwind, yinmoon + remnantnight, bodyfix + lifedeath, soulsearch + dreamdao, thirdeye + sevencolor, restriction + plumblossom, starfall + heavenflip, yellowspring + devour, timerestrict + lifedeathrestrict, soulbanner + servitude, voidnail + seize, ghostsummon + soulvortex, soulrefine + bodyformation, starrotation + meritspirit.
+  partner evolved (x1.5 power). Thunder: bolt + seal, palm + step, quake + burst, fireball + vermilion, jithunder + finger, gravity + earthsplit, gather + heartbeat, slashluo + onestep, mountain + ancientgod, ancientthunder + tigerflag, demonfinger + kunjiwhip, fireescape + flameorigin, warprint + heavenlychop, fingerdeath + celestialslaughter. Frost: shard + icicle, shatter + flurry, lotus + jet, summonrain + summonwind, yinmoon + remnantnight, bodyfix + lifedeath, soulsearch + dreamdao, thirdeye + sevencolor, restriction + plumblossom, starfall + heavenflip, yellowspring + devour, timerestrict + lifedeathrestrict, soulbanner + servitude, voidnail + seize, ghostsummon + soulvortex, soulrefine + bodyformation, starrotation + meritspirit, daoyellow + springsoul.
 - **Lucky casts.** A cast sometimes rolls lucky (8%): doubled, free, or cast again (`data.rs`).
 
 So a bot has seven castable slots: the three basics, the three bar slots and the ultimate.
@@ -85,7 +85,7 @@ The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `da
 - **A blow during a windup breaks the cast**: the cast is lost.
 - **Counter:** a blow on a fighter in its windup does 1.2x and staggers 0.10 s longer.
 - **Punish:** a blow on a fighter in its recover does 1.2x and staggers 0.20 s longer.
-- **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts (ancientgod, slashluo, onestep, nineturn, sevencolor, heavenlychop, fireescape, warprint) recover 0.15 s longer when their blow is guarded.
+- **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts (ancientgod, slashluo, onestep, nineturn, sevencolor, heavenlychop, fireescape, warprint, daofusion) recover 0.15 s longer when their blow is guarded.
 - **Ultimate opening:** an ultimate cannot be hit in the first 0.3 s of its windup; a blow passes through as a dodge.
 - A field's strike (void) gives neither a counter nor a punish.
 
@@ -100,7 +100,7 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 
 ## The Renegade Immortal skills
 
-64 skills of the Thunder and Frost pools are techniques of the novel *Renegade Immortal* (Xian Ni). Each is a spell of the kinds above, read by a bot by its kind and numbers, never its name (`docs/bot.md`); `docs/specs/2026-11-16-xianni-spells-design.md` says which technique each one is and which techniques have no skill.
+72 skills of the Thunder and Frost pools are techniques of the novel *Renegade Immortal* (Xian Ni). Each is a spell of the kinds above, read by a bot by its kind and numbers, never its name (`docs/bot.md`); `docs/specs/2026-11-16-xianni-spells-design.md` says which technique each one is and which techniques have no skill.
 
 **Thunder**
 
@@ -135,6 +135,9 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | War Spirit Print (`warprint`) | blast | 32 | A seal of war stamped on the foe at close range: a heavy blow that breaks its defence. |
 | Earth Escape (`earthescape`) | blink | 14 | Sinks into the ground and comes out a few steps away. |
 | Celestial Slaughter Art (`celestialslaughter`) | bolt | 36 | A bolt of slaughter intent, slow to gather and heavy. |
+| Ancient God Cauldron (`ancientcauldron`) | area | 32 | Swaps places: a cauldron drags the foe in to where the caster stands and strikes it there. |
+| Eight Extremes Dao (`eightextremes`) | area | 40 | Eight Dao paths fall on the foe one after another, four strikes that burn. |
+| Dao Art Fusion (`daofusion`) | blast | 46 | Treasures, abilities and rules fused into one blow: slow to gather, heavy, and it shocks. |
 
 **Frost**
 
@@ -175,3 +178,8 @@ reward and not the hand-written brain. A bot may play it or ignore it; the shipp
 | Merit Spirit (`meritspirit`) | ward | 42 | A spirit of merit stands over the caster: 1 to 3 charges, each stops a whole blow. Cleanses. |
 | Body Formation (`bodyformation`) | heal | 34 | Forms the body anew: heals and washes off burn, silence, defence down, chill and shock. |
 | True and False Seal (`truefalse`) | area | 36 | Open eyes are truth, closed eyes falsehood: a seal on the foe that silences it and breaks its defence. |
+| Dao Transformation Yellow Spring (`daoyellow`) | field | 42 | A reincarnation cycle forms over the foe: a cold field that chills whoever stands in it for three seconds. |
+| Condensed Spring Soul (`springsoul`) | bolt | 26 | A hundred million souls condensed into one dart that chills what it hits. |
+| Star Soul Extraction (`starsoul`) | blast | 30 | Pulls the soul out of the foe at close range: steals a point of rage. |
+| Life Destruction Spirit Summoning (`spiritsummon`) | area | 36 | Spirits of destroyed life arrive in two waves on the foe and burn it. |
+| Star Compass (`starcompass`) | blink | 16 | The compass turns and the caster stands elsewhere: a short step through the stars. |

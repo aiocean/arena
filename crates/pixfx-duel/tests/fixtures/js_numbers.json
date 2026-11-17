@@ -1178,6 +1178,46 @@
    true
   ],
   [
+   "swift",
+   "ancientcauldron",
+   true
+  ],
+  [
+   "swift",
+   "eightextremes",
+   true
+  ],
+  [
+   "swift",
+   "daofusion",
+   true
+  ],
+  [
+   "swift",
+   "daoyellow",
+   true
+  ],
+  [
+   "swift",
+   "springsoul",
+   true
+  ],
+  [
+   "swift",
+   "starsoul",
+   true
+  ],
+  [
+   "swift",
+   "spiritsummon",
+   true
+  ],
+  [
+   "swift",
+   "starcompass",
+   true
+  ],
+  [
    "heavy",
    "slash",
    true
@@ -1633,6 +1673,46 @@
    true
   ],
   [
+   "heavy",
+   "ancientcauldron",
+   true
+  ],
+  [
+   "heavy",
+   "eightextremes",
+   true
+  ],
+  [
+   "heavy",
+   "daofusion",
+   true
+  ],
+  [
+   "heavy",
+   "daoyellow",
+   true
+  ],
+  [
+   "heavy",
+   "springsoul",
+   true
+  ],
+  [
+   "heavy",
+   "starsoul",
+   true
+  ],
+  [
+   "heavy",
+   "spiritsummon",
+   true
+  ],
+  [
+   "heavy",
+   "starcompass",
+   false
+  ],
+  [
    "piercing",
    "slash",
    true
@@ -2088,6 +2168,46 @@
    false
   ],
   [
+   "piercing",
+   "ancientcauldron",
+   false
+  ],
+  [
+   "piercing",
+   "eightextremes",
+   false
+  ],
+  [
+   "piercing",
+   "daofusion",
+   true
+  ],
+  [
+   "piercing",
+   "daoyellow",
+   false
+  ],
+  [
+   "piercing",
+   "springsoul",
+   true
+  ],
+  [
+   "piercing",
+   "starsoul",
+   true
+  ],
+  [
+   "piercing",
+   "spiritsummon",
+   false
+  ],
+  [
+   "piercing",
+   "starcompass",
+   false
+  ],
+  [
    "lingering",
    "slash",
    false
@@ -2543,6 +2663,46 @@
    false
   ],
   [
+   "lingering",
+   "ancientcauldron",
+   false
+  ],
+  [
+   "lingering",
+   "eightextremes",
+   false
+  ],
+  [
+   "lingering",
+   "daofusion",
+   true
+  ],
+  [
+   "lingering",
+   "daoyellow",
+   true
+  ],
+  [
+   "lingering",
+   "springsoul",
+   true
+  ],
+  [
+   "lingering",
+   "starsoul",
+   false
+  ],
+  [
+   "lingering",
+   "spiritsummon",
+   false
+  ],
+  [
+   "lingering",
+   "starcompass",
+   false
+  ],
+  [
    "cheap",
    "slash",
    true
@@ -2995,6 +3155,46 @@
   [
    "cheap",
    "truefalse",
+   true
+  ],
+  [
+   "cheap",
+   "ancientcauldron",
+   true
+  ],
+  [
+   "cheap",
+   "eightextremes",
+   true
+  ],
+  [
+   "cheap",
+   "daofusion",
+   true
+  ],
+  [
+   "cheap",
+   "daoyellow",
+   true
+  ],
+  [
+   "cheap",
+   "springsoul",
+   true
+  ],
+  [
+   "cheap",
+   "starsoul",
+   true
+  ],
+  [
+   "cheap",
+   "spiritsummon",
+   true
+  ],
+  [
+   "cheap",
+   "starcompass",
    true
   ]
  ],
@@ -4193,6 +4393,118 @@
    "notice": 0.1,
    "defDown": 2,
    "silence": 0.8
+  },
+  "ancientcauldron": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "arcane/vortex-ring",
+   "cost": 32,
+   "windup": 0.3,
+   "recover": 0.35,
+   "cooldown": 5,
+   "damage": 16,
+   "impact": 0.4,
+   "radius": 14,
+   "notice": 0.1,
+   "pull": 70,
+   "reach": 60,
+   "pullUntil": 0.7
+  },
+  "eightextremes": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "explosions/plasma-explosion",
+   "cost": 40,
+   "windup": 0.45,
+   "recover": 0.35,
+   "cooldown": 5.5,
+   "damage": 11,
+   "sigil": 0.2,
+   "impact": 0.08,
+   "radius": 11,
+   "notice": 0,
+   "strikes": 4,
+   "every": 0.3,
+   "aimAhead": 0.2,
+   "burn": true
+  },
+  "daofusion": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "explosions/swirl-blast",
+   "cost": 46,
+   "windup": 0.8,
+   "recover": 0.5,
+   "cooldown": 7,
+   "range": 54,
+   "damage": 36,
+   "shock": true
+  },
+  "daoyellow": {
+   "kind": "void",
+   "type": "magic",
+   "fx": "critters/wisp",
+   "cost": 42,
+   "windup": 0.5,
+   "recover": 0.3,
+   "cooldown": 7.5,
+   "damage": 6,
+   "life": 3,
+   "height": 0,
+   "pull": 0,
+   "reach": 34,
+   "under": 34,
+   "tick": 5,
+   "chill": true
+  },
+  "springsoul": {
+   "kind": "bolt",
+   "type": "magic",
+   "fx": "projectiles/laser-bolt",
+   "cost": 26,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 3,
+   "damage": 14,
+   "speed": 170,
+   "chill": true
+  },
+  "starsoul": {
+   "kind": "blast",
+   "type": "magic",
+   "fx": "arcane/vortex-ring",
+   "cost": 30,
+   "windup": 0.45,
+   "recover": 0.4,
+   "cooldown": 4.5,
+   "range": 46,
+   "damage": 12,
+   "stealRage": 1
+  },
+  "spiritsummon": {
+   "kind": "zone",
+   "type": "magic",
+   "fx": "impacts/twin-converge",
+   "cost": 36,
+   "windup": 0.4,
+   "recover": 0.3,
+   "cooldown": 4.5,
+   "damage": 12,
+   "impact": 0.3,
+   "radius": 12,
+   "notice": 0,
+   "strikes": 2,
+   "every": 0.4,
+   "burn": true
+  },
+  "starcompass": {
+   "kind": "blink",
+   "fx": "explosions/puff-burst",
+   "cost": 16,
+   "windup": 0.06,
+   "recover": 0.1,
+   "cooldown": 1.6,
+   "distance": 44
   }
  },
  "schools": {
@@ -4243,7 +4555,10 @@
     "flameorigin",
     "warprint",
     "earthescape",
-    "celestialslaughter"
+    "celestialslaughter",
+    "ancientcauldron",
+    "eightextremes",
+    "daofusion"
    ],
    "ultimate": "tribulation",
    "signature": "blast",
@@ -4489,7 +4804,12 @@
     "starrotation",
     "meritspirit",
     "bodyformation",
-    "truefalse"
+    "truefalse",
+    "daoyellow",
+    "springsoul",
+    "starsoul",
+    "spiritsummon",
+    "starcompass"
    ],
    "ultimate": "prison",
    "signature": "zone",
@@ -4890,7 +5210,8 @@
     "sevencolor",
     "heavenlychop",
     "fireescape",
-    "warprint"
+    "warprint",
+    "daofusion"
    ],
    "ultimateInvincible": 0.3
   },

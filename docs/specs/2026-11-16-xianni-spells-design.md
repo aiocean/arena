@@ -2,7 +2,7 @@
 
 ## Intent
 
-The arena's duel is a cultivation duel. This adds the techniques of the novel *Renegade Immortal* (Xian Ni, Er Gen) as skills in the two schools' pools: 64 skills, 29 for Thunder and 35 for Frost, on top of the 27 spells the duel had.
+The arena's duel is a cultivation duel. This adds the techniques of the novel *Renegade Immortal* (Xian Ni, Er Gen) as skills in the two schools' pools: 72 skills, 32 for Thunder and 40 for Frost, on top of the 27 spells the duel had.
 
 ## How a technique becomes a skill
 
@@ -15,7 +15,7 @@ The arena's duel is a cultivation duel. This adds the techniques of the novel *R
 
 ## The pool
 
-A fight still draws 8 skills of its school (`POOL_SIZE`). With 40 Thunder and 46 Frost skills in the pools, `bar::fight_pool` now also guarantees that a payoff skill (palm, burst, gather; shatter, lotus, yellowspring) comes with a skill that lays the status it spends, because the draw no longer leaves out only 3 of 11.
+A fight still draws 8 skills of its school (`POOL_SIZE`). With 43 Thunder and 51 Frost skills in the pools, `bar::fight_pool` now also guarantees that a payoff skill (palm, burst, gather; shatter, lotus, yellowspring) comes with a skill that lays the status it spends, because the draw no longer leaves out only 3 of 11.
 
 ## Technique to skill
 
@@ -85,22 +85,47 @@ A fight still draws 8 skills of its school (`POOL_SIZE`). With 40 Thunder and 46
 | Merit Spirit (Ancient God spell) | `meritspirit` | Frost | ward |
 | Body Formation (Celestial Emperor Qing Lin spell) | `bodyformation` | Frost | heal |
 | True and False Domain / True and False Seal | `truefalse` | Frost | area |
+| Ancient God Cauldron | `ancientcauldron` | Thunder | area |
+| Eight Extremes Dao | `eightextremes` | Thunder | area |
+| Dao Art Fusion | `daofusion` | Thunder | blast |
+| Dao Transformation Yellow Spring | `daoyellow` | Frost | field |
+| Condensed Spring Soul | `springsoul` | Frost | bolt |
+| Star Soul Extraction | `starsoul` | Frost | blast |
+| Life Destruction Spirit Summoning | `spiritsummon` | Frost | area |
+| Star Compass | `starcompass` | Frost | blink |
 
 ## Balance
 
 Measured with `cargo run --release -p pixfx-duel --example ladder -- --seeds 150 --telemetry`, the shipped policy (trained before these skills existed):
 
-| Match | Before | First draft of the skills | 50 skills | All 64 skills |
-|---|---|---|---|---|
-| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) | 94.1% (Thunder 95.6%, Frost 92.7%) |
-| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% | 93.0% |
-| balanced vs aggressive script | 91.1% | 85.1% | 85.6% | 85.7% |
-| balanced vs turtle script | 100.0% | 99.9% | 99.9% | 100.0% |
-| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% | 45.1% (Frost 54.9%) |
+| Match | Before | First draft of the skills | 50 skills | 64 skills | All 72 skills |
+|---|---|---|---|---|---|
+| balanced vs brain (bar 75%, 65% each school) | 95.9% | 93.1% | 92.0% (Thunder 93.3%, Frost 90.7%) | 94.1% (Thunder 95.6%, Frost 92.7%) | 92.4% (Thunder 91.6%, Frost 93.3%) |
+| balanced vs first mind (bar 80%) | 95.4% | 93.0% | 93.4% | 93.0% | 90.6% |
+| balanced vs aggressive script | 91.1% | 85.1% | 85.6% | 85.7% | 84.2% |
+| balanced vs turtle script | 100.0% | 99.9% | 99.9% | 100.0% | 99.4% |
+| mirror, Thunder's share (target 45-55%) | 49.1% | 40.4% | 49.1% | 45.1% (Frost 54.9%) | 46.2% (Frost 53.8%) |
 
-The last column is the build in this repository, measured on 150 seeds. Thunder's mirror share sits at the low end of the band: the next retrain, or a nudge to a Thunder skill that rarely lands, is the lever.
+The last column is the build in this repository, measured on 150 seeds. The first run of the 72 skills left Thunder at 44.9%; raising the damage of `ancientcauldron` (16), `eightextremes` (11) and `daofusion` (36) brought it to 46.2%. Thunder stays at the low end of the band: the next retrain is the lever.
 
 The first draft favoured Frost: its new skills (`yellowspring`, `soulbanner`, `summonrain`, `sevencolor`) land and hurt, while Thunder's (`gather`, `gravity`, `earthsplit`, `mountain`) rarely landed, and a larger pool dilutes Thunder's older, stronger core more. The shipped numbers raise Thunder's weak new skills and trim those four of Frost's; no number of the original 27 spells changed.
+
+## Techniques the duel approximates
+
+Eight techniques name a mechanic the duel has no rule for. Each is a skill of the existing kinds that keeps its role, not its mechanism, so a bot still reads it by kind and numbers:
+
+| Technique | Skill | The mechanic it stands in for | What the skill does instead |
+|---|---|---|---|
+| Ancient God Cauldron | `ancientcauldron` | swaps the two fighters' positions | an area that pulls the foe in to the caster |
+| Star Compass | `starcompass` | swaps positions | a short blink |
+| Dao Art Fusion | `daofusion` | fuses abilities | one heavy, slow, shocking blast |
+| Eight Extremes Dao | `eightextremes` | eight Dao paths at once | four burning strikes in sequence |
+| Dao Transformation Yellow Spring | `daoyellow` | an independent reincarnation cycle | a chilling field |
+| Condensed Spring Soul | `springsoul` | a hundred million souls fused into one | a chilling dart |
+| Star Soul Extraction | `starsoul` | pulls a planet's soul out | rage steal at close range |
+| Life Destruction Spirit Summoning | `spiritsummon` | summoned allies that trade life for power | two burning waves of strikes |
+
+A true swap, an ally that fights beside the caster, or life spent for power would change what a bot senses or can do (`docs/bot.md`): that needs a retrain and a new season, and it is the owner's call, not part of this table.
 
 ## Techniques with no skill
 
@@ -112,8 +137,6 @@ The source (the Fandom page "Wang Lin/Techniques", below) lists more than the du
 | Disguising Technique, Memory Erasing Technique | out-of-fight uses; the duel's silence skill (`spiritchange`) carries the memory wipe |
 | Specializations (restrictions, body tempering, the soul, killing intent), the Essences, True Bodies, the Main Body (27 Stars), Dao Source: Reincarnation | what a cultivator is, not an action; the schools' traits stand for them |
 | Ancient God "Tactics" | named without any description |
-| Dao Art Fusion, Eight Extremes Dao, Dao Transformation Yellow Spring, Condensed Spring Soul, Star Soul Extraction, Life Destruction Spirit Summoning (Baidu Baike) | fuse, summon over many turns or trade life for power: the duel has no ally, life-for-power or fusion mechanic |
-| Ancient God Cauldron (swaps positions), Star Compass (Baidu Baike) | a position swap the duel has no rule for; `inchearth` and `earthescape` cover travel |
 | Magic treasures with no combat verb (Immortal Pointing Brush, Immortal Sealing Seal, Collection Pavilion, Heaven Defying Bead) | they carry other techniques; the ones with a verb are skills (`tigerflag`, `soulbanner`, `kunjiwhip`, `voidnail`) |
 
 ## Sources and coverage

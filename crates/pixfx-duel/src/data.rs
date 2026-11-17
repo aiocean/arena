@@ -370,6 +370,7 @@ pub fn evolves(school: School) -> &'static [[&'static str; 2]] {
             ["ghostsummon", "soulvortex"],
             ["soulrefine", "bodyformation"],
             ["starrotation", "meritspirit"],
+            ["daoyellow", "springsoul"],
         ],
     }
 }
@@ -537,6 +538,7 @@ pub const FRAMES: Frames = Frames {
         "heavenlychop",
         "fireescape",
         "warprint",
+        "daofusion",
     ],
     ultimate_invincible: 0.3,
 };
@@ -753,7 +755,7 @@ const BASE: Spell = Spell {
 use Blow::{Magic, Physical};
 
 /// Every spell, in the duel's order.
-static SPELLS: [Spell; 91] = [
+static SPELLS: [Spell; 99] = [
     Spell {
         name: "slash",
         kind: Kind::Melee,
@@ -2216,6 +2218,142 @@ static SPELLS: [Spell; 91] = [
         silence: Some(0.8),
         ..BASE
     },
+    // Thunder: Ancient God Cauldron: Swaps places: a cauldron drags the foe in to where the caster stands and strikes it there.
+    Spell {
+        name: "ancientcauldron",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("arcane/vortex-ring"),
+        cost: 32.0,
+        windup: 0.3,
+        recover: 0.35,
+        cooldown: 5.0,
+        damage: Some(16.0),
+        impact: Some(0.4),
+        radius: Some(14.0),
+        notice: Some(0.1),
+        pull: Some(70.0),
+        reach: Some(60.0),
+        pull_until: Some(0.7),
+        ..BASE
+    },
+    // Thunder: Eight Extremes Dao: Eight Dao paths fall on the foe one after another, four strikes that burn.
+    Spell {
+        name: "eightextremes",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("explosions/plasma-explosion"),
+        cost: 40.0,
+        windup: 0.45,
+        recover: 0.35,
+        cooldown: 5.5,
+        damage: Some(11.0),
+        sigil: Some(0.2),
+        impact: Some(0.08),
+        radius: Some(11.0),
+        notice: Some(0.0),
+        strikes: Some(4.0),
+        every: Some(0.3),
+        aim_ahead: Some(0.2),
+        burn: true,
+        ..BASE
+    },
+    // Thunder: Dao Art Fusion: Treasures, abilities and rules fused into one blow: slow to gather, heavy, and it shocks.
+    Spell {
+        name: "daofusion",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("explosions/swirl-blast"),
+        cost: 46.0,
+        windup: 0.8,
+        recover: 0.5,
+        cooldown: 7.0,
+        range: Some(54.0),
+        damage: Some(36.0),
+        shock: true,
+        ..BASE
+    },
+    // Frost: Dao Transformation Yellow Spring: A reincarnation cycle forms over the foe: a cold field that chills whoever stands in it for three seconds.
+    Spell {
+        name: "daoyellow",
+        kind: Kind::Void,
+        blow: Some(Magic),
+        fx: Some("critters/wisp"),
+        cost: 42.0,
+        windup: 0.5,
+        recover: 0.3,
+        cooldown: 7.5,
+        damage: Some(6.0),
+        life: Some(3.0),
+        height: Some(0.0),
+        pull: Some(0.0),
+        reach: Some(34.0),
+        under: Some(34.0),
+        tick: Some(5.0),
+        chill: true,
+        ..BASE
+    },
+    // Frost: Condensed Spring Soul: A hundred million souls condensed into one dart that chills what it hits.
+    Spell {
+        name: "springsoul",
+        kind: Kind::Bolt,
+        blow: Some(Magic),
+        fx: Some("projectiles/laser-bolt"),
+        cost: 26.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 3.0,
+        damage: Some(14.0),
+        speed: Some(170.0),
+        chill: true,
+        ..BASE
+    },
+    // Frost: Star Soul Extraction: Pulls the soul out of the foe at close range: steals a point of rage.
+    Spell {
+        name: "starsoul",
+        kind: Kind::Blast,
+        blow: Some(Magic),
+        fx: Some("arcane/vortex-ring"),
+        cost: 30.0,
+        windup: 0.45,
+        recover: 0.4,
+        cooldown: 4.5,
+        range: Some(46.0),
+        damage: Some(12.0),
+        steal_rage: Some(1.0),
+        ..BASE
+    },
+    // Frost: Life Destruction Spirit Summoning: Spirits of destroyed life arrive in two waves on the foe and burn it.
+    Spell {
+        name: "spiritsummon",
+        kind: Kind::Zone,
+        blow: Some(Magic),
+        fx: Some("impacts/twin-converge"),
+        cost: 36.0,
+        windup: 0.4,
+        recover: 0.3,
+        cooldown: 4.5,
+        damage: Some(12.0),
+        impact: Some(0.3),
+        radius: Some(12.0),
+        notice: Some(0.0),
+        strikes: Some(2.0),
+        every: Some(0.4),
+        burn: true,
+        ..BASE
+    },
+    // Frost: Star Compass: The compass turns and the caster stands elsewhere: a short step through the stars.
+    Spell {
+        name: "starcompass",
+        kind: Kind::Blink,
+        fx: Some("explosions/puff-burst"),
+        cost: 16.0,
+        windup: 0.06,
+        recover: 0.1,
+        cooldown: 1.6,
+        distance: Some(44.0),
+        ..BASE
+    },
 ];
 
 /// Every spell, in the duel's order.
@@ -2327,6 +2465,9 @@ static THUNDER: SchoolData = SchoolData {
         "warprint",
         "earthescape",
         "celestialslaughter",
+        "ancientcauldron",
+        "eightextremes",
+        "daofusion",
     ],
     ultimate: "tribulation",
     signature: Kind::Blast,
@@ -2500,6 +2641,11 @@ static FROST: SchoolData = SchoolData {
         "meritspirit",
         "bodyformation",
         "truefalse",
+        "daoyellow",
+        "springsoul",
+        "starsoul",
+        "spiritsummon",
+        "starcompass",
     ],
     ultimate: "prison",
     signature: Kind::Zone,
