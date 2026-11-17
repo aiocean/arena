@@ -13,6 +13,8 @@
 //! - `live`: the page reached the relay over WebTransport (`window.__arena.live.connected`) and match frames came
 //!   (`frames`), and it is watching the server's match, not fighting on its own (the status line's `live`).
 //! - `hud`: the canvas is painted (many colours, most pixels not the background).
+//! - `weight` (never fails the run): what the first visit downloaded, bytes on the wire by kind and the heaviest
+//!   files, and the seconds to the game starting and to the first live frame (`arena_smoke::Weight`).
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //!
 //! It writes `screenshot.png` and `summary.json` to `--out`; with `--review <dir>` also a run page into
@@ -23,10 +25,11 @@
 //! `~/.cache/arena-smoke`.
 
 use arena_smoke::{
-    Check, Picture, Summary, changed, ignored_console, ignored_request, paint, redact, stamp,
+    Check, Picture, Summary, Weight, changed, ignored_console, ignored_request, paint, redact,
+    stamp,
 };
 use chromiumoxide::cdp::browser_protocol::network::{
-    EventLoadingFailed, EventRequestWillBeSent, EventResponseReceived,
+    EventLoadingFailed, EventLoadingFinished, EventRequestWillBeSent, EventResponseReceived,
 };
 use chromiumoxide::cdp::browser_protocol::page::{CaptureScreenshotFormat, Viewport};
 use chromiumoxide::cdp::js_protocol::runtime::{
@@ -203,6 +206,10 @@ struct Seen {
     urls: HashMap<String, String>,
     /// The page's own responses: URL and status.
     responses: Vec<(String, i64)>,
+    /// Every response by request id: URL and MIME type.
+    answers: HashMap<String, (String, String)>,
+    /// Every finished response: URL, MIME type and bytes on the wire.
+    finished: Vec<(String, String, u64)>,
 }
 
 impl Seen {
@@ -360,8 +367,12 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     // let the page settle on the relay's match (it falls back to its own fight after 8 s without one)
     let settle = Duration::from_secs(10);
     let mut live = Value::Null;
+    let mut first_frame = None;
     while loaded.elapsed() < deadline.max(settle) {
         live = eval_json(&page, "window.__arena?.live ?? null").await;
+        if first_frame.is_none() && live.get("frames").and_then(Value::as_u64).unwrap_or(0) > 0 {
+            first_frame = Some(loaded.elapsed().as_secs_f64());
+        }
         status = eval_string(
             &page,
             "document.getElementById('status')?.textContent ?? ''",
@@ -513,11 +524,16 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
             },
         ),
     );
+    let mut weight = Weight::of(&lock(&seen).finished);
+    weight.game_start_s = started.then_some(start_secs);
+    weight.first_live_frame_s = first_frame;
+    checks.push(Check::new("weight", true, weight.line()));
     let summary = Summary {
         checks,
         status_line: redact(&status),
         errors,
         ignored,
+        weight,
         ..Summary::default()
     };
     Ok((summary, full))
@@ -549,6 +565,10 @@ async fn listen(page: &Page, seen: &Arc<Mutex<Seen>>, own: &str) -> Result<(), S
         .map_err(e)?;
     let mut failed = page
         .event_listener::<EventLoadingFailed>()
+        .await
+        .map_err(e)?;
+    let mut done = page
+        .event_listener::<EventLoadingFinished>()
         .await
         .map_err(e)?;
 
@@ -597,11 +617,29 @@ async fn listen(page: &Page, seen: &Arc<Mutex<Seen>>, own: &str) -> Result<(), S
         while let Some(ev) = answered.next().await {
             let (url, code) = (ev.response.url.clone(), ev.response.status);
             let mut s = lock(&s);
+            s.answers.insert(
+                ev.request_id.inner().clone(),
+                (url.clone(), ev.response.mime_type.clone()),
+            );
             if url.starts_with(&o) {
                 s.responses.push((url.clone(), code));
             }
             if code >= 400 {
                 s.request(&url, &o, &format!("answered {code}"));
+            }
+        }
+    });
+    let s = Arc::clone(seen);
+    tokio::spawn(async move {
+        while let Some(ev) = done.next().await {
+            let mut s = lock(&s);
+            if let Some((url, mime)) = s.answers.get(ev.request_id.inner()).cloned()
+                && !url.starts_with("data:")
+                && !url.starts_with("blob:")
+            {
+                // bytes on the wire: a whole number, though the protocol sends a float
+                let bytes = ev.encoded_data_length.max(0.0) as u64;
+                s.finished.push((url, mime, bytes));
             }
         }
     });

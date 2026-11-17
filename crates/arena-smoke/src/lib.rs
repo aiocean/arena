@@ -42,6 +42,126 @@ pub struct Summary {
     pub ignored: Vec<String>,
     /// How long the run took, in seconds.
     pub seconds: f64,
+    /// What a first visit downloaded (a fresh browser, nothing cached) and how long it took to see the game.
+    #[serde(default)]
+    pub weight: Weight,
+}
+
+/// A first visit's bytes and timings: every response's bytes on the wire (`encodedDataLength`: compressed, headers
+/// included) by kind, the largest files, the seconds from navigation to the game starting and to the first live
+/// frame. The relay's WebTransport stream is not an HTTP request and is not counted.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct Weight {
+    pub bytes: u64,
+    pub requests: u32,
+    /// Kind (`kind_of`), its bytes and its requests, the heaviest first.
+    pub by_kind: Vec<(String, u64, u32)>,
+    /// The ten heaviest responses: URL (path only) and bytes.
+    pub largest: Vec<(String, u64)>,
+    /// Navigation to the status line saying `Seed ...` (the game's wasm fetched, compiled and running).
+    pub game_start_s: Option<f64>,
+    /// Navigation to the first match frame from the relay (`window.__arena.live.frames > 0`).
+    pub first_live_frame_s: Option<f64>,
+}
+
+impl Weight {
+    /// Sum `responses` (URL, MIME type, bytes on the wire) into a weight.
+    pub fn of(responses: &[(String, String, u64)]) -> Weight {
+        let mut kinds: HashMap<&'static str, (u64, u32)> = HashMap::new();
+        for (url, mime, bytes) in responses {
+            let k = kinds.entry(kind_of(url, mime)).or_default();
+            k.0 += bytes;
+            k.1 += 1;
+        }
+        let mut by_kind: Vec<_> = kinds
+            .into_iter()
+            .map(|(k, (b, n))| (k.to_string(), b, n))
+            .collect();
+        by_kind.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        let mut largest: Vec<_> = responses.iter().map(|(u, _, b)| (path_of(u), *b)).collect();
+        largest.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        largest.truncate(10);
+        Weight {
+            bytes: responses.iter().map(|r| r.2).sum(),
+            requests: u32::try_from(responses.len()).unwrap_or(u32::MAX),
+            by_kind,
+            largest,
+            ..Weight::default()
+        }
+    }
+
+    /// One line for the console and the review page.
+    pub fn line(&self) -> String {
+        let kinds: Vec<String> = self
+            .by_kind
+            .iter()
+            .map(|(k, b, n)| format!("{k} {} ({n})", mb(*b)))
+            .collect();
+        let secs = |s: Option<f64>| s.map_or("never".to_string(), |s| format!("{s:.1} s"));
+        format!(
+            "{} in {} requests: {}; game started {}, first live frame {}",
+            mb(self.bytes),
+            self.requests,
+            kinds.join(", "),
+            secs(self.game_start_s),
+            secs(self.first_live_frame_s)
+        )
+    }
+}
+
+/// Bytes as megabytes, one decimal place below 10 MB, two above none.
+pub fn mb(bytes: u64) -> String {
+    let m = bytes as f64 / 1_000_000.0;
+    if m >= 10.0 {
+        format!("{m:.1} MB")
+    } else {
+        format!("{m:.2} MB")
+    }
+}
+
+/// What kind of file a response is, by its type and else its extension: wasm, js, image, json, html, css, font,
+/// other.
+pub fn kind_of(url: &str, mime: &str) -> &'static str {
+    let path = path_of(url);
+    let ext = path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+    if mime == "application/wasm" || ext == "wasm" {
+        "wasm"
+    } else if mime.contains("javascript") || ext == "js" || ext == "mjs" {
+        "js"
+    } else if mime.starts_with("image/") {
+        "image"
+    } else if mime.contains("json") || ext == "json" {
+        "json"
+    } else if mime.starts_with("text/html") {
+        "html"
+    } else if mime.starts_with("text/css") {
+        "css"
+    } else if mime.starts_with("font/")
+        || mime.contains("font")
+        || ["woff", "woff2", "ttf", "otf"].contains(&ext.as_str())
+    {
+        "font"
+    } else {
+        "other"
+    }
+}
+
+/// A URL's path, its query (which may hold a token) and its origin left out for another site's file only.
+fn path_of(url: &str) -> String {
+    let no_query = url.split(['?', '#']).next().unwrap_or(url);
+    match no_query.split_once("://") {
+        Some((_, rest)) => match rest.split_once('/') {
+            Some((host, path))
+                if host.ends_with("arena.aiocean.io")
+                    || host.starts_with("127.0.0.1")
+                    || host.starts_with("localhost") =>
+            {
+                format!("/{path}")
+            }
+            _ => rest.to_string(),
+        },
+        None => no_query.to_string(),
+    }
 }
 
 impl Summary {
@@ -389,6 +509,77 @@ pub fn write_review(
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    #[test]
+    fn a_visit_is_weighed_by_kind_heaviest_first() {
+        let r = |u: &str, m: &str, b: u64| (u.to_string(), m.to_string(), b);
+        let w = Weight::of(&[
+            r("https://arena.aiocean.io/", "text/html", 4_000),
+            r(
+                "https://arena.aiocean.io/game/arena_game_bg.wasm",
+                "application/wasm",
+                6_700_000,
+            ),
+            r(
+                "https://arena.aiocean.io/game/arena_game.js",
+                "text/javascript",
+                30_000,
+            ),
+            r(
+                "https://arena.aiocean.io/game/assets/vfx/vfx-1.webp",
+                "image/webp",
+                1_200_000,
+            ),
+            r(
+                "https://arena.aiocean.io/game/assets/fighters/a.png",
+                "image/png",
+                900_000,
+            ),
+            r(
+                "https://arena.aiocean.io/live.json?x=secret",
+                "application/json",
+                300,
+            ),
+            r("https://fonts.gstatic.com/s/x.woff2", "font/woff2", 20_000),
+        ]);
+        assert_eq!(w.bytes, 8_854_300);
+        assert_eq!(w.requests, 7);
+        assert_eq!(w.by_kind[0], ("wasm".to_string(), 6_700_000, 1));
+        assert_eq!(w.by_kind[1], ("image".to_string(), 2_100_000, 2));
+        assert_eq!(w.largest[0].0, "/game/arena_game_bg.wasm");
+        assert!(
+            w.largest.iter().all(|(u, _)| !u.contains("secret")),
+            "a query never shown: {:?}",
+            w.largest
+        );
+        assert!(
+            w.largest
+                .iter()
+                .any(|(u, _)| u == "fonts.gstatic.com/s/x.woff2")
+        );
+        assert!(
+            w.line()
+                .starts_with("8.85 MB in 7 requests: wasm 6.70 MB (1), image 2.10 MB (2)"),
+            "{}",
+            w.line()
+        );
+    }
+
+    #[test]
+    fn kinds_by_type_then_extension() {
+        assert_eq!(
+            kind_of("https://a/x.wasm", "application/octet-stream"),
+            "wasm"
+        );
+        assert_eq!(kind_of("https://a/x", "application/javascript"), "js");
+        assert_eq!(kind_of("https://a/x.webp", "image/webp"), "image");
+        assert_eq!(
+            kind_of("https://a/docs/", "text/html; charset=utf-8"),
+            "html"
+        );
+        assert_eq!(kind_of("https://a/x.woff2", ""), "font");
+        assert_eq!(kind_of("https://a/x.bin", ""), "other");
+    }
 
     fn picture(w: usize, h: usize, f: impl Fn(usize, usize) -> [u8; 3]) -> Picture {
         let mut rgba = Vec::with_capacity(w * h * 4);
