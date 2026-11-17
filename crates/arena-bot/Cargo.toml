@@ -25,10 +25,12 @@ wat = "1"
 # the ladder's --telemetry-otlp: its rows and per-skill tables as events
 arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["otlp"] }
 tracing = "0.1"
+# the telemetry test's subscriber: what bot.end carries
+tracing-subscriber = { version = "0.3", default-features = false, features = ["registry", "std"] }
 
 [features]
 host = ["dep:arena-duel", "dep:arena-mind", "dep:wasmtime", "dep:tracing"]
-onnx = ["dep:arena-duel", "dep:arena-mind", "dep:tract-onnx"]
+onnx = ["dep:arena-duel", "dep:arena-mind", "dep:tract-onnx", "dep:tracing"]
 # the trace example: every tick as JSON, the rules' serde shapes
 trace = ["onnx", "arena-duel/serde"]
 

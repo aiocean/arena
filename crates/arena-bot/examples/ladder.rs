@@ -10,6 +10,8 @@
 //!
 //! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends each row and each seat's skill table to the telemetry
 //! store as `arena_ladder` events under one `run_id`, as service `arena-ladder` (`ops/observe/README.md`).
+//! The bot's own measures (think-time and fuel percentiles, faults) go as `bot.end` events, one an instance (a row),
+//! under service `arena-bot`, with `runtime` "onnx" or "wasm" and `bot` "house", `onnx-<hash>` or `<file>-<hash>`.
 
 use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
@@ -50,6 +52,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let admitted =
                 arena_bot::admit(&std::fs::read(&path)?).map_err(|e| format!("{path}: {e}"))?;
             let runner = Runner::new(&admitted).map_err(|e| format!("{path}: {}", e.0))?;
+            // its telemetry's `bot`: the file's name, then the start of its hash
+            let stem = std::path::Path::new(&path)
+                .file_stem()
+                .map_or_else(|| "module".into(), |s| s.to_string_lossy());
+            let runner = runner.named(&format!("{stem}-{}", &admitted.hash[..8]));
             Rc::new(move || runner.decider())
         }
         (None, path) => {
@@ -168,7 +175,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             print_telemetry(name, r);
         }
     }
-    decision_cost(&*new, &effects);
+    // a benchmark, not a match: its instance is kept out of the telemetry (bot.end, think time)
+    tracing::subscriber::with_default(tracing::subscriber::NoSubscriber::default(), || {
+        decision_cost(&*new, &effects);
+    });
     Ok(())
 }
 

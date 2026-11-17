@@ -3,14 +3,17 @@
 //! (`FUEL_EXPORT`); a trap or an empty counter is a `Fault`, and the instance plays on with its memory as left.
 //!
 //! Each decision's wall time and fuel are metric events, each fault and a module that will not start an `arena::bot`
-//! event, and an instance's totals one more when it is dropped (`arena-telemetry` exports them when it is configured;
-//! with nothing listening they cost a clock read).
+//! event, and an instance's totals, with its think-time and fuel percentiles, one more when it is dropped
+//! (`meter::Tally`, runtime "wasm"; `arena-telemetry` exports them when it is configured; with nothing listening they
+//! cost a clock read).
 
+use crate::meter::Tally;
 use crate::{ACTIONS, Admitted, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};
 use arena_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::sync::Arc;
+use std::time::Instant;
 use tracing::{Level, event};
 use wasmtime::{Config, Engine, Global, Instance, Memory, Module, Store, TypedFunc, Val};
 
@@ -19,6 +22,8 @@ use wasmtime::{Config, Engine, Global, Instance, Memory, Module, Store, TypedFun
 pub struct Runner {
     engine: Engine,
     module: Module,
+    /// The name its telemetry carries (`bot`): `module-` and the first 12 of its hash, unless `named`.
+    name: Arc<str>,
 }
 
 impl Runner {
@@ -29,7 +34,27 @@ impl Runner {
         let engine = Engine::new(&config).map_err(|e| Fault(format!("the engine: {e}")))?;
         let module = Module::new(&engine, &admitted.bytes)
             .map_err(|e| Fault(format!("compiling the module: {e}")))?;
-        Ok(Runner { engine, module })
+        let name = format!(
+            "module-{}",
+            admitted.hash.get(..12).unwrap_or(&admitted.hash)
+        )
+        .into();
+        Ok(Runner {
+            engine,
+            module,
+            name,
+        })
+    }
+
+    /// The same module under `name` in its telemetry.
+    pub fn named(mut self, name: &str) -> Runner {
+        self.name = name.into();
+        self
+    }
+
+    /// The name its telemetry carries.
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     /// A fresh instance: one match.
@@ -42,7 +67,9 @@ impl Runner {
         match self.instance() {
             Ok(bot) => Rc::new(RefCell::new(bot)),
             Err(fault) => {
-                event!(target: "arena::bot", Level::ERROR, { fault = %fault.0 }, "bot.broken");
+                event!(target: "arena::bot", Level::ERROR, {
+                    runtime = "wasm", bot = &*self.name, fault = %fault.0,
+                }, "bot.broken");
                 Rc::new(RefCell::new(Broken(fault)))
             }
         }
@@ -62,10 +89,9 @@ pub struct Bot {
     /// The calls that trapped or ran out of fuel, and the most fuel one decision used.
     pub faults: Vec<Fault>,
     pub most_fuel: i64,
-    /// Decisions made, and their wall time and fuel together.
-    decisions: u64,
-    thought: Duration,
-    fuel_used: i64,
+    /// Decisions, their think time and fuel, faults: what `bot.end` reports.
+    tally: Tally,
+    buf: Vec<u8>,
 }
 
 fn fault(e: impl std::fmt::Display) -> Fault {
@@ -108,9 +134,8 @@ impl Bot {
             decide,
             faults: Vec::new(),
             most_fuel: 0,
-            decisions: 0,
-            thought: Duration::ZERO,
-            fuel_used: 0,
+            tally: Tally::new("wasm", Arc::clone(&runner.name), Some(DECIDE_FUEL)),
+            buf: Vec::with_capacity(OBS * 4 + ACTIONS),
         };
         bot.refuel(SETUP_FUEL)?;
         let input = input_at.call(&mut bot.store, ()).map_err(fault)?;
@@ -134,6 +159,11 @@ impl Bot {
         self.abi.call(&mut self.store, ()).map_err(fault)
     }
 
+    /// What it has done so far, as `bot.end` will report it.
+    pub fn summary(&self) -> crate::meter::Summary {
+        self.tally.summary()
+    }
+
     fn noted<T>(&mut self, call: &'static str, r: Result<T, Fault>) -> Result<T, Fault> {
         if let Err(f) = &r {
             let kind = if self.left() <= 0 {
@@ -141,16 +171,7 @@ impl Bot {
             } else {
                 "trap"
             };
-            // a module that faults on every call is told about ten times, then every thousandth (all are counted)
-            let n = self.faults.len() + 1;
-            if n <= 10 || n.is_multiple_of(1000) {
-                event!(target: "arena::bot", Level::WARN, {
-                    call = call, kind = kind, fault = %f.0, faults = n,
-                }, "bot.fault");
-            }
-            event!(target: "arena::metrics", Level::INFO, {
-                monotonic_counter.arena_bot_faults_total = 1_u64, call = call, kind = kind,
-            });
+            self.tally.fault(call, kind, f);
             self.faults.push(f.clone());
         }
         r
@@ -159,6 +180,7 @@ impl Bot {
 
 impl Decider for Bot {
     fn start(&mut self, seed: u32) -> Result<(), Fault> {
+        self.tally.started();
         let r = self.refuel(SETUP_FUEL).and_then(|()| {
             let seed = i32::from_ne_bytes(seed.to_ne_bytes());
             self.start.call(&mut self.store, seed).map_err(fault)
@@ -174,7 +196,9 @@ impl Decider for Bot {
     }
 
     fn decide(&mut self, obs: &[f32; OBS], legal: &[bool; ACTIONS], u: f32) -> Result<i32, Fault> {
-        let mut buf = Vec::with_capacity(OBS * 4 + ACTIONS);
+        // the input, built in a buffer the instance keeps: no allocation a decision
+        let mut buf = std::mem::take(&mut self.buf);
+        buf.clear();
         for v in obs {
             buf.extend(v.to_le_bytes());
         }
@@ -187,28 +211,11 @@ impl Decider for Bot {
             .and_then(|()| self.refuel(DECIDE_FUEL))
             .and_then(|()| self.decide.call(&mut self.store, u).map_err(fault));
         let took = began.elapsed();
+        self.buf = buf;
         let used = DECIDE_FUEL - self.left();
         self.most_fuel = self.most_fuel.max(used);
-        self.decisions += 1;
-        self.thought += took;
-        self.fuel_used += used;
-        event!(target: "arena::metrics", Level::INFO, {
-            histogram.arena_bot_think_seconds = took.as_secs_f64(), histogram.arena_bot_fuel = used as f64,
-        });
+        self.tally.decided(took, Some(used));
         self.noted("decide", r)
-    }
-}
-
-impl Drop for Bot {
-    fn drop(&mut self) {
-        if self.decisions > 0 || !self.faults.is_empty() {
-            let n = self.decisions.max(1) as f64;
-            event!(target: "arena::bot", Level::INFO, {
-                decisions = self.decisions, faults = self.faults.len(),
-                think_mean_ms = self.thought.as_secs_f64() * 1000.0 / n,
-                fuel_mean = self.fuel_used as f64 / n, fuel_most = self.most_fuel, fuel_cap = DECIDE_FUEL,
-            }, "bot.end");
-        }
     }
 }
 

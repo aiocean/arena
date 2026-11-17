@@ -17,6 +17,8 @@ use wasmparser::{
 
 #[cfg(feature = "host")]
 pub mod host;
+#[cfg(any(feature = "host", feature = "onnx"))]
+pub mod meter;
 #[cfg(feature = "onnx")]
 pub mod onnx;
 
