@@ -1,9 +1,8 @@
-//! The ladder: one seat against another over many seeds, each fought both ways (as Thunder, then as Frost) so the
-//! schools' own balance cancels out, with what a watcher would judge: who wins as each school, how long rounds last,
-//! whether fights stall, how varied and how aggressive the first seat plays, and the distance it keeps; and, for each
-//! school whoever sits in it, what each skill did (telemetry), to see where one school's edge comes from.
+//! The ladder: one seat against another over many seeds, each fought both ways (in seat 0, then in seat 1) so the
+//! seats' own edge and the two random loadouts of a seed cancel out, with what a watcher would judge: who wins in each
+//! seat, how long rounds last, whether fights stall, how varied and how aggressive the first contestant plays, and
+//! the distance it keeps; and, for each seat whoever sits in it, what each skill did (telemetry).
 
-use crate::bar::cost_of;
 use crate::data::spell;
 use crate::duel::{Duel, DuelConfig, TICK};
 use crate::fighter::State;
@@ -31,7 +30,7 @@ pub struct Match {
 /// A match's result, from the first seat's side.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Record {
-    /// Rounds the first seat won and lost as Thunder (0) and as Frost (1).
+    /// Rounds the first contestant won and lost in seat 0 and in seat 1.
     pub won: [u32; 2],
     pub lost: [u32; 2],
     /// Every finished round's length, seconds.
@@ -45,11 +44,11 @@ pub struct Record {
     pub attacks: u32,
     /// The mean distance between the fighters, game pixels, over every tick of a round.
     pub mean_distance: f64,
-    /// What each school (0 Thunder, 1 Frost) did, whichever seat sat in it.
-    pub schools: [SchoolLog; 2],
+    /// What each seat (0 left, 1 right) did, whoever sat in it.
+    pub seats: [SeatLog; 2],
 }
 
-/// What one skill of a school did over a match. Shares of life are of a full life (100 is one life).
+/// What one skill of a seat did over a match. Shares of life are of a full life (100 is one life).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SkillLog {
     pub casts: u32,
@@ -73,9 +72,9 @@ pub struct SkillLog {
     pub punished: u32,
 }
 
-/// What one school did over a match.
+/// What one seat did over a match.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct SchoolLog {
+pub struct SeatLog {
     /// By skill: its own, and a foe's bolt it sent back.
     pub skills: BTreeMap<&'static str, SkillLog>,
     /// The share of the foe's life its burns and shocks took.
@@ -95,7 +94,7 @@ pub struct SchoolLog {
     pub flying: f64,
 }
 
-impl SchoolLog {
+impl SeatLog {
     /// The share of the foe's life it took, every skill and status together.
     pub fn dealt(&self) -> f64 {
         self.skills.values().map(|s| s.damage).sum::<f64>() + self.statuses.values().sum::<f64>()
@@ -115,8 +114,8 @@ impl Record {
         )
     }
 
-    /// The share it won as school `i` (0 Thunder, 1 Frost).
-    pub fn as_school(&self, i: usize) -> f64 {
+    /// The share it won in seat `i`.
+    pub fn as_seat(&self, i: usize) -> f64 {
         let (w, l) = (
             self.won.get(i).copied().unwrap_or(0),
             self.lost.get(i).copied().unwrap_or(0),
@@ -209,11 +208,11 @@ impl Seat for Counted {
     }
 }
 
-/// A seat that writes its school's casts, what they cost, and the moves it was told were punished.
+/// A seat that writes its seat's casts, what they cost, and the moves it was told were punished.
 struct Watched {
     inner: Box<dyn Seat>,
     me: usize,
-    logs: Rc<RefCell<[SchoolLog; 2]>>,
+    logs: Rc<RefCell<[SeatLog; 2]>>,
 }
 
 impl Seat for Watched {
@@ -226,7 +225,7 @@ impl Seat for Watched {
             let mut logs = self.logs.borrow_mut();
             let log = &mut logs[me];
             log.skill(sp.name).casts += 1;
-            log.qi_spent += cost_of(f, sp.name);
+            log.qi_spent += f.kit.get(sp.name).map_or(0.0, |k| k.qi());
             if sp.ultimate {
                 log.rage_spent += f.rage;
             }
@@ -255,7 +254,7 @@ impl Seat for Watched {
     }
 }
 
-fn watched(make: MakeSeat, logs: &Rc<RefCell<[SchoolLog; 2]>>) -> MakeSeat {
+fn watched(make: MakeSeat, logs: &Rc<RefCell<[SeatLog; 2]>>) -> MakeSeat {
     let logs = Rc::clone(logs);
     Box::new(move |state, me| {
         Box::new(Watched {
@@ -281,7 +280,7 @@ struct Lives {
 
 impl Lives {
     /// Fighter `f` loses `share` of its life to its foe, but nothing past what it has left; returns what it lost.
-    fn took(&mut self, logs: &mut [SchoolLog; 2], f: usize, cause: Cause, share: f64) -> f64 {
+    fn took(&mut self, logs: &mut [SeatLog; 2], f: usize, cause: Cause, share: f64) -> f64 {
         let taken = share.min(self.life[f]).max(0.0);
         self.life[f] -= taken;
         let by = &mut logs[1 - f];
@@ -298,7 +297,7 @@ impl Lives {
 
 /// One tick's telemetry: what its events and notes say each blow did, from each fighter's life `before` the tick,
 /// and what each fighter was doing after it.
-fn account(logs: &mut [SchoolLog; 2], before: [f64; 2], out: &[Out], state: &State) {
+fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State) {
     let mut lives = Lives {
         life: before,
         last: [None, None],
@@ -351,7 +350,7 @@ fn account(logs: &mut [SchoolLog; 2], before: [f64; 2], out: &[Out], state: &Sta
     }
     for (f, log) in logs.iter_mut().enumerate() {
         let me = &state.fighters[f];
-        log.life_lost += before[f] - me.hp + healed[f];
+        log.life_lost += before[f] - me.hp() + healed[f];
         let on = |b: bool| if b { TICK } else { 0.0 };
         log.seconds += TICK;
         log.meditating += on(me.medit);
@@ -367,11 +366,11 @@ fn account(logs: &mut [SchoolLog; 2], before: [f64; 2], out: &[Out], state: &Sta
     }
 }
 
-/// Seat `a` against seat `b` over `m`, each seed fought with `a` as Thunder and then as Frost.
+/// Seat `a` against seat `b` over `m`, each seed fought with `a` in seat 0 and then in seat 1.
 pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -> Record {
     let mut r = Record::default();
     let tally = Rc::new(RefCell::new(Tally::default()));
-    let logs = Rc::new(RefCell::new(<[SchoolLog; 2]>::default()));
+    let logs = Rc::new(RefCell::new(<[SeatLog; 2]>::default()));
     let (mut distance, mut ticks) = (0.0, 0_u64);
     for seed in m.seeds.clone() {
         for corner in 0..2 {
@@ -403,7 +402,7 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             let mut ended = false;
             while duel.state().wins[0] + duel.state().wins[1] < m.rounds {
                 let fighting = duel.state().winner.is_none();
-                let before = duel.state().fighters.each_ref().map(|f| f.hp);
+                let before = duel.state().fighters.each_ref().map(|f| f.hp());
                 let out = duel.step(TICK);
                 if fighting {
                     account(&mut logs.borrow_mut(), before, &out, duel.state());
@@ -437,7 +436,7 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
     r.choices = t.choices.clone();
     r.decisions = t.decisions;
     r.attacks = t.attacks;
-    r.schools = logs.borrow().clone();
+    r.seats = logs.borrow().clone();
     r.mean_distance = if ticks == 0 {
         0.0
     } else {
@@ -500,7 +499,7 @@ impl Bot {
     }
 }
 
-/// Bot `a` against bot `b` over `m`, from `a`'s side: each seed fought with `a` as Thunder, then as Frost.
+/// Bot `a` against bot `b` over `m`, from `a`'s side: each seed fought with `a` in seat 0, then in seat 1.
 pub fn bout(a: &Bot, b: &Bot, m: &Match) -> Record {
     match_up(&*a.contestant(None), &*b.contestant(None), m)
 }
@@ -514,16 +513,16 @@ pub struct EntryBar {
 }
 
 impl EntryBar {
-    /// The share of rounds it must win against the brain, overall and as each school, and against the first mind.
+    /// The share of rounds it must win against the brain, overall and in each seat, and against the first mind.
     pub const BRAIN: f64 = 0.75;
-    pub const BRAIN_EACH_SCHOOL: f64 = 0.65;
+    pub const BRAIN_EACH_SEAT: f64 = 0.65;
     pub const FIRST: f64 = 0.80;
 
     /// Whether the bot clears every part of the bar.
     pub fn passed(&self) -> bool {
         self.vs_brain.win_rate() >= Self::BRAIN
-            && self.vs_brain.as_school(0) >= Self::BRAIN_EACH_SCHOOL
-            && self.vs_brain.as_school(1) >= Self::BRAIN_EACH_SCHOOL
+            && self.vs_brain.as_seat(0) >= Self::BRAIN_EACH_SEAT
+            && self.vs_brain.as_seat(1) >= Self::BRAIN_EACH_SEAT
             && self.vs_first.win_rate() >= Self::FIRST
     }
 }

@@ -33,8 +33,6 @@ pub struct BodySpec {
     pub walk: f64,
     /// Walking away from the foe is slower than walking toward it, so no one can run away forever.
     pub backwalk: f64,
-    /// What a chill leaves of the walking speed.
-    pub chill: f64,
     /// The speed a jump leaves the ground at.
     pub jump_speed: f64,
     pub gravity: f64,
@@ -89,10 +87,9 @@ pub struct BodySpec {
     pub bounce: f64,
     /// Falling faster than this when it lands, a fighter's landing is felt.
     pub hard_landing: f64,
-    /// How far a blow that keeps the target on its feet pushes it, as a speed; a freezing blow pushes
-    /// `freeze_knockback` of that, a throwing one `launch_knockback` of it.
+    /// How far a blow that keeps the target on its feet pushes it, as a speed; a throwing one pushes
+    /// `launch_knockback` of it.
     pub knockback: f64,
-    pub freeze_knockback: f64,
     pub launch_knockback: f64,
     /// Bounced off the arena's edge, a body keeps this share of its speed.
     pub wall_keep: f64,
@@ -113,7 +110,6 @@ impl Default for BodySpec {
             room: 3.0,
             walk: 52.0,
             backwalk: 0.75,
-            chill: 0.45,
             jump_speed: 220.0,
             gravity: 520.0,
             apex_speed: 45.0,
@@ -147,7 +143,6 @@ impl Default for BodySpec {
             bounce: 80.0,
             hard_landing: 140.0,
             knockback: 130.0,
-            freeze_knockback: 0.5,
             launch_knockback: 1.7,
             wall_keep: 0.5,
             soft_landing: 40.0,
@@ -285,7 +280,6 @@ pub struct Drive {
     pub meditating: bool,
     /// Holding a block.
     pub guarding: bool,
-    pub chilled: bool,
     /// Which way it wants to walk, -1 to 1.
     pub intent: f64,
     pub motion: Motion,
@@ -311,24 +305,23 @@ pub enum Doing {
     Idle,
 }
 
-/// A blow that landed: its `power`, the way it pushes (`dir`, -1 or 1), whether it freezes rather than throws, and
+/// A blow that landed: its `power`, the way it pushes (`dir`, -1 or 1), and
 /// whether the target was flying when it struck.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Blow {
     pub power: f64,
     pub dir: f64,
-    pub freeze: bool,
     pub flying: bool,
 }
 
 impl Blow {
     /// Strong enough to throw a fighter built to `spec` off its feet (a freezing blow never does).
     pub fn heavy(&self, spec: &BodySpec) -> bool {
-        self.power >= spec.launch_damage && !self.freeze
+        self.power >= spec.launch_damage
     }
 }
 
-/// A fighter's body. Plain fields: the game reads and writes them, and sets `frozen`, `shocked`, `squat` + `leap`
+/// A fighter's body. Plain fields: the game reads and writes them, and sets `shocked`, `squat` + `leap`
 /// (a jump) and `duck` itself.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Body {
@@ -359,7 +352,6 @@ pub struct Body {
     /// Time since the last hit, and its power.
     pub hit_t: f64,
     pub hit_power: f64,
-    pub frozen: f64,
     pub shocked: f64,
     pub pose: Pose,
     /// Time in this pose.
@@ -394,7 +386,6 @@ impl Body {
             invincible: 0.0,
             hit_t: 9.0,
             hit_power: 0.0,
-            frozen: 0.0,
             shocked: 0.0,
             pose: Pose::Idle,
             pose_t: 0.0,
@@ -425,7 +416,6 @@ impl Body {
         if self.down.is_some() {
             self.downed(dt, alive);
         }
-        self.frozen = max(0.0, self.frozen - dt);
         self.shocked = max(0.0, self.shocked - dt);
     }
 
@@ -455,16 +445,12 @@ impl Body {
         let free = !drive.acting
             && !self.reeling()
             && !drive.meditating
-            && self.frozen == 0.0
             && self.shocked == 0.0
             && self.squat == 0.0
             && self.duck == 0.0;
         let away = js_sign(drive.intent) == -js_sign(drive.foe_x - self.x);
         let walk = if free && !drive.guarding {
-            drive.intent
-                * self.spec.walk
-                * (if drive.chilled { self.spec.chill } else { 1.0 })
-                * (if away { self.spec.backwalk } else { 1.0 })
+            drive.intent * self.spec.walk * (if away { self.spec.backwalk } else { 1.0 })
         } else {
             0.0
         };
@@ -534,7 +520,7 @@ impl Body {
     }
 
     /// The body takes a blow that landed: it flashes, and a heavy blow (or any blow that catches it off the
-    /// ground, unless it freezes) throws it; a lighter one staggers it where it stands and pushes it back. Inside the
+    /// ground) throws it; a lighter one staggers it where it stands and pushes it back. Inside the
     /// invincibility a blow before it left ([`BodySpec::invincible`]), nothing happens.
     pub fn hit(&mut self, blow: Blow) {
         if self.invincible > 0.0 {
@@ -542,7 +528,7 @@ impl Body {
         }
         self.invincible = self.spec.invincible;
         let heavy = blow.heavy(&self.spec);
-        let thrown = heavy || (!blow.freeze && (self.air > 0.0 || blow.flying || self.thrown()));
+        let thrown = heavy || self.air > 0.0 || blow.flying || self.thrown();
         self.flash = self.spec.flash;
         self.hit_t = 0.0;
         self.hit_power = blow.power;
@@ -552,13 +538,7 @@ impl Body {
             self.launch(blow.power, blow.dir, heavy);
         } else {
             self.stun = self.spec.hitstun_base + blow.power * self.spec.hitstun_per;
-            self.vx += blow.dir
-                * self.spec.knockback
-                * (if blow.freeze {
-                    self.spec.freeze_knockback
-                } else {
-                    1.0
-                });
+            self.vx += blow.dir * self.spec.knockback;
         }
     }
 
@@ -730,7 +710,7 @@ impl Body {
         max(floor, self.invincible)
     }
 
-    /// The pose for this step: the body's own state first (thrown, down, getting up, knocked out, frozen, shocked,
+    /// The pose for this step: the body's own state first (thrown, down, getting up, knocked out, shocked,
     /// stunned, ducking, a jump's crouch), then what the rules have it `doing`, with landing and the air between.
     pub fn pose_of(&self, doing: Doing, alive: bool) -> Pose {
         if let Some(d) = self.down {
@@ -756,9 +736,6 @@ impl Body {
         // struck down this very step: the knockout throws it next
         if !alive {
             return Pose::Hurt;
-        }
-        if self.frozen > 0.0 {
-            return Pose::Frozen;
         }
         if self.shocked > 0.0 {
             return Pose::Shocked;

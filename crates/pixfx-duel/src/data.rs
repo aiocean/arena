@@ -1,8 +1,11 @@
-//! The duel's tables and numbers: skills, schools, stats, tiers, traits, luck, and the constants every rule reads.
-//! `tests/data.rs` pins each against `tests/fixtures/js_numbers.json`.
+//! The duel's tables and numbers: the motions skills borrow (how they move and look), the skills of the shared pool
+//! as the duel casts them, the looks, and the constants every rule reads. `tests/data.rs` pins each against
+//! `tests/fixtures/js_numbers.json`. How much a skill deals, what it lays and what it costs come from `arena-calc`
+//! (`docs/specs/2026-11-17-damage-system-design.md`); the duel decides how it travels.
 
 use crate::body::BodySpec;
 use crate::js::js_min;
+use std::sync::OnceLock;
 
 /// Effects the arena itself shows when they are in the registry: the lamps and the night.
 pub const DECOR: [&str; 2] = ["fire/brazier", "weather/fireflies"];
@@ -17,109 +20,9 @@ pub const FLY: Fly = Fly {
     cost: 3.0,
 };
 
-/// Rage is a small whole-number pool: a point for each blow landed; when full, the school's ultimate.
+/// Rage is a small whole-number pool: a point for each cast whose blow lands (design 10); when full, the loadout's
+/// ultimate.
 pub const RAGE: f64 = 4.0;
-/// Frozen: no moving, no acting, in seconds.
-pub const FREEZE: f64 = 0.9;
-
-/// Chill: each chilling hit adds a stack (at most `max`), all fading `time` seconds after the last; each slows
-/// walking by `slow`, and the last freezes and clears them.
-pub struct Chill {
-    pub max: f64,
-    pub time: f64,
-    pub slow: f64,
-}
-pub const CHILL: Chill = Chill {
-    max: 3.0,
-    time: 2.5,
-    slow: 0.85,
-};
-
-/// Shock: each shocking hit adds a stack (at most `max`); a shocked fighter twitches every
-/// `every × fast^(stacks − 1)` seconds, spending a stack, losing `share` of the caster's attack and held `hold` s.
-pub struct Shock {
-    pub max: f64,
-    pub every: f64,
-    pub fast: f64,
-    pub share: f64,
-    pub hold: f64,
-}
-pub const SHOCK: Shock = Shock {
-    max: 5.0,
-    every: 0.6,
-    fast: 0.854,
-    share: 0.03,
-    hold: 0.12,
-};
-
-/// While the foe carries a status, the share of draws that come from the skills that spend it.
-pub const PAY_DRAW: f64 = 1.0 / 3.0;
-
-/// A status a payoff skill spends.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Status {
-    Shock,
-    Chill,
-}
-
-/// Skills that spend the foe's stacks of a status to hit harder: this much more power per stack.
-pub const PAYOFF: &[(&str, Status, f64)] = &[
-    ("palm", Status::Shock, 0.12),
-    ("burst", Status::Shock, 0.12),
-    ("shatter", Status::Chill, 0.15),
-    ("lotus", Status::Chill, 0.15),
-    ("gather", Status::Shock, 0.12),
-    ("yellowspring", Status::Chill, 0.15),
-];
-
-/// The payoff of spell `name`, if it is one.
-pub fn payoff(name: &str) -> Option<(Status, f64)> {
-    PAYOFF
-        .iter()
-        .find(|(n, _, _)| *n == name)
-        .map(|&(_, s, per)| (s, per))
-}
-
-/// Grit: each hard control adds `per`; grit falls `fall` a second. A control lasts `seconds / (1 + grit)`, and from
-/// grit `thaw` a freeze is only a chill stack.
-pub struct Grit {
-    pub per: f64,
-    pub fall: f64,
-    pub thaw: f64,
-}
-pub const GRIT: Grit = Grit {
-    per: 1.0,
-    fall: 0.4,
-    thaw: 2.0,
-};
-
-pub const DEFENCE: f64 = 500.0;
-pub const SPREAD: f64 = 0.03;
-
-/// Fury: each blow a fury fighter lands raises its attack by `per`, up to `max` stacks, for the rest of the round.
-pub struct Fury {
-    pub per: f64,
-    pub max: f64,
-}
-pub const FURY: Fury = Fury {
-    per: 0.04,
-    max: 5.0,
-};
-
-/// Defence broken by a spell: this much defence lost.
-pub const DEF_DOWN: f64 = 0.3;
-
-/// Burn: a share of the caster's attack every tick, ignoring defence.
-pub struct Burn {
-    pub time: f64,
-    pub every: f64,
-    pub share: f64,
-}
-pub const BURN: Burn = Burn {
-    time: 3.0,
-    every: 0.5,
-    share: 0.05,
-};
 
 /// A ward holds 1 to `charges` charges for `time` seconds; each erases one whole blow.
 pub struct Ward {
@@ -131,196 +34,11 @@ pub const WARD: Ward = Ward {
     time: 6.0,
 };
 
-/// A skill's tier.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-pub enum Rarity {
-    Common = 0,
-    Rare = 1,
-    Epic = 2,
-    Legendary = 3,
-}
-
-impl Rarity {
-    /// The tiers, lowest first: a duplicate draw lifts a skill one step, up to the last.
-    pub const ALL: [Rarity; 4] = [
-        Rarity::Common,
-        Rarity::Rare,
-        Rarity::Epic,
-        Rarity::Legendary,
-    ];
-
-    pub fn name(self) -> &'static str {
-        match self {
-            Rarity::Common => "common",
-            Rarity::Rare => "rare",
-            Rarity::Epic => "epic",
-            Rarity::Legendary => "legendary",
-        }
-    }
-
-    /// One tier up; a legendary stays legendary.
-    pub fn up(self) -> Rarity {
-        match self {
-            Rarity::Common => Rarity::Rare,
-            Rarity::Rare => Rarity::Epic,
-            Rarity::Epic | Rarity::Legendary => Rarity::Legendary,
-        }
-    }
-}
-
-/// How likely a draw is to bring a tier, how much more power, and how many traits it brings (a common one: `chance`
-/// of one). A legendary is never drawn: a skill reaches it only by duplicates.
-#[derive(Clone, Copy, Debug)]
-pub struct RarityData {
-    pub odds: f64,
-    pub power: f64,
-    pub traits: usize,
-    pub chance: Option<f64>,
-}
-pub const RARITY: [RarityData; 4] = [
-    RarityData {
-        odds: 0.7,
-        power: 1.0,
-        traits: 0,
-        chance: Some(0.4),
-    },
-    RarityData {
-        odds: 0.22,
-        power: 1.15,
-        traits: 1,
-        chance: None,
-    },
-    RarityData {
-        odds: 0.08,
-        power: 1.3,
-        traits: 2,
-        chance: None,
-    },
-    RarityData {
-        odds: 0.0,
-        power: 1.5,
-        traits: 3,
-        chance: None,
-    },
-];
-
-/// A trait a bar skill can be drawn with.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-pub enum Trait {
-    Swift,
-    Heavy,
-    Piercing,
-    Lingering,
-    Cheap,
-}
-
-impl Trait {
-    /// In the order traits are rolled from.
-    pub const ALL: [Trait; 5] = [
-        Trait::Swift,
-        Trait::Heavy,
-        Trait::Piercing,
-        Trait::Lingering,
-        Trait::Cheap,
-    ];
-
-    pub fn name(self) -> &'static str {
-        match self {
-            Trait::Swift => "swift",
-            Trait::Heavy => "heavy",
-            Trait::Piercing => "piercing",
-            Trait::Lingering => "lingering",
-            Trait::Cheap => "cheap",
-        }
-    }
-}
-
-/// What each trait does to the skill it is drawn on.
-pub struct Traits {
-    pub swift_cooldown: f64,
-    pub heavy_power: f64,
-    pub lingering_stacks: f64,
-    pub cheap_cost: f64,
-}
-pub const TRAITS: Traits = Traits {
-    swift_cooldown: 0.6,
-    heavy_power: 1.3,
-    lingering_stacks: 1.0,
-    cheap_cost: 0.5,
-};
-
-/// What luck does to a cast.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-pub enum Luck {
-    /// Hits twice as hard.
-    Double,
-    /// Costs nothing.
-    Free,
-    /// Ready again at once.
-    Again,
-}
-
-impl Luck {
-    pub fn name(self) -> &'static str {
-        match self {
-            Luck::Double => "double",
-            Luck::Free => "free",
-            Luck::Again => "again",
-        }
-    }
-}
-
-/// A cast of a bar skill is lucky this often.
-pub struct Lucky {
-    pub chance: f64,
-    pub kinds: [Luck; 3],
-}
-pub const LUCKY: Lucky = Lucky {
-    chance: 0.08,
-    kinds: [Luck::Double, Luck::Free, Luck::Again],
-};
-
 /// The kinds of blow a guard can turn aside (a zone or a field falls past it).
 pub const GUARDED: [Kind; 5] = [Kind::Melee, Kind::Blast, Kind::Dash, Kind::Bolt, Kind::Orb];
 
-/// Whether `t` does anything to spell `name`: heavy needs a blow, piercing a blow a guard can stop, lingering a chill
-/// or a shock.
-pub fn fits(t: Trait, name: &str) -> bool {
-    let Some(s) = spell(name) else { return false };
-    let damage = s.damage.unwrap_or(0.0);
-    match t {
-        Trait::Heavy => damage > 0.0,
-        Trait::Piercing => damage > 0.0 && GUARDED.contains(&s.kind),
-        Trait::Lingering => s.chill || s.shock,
-        Trait::Swift | Trait::Cheap => true,
-    }
-}
-
-/// Power a skill gains for each point of life its caster spends on it (`Spell::blood`).
-pub const BLOOD_POWER: f64 = 0.03;
-
-/// An evolved skill is this many times as strong.
-pub const EVOLVED: f64 = 1.5;
-
-/// The power a bar skill strikes with: its tier, heavy, and evolution.
-pub fn slot_power(rarity: Rarity, traits: &[Trait], evolved: bool) -> f64 {
-    RARITY[rarity as usize].power
-        * (if traits.contains(&Trait::Heavy) {
-            TRAITS.heavy_power
-        } else {
-            1.0
-        })
-        * (if evolved { EVOLVED } else { 1.0 })
-}
-
-/// How many of its school's pool a fighter plays in one fight.
-pub const POOL_SIZE: usize = 8;
+/// How many of its loadout's actives a fighter's bar draws from (`arena_calc::loadout::ACTIVES`).
+pub const POOL_SIZE: usize = arena_calc::loadout::ACTIVES;
 
 /// The rotating bar: `slots` skills at a time; an emptied slot counts down `wait + spread × roll` seconds.
 pub struct Bar {
@@ -337,116 +55,60 @@ pub const BAR: Bar = Bar {
 /// Seconds a bar skill may sit ready and uncast before it leaves for another draw.
 pub const STALE: f64 = 6.0;
 
-/// The pairs that evolve, per school.
-pub fn evolves(school: School) -> &'static [[&'static str; 2]] {
-    match school {
-        School::Thunder => &[
-            ["bolt", "seal"],
-            ["palm", "step"],
-            ["quake", "burst"],
-            ["fireball", "vermilion"],
-            ["jithunder", "finger"],
-            ["gravity", "earthsplit"],
-            ["gather", "heartbeat"],
-            ["slashluo", "onestep"],
-            ["mountain", "ancientgod"],
-            ["ancientthunder", "tigerflag"],
-            ["demonfinger", "kunjiwhip"],
-            ["fireescape", "flameorigin"],
-            ["warprint", "heavenlychop"],
-            ["fingerdeath", "celestialslaughter"],
-        ],
-        School::Frost => &[
-            ["shard", "icicle"],
-            ["shatter", "flurry"],
-            ["lotus", "jet"],
-            ["summonrain", "summonwind"],
-            ["yinmoon", "remnantnight"],
-            ["bodyfix", "lifedeath"],
-            ["soulsearch", "dreamdao"],
-            ["thirdeye", "sevencolor"],
-            ["restriction", "plumblossom"],
-            ["starfall", "heavenflip"],
-            ["yellowspring", "devour"],
-            ["timerestrict", "lifedeathrestrict"],
-            ["soulbanner", "servitude"],
-            ["voidnail", "seize"],
-            ["ghostsummon", "soulvortex"],
-            ["soulrefine", "bodyformation"],
-            ["starrotation", "meritspirit"],
-            ["daoyellow", "springsoul"],
-        ],
-    }
-}
+/// The level (hỏa hầu) every skill is cast at: `arena_calc::gem::BASE_LEVEL`, where a spell's base deals what the
+/// duel's skills dealt before the damage system.
+pub const SKILL_LEVEL: u8 = arena_calc::gem::BASE_LEVEL;
 
-/// A school.
+/// One point of a skill's old power in damage: the mean attack times the mean magic defence factor over 10
+/// (`arena_calc::gem`'s base). A blow's power for the body (how hard it throws) and for the minds is what it deals
+/// over this.
+pub const POWER: f64 = arena_calc::gem::TODAY_ATK * arena_calc::gem::TODAY_DEFENCE / 10.0;
+
+/// T, the damage system's unit of length (a fighter's height, design 7), in the arena's pixels: the engine's 60 px
+/// times `UNIT`.
+pub const T: f64 = 60.0 * UNIT;
+
+/// How a fighter looks: the sprites and colours the game draws it in. The rules never decide anything by it; they
+/// only play a fighter's effects in its look's colours. Seat 0 looks like Thunder, seat 1 like Frost.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-pub enum School {
+pub enum Look {
     Thunder,
     Frost,
 }
 
-impl School {
+impl Look {
     pub fn name(self) -> &'static str {
         match self {
-            School::Thunder => "thunder",
-            School::Frost => "frost",
+            Look::Thunder => "thunder",
+            Look::Frost => "frost",
         }
     }
-}
 
-/// Each school's fighter: full life, attack, the two defences, crit chance and damage, dodge, and its passives.
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(rename_all = "camelCase", deny_unknown_fields)
-)]
-pub struct Stats {
-    pub hp: f64,
-    pub atk: f64,
-    pub pdef: f64,
-    pub mdef: f64,
-    pub crit: f64,
-    pub crit_damage: f64,
-    pub dodge: f64,
-    pub fury: bool,
-    pub unyielding: bool,
-    pub attuned: bool,
-}
-
-pub fn stats(school: School) -> &'static Stats {
-    static THUNDER: Stats = Stats {
-        hp: 2500.0,
-        atk: 345.0,
-        pdef: 130.0,
-        mdef: 110.0,
-        crit: 0.18,
-        crit_damage: 1.6,
-        dodge: 0.05,
-        fury: true,
-        unyielding: true,
-        attuned: false,
-    };
-    static FROST: Stats = Stats {
-        hp: 3300.0,
-        atk: 520.0,
-        pdef: 145.0,
-        mdef: 165.0,
-        crit: 0.15,
-        crit_damage: 1.7,
-        dodge: 0.11,
-        fury: false,
-        unyielding: false,
-        attuned: true,
-    };
-    match school {
-        School::Thunder => &THUNDER,
-        School::Frost => &FROST,
+    /// The look of seat `i`.
+    pub fn of_seat(i: usize) -> Look {
+        if i == 0 { Look::Thunder } else { Look::Frost }
     }
 }
+
+/// How the brain (`arena-mind`) fights, the same for both seats: the two old schools' mean.
+pub struct MindProfile {
+    pub postures: [f64; 8],
+    pub range: f64,
+    pub dry: f64,
+    pub aggression: f64,
+    pub tempo: f64,
+    pub sky: f64,
+}
+pub const MIND: MindProfile = MindProfile {
+    postures: [1.0; 8],
+    range: 82.0,
+    dry: 50.0,
+    aggression: 1.125,
+    tempo: 1.4,
+    sky: 35.0,
+};
 
 pub const QI_REGEN: f64 = 3.0;
 pub const MEDITATE_REGEN: f64 = 16.0;
@@ -616,24 +278,6 @@ impl Kind {
     }
 }
 
-/// Which defence a blow is cut by.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
-pub enum Blow {
-    Physical,
-    Magic,
-}
-
-impl Blow {
-    pub fn name(self) -> &'static str {
-        match self {
-            Blow::Physical => "physical",
-            Blow::Magic => "magic",
-        }
-    }
-}
-
 /// A golden bell's answer to a close blow.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -651,11 +295,6 @@ pub struct Spell {
     #[cfg_attr(feature = "serde", serde(skip))]
     pub name: &'static str,
     pub kind: Kind,
-    #[cfg_attr(
-        feature = "serde",
-        serde(rename = "type", skip_serializing_if = "Option::is_none")
-    )]
-    pub blow: Option<Blow>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub fx: Option<&'static str>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
@@ -683,8 +322,6 @@ pub struct Spell {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub notice: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub def_down: Option<f64>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub life: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub height: Option<f64>,
@@ -697,15 +334,9 @@ pub struct Spell {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub tick: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub freeze: Option<f64>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub speed: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub silence: Option<f64>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub pull_until: Option<f64>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub steal_rage: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub strikes: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
@@ -718,23 +349,12 @@ pub struct Spell {
     pub time: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub spray: Option<f64>,
-    /// Life the caster spends to cast it (never its last point): each point adds `BLOOD_POWER` to the blow's power.
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub blood: Option<f64>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub shock: bool,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub chill: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub dive: bool,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub burn: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub grounded: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub ultimate: bool,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub seals: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub reflect: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
@@ -749,7 +369,6 @@ pub struct Spell {
 const BASE: Spell = Spell {
     name: "",
     kind: Kind::Melee,
-    blow: None,
     fx: None,
     hit_fx: None,
     end_fx: None,
@@ -765,46 +384,35 @@ const BASE: Spell = Spell {
     impact: None,
     radius: None,
     notice: None,
-    def_down: None,
     life: None,
     height: None,
     pull: None,
     reach: None,
     under: None,
     tick: None,
-    freeze: None,
     speed: None,
-    silence: None,
     pull_until: None,
-    steal_rage: None,
     strikes: None,
     every: None,
     aim_ahead: None,
     amount: None,
     time: None,
     spray: None,
-    blood: None,
-    shock: false,
-    chill: false,
     dive: false,
-    burn: false,
     grounded: false,
     ultimate: false,
-    seals: false,
     reflect: false,
     feet: false,
     swap: false,
     counter: None,
 };
 
-use Blow::{Magic, Physical};
-
 /// Every spell, in the duel's order.
-static SPELLS: [Spell; 99] = [
+/// Every motion a skill may borrow, in the duel's order.
+static SPELLS: [Spell; 93] = [
     Spell {
         name: "slash",
         kind: Kind::Melee,
-        blow: Some(Physical),
         cost: 0.0,
         windup: 0.2,
         recover: 0.32,
@@ -817,7 +425,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "step",
         kind: Kind::Dash,
-        blow: Some(Physical),
         fx: Some("spawn/poof"),
         cost: 24.0,
         windup: 0.26,
@@ -831,7 +438,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "seal",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 30.0,
         windup: 0.3,
@@ -842,14 +448,12 @@ static SPELLS: [Spell; 99] = [
         radius: Some(64.0),
         damage: Some(22.0),
         notice: Some(0.0),
-        shock: true,
         ..BASE
     },
     // Frost: a lotus of ice shards blooms from the palm at close range, and cracks the foe's guard
     Spell {
         name: "lotus",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("holy/feather-burst"),
         cost: 24.0,
         windup: 0.3,
@@ -857,52 +461,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.2,
         range: Some(160.0),
         damage: Some(18.0),
-        def_down: Some(3.0),
-        ..BASE
-    },
-    // Frost: a pale fire that does not warm, lit under the foe; it burns whoever stands in it
-    Spell {
-        name: "frostfire",
-        kind: Kind::Void,
-        blow: Some(Magic),
-        fx: Some("fire/spirit-flame"),
-        cost: 33.0,
-        windup: 0.4,
-        recover: 0.3,
-        cooldown: 5.0,
-        life: Some(2.6),
-        height: Some(0.0),
-        pull: Some(0.0),
-        reach: Some(72.0),
-        under: Some(72.0),
-        tick: Some(5.0),
-        damage: Some(8.0),
-        chill: true,
-        ..BASE
-    },
-    // Frost: a blue seal under the foe that shatters into a burst of cold, freezing it
-    Spell {
-        name: "shatter",
-        kind: Kind::Zone,
-        blow: Some(Magic),
-        fx: Some("explosions/plasma-explosion"),
-        cost: 33.0,
-        windup: 0.35,
-        recover: 0.3,
-        cooldown: 3.0,
-        sigil: Some(0.35),
-        impact: Some(0.08),
-        radius: Some(64.0),
-        damage: Some(25.0),
-        notice: Some(0.0),
-        freeze: Some(0.6),
         ..BASE
     },
     // from above: drop onto the foe sword first, and crack the ground if it lands there
     Spell {
         name: "dive",
         kind: Kind::Melee,
-        blow: Some(Physical),
         dive: true,
         cost: 12.0,
         windup: 0.22,
@@ -917,7 +481,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "bolt",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 18.0,
         windup: 0.28,
@@ -925,17 +488,13 @@ static SPELLS: [Spell; 99] = [
         cooldown: 1.3,
         speed: Some(920.0),
         damage: Some(13.0),
-        shock: true,
         ..BASE
     },
     Spell {
         name: "orb",
         kind: Kind::Orb,
-        blow: Some(Magic),
         fx: Some("lightning/ball-lightning"),
         hit_fx: Some("explosions/plasma-explosion"),
-        burn: true,
-        shock: true,
         cost: 45.0,
         windup: 0.6,
         recover: 0.3,
@@ -946,31 +505,10 @@ static SPELLS: [Spell; 99] = [
         radius: Some(40.0),
         ..BASE
     },
-    // icicle-fall drops its icicle at 0.944 s and only starts to tremble, which is when a fighter notices it, at 0.3 s
-    Spell {
-        name: "icicle",
-        kind: Kind::Zone,
-        blow: Some(Magic),
-        def_down: Some(4.0),
-        fx: Some("ice/icicle-fall"),
-        cost: 33.0,
-        windup: 0.42,
-        recover: 0.28,
-        cooldown: 2.2,
-        impact: Some(0.944),
-        radius: Some(64.0),
-        damage: Some(28.0),
-        notice: Some(0.3),
-        grounded: true,
-        freeze: Some(FREEZE),
-        ..BASE
-    },
     // implosion sucks in until 0.8 s and pops at 1.02 s
     Spell {
         name: "collapse",
         kind: Kind::Zone,
-        blow: Some(Magic),
-        silence: Some(1.5),
         fx: Some("explosions/implosion"),
         cost: 39.0,
         windup: 0.5,
@@ -989,8 +527,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "palm",
         kind: Kind::Blast,
-        blow: Some(Physical),
-        steal_rage: Some(1.0),
         fx: Some("explosions/plasma-explosion"),
         cost: 27.0,
         windup: 0.32,
@@ -998,14 +534,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.8,
         range: Some(152.0),
         damage: Some(20.0),
-        shock: true,
         ..BASE
     },
     // ultimates, cast with full rage. Thunder: three thunderclaps fall one after another where the foe will be.
     Spell {
         name: "tribulation",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         ultimate: true,
         cost: 0.0,
@@ -1021,34 +555,10 @@ static SPELLS: [Spell; 99] = [
         aim_ahead: Some(0.5),
         ..BASE
     },
-    // Frost: a great collapse that drags the foe in from far off and freezes it where it pops.
-    Spell {
-        name: "prison",
-        kind: Kind::Zone,
-        blow: Some(Magic),
-        silence: Some(2.0),
-        fx: Some("explosions/implosion"),
-        ultimate: true,
-        cost: 0.0,
-        windup: 0.7,
-        recover: 0.8,
-        cooldown: 0.0,
-        impact: Some(1.02),
-        radius: Some(104.0),
-        damage: Some(31.0),
-        notice: Some(0.1),
-        pull: Some(280.0),
-        reach: Some(440.0),
-        pull_until: Some(0.9),
-        seals: true,
-        freeze: Some(FREEZE * 1.4),
-        ..BASE
-    },
     // void-orb hangs 62 px over its origin and loops every 3.2 s
     Spell {
         name: "void",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("shadow/void-orb"),
         end_fx: Some("explosions/implosion"),
         cost: 60.0,
@@ -1129,7 +639,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "spark",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 10.0,
         windup: 0.18,
@@ -1137,14 +646,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 0.9,
         speed: Some(1200.0),
         damage: Some(8.0),
-        shock: true,
         ..BASE
     },
     // Thunder: a palm that bursts with everything the foe's shocks have gathered
     Spell {
         name: "burst",
         kind: Kind::Blast,
-        blow: Some(Physical),
         fx: Some("explosions/plasma-explosion"),
         cost: 30.0,
         windup: 0.36,
@@ -1158,7 +665,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "quake",
         kind: Kind::Zone,
-        blow: Some(Physical),
         fx: Some("explosions/small-explosion"),
         cost: 26.0,
         windup: 0.3,
@@ -1184,26 +690,10 @@ static SPELLS: [Spell; 99] = [
         cooldown: 8.0,
         ..BASE
     },
-    // Frost: a sliver of ice, light and quick, that chills where it strikes
-    Spell {
-        name: "shard",
-        kind: Kind::Bolt,
-        blow: Some(Magic),
-        fx: Some("projectiles/laser-bolt"),
-        cost: 10.0,
-        windup: 0.18,
-        recover: 0.18,
-        cooldown: 0.9,
-        speed: Some(1200.0),
-        damage: Some(7.0),
-        chill: true,
-        ..BASE
-    },
     // Frost: a jet of freezing water from the palm, at middle reach; it sprays for `spray` seconds, then stops
     Spell {
         name: "jet",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("water/water-jet"),
         spray: Some(0.6),
         cost: 22.0,
@@ -1212,34 +702,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.4,
         range: Some(224.0),
         damage: Some(14.0),
-        chill: true,
-        ..BASE
-    },
-    // Frost: a short flurry of snow under the foe: two ticks that chill whoever stands in it, then its blow
-    Spell {
-        name: "flurry",
-        kind: Kind::Void,
-        blow: Some(Magic),
-        fx: Some("weather/snow"),
-        cost: 30.0,
-        windup: 0.4,
-        recover: 0.3,
-        cooldown: 5.0,
-        life: Some(1.2),
-        height: Some(0.0),
-        pull: Some(0.0),
-        reach: Some(88.0),
-        under: Some(88.0),
-        tick: Some(3.0),
-        damage: Some(10.0),
-        chill: true,
         ..BASE
     },
     // Thunder: Fireball Technique: A ball of fire that flies at the foe and sets it burning.
     Spell {
         name: "fireball",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 14.0,
         windup: 0.26,
@@ -1247,14 +715,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 1.5,
         damage: Some(12.0),
         speed: Some(840.0),
-        burn: true,
         ..BASE
     },
     // Thunder: Gravity Technique / Attractive Force: Pulls the foe in toward a point, then crushes it there.
     Spell {
         name: "gravity",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 22.0,
         windup: 0.3,
@@ -1273,7 +739,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "earthsplit",
         kind: Kind::Zone,
-        blow: Some(Physical),
         fx: Some("explosions/small-explosion"),
         cost: 28.0,
         windup: 0.32,
@@ -1284,7 +749,6 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.05),
         radius: Some(72.0),
         notice: Some(0.0),
-        def_down: Some(3.0),
         grounded: true,
         ..BASE
     },
@@ -1292,7 +756,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "finger",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 28.0,
         windup: 0.4,
@@ -1306,7 +769,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "jithunder",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 24.0,
         windup: 0.3,
@@ -1314,14 +776,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.0,
         damage: Some(15.0),
         speed: Some(1040.0),
-        shock: true,
         ..BASE
     },
     // Thunder: Thunder Gathering Seal: Gathers thunder under the foe and releases it in one burst: shocks, and hits harder per shock stack on the foe.
     Spell {
         name: "gather",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 36.0,
         windup: 0.4,
@@ -1332,14 +792,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.08),
         radius: Some(80.0),
         notice: Some(0.0),
-        shock: true,
         ..BASE
     },
     // Thunder: Ancient God Blood: The body swells into an Ancient God phantom for one heavy blow at close range.
     Spell {
         name: "ancientgod",
         kind: Kind::Blast,
-        blow: Some(Physical),
         fx: Some("explosions/swirl-blast"),
         cost: 36.0,
         windup: 0.5,
@@ -1353,7 +811,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "slashluo",
         kind: Kind::Dash,
-        blow: Some(Physical),
         fx: Some("arcane/sword-slash"),
         cost: 30.0,
         windup: 0.3,
@@ -1367,7 +824,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "arsenal",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("arcane/sword-formation"),
         end_fx: Some("arcane/sword-strike"),
         cost: 48.0,
@@ -1399,7 +855,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "onestep",
         kind: Kind::Dash,
-        blow: Some(Physical),
         fx: Some("spawn/poof"),
         cost: 30.0,
         windup: 0.2,
@@ -1413,7 +868,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "mountain",
         kind: Kind::Zone,
-        blow: Some(Physical),
         fx: Some("explosions/small-explosion"),
         cost: 44.0,
         windup: 0.6,
@@ -1431,7 +885,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "heartbeat",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 20.0,
         windup: 0.24,
@@ -1439,7 +892,6 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.0,
         range: Some(176.0),
         damage: Some(12.0),
-        shock: true,
         ..BASE
     },
     // Thunder: Light and Shadow Shield: A dome of gathered light that sends the next bolt or orb back at its caster.
@@ -1459,7 +911,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "nineturn",
         kind: Kind::Blast,
-        blow: Some(Physical),
         fx: Some("arcane/vortex-ring"),
         cost: 40.0,
         windup: 0.85,
@@ -1497,7 +948,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "vermilion",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 30.0,
         windup: 0.35,
@@ -1505,14 +955,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         range: Some(208.0),
         damage: Some(18.0),
-        burn: true,
         ..BASE
     },
     // Frost: Summon Rain: Rain falls on the foe for two seconds, chilling whoever stands in it.
     Spell {
         name: "summonrain",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("water/splash"),
         cost: 30.0,
         windup: 0.4,
@@ -1525,14 +973,12 @@ static SPELLS: [Spell; 99] = [
         reach: Some(120.0),
         under: Some(120.0),
         tick: Some(3.0),
-        chill: true,
         ..BASE
     },
     // Frost: Summon Wind: A black wind-dragon exhales yin wind at the foe at middle reach: chills.
     Spell {
         name: "summonwind",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 26.0,
         windup: 0.3,
@@ -1540,14 +986,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         range: Some(232.0),
         damage: Some(12.0),
-        chill: true,
         ..BASE
     },
     // Frost: Beans to Soldiers: Souls of the slain rise as soldiers round the foe, dragging it in and cutting it while it stands there.
     Spell {
         name: "beans",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("critters/wisp"),
         cost: 36.0,
         windup: 0.5,
@@ -1566,7 +1010,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "yinmoon",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/comma-seal"),
         cost: 32.0,
         windup: 0.35,
@@ -1576,14 +1019,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.45),
         radius: Some(72.0),
         notice: Some(0.15),
-        def_down: Some(5.0),
         ..BASE
     },
     // Frost: Soul Searching Technique: Pulls at the foe's soul at close range: silences it and steals a point of rage.
     Spell {
         name: "soulsearch",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("arcane/vortex-ring"),
         cost: 28.0,
         windup: 0.4,
@@ -1591,15 +1032,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.0,
         range: Some(176.0),
         damage: Some(8.0),
-        silence: Some(1.2),
-        steal_rage: Some(1.0),
         ..BASE
     },
     // Frost: Spirit Transformation Technique: A dart that wipes the foe's memory of its spells: silences.
     Spell {
         name: "spiritchange",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 20.0,
         windup: 0.28,
@@ -1607,14 +1045,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         damage: Some(6.0),
         speed: Some(1040.0),
-        silence: Some(1.4),
         ..BASE
     },
     // Frost: Body Fixation Art / Immobilization Technique / Stop Spell: A seal under the foe that holds its body in place: a long freeze, little damage.
     Spell {
         name: "bodyfix",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 36.0,
         windup: 0.4,
@@ -1625,14 +1061,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.08),
         radius: Some(56.0),
         notice: Some(0.0),
-        freeze: Some(0.8),
         ..BASE
     },
     // Frost: Destruction Restriction: Rings of runes write themselves round the foe, locking blinking until they close, then crush. Only hits on the ground.
     Spell {
         name: "restriction",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/restriction"),
         cost: 40.0,
         windup: 0.5,
@@ -1644,14 +1078,12 @@ static SPELLS: [Spell; 99] = [
         notice: Some(0.1),
         reach: Some(200.0),
         grounded: true,
-        seals: true,
         ..BASE
     },
     // Frost: Eighteen Plum Blossom Restrictions: A self-running restriction of rings round the foe that breaks its defence when it closes.
     Spell {
         name: "plumblossom",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/comet-rings"),
         cost: 34.0,
         windup: 0.35,
@@ -1661,14 +1093,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.5),
         radius: Some(80.0),
         notice: Some(0.15),
-        def_down: Some(3.0),
         ..BASE
     },
     // Frost: Life and Death Seal: Left hand life, right hand death: a seal that closes on the foe and freezes it briefly.
     Spell {
         name: "lifedeath",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/twin-shuriken"),
         cost: 36.0,
         windup: 0.35,
@@ -1678,7 +1108,6 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.5),
         radius: Some(64.0),
         notice: Some(0.15),
-        freeze: Some(0.5),
         ..BASE
     },
     // Frost: Cause and Effect Seal: A dome that answers the next close blow with a stunning counter.
@@ -1713,7 +1142,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "dreamdao",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/puff-burst"),
         cost: 26.0,
         windup: 0.4,
@@ -1721,7 +1149,6 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.6,
         range: Some(208.0),
         damage: Some(10.0),
-        silence: Some(1.6),
         ..BASE
     },
     // Frost: Flowing Moon: Turns time back on the caster: heals and washes off burn, silence, defence down, chill and shock.
@@ -1740,7 +1167,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "remnantnight",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("shadow/winter-ordeal"),
         cost: 46.0,
         windup: 0.5,
@@ -1750,7 +1176,6 @@ static SPELLS: [Spell; 99] = [
         impact: Some(1.78),
         radius: Some(96.0),
         notice: Some(0.12),
-        silence: Some(1.0),
         grounded: true,
         ..BASE
     },
@@ -1758,7 +1183,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "heavenflip",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/shuriken-seal"),
         cost: 50.0,
         windup: 0.6,
@@ -1768,21 +1192,18 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.5),
         radius: Some(120.0),
         notice: Some(0.15),
-        def_down: Some(4.0),
         ..BASE
     },
     // Frost: Third Eye: A beam from the third eye that breaks the defence of whatever it hits.
     Spell {
         name: "thirdeye",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 20.0,
         windup: 0.3,
         recover: 0.25,
         cooldown: 2.4,
         damage: Some(12.0),
-        def_down: Some(3.0),
         speed: Some(1360.0),
         ..BASE
     },
@@ -1790,7 +1211,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "sevencolor",
         kind: Kind::Dash,
-        blow: Some(Magic),
         fx: Some("arcane/sword-strike"),
         cost: 30.0,
         windup: 0.28,
@@ -1804,7 +1224,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "umbrella",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 34.0,
         windup: 0.4,
@@ -1815,14 +1234,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.45),
         radius: Some(88.0),
         notice: Some(0.0),
-        burn: true,
         ..BASE
     },
     // Frost: Spirit-Devouring Body-Consuming Heaven-Severing Great Art / Devouring: Devours the foe at close range: steals a point of rage.
     Spell {
         name: "devour",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("impacts/star-converge"),
         cost: 26.0,
         windup: 0.35,
@@ -1830,14 +1247,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.2,
         range: Some(160.0),
         damage: Some(16.0),
-        steal_rage: Some(1.0),
         ..BASE
     },
     // Frost: Falling Star: Two stars fall one after another where the foe will be.
     Spell {
         name: "starfall",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 40.0,
         windup: 0.4,
@@ -1857,7 +1272,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "seize",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 18.0,
         windup: 0.25,
@@ -1865,14 +1279,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.2,
         damage: Some(6.0),
         speed: Some(1120.0),
-        steal_rage: Some(1.0),
         ..BASE
     },
     // Frost: Yellow Spring Finger / Underworld Finger: A finger of the underworld's cold at middle reach: chills, and hits harder per chill stack on the foe.
     Spell {
         name: "yellowspring",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("impacts/twin-converge"),
         cost: 24.0,
         windup: 0.3,
@@ -1880,14 +1292,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.4,
         range: Some(200.0),
         damage: Some(14.0),
-        chill: true,
         ..BASE
     },
     // Thunder: Ancient Thunder Realm / Thunder Origin Technique: An ancient thunder dragon falls twice on the foe, one strike after another, and shocks it.
     Spell {
         name: "ancientthunder",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 38.0,
         windup: 0.4,
@@ -1901,14 +1311,12 @@ static SPELLS: [Spell; 99] = [
         strikes: Some(2.0),
         every: Some(0.45),
         aim_ahead: Some(0.25),
-        shock: true,
         ..BASE
     },
     // Thunder: Demon Transformation Finger: A finger of demonic qi that silences what it hits.
     Spell {
         name: "demonfinger",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 22.0,
         windup: 0.3,
@@ -1916,14 +1324,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 2.8,
         damage: Some(12.0),
         speed: Some(1200.0),
-        silence: Some(1.0),
         ..BASE
     },
     // Thunder: Kunji Whip / Cause and Effect Whip: A whip that strikes the soul directly at middle reach: silences, and shocks.
     Spell {
         name: "kunjiwhip",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 26.0,
         windup: 0.32,
@@ -1931,15 +1337,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         range: Some(224.0),
         damage: Some(13.0),
-        silence: Some(0.8),
-        shock: true,
         ..BASE
     },
     // Thunder: Heavenly Tiger Flag: A heavenly tiger leaps from the flag in a straight line and mauls what it meets.
     Spell {
         name: "tigerflag",
         kind: Kind::Bolt,
-        blow: Some(Physical),
         fx: Some("projectiles/laser-bolt"),
         cost: 26.0,
         windup: 0.34,
@@ -1953,7 +1356,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "timerestrict",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/restriction"),
         cost: 38.0,
         windup: 0.45,
@@ -1964,16 +1366,13 @@ static SPELLS: [Spell; 99] = [
         radius: Some(80.0),
         notice: Some(0.1),
         reach: Some(240.0),
-        freeze: Some(0.4),
         grounded: true,
-        seals: true,
         ..BASE
     },
     // Frost: Life and Death Restriction: Turns the vitality of whoever stands in it into death energy: a cloud that burns for three seconds.
     Spell {
         name: "lifedeathrestrict",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("nature/poison-cloud"),
         cost: 40.0,
         windup: 0.5,
@@ -1986,14 +1385,12 @@ static SPELLS: [Spell; 99] = [
         reach: Some(136.0),
         under: Some(136.0),
         tick: Some(5.0),
-        burn: true,
         ..BASE
     },
     // Frost: Billion Soul Banner / Soul Banner method: Spirits swirl in a vortex over the foe, dragging it in and cutting it while it stands there.
     Spell {
         name: "soulbanner",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("critters/wisp"),
         cost: 44.0,
         windup: 0.55,
@@ -2012,7 +1409,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "servitude",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/comma-seal"),
         cost: 34.0,
         windup: 0.4,
@@ -2024,7 +1420,6 @@ static SPELLS: [Spell; 99] = [
         notice: Some(0.1),
         pull: Some(160.0),
         reach: Some(240.0),
-        silence: Some(1.0),
         pull_until: Some(0.6),
         ..BASE
     },
@@ -2032,14 +1427,12 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "voidnail",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 34.0,
         windup: 0.4,
         recover: 0.3,
         cooldown: 4.5,
         damage: Some(20.0),
-        def_down: Some(4.0),
         speed: Some(1680.0),
         ..BASE
     },
@@ -2047,7 +1440,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "fingerdeath",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 34.0,
         windup: 0.35,
@@ -2067,7 +1459,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "heavenlychop",
         kind: Kind::Blast,
-        blow: Some(Physical),
         fx: Some("arcane/sword-slash"),
         cost: 34.0,
         windup: 0.45,
@@ -2081,7 +1472,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "fireescape",
         kind: Kind::Dash,
-        blow: Some(Magic),
         fx: Some("spawn/poof"),
         cost: 28.0,
         windup: 0.22,
@@ -2089,14 +1479,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.6,
         distance: Some(320.0),
         damage: Some(10.0),
-        burn: true,
         ..BASE
     },
     // Thunder: Rise Three Realm Flame Origin: The origin of flame rises under the foe and burns it.
     Spell {
         name: "flameorigin",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 34.0,
         windup: 0.4,
@@ -2107,14 +1495,12 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.4),
         radius: Some(80.0),
         notice: Some(0.0),
-        burn: true,
         ..BASE
     },
     // Thunder: War Spirit Print (Cloud Sea divine ability): A seal of war stamped on the foe at close range: a heavy blow that breaks its defence.
     Spell {
         name: "warprint",
         kind: Kind::Blast,
-        blow: Some(Physical),
         fx: Some("explosions/swirl-blast"),
         cost: 32.0,
         windup: 0.4,
@@ -2122,7 +1508,6 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.0,
         range: Some(184.0),
         damage: Some(22.0),
-        def_down: Some(3.0),
         ..BASE
     },
     // Thunder: Earth Escape Technique: Sinks into the ground and comes out a few steps away.
@@ -2141,7 +1526,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "celestialslaughter",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 36.0,
         windup: 0.5,
@@ -2155,7 +1539,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "ghostsummon",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("critters/wisp"),
         cost: 34.0,
         windup: 0.45,
@@ -2174,7 +1557,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "soulvortex",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("arcane/vortex-ring"),
         cost: 30.0,
         windup: 0.35,
@@ -2205,7 +1587,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "starrotation",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 38.0,
         windup: 0.4,
@@ -2249,7 +1630,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "truefalse",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("impacts/twin-converge"),
         cost: 36.0,
         windup: 0.35,
@@ -2259,8 +1639,6 @@ static SPELLS: [Spell; 99] = [
         impact: Some(0.5),
         radius: Some(64.0),
         notice: Some(0.1),
-        def_down: Some(2.0),
-        silence: Some(0.8),
         ..BASE
     },
     // Thunder: Ancient God Cauldron: Swaps places with the foe, wherever it stands.
@@ -2280,7 +1658,6 @@ static SPELLS: [Spell; 99] = [
     Spell {
         name: "eightextremes",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("explosions/plasma-explosion"),
         cost: 40.0,
         windup: 0.45,
@@ -2294,14 +1671,12 @@ static SPELLS: [Spell; 99] = [
         strikes: Some(4.0),
         every: Some(0.3),
         aim_ahead: Some(0.2),
-        burn: true,
         ..BASE
     },
     // Thunder: Dao Art Fusion: Treasures, abilities and rules fused into one blow: slow to gather, heavy, and it shocks.
     Spell {
         name: "daofusion",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("explosions/swirl-blast"),
         cost: 46.0,
         windup: 0.8,
@@ -2309,14 +1684,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 7.0,
         range: Some(216.0),
         damage: Some(36.0),
-        shock: true,
         ..BASE
     },
     // Frost: Dao Transformation Yellow Spring: A reincarnation cycle forms over the foe: a cold field that chills whoever stands in it for three seconds.
     Spell {
         name: "daoyellow",
         kind: Kind::Void,
-        blow: Some(Magic),
         fx: Some("critters/wisp"),
         cost: 42.0,
         windup: 0.5,
@@ -2329,14 +1702,12 @@ static SPELLS: [Spell; 99] = [
         reach: Some(136.0),
         under: Some(136.0),
         tick: Some(5.0),
-        chill: true,
         ..BASE
     },
     // Frost: Condensed Spring Soul: A hundred million souls condensed into one dart that chills what it hits.
     Spell {
         name: "springsoul",
         kind: Kind::Bolt,
-        blow: Some(Magic),
         fx: Some("projectiles/laser-bolt"),
         cost: 26.0,
         windup: 0.4,
@@ -2344,14 +1715,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 3.0,
         damage: Some(14.0),
         speed: Some(680.0),
-        chill: true,
         ..BASE
     },
     // Frost: Star Soul Extraction: Pulls the soul out of the foe at close range: steals a point of rage.
     Spell {
         name: "starsoul",
         kind: Kind::Blast,
-        blow: Some(Magic),
         fx: Some("arcane/vortex-ring"),
         cost: 30.0,
         windup: 0.45,
@@ -2359,14 +1728,12 @@ static SPELLS: [Spell; 99] = [
         cooldown: 4.5,
         range: Some(184.0),
         damage: Some(12.0),
-        steal_rage: Some(1.0),
         ..BASE
     },
     // Frost: Life Destruction Spirit Summoning: Spends 20 of the caster's life to call spirits down in two waves that burn the foe, each stronger for the life paid.
     Spell {
         name: "spiritsummon",
         kind: Kind::Zone,
-        blow: Some(Magic),
         fx: Some("impacts/twin-converge"),
         cost: 36.0,
         windup: 0.4,
@@ -2378,8 +1745,6 @@ static SPELLS: [Spell; 99] = [
         notice: Some(0.0),
         strikes: Some(2.0),
         every: Some(0.4),
-        burn: true,
-        blood: Some(20.0),
         ..BASE
     },
     // Frost: Star Compass: The compass turns and the caster and the foe trade places, quicker and cheaper than the cauldron.
@@ -2397,8 +1762,55 @@ static SPELLS: [Spell; 99] = [
     },
 ];
 
-/// Every spell, in the duel's order.
+/// Every skill of the shared pool as the duel casts it: the motion it borrows (`Gem::spell`: how it moves and looks),
+/// with its own name, qi cost, timings, power (`POWER`s of what it is expected to deal) and whether it is the
+/// ultimate. Built once, in the pool's order.
+fn skills() -> &'static [Spell] {
+    static SKILLS: OnceLock<Vec<Spell>> = OnceLock::new();
+    SKILLS.get_or_init(|| {
+        use arena_calc::gem::{self, Effect, Resource};
+        gem::GEMS
+            .iter()
+            .filter_map(|g| {
+                let m = motion(g.spell)?;
+                let qi = g
+                    .costs
+                    .iter()
+                    .filter(|c| c.0 == Resource::Qi)
+                    .map(|c| c.1)
+                    .sum();
+                let heal = g.effects.iter().find_map(|e| match e {
+                    Effect::Heal(h) => Some(*h * 100.0),
+                    _ => None,
+                });
+                Some(Spell {
+                    name: g.id,
+                    cost: qi,
+                    windup: g.windup,
+                    recover: g.recover,
+                    cooldown: g.cooldown,
+                    damage: g.deals_damage().then(|| gem::expected_damage(g) / POWER),
+                    amount: heal.or(m.amount),
+                    ultimate: g.is_ultimate(),
+                    ..*m
+                })
+            })
+            .collect()
+    })
+}
+
+/// Skill `id` of the shared pool as the duel casts it (see `skills`).
+pub fn spell(id: &str) -> Option<&'static Spell> {
+    skills().iter().find(|s| s.name == id)
+}
+
+/// Every skill of the shared pool the duel can cast, in the pool's order.
 pub fn spells() -> &'static [Spell] {
+    skills()
+}
+
+/// Every motion, in the duel's order.
+pub fn motions() -> &'static [Spell] {
     &SPELLS
 }
 
@@ -2408,12 +1820,12 @@ fn is_false(b: &bool) -> bool {
     !*b
 }
 
-/// The spell called `name`.
-pub fn spell(name: &str) -> Option<&'static Spell> {
+/// The motion called `name`: how a skill that borrows it moves and looks (`arena_calc::gem::Gem::spell`).
+pub fn motion(name: &str) -> Option<&'static Spell> {
     SPELLS.iter().find(|s| s.name == name)
 }
 
-/// How a school tints an effect its spells play.
+/// How a look tints an effect its fighter's skills play.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tint {
     pub palette: Option<&'static [&'static str]>,
@@ -2435,20 +1847,10 @@ const TINT: Tint = Tint {
     height: None,
 };
 
-/// A school: its spells (`basics`, the `pool` its bar draws from, its `ultimate`), its temperament for the brain, and
-/// its colours.
-pub struct SchoolData {
+/// How a fighter looks: the colours its effects are played in (a bolt's, a rune circle's, and tints by effect). The
+/// rules play a fighter's effects in its look's colours and decide nothing by it.
+pub struct LookData {
     pub name: &'static str,
-    pub basics: [&'static str; 3],
-    pub pool: &'static [&'static str],
-    pub ultimate: &'static str,
-    pub signature: Kind,
-    pub postures: [f64; 8],
-    pub range: f64,
-    pub dry: f64,
-    pub aggression: f64,
-    pub tempo: f64,
-    pub sky: f64,
     pub bolt: [&'static str; 8],
     pub circle: [&'static str; 7],
     pub tint: &'static [(&'static str, Tint)],
@@ -2461,70 +1863,14 @@ const FROST_CIRCLE: [&str; 7] = [
     "#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#dcfbff", "#ffffff",
 ];
 
-static THUNDER: SchoolData = SchoolData {
+static THUNDER: LookData = LookData {
     name: "Thunder",
-    basics: ["slash", "dive", "blink"],
-    pool: &[
-        "bolt",
-        "palm",
-        "step",
-        "seal",
-        "orb",
-        "bell",
-        "heal",
-        "spark",
-        "burst",
-        "quake",
-        "hex",
-        // Renegade Immortal (docs/specs/2026-11-16-xianni-spells-design.md)
-        "fireball",
-        "gravity",
-        "earthsplit",
-        "finger",
-        "jithunder",
-        "gather",
-        "ancientgod",
-        "slashluo",
-        "arsenal",
-        "inchearth",
-        "onestep",
-        "mountain",
-        "heartbeat",
-        "lightshield",
-        "nineturn",
-        "indestructible",
-        "ancientprotect",
-        "vermilion",
-        "ancientthunder",
-        "demonfinger",
-        "kunjiwhip",
-        "tigerflag",
-        "fingerdeath",
-        "heavenlychop",
-        "fireescape",
-        "flameorigin",
-        "warprint",
-        "earthescape",
-        "celestialslaughter",
-        "ancientcauldron",
-        "eightextremes",
-        "daofusion",
-    ],
-    ultimate: "tribulation",
-    signature: Kind::Blast,
-    postures: [1.0; 8],
-    range: 64.0,
-    // slash's range less 4: Thunder presses in to sword's length while its qi gathers
-    dry: 20.0,
-    aggression: 1.15,
-    tempo: 0.8,
-    sky: 22.0,
     bolt: [
         "#2a1a08", "#6a4410", "#b07a1a", "#e8b030", "#ffd84a", "#ffe98a", "#fff6c4", "#ffffff",
     ],
     circle: THUNDER_CIRCLE,
     tint: &[
-        // the Renegade Immortal spells' effects take the school's colours
+        // the Renegade Immortal skills' effects take the look's colours
         (
             "arcane/sword-formation",
             Tint {
@@ -2613,7 +1959,7 @@ static THUNDER: SchoolData = SchoolData {
                 ..TINT
             },
         ),
-        // a school's barrier rings in its circle's colours, and so does a blow it turns aside
+        // a look's barrier rings in its circle's colours, and so does a blow it turns aside
         (
             "arcane/rune-circle",
             Tint {
@@ -2631,77 +1977,14 @@ static THUNDER: SchoolData = SchoolData {
     ],
 };
 
-static FROST: SchoolData = SchoolData {
+static FROST: LookData = LookData {
     name: "Frost",
-    basics: ["slash", "dive", "blink"],
-    pool: &[
-        "lotus",
-        "shatter",
-        "icicle",
-        "collapse",
-        "frostfire",
-        "void",
-        "mirror",
-        "ward",
-        "shard",
-        "jet",
-        "flurry",
-        // Renegade Immortal (docs/specs/2026-11-16-xianni-spells-design.md)
-        "summonrain",
-        "summonwind",
-        "beans",
-        "yinmoon",
-        "soulsearch",
-        "spiritchange",
-        "bodyfix",
-        "restriction",
-        "plumblossom",
-        "lifedeath",
-        "karma",
-        "dreamback",
-        "dreamdao",
-        "flowingmoon",
-        "remnantnight",
-        "heavenflip",
-        "thirdeye",
-        "sevencolor",
-        "umbrella",
-        "devour",
-        "starfall",
-        "seize",
-        "yellowspring",
-        "timerestrict",
-        "lifedeathrestrict",
-        "soulbanner",
-        "servitude",
-        "voidnail",
-        "ghostsummon",
-        "soulvortex",
-        "soulrefine",
-        "starrotation",
-        "meritspirit",
-        "bodyformation",
-        "truefalse",
-        "daoyellow",
-        "springsoul",
-        "starsoul",
-        "spiritsummon",
-        "starcompass",
-    ],
-    ultimate: "prison",
-    signature: Kind::Zone,
-    postures: [1.0; 8],
-    range: 100.0,
-    dry: 80.0,
-    aggression: 1.1,
-    tempo: 2.0,
-    sky: 48.0,
     bolt: [
         "#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff",
     ],
     circle: FROST_CIRCLE,
     tint: &[
-        // the Renegade Immortal spells' effects take the school's colours
+        // the Renegade Immortal skills' effects take the look's colours
         (
             "arcane/comet-rings",
             Tint {
@@ -2851,7 +2134,7 @@ static FROST: SchoolData = SchoolData {
                 ..TINT
             },
         ),
-        // a school's barrier rings in its circle's colours, and so does a blow it turns aside
+        // a look's barrier rings in its circle's colours, and so does a blow it turns aside
         (
             "arcane/rune-circle",
             Tint {
@@ -2869,16 +2152,17 @@ static FROST: SchoolData = SchoolData {
     ],
 };
 
-pub fn school(s: School) -> &'static SchoolData {
-    match s {
-        School::Thunder => &THUNDER,
-        School::Frost => &FROST,
+/// A look's colours.
+pub fn look(l: Look) -> &'static LookData {
+    match l {
+        Look::Thunder => &THUNDER,
+        Look::Frost => &FROST,
     }
 }
 
-/// How school `s` tints effect `fx`, if it does.
-pub fn tint(s: School, fx: &str) -> Option<&'static Tint> {
-    school(s)
+/// How look `l` tints effect `fx`, if it does.
+pub fn tint(l: Look, fx: &str) -> Option<&'static Tint> {
+    look(l)
         .tint
         .iter()
         .find(|(name, _)| *name == fx)
@@ -2903,9 +2187,4 @@ pub fn powi(base: f64, n: f64) -> f64 {
         i += 1.0;
     }
     out
-}
-
-/// Seconds between shock ticks with `stacks` stacks.
-pub fn shock_interval(stacks: f64) -> f64 {
-    SHOCK.every * powi(SHOCK.fast, stacks - 1.0)
 }

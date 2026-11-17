@@ -1,12 +1,20 @@
-//! What a brain is told: each spell as arena-mind reads it (`skill_of`), and what a fighter could perceive this tick
+//! What a brain is told: each skill as arena-mind reads it (`skill_of`), and what a fighter could perceive this tick
 //! (`sense_of`). The minds think in the engine's pixels, the rules in the arena's (`UNIT` of them to one of the
 //! engine's): every length and speed a mind is told is divided by it, and what it chooses multiplied back (`chosen`).
+//!
+//! The minds' view (and so the trained policy's inputs, `arena_mind::policy::observe`) keeps its shape: the damage
+//! system's state is mapped onto the slots that fit it and the rest left at zero (design 16).
 
-use crate::act::{recover_of, stacks_in};
-use crate::bar::{ready, slot_of};
-use crate::data::{BAR, BURN, CHILL, DEF_DOWN, Kind, RAGE, SHOCK, Spell, UNIT, school, spell};
+use crate::act::recover_of;
+use crate::bar::ready;
+use crate::data::{BAR, Kind, RAGE, Spell, UNIT, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
+use crate::kit::Place;
 use crate::shot::{ShotKind, orb_at};
+use arena_calc::ailment::{Ailment, Control};
+use arena_calc::dot::{BURN_RATE, BURN_TIME};
+use arena_calc::element::Element;
+use arena_calc::gem::{self, Effect};
 use arena_mind::{
     ActPhase, Acting, Arena, Choice, Doing, Foe, Inflicts, Me, Sense, Skill, SkillKind, Threat,
     ThreatShape,
@@ -31,7 +39,8 @@ pub fn chosen(c: Choice) -> Choice {
     }
 }
 
-/// Spell `name` as arena-mind reads it: what it does, never what it is called (a heal's `damage` is what it heals).
+/// Skill `name` as arena-mind reads it: what it does, never what it is called (a heal's `damage` is what it heals;
+/// a blow's what it is expected to deal, in the old power, `data::POWER`).
 pub fn skill_of(name: &str) -> Skill {
     let Some(s) = spell(name) else {
         return Skill {
@@ -101,37 +110,62 @@ pub fn skill_of(name: &str) -> Skill {
     }
 }
 
-/// What spell `s` leaves on the one it lands on (the bell: on the one striking it), with the duel's sizes.
+/// What skill `s` leaves on the one it lands on (the bell: on the one striking it), mapped onto the minds' fixed
+/// slots: a hold (Định thân) as a freeze, a stun, a knockdown or a jolt as a stun, a lost soul as a silence; Phá
+/// (metal) as broken defence; Thiêu (fire) as a burn; Thấm (water) in the chill slots and Triền (wood) as their slow;
+/// Tê (thunder) in the shock slots. Each by the share of its kind in the skill's damage.
 fn inflicts_of(s: &Spell) -> Inflicts {
-    let def_down = s.def_down.unwrap_or(0.0);
-    let (chill, shock) = (
-        if s.chill { 1.0 } else { 0.0 },
-        if s.shock { 1.0 } else { 0.0 },
-    );
-    Inflicts {
-        freeze: s.freeze.unwrap_or(0.0),
-        stun: s.counter.map_or(0.0, |c| c.stun),
-        silence: s.silence.unwrap_or(0.0),
-        def_down,
-        def_loss: if def_down != 0.0 { DEF_DOWN } else { 0.0 },
-        burn: if s.burn { BURN.time } else { 0.0 },
-        burn_rate: if s.burn { BURN.share / BURN.every } else { 0.0 },
-        chill,
-        chill_max: CHILL.max * chill,
-        slow: (1.0 - CHILL.slow) * chill,
-        shock,
-        shock_max: SHOCK.max * shock,
-        shock_hold: SHOCK.hold * shock,
-        shock_rate: SHOCK.share * shock,
-        pull: seen(s.pull.unwrap_or(0.0)),
-        steal_rage: s.steal_rage.unwrap_or(0.0),
+    let Some(g) = gem::gem(s.name) else {
+        return Inflicts::default();
+    };
+    let share = |e: Element| -> f64 { g.split.iter().filter(|p| p.0 == e).map(|p| p.1).sum() };
+    let mut i = Inflicts::default();
+    for e in g.effects {
+        if let Effect::Control(c, secs) = e {
+            match c {
+                Control::Hold => i.freeze = i.freeze.max(*secs),
+                Control::Stun | Control::Knockdown | Control::Jolt => i.stun = i.stun.max(*secs),
+                Control::Soulless => i.silence = i.silence.max(*secs),
+                Control::Root => {}
+            }
+        }
     }
+    if let Some(c) = s.counter {
+        i.stun = i.stun.max(c.stun);
+    }
+    let metal = share(Element::Metal);
+    if metal > 0.0 {
+        i.def_down = Ailment::Sunder.data().time;
+        i.def_loss = arena_calc::ailment::AIL.sunder * metal;
+    }
+    let fire = share(Element::Fire);
+    if fire > 0.0 {
+        i.burn = BURN_TIME;
+        i.burn_rate = BURN_RATE * fire;
+    }
+    let water = share(Element::Water);
+    i.chill = water;
+    i.chill_max = if water > 0.0 {
+        Ailment::Soak.data().cap
+    } else {
+        0.0
+    };
+    i.slow = arena_calc::ailment::AIL.bind_slow * share(Element::Wood);
+    let thunder = share(Element::Thunder);
+    i.shock = thunder;
+    if thunder > 0.0 {
+        i.shock_max = Ailment::Jolt.data().cap;
+        i.shock_hold = Ailment::Jolt.data().seconds;
+        i.shock_rate = arena_calc::ailment::AIL.jolt_taken;
+    }
+    i.pull = seen(s.pull.unwrap_or(0.0));
+    i
 }
 
 /// The skill fighter `f` is using, as arena-mind reads it.
 fn acting_of(f: &Fighter) -> Option<Acting> {
     let a = f.act?;
-    let (windup, recover) = spell(a.spell).map_or((0.0, 0.0), |s| (s.windup, recover_of(&a, s)));
+    let (windup, recover) = (a.windup, recover_of(&a));
     let phase = if a.phase == Phase::Windup {
         ActPhase::Windup
     } else {
@@ -143,12 +177,6 @@ fn acting_of(f: &Fighter) -> Option<Acting> {
         windup,
         recover,
     })
-}
-
-/// How many times each spell of fighter `f` lands its stacks now: once, once more evolved, more again lingering
-/// (as `act::begin` counts them).
-fn stacks_of(f: &Fighter) -> Vec<f64> {
-    f.spells.iter().map(|n| stacks_in(slot_of(f, n))).collect()
 }
 
 /// What fighter `f` is doing, as arena-mind reads it.
@@ -188,8 +216,8 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
         }
         let sp = s.spell;
         let damage = sp.damage.unwrap_or(0.0);
-        let threat = match s.kind {
-            ShotKind::Bolt { x, y, vx } => Some(Threat {
+        let threat = match &s.kind {
+            ShotKind::Bolt { .. } => s.bolt_at(state).map(|(x, y, vx)| Threat {
                 age: s.t,
                 damage,
                 shape: ThreatShape::Projectile {
@@ -217,6 +245,7 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
                 lead,
                 ..
             } => {
+                let (follow, x, lead) = (*follow, *x, *lead);
                 if follow && s.t < 0.0 {
                     // a barrage still falling: its next strike aims where I stand
                     let age = s.t + sp.every.unwrap_or(f64::NAN) + sp.aim_ahead.unwrap_or(f64::NAN);
@@ -245,7 +274,7 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
                 age: s.t,
                 damage,
                 shape: ThreatShape::Field {
-                    x: seen(x),
+                    x: seen(*x),
                     reach: seen(sp.reach.unwrap_or(f64::NAN)),
                 },
             }),
@@ -265,25 +294,26 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
         || b.reeling()
         || b.squat > 0.0
         || b.duck > 0.0
-        || b.frozen > 0.0
         || b.shocked > 0.0
-        || f.hp <= 0.0);
+        || !f.alive());
     Sense {
         time: state.time,
         me: Me {
             x: seen(b.x),
             air: seen(b.air),
             face: b.face,
-            hp: f.hp,
-            qi: f.qi,
+            hp: f.hp(),
+            qi: f.qi(),
             rage: f.rage,
             rage_full: RAGE,
             flying: f.fly,
             hover: seen(f.hover),
             vx: seen(b.vx),
             can_act: free,
-            silenced: f.silence > 0.0,
-            sealed: f.sealed > 0.0,
+            // its soul lost (thất hồn): only attacks answer
+            silenced: f.silenced(),
+            // no blinking: sealed, or rooted
+            sealed: f.sealed > 0.0 || f.root > 0.0,
             barrier: f.barrier > 0.0,
             shield: f.charges > 0.0,
             seeker_out: state
@@ -296,12 +326,13 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             x: seen(foe.body.x),
             air: seen(foe.body.air),
             flying: foe.fly,
-            hp: foe.hp,
-            qi: foe.qi,
+            hp: foe.hp(),
+            qi: foe.qi(),
             doing: doing_of(foe),
             out_for: foe.body.out_for(),
             open_in: foe.body.open_in(),
-            frozen: foe.body.frozen,
+            // nothing freezes: a root (no walking) takes the freeze's place
+            frozen: foe.root,
             shocked: foe.body.shocked,
             barrier: foe.barrier > 0.0,
             ready: foe.spells.iter().map(|n| ready(foe, n)).collect(),
@@ -313,30 +344,30 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
         },
         threats: threats_of(state, me),
         ready: f.spells.iter().map(|n| ready(f, n)).collect(),
-        // a bar skill strikes at its power on the bar
-        power: f
-            .spells
-            .iter()
-            .map(|n| match slot_of(f, n) {
-                Some(Slot::Held { power, .. }) => *power,
-                _ => 1.0,
-            })
-            .collect(),
-        stacks: stacks_of(f),
+        // every skill strikes at its own power (no bar tiers)
+        power: Vec::new(),
+        stacks: Vec::new(),
         slots: slots_of(f),
     }
 }
 
-/// Fighter `f`'s castable slots for a policy: its school's three basics, its bar's slots, then its ultimate, each
-/// the index of the spell in `f.spells` (`None` for an empty bar slot or a spell it cannot cast this fight).
+/// Fighter `f`'s castable slots for a policy: its three basics, its bar's slots, then its ultimate, each the index of
+/// the skill in `f.spells` (`None` for an empty bar slot or a skill it cannot cast this fight).
 pub fn slots_of(f: &Fighter) -> Vec<Option<usize>> {
-    let d = school(f.school);
     let at = |name: &str| f.spells.iter().position(|n| *n == name);
-    let bar = (0..BAR.slots).map(|i| f.bar.get(i).and_then(Slot::spell).and_then(at));
-    d.basics
+    let basics = f
+        .kit
+        .skills
         .iter()
-        .map(|n| at(n))
-        .chain(bar)
-        .chain([at(d.ultimate)])
-        .collect()
+        .filter(|k| k.place == Place::Basic)
+        .map(|k| at(k.gem.id));
+    let basics: Vec<Option<usize>> = basics.chain(core::iter::repeat(None)).take(3).collect();
+    let bar = (0..BAR.slots).map(|i| f.bar.get(i).and_then(Slot::spell).and_then(at));
+    let ult = f
+        .kit
+        .skills
+        .iter()
+        .find(|k| k.place == Place::Ultimate)
+        .and_then(|k| at(k.gem.id));
+    basics.into_iter().chain(bar).chain([ult]).collect()
 }

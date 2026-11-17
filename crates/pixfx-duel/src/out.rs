@@ -2,9 +2,7 @@
 //! in the names and fields the page reads. Heights (`y`) are up from the ground for a fighter's
 //! event, screen y for an effect.
 
-use crate::data::{Luck, Rarity};
-
-/// How an effect is played: a school's colours, its size, which way it faces, its seed. Left out when `None`.
+/// How an effect is played: a look's colours, its size, which way it faces, its seed. Left out when `None`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct PlayOpts {
@@ -84,7 +82,7 @@ pub enum Out {
         x: f64,
         y: f64,
     },
-    /// A burn, shock or field ticked on its target.
+    /// A burn, a bleed, a curse or a field ticked on its target.
     Tick {
         by: usize,
         damage: f64,
@@ -147,27 +145,42 @@ pub enum Out {
         x1: f64,
         y1: f64,
     },
-    Lucky {
-        by: usize,
-        kind: Luck,
-        x: f64,
-        y: f64,
-    },
-    /// A bar skill rose a tier.
-    Tier {
-        by: usize,
-        slot: usize,
-        rarity: Rarity,
-    },
     Ultimate {
         by: usize,
         x: f64,
         y: f64,
     },
+    /// Fighter `by` rose from a killing blow on a spare life (Bất Khuất, Tam Mệnh, Ngọn Đèn Hồn).
     Unyielding {
         by: usize,
         x: f64,
         y: f64,
+    },
+    /// Fighter `by`'s skill made a trap, mine, totem or minion (`unit::Unit`) with id `id`, standing at `x`.
+    Spawn {
+        id: u32,
+        by: usize,
+        kind: arena_calc::device::Kind,
+        skill: &'static str,
+        x: f64,
+    },
+    /// Unit `id` acted: a totem cast, a trap sprang, a mine went off, a minion struck.
+    UnitAct {
+        id: u32,
+        x: f64,
+    },
+    /// Unit `id` took `damage` from fighter `by`'s side (`share` of its full life).
+    UnitHurt {
+        id: u32,
+        by: usize,
+        damage: f64,
+        share: f64,
+        x: f64,
+    },
+    /// Unit `id` is gone: destroyed, run out of time, replaced, sprung or set off.
+    UnitDie {
+        id: u32,
+        x: f64,
     },
 }
 
@@ -183,8 +196,7 @@ pub enum Note {
         how: Stop,
         chip: f64,
     },
-    /// A burn, a shock or a field (`cause`: "burn", "shock" or the field's spell) of fighter `by`'s took `share` of
-    /// its foe's life.
+    /// A burn or a bleed (`cause`: "burn" or "bleed") of fighter `by`'s took `share` of its foe's life.
     Ticked {
         by: usize,
         cause: &'static str,

@@ -1,7 +1,7 @@
 //! Who decides for a fighter: a seat. The duel asks it each tick and tells it how its skills went; the rules never
 //! call it themselves (they queue what to tell in `State::told`).
 
-use crate::data::{TEMPERAMENT, UNIT, school};
+use crate::data::{MIND, TEMPERAMENT, UNIT};
 use crate::fighter::State;
 use crate::sense::{chosen, sense_of, skill_of};
 use crate::style::{Style, tag};
@@ -31,7 +31,7 @@ pub trait Seat {
 /// Makes fighter `me`'s seat once the fighters exist (a brain is told both fighters' spells).
 pub type MakeSeat = Box<dyn FnOnce(&State, usize) -> Box<dyn Seat>>;
 
-/// arena-mind's brain with its school's skills and temperament.
+/// arena-mind's brain with its fighter's skills and the one temperament both seats share.
 pub struct Brain {
     mind: Mind,
     /// Its last thought.
@@ -41,7 +41,7 @@ pub struct Brain {
 impl Brain {
     pub fn new(state: &State, me: usize) -> Brain {
         let f = &state.fighters[me];
-        let d = school(f.school);
+        let d = MIND;
         let t = TEMPERAMENT;
         let profile = Profile {
             aggression: d.aggression,
@@ -124,7 +124,7 @@ pub fn policy_mind(state: &State, me: usize, style: Style) -> PolicyMind {
     let skills = f.spells.iter().map(|n| skill_of(n)).collect();
     let t = TEMPERAMENT;
     let seed = state.seed.wrapping_mul(2).wrapping_add(me as u32) ^ 0x9e37_79b9;
-    PolicyMind::new(skills, tag(f.school, style), t.reaction, t.think, seed)
+    PolicyMind::new(skills, tag(me, style), t.reaction, t.think, seed)
 }
 
 /// Why a bot module's call failed: it trapped or ran out of fuel. It loses the round it happened in.

@@ -1,10 +1,11 @@
-//! What a policy is told of its slots: the school's basics, the bar, the ultimate, as indexes into its spells.
+//! What a mind and a policy are told: the slots (the basics, the bar, the ultimate, as indexes into its skills), and
+//! each skill's effects mapped onto the minds' fixed slots (design 16).
 
 mod common;
 
 use common::{all_effects, config};
-use pixfx_duel::data::school;
 use pixfx_duel::duel::Duel;
+use pixfx_duel::kit::Place;
 use pixfx_duel::seat::Brain;
 use pixfx_duel::sense::sense_of;
 
@@ -19,39 +20,44 @@ fn slots_are_the_basics_the_bar_and_the_ultimate() {
         let s = sense_of(duel.state(), me);
         assert_eq!(s.slots.len(), 7);
         let name = |i: usize| s.slots[i].map(|k| f.spells[k]);
-        let d = school(f.school);
-        for (i, b) in d.basics.iter().enumerate() {
+        for (i, b) in arena_calc::loadout::BASICS.iter().enumerate() {
             assert_eq!(name(i), Some(*b));
         }
         for (i, slot) in f.bar.iter().enumerate() {
             assert_eq!(name(3 + i), slot.spell(), "bar slot {i}");
         }
         assert_eq!(f.bar.len(), 3);
-        assert_eq!(name(6), Some(d.ultimate));
+        let ult = f.kit.skills.iter().find(|k| k.place == Place::Ultimate);
+        assert_eq!(name(6), ult.map(|k| k.gem.id));
+        assert_eq!(Some(f.loadout.ultimate.as_str()), name(6));
     }
 }
 
 #[test]
-fn a_skill_says_what_it_inflicts_and_how_much() {
-    use pixfx_duel::data::{BURN, CHILL, DEF_DOWN, SHOCK};
+fn a_skill_says_what_it_inflicts_by_its_kinds_of_damage_and_its_controls() {
+    use arena_calc::ailment::{AIL, Ailment};
+    use arena_calc::dot::{BURN_RATE, BURN_TIME};
     use pixfx_duel::sense::skill_of;
     let bell = skill_of("bell").inflicts;
     assert_eq!(bell.stun, 0.6, "the bell stuns the one striking it");
-    let frostfire = skill_of("frostfire").inflicts;
-    assert_eq!(frostfire.chill, 1.0);
-    assert_eq!(frostfire.chill_max, CHILL.max);
-    assert!((frostfire.slow - (1.0 - CHILL.slow)).abs() < 1e-12);
-    let orb = skill_of("orb").inflicts;
-    assert_eq!(orb.burn, BURN.time);
-    assert!((orb.burn_rate - BURN.share / BURN.every).abs() < 1e-12);
-    assert_eq!(orb.shock, 1.0);
-    assert_eq!(orb.shock_max, SHOCK.max);
-    assert_eq!(orb.shock_hold, SHOCK.hold);
-    assert_eq!(orb.shock_rate, SHOCK.share);
-    let lotus = skill_of("lotus").inflicts;
-    assert_eq!(lotus.def_down, 3.0);
-    assert_eq!(lotus.def_loss, DEF_DOWN);
-    assert_eq!(skill_of("palm").inflicts.steal_rage, 1.0);
+    // fire burns, thunder jolts (the shock slots), water soaks (the chill slots), metal sunders (defence down)
+    let fireball = skill_of("fireball").inflicts;
+    assert_eq!(fireball.burn, BURN_TIME);
+    assert!((fireball.burn_rate - BURN_RATE).abs() < 1e-12);
+    let bolt = skill_of("bolt").inflicts;
+    assert_eq!(bolt.shock, 1.0);
+    assert_eq!(bolt.shock_max, Ailment::Jolt.data().cap);
+    assert_eq!(bolt.shock_rate, AIL.jolt_taken);
+    let jet = skill_of("jet").inflicts;
+    assert_eq!(jet.chill, 1.0);
+    assert_eq!(jet.chill_max, Ailment::Soak.data().cap);
+    assert_eq!(jet.freeze, 0.0, "nothing freezes");
+    let finger = skill_of("finger").inflicts;
+    assert_eq!(finger.def_down, Ailment::Sunder.data().time);
+    assert!((finger.def_loss - AIL.sunder).abs() < 1e-12);
+    // Định Thân holds (the freeze slot), Hóa Ma Chỉ takes the soul (the silence slot)
+    assert_eq!(skill_of("bodyfix").inflicts.freeze, 0.4);
+    assert_eq!(skill_of("demonfinger").inflicts.silence, 1.0);
     assert_eq!(skill_of("slash").inflicts, arena_mind::Inflicts::default());
 }
 
@@ -61,15 +67,19 @@ fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
     use pixfx_duel::fighter::{Act, Phase};
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
-    let ultimate = school(duel.state().fighters[1].school).ultimate;
+    let ultimate = duel.state().fighters[1]
+        .kit
+        .skills
+        .iter()
+        .find(|k| k.place == Place::Ultimate)
+        .map_or("tribulation", |k| k.gem.id);
     duel.state_mut().fighters[1].act = Some(Act {
         spell: ultimate,
         phase: Phase::Recover,
         t: 0.1,
+        windup: 0.5,
+        recover: 0.4,
         target: None,
-        power: 1.0,
-        stacks: 1.0,
-        pierce: false,
         circle: None,
         blocked: false,
     });
@@ -77,7 +87,7 @@ fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
     let a = me.act.unwrap_or_else(|| unreachable!("it is acting"));
     assert_eq!(a.phase, ActPhase::Recover);
     assert_eq!(a.t, 0.1);
-    assert!(a.recover > 0.0);
+    assert_eq!(a.recover, 0.4);
     assert_eq!(sense_of(duel.state(), 0).me.act, None);
     let Doing::Act { ultimate, .. } = sense_of(duel.state(), 0).foe.doing else {
         unreachable!("the foe is acting")
@@ -86,24 +96,16 @@ fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
 }
 
 #[test]
-fn a_lingering_or_evolved_bar_skill_lands_more_stacks() {
-    use pixfx_duel::fighter::Slot;
+fn a_lost_soul_silences_and_a_root_seals() {
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
-    let f = &mut duel.state_mut().fighters[0];
-    let at = f.bar.iter().position(|s| s.spell().is_some());
-    let at = at.unwrap_or_else(|| unreachable!("the bar holds a skill at the start"));
-    if let Slot::Held {
-        evolved, traits, ..
-    } = &mut f.bar[at]
-    {
-        *evolved = true;
-        traits.clear();
-    }
-    let name = f.bar[at].spell();
-    let k = f.spells.iter().position(|n| Some(*n) == name);
+    duel.state_mut().fighters[0].c.soul_lost = 1.0;
+    duel.state_mut().fighters[0].root = 1.0;
     let s = sense_of(duel.state(), 0);
-    let k = k.unwrap_or_else(|| unreachable!("a held skill is one of its spells"));
-    assert_eq!(s.stacks.get(k), Some(&2.0));
-    assert_eq!(s.stacks.len(), duel.state().fighters[0].spells.len());
+    assert!(s.me.silenced && s.me.sealed);
+    assert_eq!(
+        sense_of(duel.state(), 1).foe.frozen,
+        1.0,
+        "a root shows where a freeze did"
+    );
 }

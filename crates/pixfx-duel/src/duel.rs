@@ -1,18 +1,20 @@
 //! The duel: two fighters and their seats, stepped in whole ticks, round after round.
 
 use crate::act::{advance, begin, break_act, drop_barrier, knock_out, set_meditating, settle};
-use crate::bar::{draw, fight_pool};
+use crate::bar::draw;
 use crate::body::{Drive, Motion};
-use crate::data::{
-    BAR, CHILL, DECOR, FLY, GRIT, MEDITATE_REGEN, QI_REGEN, ROUND_PAUSE, STALE, powi, school, spell,
-};
+use crate::data::{BAR, DECOR, FLY, QI_REGEN, ROUND_PAUSE, STALE, spell};
 use crate::fighter::{Fighter, Phase, Slot, State, Told};
 use crate::js::{js_max, js_min};
-use crate::out::Out;
 use crate::seat::{Brain, MakeSeat, Seat};
 use crate::shot::{shot, stop_shot};
-use crate::status::{burning, shocking};
-use arena_mind::Choice;
+use crate::strike::run_queue;
+use crate::unit;
+use arena_calc::ailment::AIL;
+use arena_calc::aura;
+use arena_calc::keystone::Keystone;
+use arena_calc::loadout::{self, Loadout, LoadoutError};
+use arena_mind::{Choice, Rng};
 use bevy_ecs::prelude::*;
 use bevy_ecs::schedule::{ScheduleLabel, SingleThreadedExecutor};
 
@@ -45,19 +47,54 @@ struct Fighting(bool);
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Tick;
 
+/// The salt of the loadouts' dice, so they never share a stream with the rules' (`Rng::new(seed)`) or the styles'.
+const LOADOUT_SALT: u32 = 0x10ad_0a75;
+
+/// Both fighters' loadouts for a fight of `seed`, legal and at random (`loadout::random`), on dice of their own: drawing
+/// them never moves a fight's dice. A seat whose draw fails (never, for the pool as it is) fights with the basics.
+pub fn loadouts(seed: u32) -> [Loadout; 2] {
+    let mut rng = Rng::new(seed ^ LOADOUT_SALT);
+    let mut one = || loadout::random(&mut || rng.next()).unwrap_or_default();
+    [one(), one()]
+}
+
 /// A duel: its state and its two seats in one world, stepped in whole ticks of one single-threaded schedule, its
-/// systems chained in the rules' order (so a seed is one fight on every machine).
+/// systems chained in the rules' order (so a seed is one fight on every machine). Traps, mines, totems and minions
+/// are entities of that world (`unit::Unit`).
 pub struct Duel {
     world: World,
     tick: Schedule,
 }
 
 impl Duel {
-    /// A new duel with each fighter's seat made by `seats` once both fighters exist, its first round begun.
+    /// A new duel with a random legal loadout for each fighter (`loadouts`), each fighter's seat made by `seats` once
+    /// both fighters exist, its first round begun.
     pub fn new(config: DuelConfig, seats: [MakeSeat; 2]) -> Duel {
+        let l = loadouts(config.seed);
+        Duel::build(config, seats, l)
+    }
+
+    /// A new duel of the two `loadouts` (seat 0's, seat 1's), each checked (`loadout::check`).
+    pub fn with_loadouts(
+        config: DuelConfig,
+        seats: [MakeSeat; 2],
+        loadouts: [Loadout; 2],
+    ) -> Result<Duel, Vec<LoadoutError>> {
+        let mut errs = Vec::new();
+        for l in &loadouts {
+            if let Err(e) = loadout::check(l) {
+                errs.extend(e);
+            }
+        }
+        if !errs.is_empty() {
+            return Err(errs);
+        }
+        Ok(Duel::build(config, seats, loadouts))
+    }
+
+    fn build(config: DuelConfig, seats: [MakeSeat; 2], loadouts: [Loadout; 2]) -> Duel {
         let top = js_min(FLY.top, config.sky);
-        let blank = |i, s| Fighter::new(i, s, Vec::new(), Vec::new());
-        let schools = [crate::data::School::Thunder, crate::data::School::Frost];
+        let [la, lb] = loadouts;
         let mut state = State::new(
             config.seed,
             config.left,
@@ -65,31 +102,21 @@ impl Duel {
             config.ground,
             top,
             config.effects,
-            schools.map(|s| blank(s as usize, s)),
+            [Fighter::new(0, la), Fighter::new(1, lb)],
         );
-        let effects = state.effects.clone();
-        let usable = |name: &str| {
-            spell(name).is_some_and(|sp| sp.fx.is_none_or(|fx| effects.iter().any(|e| e == fx)))
-        };
-        for (i, s) in schools.into_iter().enumerate() {
-            let pool = fight_pool(&mut state, s, &|n| usable(n));
-            let d = school(s);
-            let spells = d
-                .basics
-                .iter()
-                .copied()
-                .chain(pool.iter().copied())
-                .chain([d.ultimate])
-                .filter(|n| usable(n))
-                .collect();
-            state.fighters[i] = Fighter::new(i, s, spells, pool);
-        }
         for (f, style) in state
             .fighters
             .iter_mut()
             .zip(crate::style::draw(config.seed))
         {
             f.style = style;
+        }
+        // a skill whose effect is not in the registry is never cast
+        let effects = state.effects.clone();
+        for f in &mut state.fighters {
+            for k in &mut f.kit.skills {
+                k.usable = k.motion.fx.is_none_or(|fx| effects.iter().any(|e| e == fx));
+            }
         }
         let [make0, make1] = seats;
         let seats = Seats([make0(&state, 0), make1(&state, 1)]);
@@ -121,9 +148,14 @@ impl Duel {
         self.world.resource_mut::<State>().into_inner()
     }
 
-    /// The world the duel runs in: its `State` and its `Seats`.
+    /// The world the duel runs in: its `State`, its `Seats` and its units.
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// The world, to read with queries (its units).
+    pub fn world_mut(&mut self) -> &mut World {
+        &mut self.world
     }
 
     /// Fighter `me`'s seat.
@@ -139,7 +171,7 @@ impl Duel {
     /// Advance by `dt` seconds (at most `STEP_MAX`; a step that is not a positive number moves nothing); returns the
     /// effect commands and events of this step. The rules run in whole ticks: what is left of `dt` waits for the next
     /// call.
-    pub fn step(&mut self, dt: f64) -> Vec<Out> {
+    pub fn step(&mut self, dt: f64) -> Vec<crate::out::Out> {
         {
             let mut state = self.world.resource_mut::<State>();
             state.out.clear();
@@ -157,19 +189,25 @@ impl Duel {
     }
 }
 
-/// One tick of the rules as a schedule: the clock, the pause between rounds, each fighter's turn (seat 0's before
-/// seat 1's), the bodies kept apart, the shots in flight, the knock-outs, and what the seats are told.
+/// One tick of the rules as a schedule: the units gathered in id order, the clock, the pause between rounds, the
+/// domains and intents, each fighter's turn (seat 0's before seat 1's), the bodies kept apart, the shots in flight,
+/// the blows due, the units, time wearing everyone, the knock-outs, what the seats are told, the units written back.
 pub fn tick_schedule() -> Schedule {
     let mut tick = Schedule::new(Tick);
     tick.set_executor(SingleThreadedExecutor::new());
     let fighting = |f: Res<Fighting>| f.0;
     tick.add_systems(
         (
+            unit::gather,
             clock,
             between_rounds.run_if(not(fighting)),
-            (turn::<0>, turn::<1>, keep_apart, shots, knock_outs, flush)
+            (
+                fields, turn::<0>, turn::<1>, keep_apart, shots, pending, units, wear, knock_outs,
+                flush,
+            )
                 .chain()
                 .run_if(fighting),
+            unit::scatter,
         )
             .chain(),
     );
@@ -193,6 +231,7 @@ fn tell_seats(state: &mut State, seats: &mut Seats) {
 /// The clock moves on, and whether this tick is fought is settled for all of it.
 fn clock(mut state: ResMut<State>, mut fighting: ResMut<Fighting>) {
     state.time += TICK;
+    state.ticks += 1;
     fighting.0 = state.winner.is_none();
 }
 
@@ -219,6 +258,13 @@ fn begin_round(state: &mut State, seats: &mut Seats) {
     for s in core::mem::take(&mut state.shots) {
         stop_shot(state, &s);
     }
+    for u in core::mem::take(&mut state.units) {
+        state.emit(crate::out::Out::UnitDie { id: u.id, x: u.x });
+    }
+    unit::clear(state);
+    state.pending.clear();
+    state.queue = arena_calc::event::Queue::new();
+    state.field.new_round();
     for f in 0..2 {
         // what the last round left standing goes with it
         break_act(state, f);
@@ -229,16 +275,49 @@ fn begin_round(state: &mut State, seats: &mut Seats) {
         let at = if f == 0 { 0.22 } else { 0.78 };
         state.fighters[f].body.start_round(state.left + span * at);
     }
-    // the draws come once both fighters are fresh: nothing the last round left on a foe steers them
     for f in 0..2 {
         for i in 0..BAR.slots {
-            draw(state, f, i, i == 0, None);
+            draw(state, f, i, None);
         }
     }
     tell_seats(state, seats);
 }
 
-/// Fighter `ME`'s turn: its seat hears what happened, thinks, and its fighter does what it chose and moves.
+/// The domains run down and put their rules on the fighters; each fighter's intents age and press (positions in T).
+fn fields(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    let pos = [
+        state.to_t(state.fighters[0].body.x),
+        state.to_t(state.fighters[1].body.x),
+    ];
+    state.field.tick(crate::duel::TICK, pos);
+    let moving = [state.fighters[0].moving, state.fighters[1].moving];
+    {
+        let State {
+            fighters, field, ..
+        } = state;
+        let [a, b] = fighters;
+        field.sync([&mut a.c, &mut b.c], pos, moving);
+    }
+    for me in 0..2 {
+        let [a, b] = &mut state.fighters;
+        let (mine, theirs) = if me == 0 { (a, b) } else { (b, a) };
+        let calm = mine.has(Keystone::GreyHeart);
+        mine.auras.tick(TICK, &mut mine.c);
+        aura::sync(
+            &mine.auras,
+            &mine.sheet,
+            &mut mine.c,
+            pos[me],
+            &mut theirs.c,
+            pos[1 - me],
+            calm,
+        );
+    }
+}
+
+/// Fighter `ME`'s turn: its seat hears what happened, thinks, and its fighter does what it chose and moves; then the
+/// damage system's triggers answer what happened.
 fn turn<const ME: usize>(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
     let state = state.as_mut();
     tell_seats(state, &mut seats);
@@ -246,13 +325,15 @@ fn turn<const ME: usize>(mut state: ResMut<State>, mut seats: NonSendMut<Seats>)
         apply(state, ME, &choice);
     }
     body(state, ME, TICK);
+    run_queue(state);
 }
 
 /// Two living bodies never overlap.
 fn keep_apart(mut state: ResMut<State>) {
     let state = state.as_mut();
+    let alive = state.fighters[0].alive() && state.fighters[1].alive();
     let [a, b] = &mut state.fighters;
-    if a.hp > 0.0 && b.hp > 0.0 {
+    if alive {
         let arena = crate::body::Arena {
             left: state.left,
             right: state.right,
@@ -269,44 +350,79 @@ fn shots(mut state: ResMut<State>) {
     for id in ids {
         shot(state, id, TICK);
     }
+    run_queue(state);
 }
 
-/// A life at 0 ends the round, and so does a seat that gives it up (a bot module's fault).
+/// The blows due by now land, in the order they were made.
+fn pending(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    let now = state.time + 1e-9;
+    let (due, wait): (Vec<_>, Vec<_>) = core::mem::take(&mut state.pending)
+        .into_iter()
+        .partition(|p| p.at <= now);
+    state.pending = wait;
+    for d in due {
+        crate::act::due(state, d);
+    }
+    run_queue(state);
+}
+
+/// The traps, mines, totems and minions act.
+fn units(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    unit::act(state, TICK);
+    run_queue(state);
+}
+
+/// Time wears the fighters (curses, damage over time, regen, timers) and the units.
+fn wear(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    crate::strike::wear(state, TICK);
+    unit::wear(state, TICK);
+    run_queue(state);
+}
+
+/// A life at 0 ends the round unless a keystone gives a spare one; so does a seat that gives it up (a bot module's
+/// fault).
 fn knock_outs(mut state: ResMut<State>, seats: NonSend<Seats>) {
     let state = state.as_mut();
     for f in 0..2 {
-        let out = state.fighters[f].hp <= 0.0 || seats.0[f].forfeit();
+        if !state.fighters[f].alive() && crate::strike::spare(state, f) {
+            continue;
+        }
+        let out = !state.fighters[f].alive() || seats.0[f].forfeit();
         if out && state.winner.is_none() {
             knock_out(state, f);
         }
     }
 }
 
-/// One step of fighter `me`: its body's clocks, the rules' own timers, then its body moves as the rules drive it,
-/// and its cast moves on.
+/// One step of fighter `me`: its body's clocks, the rules' own timers and its stored uses, its bar, then its body
+/// moves as the rules drive it, and its cast moves on.
 fn body(state: &mut State, me: usize, dt: f64) {
     let foe = 1 - me;
     {
         let f = &mut state.fighters[me];
-        f.body.tick(dt, f.hp > 0.0);
+        let alive = f.alive();
+        f.body.tick(dt, alive);
         f.sealed = js_max(0.0, f.sealed - dt);
-        f.def_down = js_max(0.0, f.def_down - dt);
-        f.silence = js_max(0.0, f.silence - dt);
+        f.root = js_max(0.0, f.root - dt);
+        f.no_guard = js_max(0.0, f.no_guard - dt);
         f.dodged = js_max(0.0, f.dodged - dt);
-        f.grit = js_max(0.0, f.grit - GRIT.fall * dt);
-        f.chill_t = js_max(0.0, f.chill_t - dt);
-        if f.chill_t == 0.0 {
-            f.chill = 0.0;
-        }
-    }
-    shocking(state, me, dt);
-    {
-        let f = &mut state.fighters[me];
         f.shield_t = js_max(0.0, f.shield_t - dt);
         if f.shield_t == 0.0 {
             f.charges = 0.0;
         }
         f.rang = js_max(0.0, f.rang - dt);
+        // choked (Ngạt), cooldowns run at half speed
+        let choke = if f.c.choke > 0.0 {
+            AIL.choke_cooldown
+        } else {
+            1.0
+        };
+        for k in &mut f.kit.skills {
+            k.uses.tick(dt * choke);
+        }
     }
     if state.fighters[me].barrier > 0.0 {
         let f = &mut state.fighters[me];
@@ -315,20 +431,19 @@ fn body(state: &mut State, me: usize, dt: f64) {
             drop_barrier(state, me);
         }
     }
-    burning(state, me, dt);
     {
         let f = &mut state.fighters[me];
         f.guard = js_max(0.0, f.guard - dt);
-        for (_, left) in &mut f.cool {
-            *left = js_max(0.0, *left - dt);
-        }
     }
     for i in 0..state.fighters[me].bar.len() {
         let f = &mut state.fighters[me];
-        let cooling = f.bar[i].spell().is_some_and(|n| f.cool(n) > 0.0);
+        let cooling = f.bar[i]
+            .spell()
+            .and_then(|n| f.kit.get(n))
+            .is_some_and(|k| !k.uses.ready());
         let redraw = match &mut f.bar[i] {
             Slot::Held { .. } if cooling => None,
-            Slot::Held { spell, idle, .. } => {
+            Slot::Held { spell, idle } => {
                 *idle += dt;
                 (*idle >= STALE).then_some(Some(*spell))
             }
@@ -338,20 +453,16 @@ fn body(state: &mut State, me: usize, dt: f64) {
             }
         };
         if let Some(gone) = redraw {
-            draw(state, me, i, false, gone);
+            draw(state, me, i, gone);
         }
     }
     let f = &mut state.fighters[me];
-    let regen = if f.medit {
-        MEDITATE_REGEN
-    } else if f.fly {
-        -FLY.cost
-    } else {
-        QI_REGEN
-    };
-    f.qi = js_min(100.0, f.qi + regen * dt);
+    // flying stops the qi's regen (`wear` gives it back) and costs its own
+    if f.fly {
+        f.c.qi = js_max(0.0, f.c.qi - (FLY.cost + QI_REGEN) * dt);
+    }
     // out of qi, or knocked out of the sky: flight ends and it falls
-    if f.fly && (f.qi <= 1.0 || f.body.reeling()) {
+    if f.fly && (f.qi() <= 1.0 || f.body.reeling()) {
         f.fly = false;
     }
     // a dive drops straight at the foe's height
@@ -363,7 +474,9 @@ fn body(state: &mut State, me: usize, dt: f64) {
     let f = &state.fighters[me];
     let motion = if diving {
         Motion::Dive {
-            speed: spell("dive").and_then(|s| s.speed).unwrap_or(0.0),
+            speed: spell(f.act.map_or("dive", |a| a.spell))
+                .and_then(|s| s.speed)
+                .unwrap_or(0.0),
             floor: foe_air,
         }
     } else if f.fly {
@@ -371,17 +484,20 @@ fn body(state: &mut State, me: usize, dt: f64) {
     } else {
         Motion::Gravity
     };
+    // rooted, it cannot walk; Triền and Phế Cước slow it (its run speed through `MoveSpeed`)
+    let speed =
+        arena_calc::motion::run_speed(1.0, &f.c.bearer_table(&f.sheet, f.moving), f.root > 0.0);
     let drive = Drive {
-        alive: f.hp > 0.0,
+        alive: f.alive(),
         acting: f.act.is_some(),
         meditating: f.medit,
         guarding: f.guard > 0.0,
-        chilled: false,
-        intent: f.intent * powi(CHILL.slow, f.chill),
+        intent: f.intent * speed,
         motion,
         foe_x,
     };
     let arena = state.arena();
+    let before = state.fighters[me].body.x;
     let State { rng, fighters, .. } = state;
     let events = fighters[me]
         .body
@@ -389,6 +505,8 @@ fn body(state: &mut State, me: usize, dt: f64) {
     for e in events {
         state.emit(e.into());
     }
+    let f = &mut state.fighters[me];
+    f.moving = f.intent != 0.0 && (f.body.x - before).abs() > 1e-9;
     advance(state, me, dt);
 }
 
@@ -419,7 +537,7 @@ pub fn apply(state: &mut State, me: usize, choice: &Choice) {
         }
         Choice::Meditate => set_meditating(state, me, true),
         Choice::Cast { skill, target } => {
-            if let Some(name) = spell(skill).map(|s| s.name) {
+            if let Some(name) = state.fighters[me].kit.get(skill).map(|k| k.gem.id) {
                 begin(state, me, name, *target);
             }
         }

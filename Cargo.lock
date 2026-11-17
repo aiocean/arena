@@ -4757,6 +4757,7 @@ dependencies = [
 name = "pixfx-duel"
 version = "0.1.0"
 dependencies = [
+ "arena-calc",
  "arena-mind",
  "bevy_ecs",
  "libm",

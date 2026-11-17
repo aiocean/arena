@@ -1,6 +1,7 @@
-//! The landing duel's rules: two cultivators, Thunder and Frost, fight with skills drawn onto a rotating bar, with
-//! statuses, wards and barriers, round after round. Everything is decided here and deterministic from a seed; a shell
-//! plays the effect commands and feels the events `Duel::step` returns.
+//! The landing duel's rules: two cultivators, each with a loadout from the shared pool (`arena-calc`), fight with
+//! skills drawn onto a rotating bar, with wards and barriers, traps, mines, totems and minions, round after round.
+//! Every blow goes through the damage system. Everything is decided here and deterministic from a seed; a shell plays
+//! the effect commands and feels the events `Duel::step` returns.
 //! See `AGENTS.md` and `docs/specs/2026-11-15-duel-rules-in-rust-design.md`.
 
 #![forbid(unsafe_code)]
@@ -14,6 +15,7 @@ pub mod effects;
 pub mod fighter;
 pub mod first_mind;
 pub mod js;
+pub mod kit;
 pub mod ladder;
 pub mod out;
 pub mod pose;
@@ -21,7 +23,8 @@ pub mod scripted;
 pub mod seat;
 pub mod sense;
 pub mod shot;
-pub mod status;
+pub mod strike;
 pub mod style;
 pub mod train;
+pub mod unit;
 pub mod view;

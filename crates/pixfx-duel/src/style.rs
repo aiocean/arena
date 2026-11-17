@@ -1,7 +1,6 @@
 //! How a fighter fights: aggressive, balanced or defensive. Drawn per fighter from the seed on dice of its own, so the
 //! rules' dice are untouched; the trained policy reads it in its tag; it changes no rule and no reward.
 
-use crate::data::School;
 use arena_mind::{Rng, policy::TAG};
 
 /// A fighter's style.
@@ -42,14 +41,11 @@ pub fn draw(seed: u32) -> [Style; 2] {
     [one(), one()]
 }
 
-/// Who a fighter is, as the policy reads it: its school (Thunder, Frost) and its style, one-hot.
-pub fn tag(school: School, style: Style) -> [f32; TAG] {
+/// Who a fighter is, as the policy reads it: its seat (0 left, 1 right; the slots that held the old schools, which
+/// sat in those seats) and its style, one-hot.
+pub fn tag(seat: usize, style: Style) -> [f32; TAG] {
     let mut t = [0.0; TAG];
-    let s = match school {
-        School::Thunder => 0,
-        School::Frost => 1,
-    };
-    if let Some(v) = t.get_mut(s) {
+    if let Some(v) = t.get_mut(seat.min(1)) {
         *v = 1.0;
     }
     if let Some(v) = t.get_mut(2 + style.index()) {

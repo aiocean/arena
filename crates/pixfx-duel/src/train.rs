@@ -254,14 +254,14 @@ impl Env {
         let (mut dealt, mut taken) = (0.0, 0.0);
         loop {
             let before = [
-                self.duel.state().fighters[0].hp,
-                self.duel.state().fighters[1].hp,
+                self.duel.state().fighters[0].hp(),
+                self.duel.state().fighters[1].hp(),
             ];
             self.duel.step(TICK);
             let f = &self.duel.state().fighters;
             let (d, t) = (
-                (before[foe] - f[foe].hp).max(0.0),
-                (before[me] - f[me].hp).max(0.0),
+                (before[foe] - f[foe].hp()).max(0.0),
+                (before[me] - f[me].hp()).max(0.0),
             );
             dealt += d;
             taken += t;

@@ -1,14 +1,14 @@
-//! What the tests share: a duel's state built as `Duel::new` builds it, without its minds or its first round's
-//! bodies (each fighter's pool drawn by the duel's dice, Thunder's then Frost's, then three draws each), duels to run,
-//! and `pinned`, which checks an output against its golden file.
+//! What the tests share: a duel's state built as `Duel::new` builds it (each fighter's random loadout, then three
+//! draws each), without its minds or its first round's bodies, duels to run, loadouts to fight with, and `pinned`,
+//! which checks an output against its golden file.
 #![allow(dead_code)]
 
-use pixfx_duel::bar::{draw, fight_pool};
-use pixfx_duel::data::{School, school};
+use arena_calc::loadout::{Loadout, Slot as LoadoutSlot};
+use pixfx_duel::bar::draw;
 use pixfx_duel::fighter::{Fighter, Slot, State};
 
 pub fn arena(seed: u32) -> State {
-    let blank = |i, s| Fighter::new(i, s, Vec::new(), Vec::new());
+    let [a, b] = pixfx_duel::duel::loadouts(seed);
     let mut state = State::new(
         seed,
         0.0,
@@ -16,20 +16,8 @@ pub fn arena(seed: u32) -> State {
         600.0,
         384.0,
         Vec::new(),
-        [blank(0, School::Thunder), blank(1, School::Frost)],
+        [Fighter::new(0, a), Fighter::new(1, b)],
     );
-    for (i, s) in [(0, School::Thunder), (1, School::Frost)] {
-        let pool = fight_pool(&mut state, s, &|_| true);
-        let d = school(s);
-        let spells = d
-            .basics
-            .iter()
-            .copied()
-            .chain(pool.iter().copied())
-            .chain([d.ultimate])
-            .collect();
-        state.fighters[i] = Fighter::new(i, s, spells, pool);
-    }
     // startRound's places: 22% and 78% across the arena
     let span = state.right - state.left;
     for (i, at) in [(0, 0.22), (1, 0.78)] {
@@ -37,22 +25,44 @@ pub fn arena(seed: u32) -> State {
     }
     for f in 0..2 {
         for i in 0..3 {
-            draw(&mut state, f, i, i == 0, None);
+            draw(&mut state, f, i, None);
         }
     }
     state
 }
 
-/// A common, plain bar slot holding `spell`.
-pub fn common(spell: &'static str) -> Slot {
-    Slot::Held {
-        spell,
-        power: 1.0,
-        evolved: false,
-        rarity: pixfx_duel::data::Rarity::Common,
-        traits: Vec::new(),
-        idle: 0.0,
+/// A loadout of `actives` (with no supports; padded from a fixed list to eight) and `ultimate`, with `keystones`.
+pub fn loadout(actives: &[&str], ultimate: &str) -> Loadout {
+    let pad = [
+        "bolt", "palm", "fireball", "quake", "heal", "ward", "spark", "seal", "jet", "orb",
+    ];
+    let mut skills: Vec<&str> = actives.to_vec();
+    for p in pad {
+        if skills.len() >= arena_calc::loadout::ACTIVES {
+            break;
+        }
+        if !skills.contains(&p) {
+            skills.push(p);
+        }
     }
+    Loadout {
+        actives: skills
+            .into_iter()
+            .map(|s| LoadoutSlot {
+                skill: s.to_string(),
+                supports: Vec::new(),
+                fuse: None,
+            })
+            .collect(),
+        ultimate: ultimate.to_string(),
+        keystones: Vec::new(),
+        root: None,
+    }
+}
+
+/// A plain bar slot holding `spell`.
+pub fn common(spell: &'static str) -> Slot {
+    Slot::Held { spell, idle: 0.0 }
 }
 
 pub fn empty(left: f64) -> Slot {
@@ -62,6 +72,18 @@ pub fn empty(left: f64) -> Slot {
 /// The skills on fighter `f`'s bar.
 pub fn on_bar(f: &Fighter) -> Vec<&'static str> {
     f.bar.iter().filter_map(Slot::spell).collect()
+}
+
+/// A duel of `seats` with `loadouts`, on the landing arena with the whole registry.
+pub fn duel_of(
+    seed: u32,
+    seats: [pixfx_duel::seat::MakeSeat; 2],
+    loadouts: [Loadout; 2],
+) -> pixfx_duel::duel::Duel {
+    match pixfx_duel::duel::Duel::with_loadouts(config(seed, all_effects()), seats, loadouts) {
+        Ok(d) => d,
+        Err(e) => unreachable!("an illegal test loadout: {e:?}"),
+    }
 }
 
 /// Every number as an f64, so 1 and 1.0 compare equal.

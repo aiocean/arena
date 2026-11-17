@@ -55,7 +55,7 @@ fn trace(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> Vec<([f64; 2], [u32; 
     while duel.state().time < seconds {
         duel.step(TICK);
         out.push((
-            duel.state().fighters.each_ref().map(|f| f.hp),
+            duel.state().fighters.each_ref().map(|f| f.hp()),
             duel.state().wins,
         ));
     }

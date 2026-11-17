@@ -27,7 +27,6 @@ pub enum Pose {
     Meditate,
     /// Struck and staggered where it stands.
     Hurt,
-    Frozen,
     Shocked,
     /// Thrown up by a blow, still rising.
     Launched,

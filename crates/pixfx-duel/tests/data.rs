@@ -1,10 +1,9 @@
-//! The duel's tables, dice and maths, pinned against `tests/fixtures/js_numbers.json`.
+//! The duel's tables, dice and maths, pinned against `tests/fixtures/js_numbers.json`: the motions skills borrow, the
+//! looks, the brain's one temperament and the constants. The skills' damage, costs and timings are `arena-calc`'s
+//! (`crates/arena-calc/tests/gem.rs` pins them); here, that each skill the duel casts is its gem on its motion.
 
 use arena_mind::Rng;
-use pixfx_duel::data::{
-    self, Blow, Kind, LUCKY, PAYOFF, RARITY, Rarity, School, Status, TRAITS, Trait, block_chance,
-    fits, orb_offset, shock_interval, slot_power,
-};
+use pixfx_duel::data::{self, Kind, Look, block_chance, orb_offset};
 use serde_json::{Map, Value, json};
 
 fn fixture() -> Value {
@@ -60,68 +59,6 @@ fn block_chance_matches_js() {
     }
 }
 
-#[test]
-fn shock_interval_matches_js() {
-    for row in fixture()["shockInterval"].as_array().into_iter().flatten() {
-        assert_eq!(
-            shock_interval(num(&row[0])),
-            num(&row[1]),
-            "stacks {}",
-            row[0]
-        );
-    }
-}
-
-fn rarity(name: &str) -> Rarity {
-    Rarity::ALL
-        .into_iter()
-        .find(|r| r.name() == name)
-        .unwrap_or(Rarity::Common)
-}
-
-fn trait_of(name: &str) -> Option<Trait> {
-    Trait::ALL.into_iter().find(|t| t.name() == name)
-}
-
-#[test]
-fn slot_power_matches_js() {
-    let rows = fixture()["slotPower"]
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
-    assert_eq!(rows.len(), 16);
-    for row in rows {
-        let traits: Vec<Trait> = row[1]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|t| t.as_str().and_then(trait_of))
-            .collect();
-        let evolved = row[2].as_bool().unwrap_or(false);
-        assert_eq!(
-            slot_power(rarity(row[0].as_str().unwrap_or("")), &traits, evolved),
-            num(&row[3]),
-            "{row}"
-        );
-    }
-}
-
-#[test]
-fn fits_matches_js() -> Result<(), String> {
-    for row in fixture()["fits"].as_array().into_iter().flatten() {
-        let t = row[0]
-            .as_str()
-            .and_then(trait_of)
-            .ok_or_else(|| format!("unknown trait {}", row[0]))?;
-        assert_eq!(
-            fits(t, row[1].as_str().unwrap_or("")),
-            row[2].as_bool().unwrap_or(false),
-            "{row}"
-        );
-    }
-    Ok(())
-}
-
 fn kind_name(k: Kind) -> &'static str {
     k.name()
 }
@@ -133,15 +70,6 @@ fn spell_json(s: &data::Spell) -> Value {
         o.insert(k.to_string(), v);
     };
     put("kind", json!(kind_name(s.kind)));
-    if let Some(b) = s.blow {
-        put(
-            "type",
-            json!(match b {
-                Blow::Physical => "physical",
-                Blow::Magic => "magic",
-            }),
-        );
-    }
     for (k, v) in [
         ("fx", s.fx),
         ("hitFx", s.hit_fx),
@@ -168,38 +96,29 @@ fn spell_json(s: &data::Spell) -> Value {
         ("impact", s.impact),
         ("radius", s.radius),
         ("notice", s.notice),
-        ("defDown", s.def_down),
         ("life", s.life),
         ("height", s.height),
         ("pull", s.pull),
         ("reach", s.reach),
         ("under", s.under),
         ("tick", s.tick),
-        ("freeze", s.freeze),
         ("speed", s.speed),
-        ("silence", s.silence),
         ("pullUntil", s.pull_until),
-        ("stealRage", s.steal_rage),
         ("strikes", s.strikes),
         ("every", s.every),
         ("aimAhead", s.aim_ahead),
         ("amount", s.amount),
         ("time", s.time),
         ("spray", s.spray),
-        ("blood", s.blood),
     ] {
         if let Some(v) = v {
             put(k, json!(v));
         }
     }
     for (k, v) in [
-        ("shock", s.shock),
-        ("chill", s.chill),
         ("dive", s.dive),
-        ("burn", s.burn),
         ("grounded", s.grounded),
         ("ultimate", s.ultimate),
-        ("seals", s.seals),
         ("reflect", s.reflect),
         ("feet", s.feet),
         ("swap", s.swap),
@@ -215,19 +134,19 @@ fn spell_json(s: &data::Spell) -> Value {
 }
 
 #[test]
-fn every_spell_is_ported_field_for_field() -> Result<(), String> {
+fn every_motion_is_ported_field_for_field() -> Result<(), String> {
     let f = fixture();
-    let js = f["spells"]
+    let js = f["motions"]
         .as_object()
-        .ok_or_else(|| "fixture has no spells".to_string())?;
-    let names: Vec<&str> = data::spells().iter().map(|s| s.name).collect();
+        .ok_or_else(|| "fixture has no motions".to_string())?;
+    let names: Vec<&str> = data::motions().iter().map(|s| s.name).collect();
     assert_eq!(
         names,
         js.keys().map(String::as_str).collect::<Vec<_>>(),
         "names in the fixture's order"
     );
     for (name, want) in js {
-        let s = data::spell(name).ok_or_else(|| format!("no spell {name}"))?;
+        let s = data::motion(name).ok_or_else(|| format!("no motion {name}"))?;
         let got = spell_json(s);
         // keys in any order: compare as sorted maps
         let sort = |v: &Value| {
@@ -237,32 +156,72 @@ fn every_spell_is_ported_field_for_field() -> Result<(), String> {
                     .collect::<std::collections::BTreeMap<_, _>>()
             })
         };
-        assert_eq!(sort(&norm(&got)), sort(&norm(want)), "spell {name}");
+        assert_eq!(sort(&norm(&got)), sort(&norm(want)), "motion {name}");
     }
     Ok(())
 }
 
 #[test]
-fn every_school_and_its_stats_are_ported() -> Result<(), String> {
+fn no_frost_skill_is_left() {
+    for gone in [
+        "icicle",
+        "shard",
+        "shatter",
+        "frostfire",
+        "flurry",
+        "prison",
+    ] {
+        assert!(data::motion(gone).is_none(), "{gone}");
+        assert!(data::spell(gone).is_none(), "{gone}");
+    }
+}
+
+#[test]
+fn every_skill_is_its_gem_on_its_motion() {
+    use arena_calc::gem::{GEMS, Resource};
+    for g in GEMS {
+        let m = data::motion(g.spell);
+        assert!(
+            m.is_some(),
+            "{} borrows {}, which the duel has",
+            g.id,
+            g.spell
+        );
+        let (Some(m), Some(s)) = (m, data::spell(g.id)) else {
+            continue;
+        };
+        let qi: f64 = g
+            .costs
+            .iter()
+            .filter(|c| c.0 == Resource::Qi)
+            .map(|c| c.1)
+            .sum();
+        assert_eq!(s.name, g.id);
+        assert_eq!(
+            (s.kind, s.fx, s.range, s.speed),
+            (m.kind, m.fx, m.range, m.speed),
+            "{}",
+            g.id
+        );
+        assert_eq!(
+            (s.windup, s.recover, s.cooldown, s.cost),
+            (g.windup, g.recover, g.cooldown, qi),
+            "{}",
+            g.id
+        );
+        assert_eq!(s.ultimate, g.is_ultimate(), "{}", g.id);
+        assert_eq!(s.damage.is_some(), g.deals_damage(), "{}", g.id);
+    }
+    assert_eq!(data::spells().len(), GEMS.len());
+}
+
+#[test]
+fn each_look_is_ported() -> Result<(), String> {
     let f = fixture();
-    for (key, school) in [("thunder", School::Thunder), ("frost", School::Frost)] {
-        let d = data::school(school);
-        let js = &f["schools"][key];
+    for (key, l) in [("thunder", Look::Thunder), ("frost", Look::Frost)] {
+        let d = data::look(l);
+        let js = &f["looks"][key];
         assert_eq!(json!(d.name), js["name"]);
-        assert_eq!(json!(d.basics), js["basics"], "{key} basics");
-        assert_eq!(json!(d.pool), js["pool"], "{key} pool");
-        assert_eq!(json!(d.ultimate), js["ultimate"]);
-        assert_eq!(json!(kind_name(d.signature)), js["signature"]);
-        assert_eq!(norm(&json!(d.postures)), norm(&js["postures"]));
-        for (k, v) in [
-            ("range", d.range),
-            ("dry", d.dry),
-            ("aggression", d.aggression),
-            ("tempo", d.tempo),
-            ("sky", d.sky),
-        ] {
-            assert_eq!(v, num(&js[k]), "{key}.{k}");
-        }
         assert_eq!(json!(d.bolt), js["bolt"]);
         assert_eq!(json!(d.circle), js["circle"]);
         let tints = js["tint"]
@@ -296,63 +255,27 @@ fn every_school_and_its_stats_are_ported() -> Result<(), String> {
             }
             assert_eq!(norm(&Value::Object(o)), norm(want), "{key} tint {fx}");
         }
-        let s = data::stats(school);
-        let got = json!({
-            "hp": s.hp, "atk": s.atk, "pdef": s.pdef, "mdef": s.mdef, "crit": s.crit, "critDamage": s.crit_damage,
-            "dodge": s.dodge, "fury": s.fury, "unyielding": s.unyielding, "attuned": s.attuned,
-        });
-        assert_eq!(norm(&got), norm(&f["stats"][key]), "{key} stats");
     }
+    let m = data::MIND;
+    let got = json!({
+        "postures": m.postures, "range": m.range, "dry": m.dry, "aggression": m.aggression, "tempo": m.tempo,
+        "sky": m.sky,
+    });
+    assert_eq!(norm(&got), norm(&f["mind"]));
     Ok(())
 }
 
 #[test]
-fn rarity_traits_luck_and_payoffs_are_ported() -> Result<(), String> {
+fn the_constants_are_ported() {
     let f = fixture();
-    for r in Rarity::ALL {
-        let d = RARITY[r as usize];
-        let mut o = json!({ "odds": d.odds, "power": d.power, "traits": d.traits });
-        if let Some(c) = d.chance {
-            o["chance"] = json!(c);
-        }
-        assert_eq!(norm(&o), norm(&f["rarity"][r.name()]), "{}", r.name());
-    }
-    assert_eq!(
-        json!(Rarity::ALL.map(|r| r.name())),
-        f["constants"]["TIERS"]
-    );
-    let traits = json!({
-        "swift": { "cooldown": TRAITS.swift_cooldown }, "heavy": { "power": TRAITS.heavy_power }, "piercing": {},
-        "lingering": { "stacks": TRAITS.lingering_stacks }, "cheap": { "cost": TRAITS.cheap_cost },
-    });
-    assert_eq!(norm(&traits), norm(&f["traits"]));
-    assert_eq!(
-        json!(Trait::ALL.map(|t| t.name())),
-        json!(["swift", "heavy", "piercing", "lingering", "cheap"])
-    );
-    assert_eq!(
-        norm(&json!({ "chance": LUCKY.chance, "kinds": ["double", "free", "again"] })),
-        norm(&f["lucky"])
-    );
-    let js = f["payoff"]
-        .as_object()
-        .ok_or_else(|| "no payoff".to_string())?;
-    assert_eq!(PAYOFF.len(), js.len());
-    for (name, status, per) in PAYOFF {
-        let s = match status {
-            Status::Shock => "shock",
-            Status::Chill => "chill",
-        };
-        assert_eq!(
-            norm(&json!({ "status": s, "per": per })),
-            norm(&js[*name]),
-            "payoff {name}"
-        );
-    }
     assert_eq!(data::RAGE, num(&f["constants"]["RAGE"]));
     assert_eq!(data::STALE, num(&f["constants"]["STALE"]));
-    assert_eq!(data::BLOOD_POWER, num(&f["constants"]["BLOOD_POWER"]));
     assert_eq!(data::POOL_SIZE as f64, num(&f["constants"]["POOL_SIZE"]));
+    assert_eq!(
+        f64::from(data::SKILL_LEVEL),
+        num(&f["constants"]["SKILL_LEVEL"])
+    );
+    assert_eq!(data::T, num(&f["constants"]["T"]));
     let fr = data::FRAMES;
     let frames = json!({
         "counter": { "power": fr.counter.power, "stagger": fr.counter.stagger },
@@ -366,5 +289,4 @@ fn rarity_traits_luck_and_payoffs_are_ported() -> Result<(), String> {
         json!({ "lamp": data::DECOR[0], "night": data::DECOR[1] }),
         f["constants"]["DECOR"]
     );
-    Ok(())
 }

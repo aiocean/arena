@@ -4,7 +4,7 @@
 //! seconds, and does the best, with a little noise.
 
 use crate::bar::ready;
-use crate::data::{Kind, Spell, UNIT, school, spell};
+use crate::data::{Kind, MIND, Spell, UNIT, spell};
 use crate::fighter::{Fighter, Phase, State};
 use crate::js::{js_max, js_min, js_sign, or_one};
 use crate::seat::{MakeSeat, Seat};
@@ -95,9 +95,8 @@ impl FirstMind {
             || b.reeling()
             || b.squat > 0.0
             || b.duck > 0.0
-            || b.frozen > 0.0
             || b.shocked > 0.0
-            || f.hp <= 0.0
+            || !f.alive()
         {
             return None;
         }
@@ -128,11 +127,11 @@ impl FirstMind {
                 best = Some(o);
             }
         }
-        best.map(|b| self.choice_of(f, b))
+        best.map(|b| self.choice_of(b))
     }
 
     /// The option it chose as a Choice; an attack takes its breath and counts as tried.
-    fn choice_of(&mut self, f: &Fighter, best: Opt) -> Choice {
+    fn choice_of(&mut self, best: Opt) -> Choice {
         match best.what {
             What::Move(dir) => Choice::Move { dir },
             What::Jump => Choice::Jump,
@@ -143,8 +142,7 @@ impl FirstMind {
             What::Wait => Choice::Wait,
             What::Cast(name, target) => {
                 if spell(name).and_then(|s| s.damage).is_some_and(|d| d != 0.0) {
-                    self.calm =
-                        school(f.school).tempo * (1.0 - SPREAD / 2.0 + SPREAD * self.rng.next());
+                    self.calm = MIND.tempo * (1.0 - SPREAD / 2.0 + SPREAD * self.rng.next());
                     match self.tried.iter_mut().find(|(n, _)| *n == name) {
                         Some(e) => e.1 += 1.0,
                         None => self.tried.push((name, 1.0)),
@@ -160,7 +158,7 @@ impl FirstMind {
 
     /// Each attack it could start now, scored by the damage it expects for what it costs.
     fn attacks(&self, state: &State, me: &Fighter, foe: &Fighter) -> Vec<Opt> {
-        let sch = school(me.school);
+        let sch = &MIND;
         let d = (foe.body.x - me.body.x).abs();
         let fact = foe.act.and_then(|a| spell(a.spell).map(|s| (a, s)));
         // how long the foe cannot answer: it is gathering a spell, recovering from one, or staggered
@@ -180,14 +178,11 @@ impl FirstMind {
             });
         // a foe on the floor cannot be touched: a blow is only worth starting if it lands once the foe is up
         let open = foe.body.open_in();
-        let free = !foe.body.reeling()
-            && foe.act.is_none()
-            && foe.body.frozen == 0.0
-            && foe.body.shocked == 0.0;
+        let free = !foe.body.reeling() && foe.act.is_none() && foe.body.shocked == 0.0;
         let striking =
             fact.is_some_and(|(_, s)| matches!(s.kind, Kind::Melee | Kind::Blast | Kind::Dash));
         let opening = foe.body.out_for()
-            + foe.body.frozen
+            + foe.root
             + foe.body.shocked
             + match fact {
                 None => 0.0,
@@ -196,7 +191,7 @@ impl FirstMind {
                 Some((a, s)) => s.windup - a.t + s.recover,
             };
         // ahead on life, a miss costs more than it gains; behind, less
-        let lead = clamp((me.hp - foe.hp) / 40.0, -1.0, 1.0);
+        let lead = clamp((me.hp() - foe.hp()) / 40.0, -1.0, 1.0);
         let value = |name: &str, chance: f64, lands: Option<f64>| -> f64 {
             let Some(s) = spell(name) else { return 0.0 };
             let lands = lands.unwrap_or(s.windup);
@@ -355,7 +350,7 @@ impl FirstMind {
             // a fire or a vortex under the foe: worth it on a foe that cannot leave it soon
             if s.kind == Kind::Void
                 && ready(me, name)
-                && (busy > 0.4 || foe.body.frozen > 0.0 || foe.hp < 75.0)
+                && (busy > 0.4 || foe.root > 0.0 || foe.hp() < 75.0)
             {
                 // it lands its blow when it ends, burning on the way
                 out.push(opt(
@@ -381,7 +376,7 @@ impl FirstMind {
             }
         }
         // `me.shield === 0` in the JS never holds (fighters have `charges`, not `shield`): the first mind never wards
-        if ready(me, "heal") && me.hp < 50.0 {
+        if ready(me, "heal") && me.hp() < 50.0 {
             let safe = if d > 240.0 && foe.act.is_none() {
                 1.0
             } else if busy > 1.0 {
@@ -392,7 +387,7 @@ impl FirstMind {
             let amount = sp("heal").and_then(|s| s.amount).unwrap_or(0.0);
             out.push(opt(
                 What::Cast("heal", None),
-                amount * safe * (1.0 - me.hp / 100.0),
+                amount * safe * (1.0 - me.hp() / 100.0),
             ));
         }
         out
@@ -406,8 +401,8 @@ impl FirstMind {
                 .iter()
                 .any(|n| spell(n).is_some_and(|s| kinds.contains(&s.kind)))
         };
-        let sch = school(me.school);
-        let casting = me.qi >= 25.0;
+        let sch = &MIND;
+        let casting = me.qi() >= 25.0;
         let slash_range = spell("slash").and_then(|s| s.range).unwrap_or(0.0);
         let range = if !casting {
             sch.dry * UNIT
@@ -473,14 +468,14 @@ impl FirstMind {
                 out.push(opt(What::Cast("blink", Some(behind)), 2.5));
             }
         }
-        // the height it wants: its school's while it has the qi, the foe's when it must close in with a blade
-        let mut want = if me.qi > 40.0 && has(&[Kind::Bolt, Kind::Orb, Kind::Zone, Kind::Void]) {
+        // the height it wants: its own while it has the qi, the foe's when it must close in with a blade
+        let mut want = if me.qi() > 40.0 && has(&[Kind::Bolt, Kind::Orb, Kind::Zone, Kind::Void]) {
             sch.sky * UNIT
         } else {
             0.0
         };
         if !casting || d.abs() < 160.0 {
-            want = if foe.body.air > 64.0 && me.qi > 20.0 {
+            want = if foe.body.air > 64.0 && me.qi() > 20.0 {
                 js_min(state.top, foe.body.air)
             } else {
                 want
@@ -495,14 +490,14 @@ impl FirstMind {
             out.push(opt(What::Jump, 1.3));
         }
         let threatened = state.shots.iter().any(|s| s.owner != me.index);
-        if me.qi < 45.0
+        if me.qi() < 45.0
             && d.abs() > 280.0
             && !threatened
             && foe.act.is_none()
             && me.body.air == 0.0
             && !me.fly
         {
-            out.push(opt(What::Meditate, 2.2 - me.qi / 40.0));
+            out.push(opt(What::Meditate, 2.2 - me.qi() / 40.0));
         }
         out
     }
@@ -601,7 +596,10 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
             continue;
         }
         match s.kind {
-            ShotKind::Bolt { x: sx, y: sy, vx } => {
+            ShotKind::Bolt { .. } => {
+                let Some((sx, sy, vx)) = s.bolt_at(state) else {
+                    continue;
+                };
                 let toward = js_sign(x - sx) == js_sign(vx);
                 let tti = (x - sx).abs() / vx.abs();
                 if !toward
@@ -623,7 +621,7 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
                     out.push(opt(What::Duck(tti + 0.12), urgency * 1.2));
                 }
                 // on the sword: rise over it, or sink under it
-                if me.qi > 12.0 && tti > 0.15 {
+                if me.qi() > 12.0 && tti > 0.15 {
                     let over = sy + 16.0;
                     if over < state.top {
                         out.push(opt(What::Fly(over), urgency * 1.15));
@@ -677,7 +675,7 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
                     js_sign(dx)
                 };
                 out.push(opt(What::Move(way), urgency * 1.3));
-                if sp.grounded && me.qi > 12.0 {
+                if sp.grounded && me.qi() > 12.0 {
                     out.push(opt(What::Fly(96.0), urgency * 1.35));
                 }
                 blink(&mut out, zx, urgency * if left < 0.3 { 1.4 } else { 0.6 });
