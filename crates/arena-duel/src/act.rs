@@ -275,6 +275,15 @@ pub fn advance(state: &mut State, me: usize, dt: f64) {
     pose(state, me);
 }
 
+/// The whole span of `act`'s phase: its wind-up, or its recovery as the rules keep it (`recover_of`); what the drawn
+/// body stretches the phase's frames over (`pick::appearance`).
+pub fn phase_span(act: &Act) -> f64 {
+    match act.phase {
+        Phase::Windup => act.windup,
+        Phase::Recover => recover_of(act),
+    }
+}
+
 /// How long `act` recovers: an unsafe skill whose blow was guarded recovers longer.
 pub fn recover_of(act: &Act) -> f64 {
     if act.blocked && FRAMES.unsafe_on_block.contains(&act.spell) {

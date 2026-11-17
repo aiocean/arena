@@ -167,6 +167,10 @@ The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `da
 - **A blow during a windup breaks the cast**: the cast is lost.
 - **Counter:** a blow on a fighter in its windup does 1.2x (the damage system's step 10) and staggers 0.10 s longer.
 - **Punish:** a blow on a fighter in its recover does 1.2x and staggers 0.20 s longer.
+- **The body shows both windows for exactly as long as they are open.** A skill's clip is split at its active frame:
+  the windup plays the first part stretched over the act's windup, the recover the rest stretched over its recover
+  (longer when an unsafe blow was guarded). A fighter looks open, and is hit where it is drawn, until it can act again,
+  never back in its stance while still punishable.
 - **Unsafe on block:** dive, step, palm, burst, lotus and the heavy dashes and blasts recover 0.15 s longer when their
   blow is guarded.
 - A field's strike (void) gives neither a counter nor a punish.

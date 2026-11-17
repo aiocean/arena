@@ -81,7 +81,8 @@ fn shown(state: &State, f: usize) -> Option<(&'static str, usize)> {
         b.pose,
         b.pose_t,
         !fi.alive(),
-        fi.act.map(|a| (a.spell, a.phase, a.t)),
+        fi.act
+            .map(|a| (a.spell, a.phase, a.t, crate::act::phase_span(&a))),
     );
     let shot = pick(
         &a,
@@ -158,7 +159,8 @@ fn act_clip(state: &State, f: usize) -> Option<&'static str> {
         fi.body.pose,
         fi.body.pose_t,
         false,
-        fi.act.map(|a| (a.spell, a.phase, a.t)),
+        fi.act
+            .map(|a| (a.spell, a.phase, a.t, crate::act::phase_span(&a))),
     )
     .act?;
     Some(match (a.how, a.dive) {

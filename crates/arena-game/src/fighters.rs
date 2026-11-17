@@ -103,7 +103,7 @@ pub fn appearance(f: &FighterView) -> Appearance {
         f.pose,
         f.pose_t,
         f.hp <= 0.0,
-        f.act.map(|a| (a.spell, a.phase, a.t)),
+        f.act.map(|a| (a.spell, a.phase, a.t, a.span)),
     )
 }
 

@@ -1,336 +1,336 @@
-thunder slash              slash    frames 14 active  3 at 20 fps | windup 0.20 s (15 fps) recover 0.32 s, drawn 0.50 s | ok
-thunder dive               overhead frames 14 active  1 at 20 fps | windup 0.22 s (5 fps) recover 0.50 s, drawn 0.60 s | choppy
-thunder blink              cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.10 s | ok
-thunder step               dash     frames 16 active  1 at 20 fps | windup 0.26 s (4 fps) recover 0.45 s, drawn 0.70 s | choppy
-thunder palm               cast     frames 13 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder burst              cast     frames 13 active 10 at 20 fps | windup 0.36 s (28 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder lotus              cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder ancientgod         cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.55 s, drawn 0.10 s | open_short
-thunder slashluo           dash     frames 16 active  1 at 20 fps | windup 0.30 s (3 fps) recover 0.50 s, drawn 0.70 s | choppy
-thunder onestep            dash     frames 16 active  1 at 20 fps | windup 0.20 s (5 fps) recover 0.40 s, drawn 0.70 s | choppy
-thunder nineturn           cast     frames 13 active 10 at 20 fps | windup 0.85 s (12 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder vermilion          cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder heavenlychop       cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder fireescape         dash     frames 16 active  1 at 20 fps | windup 0.22 s (5 fps) recover 0.40 s, drawn 0.70 s | choppy
-thunder warprint           cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder sevencolor         dash     frames 16 active  1 at 20 fps | windup 0.28 s (4 fps) recover 0.45 s, drawn 0.70 s | choppy
-thunder devour             cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder hundredfist        slash    frames 14 active  3 at 20 fps | windup 0.30 s (10 fps) recover 0.45 s, drawn 0.50 s | ok
-thunder tenfist            slash    frames 14 active  3 at 20 fps | windup 0.40 s (8 fps) recover 0.60 s, drawn 0.50 s | choppy open_short
-thunder manshen            slash    frames 14 active  3 at 20 fps | windup 0.40 s (8 fps) recover 0.60 s, drawn 0.50 s | choppy open_short
-thunder devourbody         dash     frames 16 active  1 at 20 fps | windup 0.25 s (4 fps) recover 0.45 s, drawn 0.70 s | choppy
-thunder autumn             cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder manspear           dash     frames 16 active  1 at 20 fps | windup 0.30 s (3 fps) recover 0.50 s, drawn 0.70 s | choppy
-thunder godquake           cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder bolt               cast     frames 13 active 10 at 20 fps | windup 0.28 s (36 fps) recover 0.22 s, drawn 0.10 s | open_short
-thunder orb                cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder spark              cast     frames 13 active 10 at 20 fps | windup 0.18 s (56 fps) recover 0.18 s, drawn 0.10 s | open_short
-thunder fireball           cast     frames 13 active 10 at 20 fps | windup 0.26 s (38 fps) recover 0.24 s, drawn 0.10 s | open_short
-thunder finger             cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder jithunder          cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder demonfinger        cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder tigerflag          cast     frames 13 active 10 at 20 fps | windup 0.34 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder celestialslaughter cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder spiritchange       cast     frames 13 active 10 at 20 fps | windup 0.28 s (36 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder thirdeye           cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder seize              cast     frames 13 active 10 at 20 fps | windup 0.25 s (40 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder voidnail           cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder springsoul         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder jet                cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder extremesense       cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder bodyfix            cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder silentfinger       cast     frames 13 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder fivearrows         cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder libow              cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder godfinger          cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder slaughterbolt      cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder summonwind         cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder seal               cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder collapse           cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder quake              cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder gravity            cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder earthsplit         cast     frames 13 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder gather             cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder mountain           cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder ancientthunder     cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder fingerdeath        cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder flameorigin        cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder eightextremes      cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder yinmoon            cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder restriction        cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder plumblossom        cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder lifedeath          cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder remnantnight       cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder heavenflip         cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder umbrella           cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder starfall           cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder timerestrict       cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder servitude          cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder soulvortex         cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder starrotation       cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder truefalse          cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder spiritsummon       cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder threerestrict      cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder movemountain       cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder karmaseal          cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder void               cast     frames 13 active 10 at 20 fps | windup 0.90 s (11 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder arsenal            cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder summonrain         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder beans              cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder lifedeathrestrict  cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder soulbanner         cast     frames 13 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder ghostsummon        cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder daoyellow          cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder wanderingsouls     cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder restrictbanner     cast     frames 13 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder yellowfinger       cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder moonwing           cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder heartbeat          cast     frames 13 active 10 at 20 fps | windup 0.24 s (42 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder kunjiwhip          cast     frames 13 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder soulsearch         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder dreamdao           cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder yellowspring       cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder starsoul           cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder hex                cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder strawknot          cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder ancestorcurse      cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder exposemark         cast     frames 13 active 10 at 20 fps | windup 0.25 s (40 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder ward               cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder bell               cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder mirror             cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder lightshield        cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder ancientprotect     cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder karma              cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder dreamback          cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder meritspirit        cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder heal               cast     frames 13 active 10 at 20 fps | windup 0.85 s (12 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder indestructible     cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder flowingmoon        cast     frames 13 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder soulrefine         cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder bodyformation      cast     frames 13 active 10 at 20 fps | windup 0.75 s (13 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder godform            cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder fate               cast     frames 13 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder inchearth          cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.10 s | ok
-thunder earthescape        cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder ancientcauldron    cast     frames 13 active 10 at 20 fps | windup 0.20 s (50 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder starcompass        cast     frames 13 active 10 at 20 fps | windup 0.10 s (100 fps) recover 0.20 s, drawn 0.10 s | open_short
-thunder teleport           cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.10 s | ok
-thunder slaughteraura      cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder timeaura           cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder tribulation        cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.10 s | open_short
-thunder remnantdusk        cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.10 s | open_short
-thunder sukiep             cast     frames 13 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.10 s | open_short
-thunder daofusion          cast     frames 13 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder banspear           cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder thunderchart       cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder starbreak          cast     frames 13 active 10 at 20 fps | windup 0.36 s (28 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder defiance           cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.10 s | ok
-thunder warseal            cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder fourforms          cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder soulmerge          cast     frames 13 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder soulburst          cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder bloodpowder        cast     frames 13 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder threeslay          cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder liphong            cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder timereverse        cast     frames 13 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.10 s | open_short
-thunder cursewords         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder fourseasons        cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder realfake           cast     frames 13 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.50 s, drawn 0.10 s | open_short
-thunder heaventhread       cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder bannertribulation  cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.10 s | open_short
-thunder manhair            cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder skyqueen           cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.10 s | open_short
-thunder soularmour         cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder deathlessbreath    cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder ninedeaths         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder deathseal          cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder fiveorgans         cast     frames 13 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder threebreaths       cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder bindingword        cast     frames 13 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder sealgod            cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder agingcurse         cast     frames 13 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder stillwind          cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder fixedrule          cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder truepressure       cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder windrain           cast     frames 13 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.10 s | open_short
-thunder belief             cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder waraura            cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder ease               cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder dispassion         cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder frenzy             cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder moods              cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder rebirth            cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder desire             cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder soullock           cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder memory             cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder infatuation        cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder severance          cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-thunder charm              cast     frames 13 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.10 s | open_short
-frost   slash              slash    frames 12 active  5 at 20 fps | windup 0.20 s (25 fps) recover 0.32 s, drawn 0.30 s | ok
-frost   dive               overhead frames 15 active  6 at 20 fps | windup 0.22 s (27 fps) recover 0.50 s, drawn 0.40 s | open_short
-frost   blink              cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.15 s | ok
-frost   step               dash     frames 16 active  2 at 20 fps | windup 0.26 s (8 fps) recover 0.45 s, drawn 0.65 s | choppy
-frost   palm               cast     frames 14 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   burst              cast     frames 14 active 10 at 20 fps | windup 0.36 s (28 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   lotus              cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   ancientgod         cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.55 s, drawn 0.15 s | open_short
-frost   slashluo           dash     frames 16 active  2 at 20 fps | windup 0.30 s (7 fps) recover 0.50 s, drawn 0.65 s | choppy
-frost   onestep            dash     frames 16 active  2 at 20 fps | windup 0.20 s (10 fps) recover 0.40 s, drawn 0.65 s | ok
-frost   nineturn           cast     frames 14 active 10 at 20 fps | windup 0.85 s (12 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   vermilion          cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   heavenlychop       cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   fireescape         dash     frames 16 active  2 at 20 fps | windup 0.22 s (9 fps) recover 0.40 s, drawn 0.65 s | choppy
-frost   warprint           cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   sevencolor         dash     frames 16 active  2 at 20 fps | windup 0.28 s (7 fps) recover 0.45 s, drawn 0.65 s | choppy
-frost   devour             cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   hundredfist        slash    frames 12 active  5 at 20 fps | windup 0.30 s (17 fps) recover 0.45 s, drawn 0.30 s | open_short
-frost   tenfist            slash    frames 12 active  5 at 20 fps | windup 0.40 s (12 fps) recover 0.60 s, drawn 0.30 s | open_short
-frost   manshen            slash    frames 12 active  5 at 20 fps | windup 0.40 s (12 fps) recover 0.60 s, drawn 0.30 s | open_short
-frost   devourbody         dash     frames 16 active  2 at 20 fps | windup 0.25 s (8 fps) recover 0.45 s, drawn 0.65 s | choppy
-frost   autumn             cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   manspear           dash     frames 16 active  2 at 20 fps | windup 0.30 s (7 fps) recover 0.50 s, drawn 0.65 s | choppy
-frost   godquake           cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   bolt               cast     frames 14 active 10 at 20 fps | windup 0.28 s (36 fps) recover 0.22 s, drawn 0.15 s | open_short
-frost   orb                cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   spark              cast     frames 14 active 10 at 20 fps | windup 0.18 s (56 fps) recover 0.18 s, drawn 0.15 s | ok
-frost   fireball           cast     frames 14 active 10 at 20 fps | windup 0.26 s (38 fps) recover 0.24 s, drawn 0.15 s | open_short
-frost   finger             cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   jithunder          cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   demonfinger        cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   tigerflag          cast     frames 14 active 10 at 20 fps | windup 0.34 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   celestialslaughter cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   spiritchange       cast     frames 14 active 10 at 20 fps | windup 0.28 s (36 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   thirdeye           cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   seize              cast     frames 14 active 10 at 20 fps | windup 0.25 s (40 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   voidnail           cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   springsoul         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   jet                cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   extremesense       cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   bodyfix            cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   silentfinger       cast     frames 14 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   fivearrows         cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   libow              cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   godfinger          cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   slaughterbolt      cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   summonwind         cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   seal               cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   collapse           cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   quake              cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   gravity            cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   earthsplit         cast     frames 14 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   gather             cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   mountain           cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   ancientthunder     cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   fingerdeath        cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   flameorigin        cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   eightextremes      cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   yinmoon            cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   restriction        cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   plumblossom        cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   lifedeath          cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   remnantnight       cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   heavenflip         cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   umbrella           cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   starfall           cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   timerestrict       cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   servitude          cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   soulvortex         cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   starrotation       cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   truefalse          cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   spiritsummon       cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   threerestrict      cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   movemountain       cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   karmaseal          cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   void               cast     frames 14 active 10 at 20 fps | windup 0.90 s (11 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   arsenal            cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   summonrain         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   beans              cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   lifedeathrestrict  cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   soulbanner         cast     frames 14 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   ghostsummon        cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   daoyellow          cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   wanderingsouls     cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   restrictbanner     cast     frames 14 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   yellowfinger       cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   moonwing           cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   heartbeat          cast     frames 14 active 10 at 20 fps | windup 0.24 s (42 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   kunjiwhip          cast     frames 14 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   soulsearch         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   dreamdao           cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   yellowspring       cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   starsoul           cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   hex                cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   strawknot          cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   ancestorcurse      cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   exposemark         cast     frames 14 active 10 at 20 fps | windup 0.25 s (40 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   ward               cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   bell               cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   mirror             cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   lightshield        cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   ancientprotect     cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   karma              cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   dreamback          cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   meritspirit        cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   heal               cast     frames 14 active 10 at 20 fps | windup 0.85 s (12 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   indestructible     cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   flowingmoon        cast     frames 14 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   soulrefine         cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   bodyformation      cast     frames 14 active 10 at 20 fps | windup 0.75 s (13 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   godform            cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   fate               cast     frames 14 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   inchearth          cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.15 s | ok
-frost   earthescape        cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   ancientcauldron    cast     frames 14 active 10 at 20 fps | windup 0.20 s (50 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   starcompass        cast     frames 14 active 10 at 20 fps | windup 0.10 s (100 fps) recover 0.20 s, drawn 0.15 s | ok
-frost   teleport           cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.12 s, drawn 0.15 s | ok
-frost   slaughteraura      cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   timeaura           cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   tribulation        cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.15 s | open_short
-frost   remnantdusk        cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.15 s | open_short
-frost   sukiep             cast     frames 14 active 10 at 20 fps | windup 0.70 s (14 fps) recover 0.80 s, drawn 0.15 s | open_short
-frost   daofusion          cast     frames 14 active 10 at 20 fps | windup 0.80 s (12 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   banspear           cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   thunderchart       cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   starbreak          cast     frames 14 active 10 at 20 fps | windup 0.36 s (28 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   defiance           cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.10 s, drawn 0.15 s | ok
-frost   warseal            cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   fourforms          cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   soulmerge          cast     frames 14 active 10 at 20 fps | windup 0.55 s (18 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   soulburst          cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   bloodpowder        cast     frames 14 active 10 at 20 fps | windup 0.32 s (31 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   threeslay          cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   liphong            cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   timereverse        cast     frames 14 active 10 at 20 fps | windup 0.30 s (33 fps) recover 0.25 s, drawn 0.15 s | open_short
-frost   cursewords         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   fourseasons        cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   realfake           cast     frames 14 active 10 at 20 fps | windup 0.06 s (167 fps) recover 0.50 s, drawn 0.15 s | open_short
-frost   heaventhread       cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   bannertribulation  cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.45 s, drawn 0.15 s | open_short
-frost   manhair            cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   skyqueen           cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.35 s, drawn 0.15 s | open_short
-frost   soularmour         cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   deathlessbreath    cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   ninedeaths         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   deathseal          cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   fiveorgans         cast     frames 14 active 10 at 20 fps | windup 0.45 s (22 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   threebreaths       cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   bindingword        cast     frames 14 active 10 at 20 fps | windup 0.35 s (29 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   sealgod            cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   agingcurse         cast     frames 14 active 10 at 20 fps | windup 0.40 s (25 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   stillwind          cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   fixedrule          cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   truepressure       cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   windrain           cast     frames 14 active 10 at 20 fps | windup 0.60 s (17 fps) recover 0.40 s, drawn 0.15 s | open_short
-frost   belief             cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   waraura            cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   ease               cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   dispassion         cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   frenzy             cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   moods              cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   rebirth            cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   desire             cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   soullock           cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   memory             cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   infatuation        cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   severance          cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
-frost   charm              cast     frames 14 active 10 at 20 fps | windup 0.50 s (20 fps) recover 0.30 s, drawn 0.15 s | open_short
+thunder slash              slash    frames 14 active  3 | windup 0.20 s (15 fps) recover 0.32 s (31 fps) | ok
+thunder dive               overhead frames 14 active  1 | windup 0.22 s (5 fps) recover 0.50 s (24 fps) | choppy
+thunder blink              cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.12 s (17 fps) | ok
+thunder step               dash     frames 16 active  1 | windup 0.26 s (4 fps) recover 0.45 s (31 fps) | choppy
+thunder palm               cast     frames 13 active 10 | windup 0.32 s (31 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder burst              cast     frames 13 active 10 | windup 0.36 s (28 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder lotus              cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder ancientgod         cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.55 s (4 fps) | choppy_recover
+thunder slashluo           dash     frames 16 active  1 | windup 0.30 s (3 fps) recover 0.50 s (28 fps) | choppy
+thunder onestep            dash     frames 16 active  1 | windup 0.20 s (5 fps) recover 0.40 s (35 fps) | choppy
+thunder nineturn           cast     frames 13 active 10 | windup 0.85 s (12 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder vermilion          cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder heavenlychop       cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder fireescape         dash     frames 16 active  1 | windup 0.22 s (5 fps) recover 0.40 s (35 fps) | choppy
+thunder warprint           cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder sevencolor         dash     frames 16 active  1 | windup 0.28 s (4 fps) recover 0.45 s (31 fps) | choppy
+thunder devour             cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder hundredfist        slash    frames 14 active  3 | windup 0.30 s (10 fps) recover 0.45 s (22 fps) | ok
+thunder tenfist            slash    frames 14 active  3 | windup 0.40 s (8 fps) recover 0.60 s (17 fps) | choppy
+thunder manshen            slash    frames 14 active  3 | windup 0.40 s (8 fps) recover 0.60 s (17 fps) | choppy
+thunder devourbody         dash     frames 16 active  1 | windup 0.25 s (4 fps) recover 0.45 s (31 fps) | choppy
+thunder autumn             cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder manspear           dash     frames 16 active  1 | windup 0.30 s (3 fps) recover 0.50 s (28 fps) | choppy
+thunder godquake           cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder bolt               cast     frames 13 active 10 | windup 0.28 s (36 fps) recover 0.22 s (9 fps) | choppy_recover
+thunder orb                cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder spark              cast     frames 13 active 10 | windup 0.18 s (56 fps) recover 0.18 s (11 fps) | ok
+thunder fireball           cast     frames 13 active 10 | windup 0.26 s (38 fps) recover 0.24 s (8 fps) | choppy_recover
+thunder finger             cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder jithunder          cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder demonfinger        cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder tigerflag          cast     frames 13 active 10 | windup 0.34 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder celestialslaughter cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder spiritchange       cast     frames 13 active 10 | windup 0.28 s (36 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder thirdeye           cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder seize              cast     frames 13 active 10 | windup 0.25 s (40 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder voidnail           cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder springsoul         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder jet                cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder extremesense       cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder bodyfix            cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder silentfinger       cast     frames 13 active 10 | windup 0.32 s (31 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder fivearrows         cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder libow              cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder godfinger          cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder slaughterbolt      cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder summonwind         cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder seal               cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder collapse           cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder quake              cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder gravity            cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder earthsplit         cast     frames 13 active 10 | windup 0.32 s (31 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder gather             cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder mountain           cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder ancientthunder     cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder fingerdeath        cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder flameorigin        cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder eightextremes      cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder yinmoon            cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder restriction        cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder plumblossom        cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder lifedeath          cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder remnantnight       cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder heavenflip         cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder umbrella           cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder starfall           cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder timerestrict       cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder servitude          cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder soulvortex         cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder starrotation       cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder truefalse          cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder spiritsummon       cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder threerestrict      cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder movemountain       cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder karmaseal          cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder void               cast     frames 13 active 10 | windup 0.90 s (11 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder arsenal            cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder summonrain         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder beans              cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder lifedeathrestrict  cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder soulbanner         cast     frames 13 active 10 | windup 0.55 s (18 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder ghostsummon        cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder daoyellow          cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder wanderingsouls     cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder restrictbanner     cast     frames 13 active 10 | windup 0.55 s (18 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder yellowfinger       cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder moonwing           cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder heartbeat          cast     frames 13 active 10 | windup 0.24 s (42 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder kunjiwhip          cast     frames 13 active 10 | windup 0.32 s (31 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder soulsearch         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder dreamdao           cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder yellowspring       cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder starsoul           cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder hex                cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder strawknot          cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder ancestorcurse      cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder exposemark         cast     frames 13 active 10 | windup 0.25 s (40 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder ward               cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder bell               cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder mirror             cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder lightshield        cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder ancientprotect     cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder karma              cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder dreamback          cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder meritspirit        cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder heal               cast     frames 13 active 10 | windup 0.85 s (12 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder indestructible     cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder flowingmoon        cast     frames 13 active 10 | windup 0.80 s (12 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder soulrefine         cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder bodyformation      cast     frames 13 active 10 | windup 0.75 s (13 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder godform            cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder fate               cast     frames 13 active 10 | windup 0.80 s (12 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder inchearth          cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.12 s (17 fps) | ok
+thunder earthescape        cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder ancientcauldron    cast     frames 13 active 10 | windup 0.20 s (50 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder starcompass        cast     frames 13 active 10 | windup 0.10 s (100 fps) recover 0.20 s (10 fps) | ok
+thunder teleport           cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.12 s (17 fps) | ok
+thunder slaughteraura      cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder timeaura           cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder tribulation        cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.80 s (2 fps) | choppy_recover
+thunder remnantdusk        cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.80 s (2 fps) | choppy_recover
+thunder sukiep             cast     frames 13 active 10 | windup 0.70 s (14 fps) recover 0.80 s (2 fps) | choppy_recover
+thunder daofusion          cast     frames 13 active 10 | windup 0.80 s (12 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder banspear           cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder thunderchart       cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder starbreak          cast     frames 13 active 10 | windup 0.36 s (28 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder defiance           cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.10 s (20 fps) | ok
+thunder warseal            cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder fourforms          cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder soulmerge          cast     frames 13 active 10 | windup 0.55 s (18 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder soulburst          cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder bloodpowder        cast     frames 13 active 10 | windup 0.32 s (31 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder threeslay          cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder liphong            cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder timereverse        cast     frames 13 active 10 | windup 0.30 s (33 fps) recover 0.25 s (8 fps) | choppy_recover
+thunder cursewords         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder fourseasons        cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder realfake           cast     frames 13 active 10 | windup 0.06 s (167 fps) recover 0.50 s (4 fps) | choppy_recover
+thunder heaventhread       cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder bannertribulation  cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.45 s (4 fps) | choppy_recover
+thunder manhair            cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder skyqueen           cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.35 s (6 fps) | choppy_recover
+thunder soularmour         cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder deathlessbreath    cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder ninedeaths         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder deathseal          cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder fiveorgans         cast     frames 13 active 10 | windup 0.45 s (22 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder threebreaths       cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder bindingword        cast     frames 13 active 10 | windup 0.35 s (29 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder sealgod            cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder agingcurse         cast     frames 13 active 10 | windup 0.40 s (25 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder stillwind          cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder fixedrule          cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder truepressure       cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder windrain           cast     frames 13 active 10 | windup 0.60 s (17 fps) recover 0.40 s (5 fps) | choppy_recover
+thunder belief             cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder waraura            cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder ease               cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder dispassion         cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder frenzy             cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder moods              cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder rebirth            cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder desire             cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder soullock           cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder memory             cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder infatuation        cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder severance          cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+thunder charm              cast     frames 13 active 10 | windup 0.50 s (20 fps) recover 0.30 s (7 fps) | choppy_recover
+frost   slash              slash    frames 12 active  5 | windup 0.20 s (25 fps) recover 0.32 s (19 fps) | ok
+frost   dive               overhead frames 15 active  6 | windup 0.22 s (27 fps) recover 0.50 s (16 fps) | ok
+frost   blink              cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.12 s (25 fps) | ok
+frost   step               dash     frames 16 active  2 | windup 0.26 s (8 fps) recover 0.45 s (29 fps) | choppy
+frost   palm               cast     frames 14 active 10 | windup 0.32 s (31 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   burst              cast     frames 14 active 10 | windup 0.36 s (28 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   lotus              cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   ancientgod         cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.55 s (5 fps) | choppy_recover
+frost   slashluo           dash     frames 16 active  2 | windup 0.30 s (7 fps) recover 0.50 s (26 fps) | choppy
+frost   onestep            dash     frames 16 active  2 | windup 0.20 s (10 fps) recover 0.40 s (32 fps) | ok
+frost   nineturn           cast     frames 14 active 10 | windup 0.85 s (12 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   vermilion          cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   heavenlychop       cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   fireescape         dash     frames 16 active  2 | windup 0.22 s (9 fps) recover 0.40 s (32 fps) | choppy
+frost   warprint           cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   sevencolor         dash     frames 16 active  2 | windup 0.28 s (7 fps) recover 0.45 s (29 fps) | choppy
+frost   devour             cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   hundredfist        slash    frames 12 active  5 | windup 0.30 s (17 fps) recover 0.45 s (13 fps) | ok
+frost   tenfist            slash    frames 12 active  5 | windup 0.40 s (12 fps) recover 0.60 s (10 fps) | ok
+frost   manshen            slash    frames 12 active  5 | windup 0.40 s (12 fps) recover 0.60 s (10 fps) | ok
+frost   devourbody         dash     frames 16 active  2 | windup 0.25 s (8 fps) recover 0.45 s (29 fps) | choppy
+frost   autumn             cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   manspear           dash     frames 16 active  2 | windup 0.30 s (7 fps) recover 0.50 s (26 fps) | choppy
+frost   godquake           cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   bolt               cast     frames 14 active 10 | windup 0.28 s (36 fps) recover 0.22 s (14 fps) | ok
+frost   orb                cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.30 s (10 fps) | ok
+frost   spark              cast     frames 14 active 10 | windup 0.18 s (56 fps) recover 0.18 s (17 fps) | ok
+frost   fireball           cast     frames 14 active 10 | windup 0.26 s (38 fps) recover 0.24 s (12 fps) | ok
+frost   finger             cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   jithunder          cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.25 s (12 fps) | ok
+frost   demonfinger        cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.25 s (12 fps) | ok
+frost   tigerflag          cast     frames 14 active 10 | windup 0.34 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   celestialslaughter cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   spiritchange       cast     frames 14 active 10 | windup 0.28 s (36 fps) recover 0.25 s (12 fps) | ok
+frost   thirdeye           cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.25 s (12 fps) | ok
+frost   seize              cast     frames 14 active 10 | windup 0.25 s (40 fps) recover 0.25 s (12 fps) | ok
+frost   voidnail           cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   springsoul         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   jet                cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   extremesense       cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.25 s (12 fps) | ok
+frost   bodyfix            cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   silentfinger       cast     frames 14 active 10 | windup 0.32 s (31 fps) recover 0.25 s (12 fps) | ok
+frost   fivearrows         cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.30 s (10 fps) | ok
+frost   libow              cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   godfinger          cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   slaughterbolt      cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   summonwind         cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   seal               cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.30 s (10 fps) | ok
+frost   collapse           cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   quake              cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.30 s (10 fps) | ok
+frost   gravity            cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.30 s (10 fps) | ok
+frost   earthsplit         cast     frames 14 active 10 | windup 0.32 s (31 fps) recover 0.30 s (10 fps) | ok
+frost   gather             cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   mountain           cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   ancientthunder     cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   fingerdeath        cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   flameorigin        cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   eightextremes      cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   yinmoon            cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   restriction        cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   plumblossom        cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   lifedeath          cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   remnantnight       cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   heavenflip         cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   umbrella           cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   starfall           cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   timerestrict       cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   servitude          cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   soulvortex         cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   starrotation       cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   truefalse          cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   spiritsummon       cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   threerestrict      cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   movemountain       cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   karmaseal          cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   void               cast     frames 14 active 10 | windup 0.90 s (11 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   arsenal            cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   summonrain         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   beans              cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   lifedeathrestrict  cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   soulbanner         cast     frames 14 active 10 | windup 0.55 s (18 fps) recover 0.30 s (10 fps) | ok
+frost   ghostsummon        cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.30 s (10 fps) | ok
+frost   daoyellow          cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   wanderingsouls     cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.30 s (10 fps) | ok
+frost   restrictbanner     cast     frames 14 active 10 | windup 0.55 s (18 fps) recover 0.30 s (10 fps) | ok
+frost   yellowfinger       cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   moonwing           cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.30 s (10 fps) | ok
+frost   heartbeat          cast     frames 14 active 10 | windup 0.24 s (42 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   kunjiwhip          cast     frames 14 active 10 | windup 0.32 s (31 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   soulsearch         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   dreamdao           cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   yellowspring       cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   starsoul           cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   hex                cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.25 s (12 fps) | ok
+frost   strawknot          cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   ancestorcurse      cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   exposemark         cast     frames 14 active 10 | windup 0.25 s (40 fps) recover 0.25 s (12 fps) | ok
+frost   ward               cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.25 s (12 fps) | ok
+frost   bell               cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   mirror             cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   lightshield        cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   ancientprotect     cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.25 s (12 fps) | ok
+frost   karma              cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   dreamback          cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.25 s (12 fps) | ok
+frost   meritspirit        cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.25 s (12 fps) | ok
+frost   heal               cast     frames 14 active 10 | windup 0.85 s (12 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   indestructible     cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   flowingmoon        cast     frames 14 active 10 | windup 0.80 s (12 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   soulrefine         cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   bodyformation      cast     frames 14 active 10 | windup 0.75 s (13 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   godform            cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   fate               cast     frames 14 active 10 | windup 0.80 s (12 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   inchearth          cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.12 s (25 fps) | ok
+frost   earthescape        cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   ancientcauldron    cast     frames 14 active 10 | windup 0.20 s (50 fps) recover 0.30 s (10 fps) | ok
+frost   starcompass        cast     frames 14 active 10 | windup 0.10 s (100 fps) recover 0.20 s (15 fps) | ok
+frost   teleport           cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.12 s (25 fps) | ok
+frost   slaughteraura      cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   timeaura           cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   tribulation        cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.80 s (4 fps) | choppy_recover
+frost   remnantdusk        cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.80 s (4 fps) | choppy_recover
+frost   sukiep             cast     frames 14 active 10 | windup 0.70 s (14 fps) recover 0.80 s (4 fps) | choppy_recover
+frost   daofusion          cast     frames 14 active 10 | windup 0.80 s (12 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   banspear           cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   thunderchart       cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   starbreak          cast     frames 14 active 10 | windup 0.36 s (28 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   defiance           cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.10 s (30 fps) | ok
+frost   warseal            cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.25 s (12 fps) | ok
+frost   fourforms          cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   soulmerge          cast     frames 14 active 10 | windup 0.55 s (18 fps) recover 0.30 s (10 fps) | ok
+frost   soulburst          cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   bloodpowder        cast     frames 14 active 10 | windup 0.32 s (31 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   threeslay          cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   liphong            cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   timereverse        cast     frames 14 active 10 | windup 0.30 s (33 fps) recover 0.25 s (12 fps) | ok
+frost   cursewords         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   fourseasons        cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   realfake           cast     frames 14 active 10 | windup 0.06 s (167 fps) recover 0.50 s (6 fps) | choppy_recover
+frost   heaventhread       cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   bannertribulation  cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.45 s (7 fps) | choppy_recover
+frost   manhair            cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   skyqueen           cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.35 s (9 fps) | choppy_recover
+frost   soularmour         cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   deathlessbreath    cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   ninedeaths         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   deathseal          cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   fiveorgans         cast     frames 14 active 10 | windup 0.45 s (22 fps) recover 0.30 s (10 fps) | ok
+frost   threebreaths       cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   bindingword        cast     frames 14 active 10 | windup 0.35 s (29 fps) recover 0.30 s (10 fps) | ok
+frost   sealgod            cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   agingcurse         cast     frames 14 active 10 | windup 0.40 s (25 fps) recover 0.30 s (10 fps) | ok
+frost   stillwind          cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   fixedrule          cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   truepressure       cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   windrain           cast     frames 14 active 10 | windup 0.60 s (17 fps) recover 0.40 s (8 fps) | choppy_recover
+frost   belief             cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   waraura            cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   ease               cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   dispassion         cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   frenzy             cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   moods              cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   rebirth            cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   desire             cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   soullock           cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   memory             cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   infatuation        cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   severance          cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok
+frost   charm              cast     frames 14 active 10 | windup 0.50 s (20 fps) recover 0.30 s (10 fps) | ok

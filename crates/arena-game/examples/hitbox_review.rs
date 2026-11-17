@@ -199,7 +199,8 @@ fn draw_fighter(img: &mut RgbaImage, v: &View, state: &State, f: usize, sheet: &
         b.pose,
         b.pose_t,
         !fi.alive(),
-        fi.act.map(|a| (a.spell, a.phase, a.t)),
+        fi.act
+            .map(|a| (a.spell, a.phase, a.t, arena_duel::act::phase_span(&a))),
     );
     let look = fi.look;
     let shot = pick(
@@ -425,7 +426,8 @@ fn shoot(
         b.pose,
         b.pose_t,
         !fi.alive(),
-        fi.act.map(|a| (a.spell, a.phase, a.t)),
+        fi.act
+            .map(|a| (a.spell, a.phase, a.t, arena_duel::act::phase_span(&a))),
     );
     let sheet = &sheets[if fi.look == Look::Thunder { 0 } else { 1 }];
     let look = fi.look;

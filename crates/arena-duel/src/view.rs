@@ -71,6 +71,8 @@ pub struct ActView {
     pub spell: &'static str,
     pub phase: Phase,
     pub t: f64,
+    /// The whole span of the phase (`act::phase_span`): the drawn body stretches the phase's frames over it.
+    pub span: f64,
 }
 
 /// A unit this tick.
@@ -158,6 +160,7 @@ fn fighter_view(f: &Fighter) -> FighterView {
             spell: a.spell,
             phase: a.phase,
             t: a.t,
+            span: crate::act::phase_span(&a),
         }),
         untouchable: b.untouchable(),
         skill_bar: skill_bar(f),

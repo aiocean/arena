@@ -147,8 +147,10 @@ frames that show the boxes. A skill's windup a foe can counter and its recover i
 the rules keep them open: a change to a skill's `windup` or `recover` re-checks its clip, and a redrawn clip re-checks
 the numbers. `crates/arena-duel/tests/frame_sprite.rs` holds it: every wind-up has a frame of its own, and every
 skill's timing in each look is pinned beside its clip's frames with two verdicts, `choppy` (a wind-up under 10 frames
-a second) and `open_short` (the drawn follow-through ends before the rules' recovery does), so a change to one side
-without the other fails it.
+a second) and `choppy_recover` (a follow-through under 10), so a change to one side without the other fails it. The
+follow-through plays stretched over the rules' recover, as the wind-up does over its windup (`pick`), so the drawn
+body is open exactly as long as the fighter is punishable; a clip with few frames after its active one then shows them
+slowly, which `choppy_recover` names: those clips want more follow-through frames.
 
 ## Spell effects drawn by an image model
 

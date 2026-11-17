@@ -16,41 +16,46 @@ pub struct Appearance {
     pub act: Option<Act>,
 }
 
-/// A cast under way: how it is gathered, whether it is a dive, and how far along its wind-up is.
+/// A cast under way: how it is gathered, whether it is a dive, and how far along its wind-up or its recovery is.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Act {
     pub how: Gather,
     pub dive: bool,
     pub windup: Option<Windup>,
+    pub recover: Option<Windup>,
 }
 
-/// A wind-up's progress, 0 to 1.
+/// A phase's progress (the wind-up's, the recovery's), 0 to 1.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Windup {
     pub progress: f64,
 }
 
 /// What picks a fighter's frame, from what the rules keep of it: its pose and how long it has held it, whether it is
-/// out, and the cast it is gathering (`spell`, its phase and time in it).
+/// out, and the cast it is gathering (`spell`, its phase, its time in it and the phase's whole span: the act's own
+/// wind-up, or its recovery as the rules keep it, longer when an unsafe blow was guarded, `act::phase_span`). Both
+/// phases are drawn over their span, so the body shows the wind-up a foe can counter and the recovery it can punish
+/// for exactly as long as the rules keep them open.
 pub fn appearance(
     pose: Pose,
     pose_t: f64,
     out: bool,
-    act: Option<(&str, Phase, f64)>,
+    act: Option<(&str, Phase, f64, f64)>,
 ) -> Appearance {
-    let act = act.and_then(|(name, phase, t)| {
+    let act = act.and_then(|(name, phase, t, span)| {
         let s = spell(name)?;
-        let windup = (phase == Phase::Windup).then(|| Windup {
-            progress: if s.windup > 0.0 {
-                (t / s.windup).min(1.0)
+        let progress = Windup {
+            progress: if span > 0.0 {
+                (t / span).clamp(0.0, 1.0)
             } else {
                 1.0
             },
-        });
+        };
         Some(Act {
             how: crate::pose::gather_of(s.kind),
             dive: s.dive,
-            windup,
+            windup: (phase == Phase::Windup).then_some(progress),
+            recover: (phase == Phase::Recover).then_some(progress),
         })
     });
     Appearance {
@@ -128,12 +133,18 @@ const fn whole(clip: &'static str, play: Play) -> Part {
 /// The part of an animation `a`'s pose plays. A blade blow and a spell are each one animation split in two at
 /// `split` (a share of the clip: its active frame, where the blade or the hand reaches farthest, or half way): the
 /// wind-up (`Draw`, `Channel`) plays its first part by the wind-up's progress, ending on the frame the rules strike or
-/// cast on, the follow-through (`Slash`, `Cast`) the rest. A blow from the air (`dive`) is the overhead cut; a spell gathered by lunging is the dash.
+/// cast on, the follow-through (`Slash`, `Cast`) the rest by the recovery's progress, reaching its last frame when the
+/// fighter can act again. A blow from the air (`dive`) is the overhead cut; a spell gathered by lunging is the dash.
 fn part_of(a: &Appearance, split: impl Fn(&'static str) -> f64) -> Part {
     let progress = a.act.and_then(|k| k.windup).map(|w| w.progress);
     let windup = |clip, to| match progress {
         Some(p) => part(clip, 0.0, to, Play::At(p)),
         None => part(clip, 0.0, to, Play::Once),
+    };
+    let recovered = a.act.and_then(|k| k.recover).map(|w| w.progress);
+    let follow = |clip, from| match recovered {
+        Some(p) => part(clip, from, 1.0, Play::At(p)),
+        None => part(clip, from, 1.0, Play::Once),
     };
     let blade = if a.act.is_some_and(|k| k.dive) {
         "overhead"
@@ -154,9 +165,9 @@ fn part_of(a: &Appearance, split: impl Fn(&'static str) -> f64) -> Part {
         Pose::Crouch => part("jump", 0.125, 0.125, Play::Once),
         Pose::Duck => part("duck", 0.0, 0.5, Play::Once),
         Pose::Draw => windup(blade, split(blade)),
-        Pose::Slash => part(blade, split(blade), 1.0, Play::Once),
+        Pose::Slash => follow(blade, split(blade)),
         Pose::Channel => windup(spell, split(spell)),
-        Pose::Cast => part(spell, split(spell), 1.0, Play::Once),
+        Pose::Cast => follow(spell, split(spell)),
         Pose::Guard => whole("guard", Play::Once),
         Pose::Meditate => whole("meditate", Play::Once),
         Pose::Hurt => whole("hit", Play::Once),
@@ -261,6 +272,7 @@ mod tests {
                 how: Gather::Palm,
                 dive: false,
                 windup: Some(Windup { progress: p }),
+                recover: None,
             });
             pick_half(&a, 10.0, NINE)
         };
@@ -295,12 +307,34 @@ mod tests {
     }
 
     #[test]
+    fn a_follow_through_plays_by_the_recoverys_progress_and_ends_when_the_fighter_can_act() {
+        let recovering = |p| {
+            let mut a = stand(Pose::Cast, 0.0);
+            a.act = Some(Act {
+                how: Gather::Palm,
+                dive: false,
+                windup: None,
+                recover: Some(Windup { progress: p }),
+            });
+            pick_half(&a, 10.0, NINE).frame
+        };
+        // nine frames split at 4: the recovery runs 4..8 over its span, whatever the sheet's frames a second
+        assert_eq!(
+            (recovering(0.0), recovering(0.5), recovering(1.0)),
+            (4, 6, 8)
+        );
+        // a recovery an act of the rules says nothing of (no act) plays at the sheet's rate, as before
+        assert_eq!(pick_half(&stand(Pose::Cast, 0.2), 10.0, NINE).frame, 6);
+    }
+
+    #[test]
     fn a_blow_from_the_air_is_the_overhead_cut_and_a_lunge_the_dash() {
         let mut a = stand(Pose::Slash, 0.0);
         a.act = Some(Act {
             how: Gather::Palm,
             dive: true,
             windup: None,
+            recover: None,
         });
         assert_eq!(pick_half(&a, 10.0, NINE).clip, "overhead");
         let mut b = stand(Pose::Cast, 0.0);
@@ -308,6 +342,7 @@ mod tests {
             how: Gather::Lunge,
             dive: false,
             windup: None,
+            recover: None,
         });
         assert_eq!(pick_half(&b, 10.0, NINE).clip, "dash");
     }

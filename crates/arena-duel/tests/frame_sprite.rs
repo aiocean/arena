@@ -1,21 +1,21 @@
 //! Frame data and the sprite are one timeline (`art/README.md`, "Frame data and the sprite"), made executable.
 //!
 //! A skill's wind-up plays the first part of its clip, up to the clip's active frame, stretched over its `windup`
-//! (`pick`); its recovery plays the rest at the sheet's frames a second. So the clip a skill plays (`slash`, or
+//! (`pick`); its recovery plays the rest stretched over its `recover`, so the body is drawn open for exactly as long
+//! as the rules keep it punishable. So the clip a skill plays (`slash`, or
 //! `overhead` for a blow from the air, `dash` for a lunge, `cast` for the rest), the clip's frame count and active
 //! frame (`frames_data`, measured from the sheets) and the skill's `windup` and `recover` (`data`) must agree:
 //!
 //! - every wind-up has a frame of its own before the active one (held as a hard rule);
 //! - a wind-up shows at least `SMOOTH` frames a second, or it reads choppy (`choppy`);
-//! - the drawn follow-through lasts as long as the rules keep the fighter open to a punish, give or take a frame, or
-//!   it stands back in its stance while still punishable (`open_short`).
+//! - a recovery shows at least `SMOOTH` frames a second too, or its follow-through reads choppy (`choppy_recover`).
 //!
 //! Every skill's timing in each look, with those verdicts, is pinned in `goldens/frame_sprite.txt`: a skill's
 //! `windup` or `recover` changed without its clip, or a clip redrawn without the skills that play it, fails here,
 //! naming the lines. When the change is meant, look at the new verdicts, then delete the file and run again.
 
 use arena_duel::data::{Kind, Look, spells};
-use arena_duel::frames::{active, fps, len};
+use arena_duel::frames::{active, len};
 use std::fmt::Write as _;
 
 const FILE: &str = concat!(
@@ -40,7 +40,6 @@ fn clip_of(kind: Kind, dive: bool) -> &'static str {
 fn rows() -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for (look, name) in [(Look::Thunder, "thunder"), (Look::Frost, "frost")] {
-        let rate = fps(look);
         for s in spells() {
             let clip = clip_of(s.kind, s.dive);
             let n = len(look, clip);
@@ -52,21 +51,25 @@ fn rows() -> Vec<(String, bool)> {
             } else {
                 f64::INFINITY
             };
-            let follow = (last - act) as f64 / rate;
+            let follow = if s.recover > 0.0 {
+                (last - act) as f64 / s.recover
+            } else {
+                f64::INFINITY
+            };
             let mut verdict = Vec::new();
             if shown < SMOOTH {
                 verdict.push("choppy");
             }
-            if follow + 1.0 / rate < s.recover {
-                verdict.push("open_short");
+            if follow < SMOOTH {
+                verdict.push("choppy_recover");
             }
             let line = format!(
-                "{name:<7} {:<18} {clip:<8} frames {n:>2} active {act:>2} at {rate} fps | windup {:.2} s ({:.0} fps) recover {:.2} s, drawn {:.2} s | {}",
+                "{name:<7} {:<18} {clip:<8} frames {n:>2} active {act:>2} | windup {:.2} s ({:.0} fps) recover {:.2} s ({:.0} fps) | {}",
                 s.name,
                 s.windup,
                 shown.min(999.0),
                 s.recover,
-                follow,
+                follow.min(999.0),
                 if verdict.is_empty() {
                     "ok".to_owned()
                 } else {

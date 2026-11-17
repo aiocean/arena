@@ -438,7 +438,12 @@ mod tests {
     use super::*;
 
     fn act(spell: &'static str, phase: Phase, t: f64) -> ActView {
-        ActView { spell, phase, t }
+        ActView {
+            spell,
+            phase,
+            t,
+            span: 1.0,
+        }
     }
 
     #[test]
