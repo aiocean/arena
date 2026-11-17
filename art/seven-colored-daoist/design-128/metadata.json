@@ -1,0 +1,65 @@
+{
+  "group_id": "541f9302-ec34-4f10-b152-480d09474d6f",
+  "states": [
+    {
+      "character": {
+        "id": "f1676955-0b07-46b0-99e3-219650fdd45b",
+        "name": "Idle",
+        "prompt": "tall slender xianxia daoist sovereign, middle-aged, pale jade-white skin, high cheekbones, long narrow eyes with faint shifting rainbow irises, thin lips with a cold arrogant smirk, standing perfectly upright with chin slightly raised. long black hair in a high topknot crowned by a small seven-petal lotus crown, each petal a different color (red, orange, yellow, green, blue, indigo, violet), two long strands of hair falling over the chest. flowing ivory-white and pale silver daoist robe reaching the floor in a tapering triangle silhouette, very wide sleeves hiding the hands, hems and sleeve cuffs trimmed with seven thin muted rainbow bands in order, dark charcoal sash at the waist. no weapon. faint seven-colored aura mist at the edges of the robe.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-11-17T07:32:28.663009+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "099d4273-7317-4114-bcc0-0fd403233be9",
+        "name": "Idle v2",
+        "prompt": "tall slender xianxia daoist sovereign, middle-aged, pale jade-white skin, high sharp cheekbones, strong jaw, long narrow cold eyes with faint shifting rainbow irises, thin lips with a cold arrogant smirk, thin neat moustache and short thin goatee, standing perfectly upright with chin slightly raised. long black hair in a high topknot crowned by a clearly visible seven-petal lotus crown about as wide as the head, petals fanned upward, each petal a different color (red, orange, yellow, green, blue, indigo, violet), two long strands of hair falling over the chest. flowing ivory-white and pale silver daoist robe reaching the floor in a tapering triangle silhouette, very wide sleeves hiding the hands, hems and sleeve cuffs trimmed with seven thin muted rainbow bands in order, dark charcoal sash at the waist. no weapon. faint seven-colored aura mist at the edges of the robe.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-11-17T07:38:16.401215+00:00"
+      },
+      "folder": "Idle_v2",
+      "frames": {
+        "rotations": {
+          "south": "Idle_v2/rotations/south.png",
+          "south-east": "Idle_v2/rotations/south-east.png",
+          "east": "Idle_v2/rotations/east.png",
+          "north-east": "Idle_v2/rotations/north-east.png",
+          "north": "Idle_v2/rotations/north.png",
+          "north-west": "Idle_v2/rotations/north-west.png",
+          "west": "Idle_v2/rotations/west.png",
+          "south-west": "Idle_v2/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-17T07:42:00.229798"
+}

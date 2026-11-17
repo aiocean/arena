@@ -1,0 +1,28 @@
+{
+  "parts": [
+    {"name": "left_hand", "source": "../src/Rig_Base/rotations/east.png", "parent": "left_forearm", "z": 9, "pivot": [60, 71],
+     "poly": [[56, 70], [67, 70], [67, 83], [56, 83]]},
+    {"name": "left_forearm", "source": "../src/Rig_Base/rotations/east.png", "parent": "left_upper_arm", "z": 8, "pivot": [57, 52],
+     "poly": [[49, 52], [63, 52], [63.5, 70], [56, 70], [56, 80], [42, 80], [42, 62]]},
+    {"name": "left_upper_arm", "source": "../src/Rig_Base/rotations/east.png", "parent": "chest", "z": 7, "pivot": [59, 38],
+     "poly": [[54, 34], [62, 33], [64, 36], [63, 52], [49, 52]]},
+    {"name": "head", "parent": "neck", "z": 6, "pivot": [64, 30],
+     "poly": [[30, 0], [90, 0], [90, 30], [62, 30], [55, 34], [50, 50], [46, 56], [20, 56]]},
+    {"name": "neck", "parent": "chest", "z": 5, "pivot": [64, 33],
+     "poly": [[55, 30], [80, 30], [80, 34], [55, 34]]},
+    {"name": "chest", "parent": "pelvis", "z": 4, "pivot": [66, 57], "rows": [30, 58]},
+    {"name": "pelvis", "parent": "", "z": 3, "pivot": [66, 62], "rows": [58, 76]},
+    {"name": "left_foot", "parent": "left_shin", "z": 2, "pivot": [59, 106],
+     "poly": [[50, 104], [62, 104], [66, 117], [68, 128], [50, 128]]},
+    {"name": "right_foot", "parent": "right_shin", "z": -2, "pivot": [67, 106],
+     "poly": [[62, 104], [90, 104], [90, 128], [68, 128], [66, 117]]},
+    {"name": "left_thigh", "parent": "pelvis", "z": 1, "pivot": [66, 62],
+     "poly": [[58, 76], [100, 76], [100, 90], [58, 90]]},
+    {"name": "left_shin", "parent": "left_thigh", "z": 1, "pivot": [64, 90],
+     "poly": [[58, 90], [100, 90], [100, 104], [58, 104]]},
+    {"name": "right_thigh", "parent": "pelvis", "z": -1, "pivot": [62, 62],
+     "poly": [[0, 76], [58, 76], [58, 90], [0, 90]]},
+    {"name": "right_shin", "parent": "right_thigh", "z": -1, "pivot": [58, 90],
+     "poly": [[0, 90], [58, 90], [58, 104], [50, 104], [50, 112], [0, 112]]}
+  ]
+}

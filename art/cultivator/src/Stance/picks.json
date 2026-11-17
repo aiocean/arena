@@ -1,0 +1,90 @@
+{
+ "character": "541cf513-4017-406d-a0c7-f21516555166 (state Stance of e87e46ec)",
+ "picks": {
+  "stance-idle": "stance-idle-16",
+  "walk": "walk-16",
+  "slash": "slash-16",
+  "overhead": "overhead-16",
+  "thrust": "thrust-16b",
+  "cast": "cast-16",
+  "jump": "jump-16",
+  "duck": "duck-16",
+  "dash": "dash-16",
+  "meditate": "meditate-16",
+  "launched": "launched-16",
+  "tumble": "tumble-16",
+  "knockdown": "knockdown-16",
+  "defeat": "defeat-16",
+  "roll": "roll-16",
+  "getting-up": "getting-up-16",
+  "win": "win-16",
+  "hit": "hit-8",
+  "guard": "guard-8",
+  "frozen": "frozen-8",
+  "shocked": "shocked-8"
+ },
+ "dropped": {
+  "slash": [
+   10,
+   11
+  ],
+  "overhead": [
+   8,
+   9
+  ],
+  "thrust": [
+   9,
+   10,
+   11,
+   12
+  ],
+  "cast": [
+   8,
+   9,
+   12
+  ],
+  "defeat": [
+   0
+  ],
+  "getting-up": [
+   0
+  ],
+  "win": [
+   8,
+   9
+  ],
+  "hit": [
+   0,
+   1,
+   2
+  ],
+  "shocked": [
+   2,
+   4,
+   5
+  ]
+ },
+ "frames": {
+  "stance-idle": 16,
+  "walk": 16,
+  "slash": 14,
+  "overhead": 14,
+  "thrust": 12,
+  "cast": 13,
+  "jump": 16,
+  "duck": 16,
+  "dash": 16,
+  "meditate": 16,
+  "launched": 16,
+  "tumble": 16,
+  "knockdown": 16,
+  "defeat": 15,
+  "roll": 16,
+  "getting-up": 15,
+  "win": 14,
+  "hit": 5,
+  "guard": 8,
+  "frozen": 8,
+  "shocked": 5
+ }
+}

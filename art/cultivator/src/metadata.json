@@ -1,0 +1,331 @@
+{
+  "group_id": "846decbb-b2b2-4e59-940e-ab129a1eb6c5",
+  "states": [
+    {
+      "character": {
+        "id": "29a1ef98-ab85-41b8-a1d0-60a1b5f5bbbe",
+        "name": "Idle",
+        "prompt": "young xianxia cultivator swordsman, lean build, calm cold expression, long black hair tied in a high topknot with a silver hairpin, dark charcoal-grey layered hanfu robes with deep crimson inner lining and wide sleeves, black cloth sash belt with a jade pendant, cloth boots, holding a plain straight jian sword at his side, faint red qi aura",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-11-17T05:20:51.577891+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "stance-idle": {
+            "east": [
+              "Idle/animations/stance-idle/east/frame_000.png",
+              "Idle/animations/stance-idle/east/frame_001.png",
+              "Idle/animations/stance-idle/east/frame_002.png",
+              "Idle/animations/stance-idle/east/frame_003.png",
+              "Idle/animations/stance-idle/east/frame_004.png",
+              "Idle/animations/stance-idle/east/frame_005.png",
+              "Idle/animations/stance-idle/east/frame_006.png",
+              "Idle/animations/stance-idle/east/frame_007.png",
+              "Idle/animations/stance-idle/east/frame_008.png"
+            ]
+          },
+          "getting-up": {
+            "east": [
+              "Idle/animations/getting-up/east/frame_000.png",
+              "Idle/animations/getting-up/east/frame_001.png",
+              "Idle/animations/getting-up/east/frame_002.png",
+              "Idle/animations/getting-up/east/frame_003.png",
+              "Idle/animations/getting-up/east/frame_004.png",
+              "Idle/animations/getting-up/east/frame_005.png",
+              "Idle/animations/getting-up/east/frame_006.png",
+              "Idle/animations/getting-up/east/frame_007.png",
+              "Idle/animations/getting-up/east/frame_008.png"
+            ]
+          },
+          "meditate": {
+            "east": [
+              "Idle/animations/meditate/east/frame_000.png",
+              "Idle/animations/meditate/east/frame_001.png",
+              "Idle/animations/meditate/east/frame_002.png",
+              "Idle/animations/meditate/east/frame_003.png",
+              "Idle/animations/meditate/east/frame_004.png",
+              "Idle/animations/meditate/east/frame_005.png",
+              "Idle/animations/meditate/east/frame_006.png",
+              "Idle/animations/meditate/east/frame_007.png",
+              "Idle/animations/meditate/east/frame_008.png"
+            ]
+          },
+          "overhead": {
+            "east": [
+              "Idle/animations/overhead/east/frame_000.png",
+              "Idle/animations/overhead/east/frame_001.png",
+              "Idle/animations/overhead/east/frame_002.png",
+              "Idle/animations/overhead/east/frame_003.png",
+              "Idle/animations/overhead/east/frame_004.png",
+              "Idle/animations/overhead/east/frame_005.png",
+              "Idle/animations/overhead/east/frame_006.png",
+              "Idle/animations/overhead/east/frame_007.png",
+              "Idle/animations/overhead/east/frame_008.png"
+            ]
+          },
+          "knockdown": {
+            "east": [
+              "Idle/animations/knockdown/east/frame_000.png",
+              "Idle/animations/knockdown/east/frame_001.png",
+              "Idle/animations/knockdown/east/frame_002.png",
+              "Idle/animations/knockdown/east/frame_003.png",
+              "Idle/animations/knockdown/east/frame_004.png",
+              "Idle/animations/knockdown/east/frame_005.png",
+              "Idle/animations/knockdown/east/frame_006.png",
+              "Idle/animations/knockdown/east/frame_007.png",
+              "Idle/animations/knockdown/east/frame_008.png"
+            ]
+          },
+          "walk": {
+            "east": [
+              "Idle/animations/walk/east/frame_000.png",
+              "Idle/animations/walk/east/frame_001.png",
+              "Idle/animations/walk/east/frame_002.png",
+              "Idle/animations/walk/east/frame_003.png",
+              "Idle/animations/walk/east/frame_004.png",
+              "Idle/animations/walk/east/frame_005.png",
+              "Idle/animations/walk/east/frame_006.png",
+              "Idle/animations/walk/east/frame_007.png",
+              "Idle/animations/walk/east/frame_008.png"
+            ]
+          },
+          "roll": {
+            "east": [
+              "Idle/animations/roll/east/frame_000.png",
+              "Idle/animations/roll/east/frame_001.png",
+              "Idle/animations/roll/east/frame_002.png",
+              "Idle/animations/roll/east/frame_003.png",
+              "Idle/animations/roll/east/frame_004.png",
+              "Idle/animations/roll/east/frame_005.png",
+              "Idle/animations/roll/east/frame_006.png",
+              "Idle/animations/roll/east/frame_007.png",
+              "Idle/animations/roll/east/frame_008.png"
+            ]
+          },
+          "jump": {
+            "east": [
+              "Idle/animations/jump/east/frame_000.png",
+              "Idle/animations/jump/east/frame_001.png",
+              "Idle/animations/jump/east/frame_002.png",
+              "Idle/animations/jump/east/frame_003.png",
+              "Idle/animations/jump/east/frame_004.png",
+              "Idle/animations/jump/east/frame_005.png",
+              "Idle/animations/jump/east/frame_006.png",
+              "Idle/animations/jump/east/frame_007.png",
+              "Idle/animations/jump/east/frame_008.png"
+            ]
+          },
+          "win": {
+            "east": [
+              "Idle/animations/win/east/frame_000.png",
+              "Idle/animations/win/east/frame_001.png",
+              "Idle/animations/win/east/frame_002.png",
+              "Idle/animations/win/east/frame_003.png",
+              "Idle/animations/win/east/frame_004.png",
+              "Idle/animations/win/east/frame_005.png",
+              "Idle/animations/win/east/frame_006.png",
+              "Idle/animations/win/east/frame_007.png",
+              "Idle/animations/win/east/frame_008.png"
+            ]
+          },
+          "slash": {
+            "east": [
+              "Idle/animations/slash/east/frame_000.png",
+              "Idle/animations/slash/east/frame_001.png",
+              "Idle/animations/slash/east/frame_002.png",
+              "Idle/animations/slash/east/frame_003.png",
+              "Idle/animations/slash/east/frame_004.png",
+              "Idle/animations/slash/east/frame_005.png",
+              "Idle/animations/slash/east/frame_006.png",
+              "Idle/animations/slash/east/frame_007.png",
+              "Idle/animations/slash/east/frame_008.png"
+            ]
+          },
+          "cast": {
+            "east": [
+              "Idle/animations/cast/east/frame_000.png",
+              "Idle/animations/cast/east/frame_001.png",
+              "Idle/animations/cast/east/frame_002.png",
+              "Idle/animations/cast/east/frame_003.png",
+              "Idle/animations/cast/east/frame_004.png",
+              "Idle/animations/cast/east/frame_005.png",
+              "Idle/animations/cast/east/frame_006.png",
+              "Idle/animations/cast/east/frame_007.png",
+              "Idle/animations/cast/east/frame_008.png"
+            ]
+          },
+          "launched": {
+            "east": [
+              "Idle/animations/launched/east/frame_000.png",
+              "Idle/animations/launched/east/frame_001.png",
+              "Idle/animations/launched/east/frame_002.png",
+              "Idle/animations/launched/east/frame_003.png",
+              "Idle/animations/launched/east/frame_004.png",
+              "Idle/animations/launched/east/frame_005.png",
+              "Idle/animations/launched/east/frame_006.png",
+              "Idle/animations/launched/east/frame_007.png",
+              "Idle/animations/launched/east/frame_008.png"
+            ]
+          },
+          "defeat": {
+            "east": [
+              "Idle/animations/defeat/east/frame_000.png",
+              "Idle/animations/defeat/east/frame_001.png",
+              "Idle/animations/defeat/east/frame_002.png",
+              "Idle/animations/defeat/east/frame_003.png",
+              "Idle/animations/defeat/east/frame_004.png",
+              "Idle/animations/defeat/east/frame_005.png",
+              "Idle/animations/defeat/east/frame_006.png",
+              "Idle/animations/defeat/east/frame_007.png",
+              "Idle/animations/defeat/east/frame_008.png"
+            ]
+          },
+          "shocked": {
+            "east": [
+              "Idle/animations/shocked/east/frame_000.png",
+              "Idle/animations/shocked/east/frame_001.png",
+              "Idle/animations/shocked/east/frame_002.png",
+              "Idle/animations/shocked/east/frame_003.png",
+              "Idle/animations/shocked/east/frame_004.png",
+              "Idle/animations/shocked/east/frame_005.png",
+              "Idle/animations/shocked/east/frame_006.png",
+              "Idle/animations/shocked/east/frame_007.png",
+              "Idle/animations/shocked/east/frame_008.png"
+            ]
+          },
+          "thrust": {
+            "east": [
+              "Idle/animations/thrust/east/frame_000.png",
+              "Idle/animations/thrust/east/frame_001.png",
+              "Idle/animations/thrust/east/frame_002.png",
+              "Idle/animations/thrust/east/frame_003.png",
+              "Idle/animations/thrust/east/frame_004.png",
+              "Idle/animations/thrust/east/frame_005.png",
+              "Idle/animations/thrust/east/frame_006.png",
+              "Idle/animations/thrust/east/frame_007.png",
+              "Idle/animations/thrust/east/frame_008.png"
+            ]
+          },
+          "dash": {
+            "east": [
+              "Idle/animations/dash/east/frame_000.png",
+              "Idle/animations/dash/east/frame_001.png",
+              "Idle/animations/dash/east/frame_002.png",
+              "Idle/animations/dash/east/frame_003.png",
+              "Idle/animations/dash/east/frame_004.png",
+              "Idle/animations/dash/east/frame_005.png",
+              "Idle/animations/dash/east/frame_006.png"
+            ]
+          },
+          "tumble": {
+            "east": [
+              "Idle/animations/tumble/east/frame_000.png",
+              "Idle/animations/tumble/east/frame_001.png",
+              "Idle/animations/tumble/east/frame_002.png",
+              "Idle/animations/tumble/east/frame_003.png",
+              "Idle/animations/tumble/east/frame_004.png",
+              "Idle/animations/tumble/east/frame_005.png",
+              "Idle/animations/tumble/east/frame_006.png",
+              "Idle/animations/tumble/east/frame_007.png",
+              "Idle/animations/tumble/east/frame_008.png"
+            ]
+          },
+          "hit": {
+            "east": [
+              "Idle/animations/hit/east/frame_000.png",
+              "Idle/animations/hit/east/frame_001.png",
+              "Idle/animations/hit/east/frame_002.png",
+              "Idle/animations/hit/east/frame_003.png",
+              "Idle/animations/hit/east/frame_004.png",
+              "Idle/animations/hit/east/frame_005.png",
+              "Idle/animations/hit/east/frame_006.png"
+            ]
+          },
+          "guard": {
+            "east": [
+              "Idle/animations/guard/east/frame_000.png",
+              "Idle/animations/guard/east/frame_001.png",
+              "Idle/animations/guard/east/frame_002.png",
+              "Idle/animations/guard/east/frame_003.png",
+              "Idle/animations/guard/east/frame_004.png"
+            ]
+          },
+          "frozen": {
+            "east": [
+              "Idle/animations/frozen/east/frame_000.png",
+              "Idle/animations/frozen/east/frame_001.png",
+              "Idle/animations/frozen/east/frame_002.png",
+              "Idle/animations/frozen/east/frame_003.png",
+              "Idle/animations/frozen/east/frame_004.png",
+              "Idle/animations/frozen/east/frame_005.png",
+              "Idle/animations/frozen/east/frame_006.png",
+              "Idle/animations/frozen/east/frame_007.png",
+              "Idle/animations/frozen/east/frame_008.png"
+            ]
+          },
+          "duck": {
+            "east": [
+              "Idle/animations/duck/east/frame_000.png",
+              "Idle/animations/duck/east/frame_001.png",
+              "Idle/animations/duck/east/frame_002.png",
+              "Idle/animations/duck/east/frame_003.png",
+              "Idle/animations/duck/east/frame_004.png",
+              "Idle/animations/duck/east/frame_005.png",
+              "Idle/animations/duck/east/frame_006.png",
+              "Idle/animations/duck/east/frame_007.png",
+              "Idle/animations/duck/east/frame_008.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "99f9934c-0f4e-4af6-928e-b244387c4b4e",
+        "name": "Rig Base",
+        "prompt": "young xianxia cultivator swordsman, lean build, calm cold expression, long black hair tied in a high topknot with a silver hairpin, dark charcoal-grey layered hanfu robes with deep crimson inner lining and wide sleeves, black cloth sash belt with a jade pendant, cloth boots, bare empty hands, faint red qi aura",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-11-17T05:27:40.627561+00:00"
+      },
+      "folder": "Rig_Base",
+      "frames": {
+        "rotations": {
+          "south": "Rig_Base/rotations/south.png",
+          "south-east": "Rig_Base/rotations/south-east.png",
+          "east": "Rig_Base/rotations/east.png",
+          "north-east": "Rig_Base/rotations/north-east.png",
+          "north": "Rig_Base/rotations/north.png",
+          "north-west": "Rig_Base/rotations/north-west.png",
+          "west": "Rig_Base/rotations/west.png",
+          "south-west": "Rig_Base/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-17T06:53:22.369449"
+}

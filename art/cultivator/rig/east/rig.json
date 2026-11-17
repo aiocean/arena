@@ -1,0 +1,370 @@
+{
+  "source": "rig/east-body.png",
+  "canvas": [
+    128,
+    128
+  ],
+  "parts": [
+    {
+      "name": "left_hand",
+      "parent": "left_forearm",
+      "z": 9,
+      "file": "left_hand.png",
+      "box": [
+        56,
+        70,
+        11,
+        13
+      ],
+      "pivot": [
+        60,
+        71
+      ],
+      "local_pivot": [
+        4,
+        1
+      ],
+      "pixels": 143
+    },
+    {
+      "name": "left_forearm",
+      "parent": "left_upper_arm",
+      "z": 8,
+      "file": "left_forearm.png",
+      "box": [
+        43,
+        52,
+        20,
+        28
+      ],
+      "pivot": [
+        57,
+        52
+      ],
+      "local_pivot": [
+        14,
+        0
+      ],
+      "pixels": 410
+    },
+    {
+      "name": "left_upper_arm",
+      "parent": "chest",
+      "z": 7,
+      "file": "left_upper_arm.png",
+      "box": [
+        49,
+        33,
+        15,
+        19
+      ],
+      "pivot": [
+        59,
+        38
+      ],
+      "local_pivot": [
+        10,
+        5
+      ],
+      "pixels": 216
+    },
+    {
+      "name": "head",
+      "parent": "neck",
+      "z": 6,
+      "file": "head.png",
+      "box": [
+        33,
+        4,
+        42,
+        46
+      ],
+      "pivot": [
+        64,
+        30
+      ],
+      "local_pivot": [
+        31,
+        26
+      ],
+      "pixels": 861
+    },
+    {
+      "name": "neck",
+      "parent": "chest",
+      "z": 5,
+      "file": "neck.png",
+      "box": [
+        56,
+        30,
+        14,
+        4
+      ],
+      "pivot": [
+        64,
+        33
+      ],
+      "local_pivot": [
+        8,
+        3
+      ],
+      "pixels": 41
+    },
+    {
+      "name": "chest",
+      "parent": "pelvis",
+      "z": 4,
+      "file": "chest.png",
+      "box": [
+        53,
+        34,
+        22,
+        24
+      ],
+      "pivot": [
+        66,
+        57
+      ],
+      "local_pivot": [
+        13,
+        23
+      ],
+      "pixels": 450
+    },
+    {
+      "name": "pelvis",
+      "parent": "",
+      "z": 3,
+      "file": "pelvis.png",
+      "box": [
+        52,
+        58,
+        26,
+        18
+      ],
+      "pivot": [
+        66,
+        62
+      ],
+      "local_pivot": [
+        14,
+        4
+      ],
+      "pixels": 375
+    },
+    {
+      "name": "left_foot",
+      "parent": "left_shin",
+      "z": 2,
+      "file": "left_foot.png",
+      "box": [
+        50,
+        104,
+        17,
+        21
+      ],
+      "pivot": [
+        59,
+        106
+      ],
+      "local_pivot": [
+        9,
+        2
+      ],
+      "pixels": 264
+    },
+    {
+      "name": "right_foot",
+      "parent": "right_shin",
+      "z": -2,
+      "file": "right_foot.png",
+      "box": [
+        62,
+        104,
+        20,
+        15
+      ],
+      "pivot": [
+        67,
+        106
+      ],
+      "local_pivot": [
+        5,
+        2
+      ],
+      "pixels": 106
+    },
+    {
+      "name": "left_thigh",
+      "parent": "pelvis",
+      "z": 1,
+      "file": "left_thigh.png",
+      "box": [
+        58,
+        76,
+        23,
+        14
+      ],
+      "pivot": [
+        66,
+        62
+      ],
+      "local_pivot": [
+        8,
+        -14
+      ],
+      "pixels": 301
+    },
+    {
+      "name": "left_shin",
+      "parent": "left_thigh",
+      "z": 1,
+      "file": "left_shin.png",
+      "box": [
+        58,
+        90,
+        25,
+        14
+      ],
+      "pivot": [
+        64,
+        90
+      ],
+      "local_pivot": [
+        6,
+        0
+      ],
+      "pixels": 340
+    },
+    {
+      "name": "right_thigh",
+      "parent": "pelvis",
+      "z": -1,
+      "file": "right_thigh.png",
+      "box": [
+        46,
+        76,
+        12,
+        14
+      ],
+      "pivot": [
+        62,
+        62
+      ],
+      "local_pivot": [
+        16,
+        -14
+      ],
+      "pixels": 125
+    },
+    {
+      "name": "right_shin",
+      "parent": "right_thigh",
+      "z": -1,
+      "file": "right_shin.png",
+      "box": [
+        39,
+        90,
+        19,
+        19
+      ],
+      "pivot": [
+        58,
+        90
+      ],
+      "local_pivot": [
+        19,
+        0
+      ],
+      "pixels": 263
+    },
+    {
+      "name": "right_forearm",
+      "parent": "right_upper_arm",
+      "z": -5,
+      "file": "right_forearm.png",
+      "box": [
+        39,
+        51,
+        20,
+        28
+      ],
+      "pivot": [
+        53,
+        51
+      ],
+      "local_pivot": [
+        14,
+        0
+      ],
+      "pixels": 410,
+      "note": "drawn from the near arm, darkened: hidden behind the body in the source"
+    },
+    {
+      "name": "right_hand",
+      "parent": "right_forearm",
+      "z": -5,
+      "file": "right_hand.png",
+      "box": [
+        52,
+        69,
+        11,
+        13
+      ],
+      "pivot": [
+        56,
+        70
+      ],
+      "local_pivot": [
+        4,
+        1
+      ],
+      "pixels": 143,
+      "note": "drawn from the near arm, darkened: hidden behind the body in the source"
+    },
+    {
+      "name": "right_upper_arm",
+      "parent": "chest",
+      "z": -5,
+      "file": "right_upper_arm.png",
+      "box": [
+        45,
+        32,
+        15,
+        19
+      ],
+      "pivot": [
+        55,
+        37
+      ],
+      "local_pivot": [
+        10,
+        5
+      ],
+      "pixels": 216,
+      "note": "drawn from the near arm, darkened: hidden behind the body in the source"
+    },
+    {
+      "name": "sword",
+      "parent": "left_hand",
+      "z": 10,
+      "file": "sword.png",
+      "box": [
+        51,
+        71,
+        60,
+        22
+      ],
+      "pivot": [
+        61,
+        77
+      ],
+      "local_pivot": [
+        10,
+        6
+      ],
+      "pixels": 400,
+      "note": "blade points +x at rest; turn it to aim"
+    }
+  ]
+}

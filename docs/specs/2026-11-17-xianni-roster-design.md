@@ -36,7 +36,9 @@ MEDIUM confidence, from memory of the novel, not yet checked against a source:
 Checked against a source (see each character's spec):
 
 - Thất Thải Đạo Nhân (the Seven-Colored Daoist), first soul of the Seven-Colored Immortal Venerable: in the duel
-  (frost's seat, art only), `2026-11-17-seven-colored-daoist-design.md`. Vương Lâm is the cultivator in thunder's.
+  (frost's seat, art only), `2026-11-17-seven-colored-daoist-design.md`. Vương Lâm is the cultivator in thunder's: the HD cultivator's
+  `Stance` state (`541cf513-4017-406d-a0c7-f21516555166`, sword drawn), 21 clips to the smooth standard
+  (`art/README.md`), in `art/cultivator/src/Stance` (`picks.json` lists the frames left out).
 
 The full list comes from a source pass (wiki or the book's character index) before the roster is final; names not confirmed there are dropped, never guessed.
 
