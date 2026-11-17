@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! cargo run --release -p arena-smoke -- [--url https://arena.aiocean.io/] [--out target/arena-smoke]
-//!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 20] [--headful]
+//!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 20] [--headful] [--mbps 20]
 //! ```
 //!
 //! The checks, each PASS or FAIL:
@@ -14,7 +14,9 @@
 //!   (`frames`), and it is watching the server's match, not fighting on its own (the status line's `live`).
 //! - `hud`: the canvas is painted (many colours, most pixels not the background).
 //! - `weight` (never fails the run): what the first visit downloaded, bytes on the wire by kind and the heaviest
-//!   files, and the seconds to the game starting and to the first live frame (`arena_smoke::Weight`).
+//!   files, and the seconds to the game starting, to the first live frame and to the last download
+//!   (`arena_smoke::Weight`). The machine's own timings follow its load; `--mbps N` emulates a visitor's connection (N
+//!   megabits a second down, 40 ms latency), so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //!
 //! It writes `screenshot.png` and `summary.json` to `--out`; with `--review <dir>` also a run page into
@@ -57,6 +59,8 @@ struct Args {
     chrome: Option<PathBuf>,
     wait: u64,
     headful: bool,
+    /// A visitor's connection to emulate: megabits a second down, 40 ms latency (none: the machine's own).
+    mbps: Option<f64>,
 }
 
 fn args() -> Result<Args, String> {
@@ -67,6 +71,7 @@ fn args() -> Result<Args, String> {
         chrome: std::env::var_os("CHROME").map(PathBuf::from),
         wait: 20,
         headful: false,
+        mbps: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -78,8 +83,9 @@ fn args() -> Result<Args, String> {
             "--chrome" => a.chrome = Some(PathBuf::from(value()?)),
             "--wait" => a.wait = value()?.parse().map_err(|e| format!("--wait: {e}"))?,
             "--headful" => a.headful = true,
+            "--mbps" => a.mbps = Some(value()?.parse().map_err(|e| format!("--mbps: {e}"))?),
             "-h" | "--help" => {
-                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful]".into());
+                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N]".into());
             }
             other => return Err(format!("unknown argument {other}")),
         }
@@ -210,6 +216,9 @@ struct Seen {
     answers: HashMap<String, (String, String)>,
     /// Every finished response: URL, MIME type and bytes on the wire.
     finished: Vec<(String, String, u64)>,
+    /// The browser's clock (seconds) at the first request, and at the last response finished.
+    first_sent: Option<f64>,
+    last_done: f64,
 }
 
 impl Seen {
@@ -280,6 +289,20 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     let own = origin(&a.url);
     let seen = Arc::new(Mutex::new(Seen::default()));
     listen(&page, &seen, &own).await?;
+    if let Some(mbps) = a.mbps {
+        // deprecated for the by-rule commands, which chromiumoxide 0.9 does not have yet
+        #[allow(deprecated)]
+        let throttle =
+            chromiumoxide::cdp::browser_protocol::network::EmulateNetworkConditionsParams::new(
+                false,
+                40.0,
+                mbps * 125_000.0,
+                mbps * 125_000.0,
+            );
+        page.execute(throttle)
+            .await
+            .map_err(|e| format!("emulating {mbps} Mbit/s: {e}"))?;
+    }
 
     let mut checks = Vec::new();
     let loaded = Instant::now();
@@ -524,7 +547,12 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
             },
         ),
     );
-    let mut weight = Weight::of(&lock(&seen).finished);
+    let mut weight = {
+        let s = lock(&seen);
+        let mut w = Weight::of(&s.finished);
+        w.all_loaded_s = s.first_sent.map(|t| s.last_done - t);
+        w
+    };
     weight.game_start_s = started.then_some(start_secs);
     weight.first_live_frame_s = first_frame;
     checks.push(Check::new("weight", true, weight.line()));
@@ -606,8 +634,9 @@ async fn listen(page: &Page, seen: &Arc<Mutex<Seen>>, own: &str) -> Result<(), S
     let s = Arc::clone(seen);
     tokio::spawn(async move {
         while let Some(ev) = sent.next().await {
-            lock(&s)
-                .urls
+            let mut s = lock(&s);
+            s.first_sent.get_or_insert(*ev.timestamp.inner());
+            s.urls
                 .insert(ev.request_id.inner().clone(), ev.request.url.clone());
         }
     });
@@ -640,6 +669,7 @@ async fn listen(page: &Page, seen: &Arc<Mutex<Seen>>, own: &str) -> Result<(), S
                 // bytes on the wire: a whole number, though the protocol sends a float
                 let bytes = ev.encoded_data_length.max(0.0) as u64;
                 s.finished.push((url, mime, bytes));
+                s.last_done = s.last_done.max(*ev.timestamp.inner());
             }
         }
     });

@@ -62,6 +62,9 @@ pub struct Weight {
     pub game_start_s: Option<f64>,
     /// Navigation to the first match frame from the relay (`window.__arena.live.frames > 0`).
     pub first_live_frame_s: Option<f64>,
+    /// The first request to the last response finished (the pictures arrive after the game has started).
+    #[serde(default)]
+    pub all_loaded_s: Option<f64>,
 }
 
 impl Weight {
@@ -99,12 +102,13 @@ impl Weight {
             .collect();
         let secs = |s: Option<f64>| s.map_or("never".to_string(), |s| format!("{s:.1} s"));
         format!(
-            "{} in {} requests: {}; game started {}, first live frame {}",
+            "{} in {} requests: {}; game started {}, first live frame {}, all loaded {}",
             mb(self.bytes),
             self.requests,
             kinds.join(", "),
             secs(self.game_start_s),
-            secs(self.first_live_frame_s)
+            secs(self.first_live_frame_s),
+            secs(self.all_loaded_s)
         )
     }
 }
