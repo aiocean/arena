@@ -85,7 +85,8 @@ pub fn numbers(canvas: &mut Canvas, list: &[Number], ground: f64, looks: [Look; 
             continue;
         }
         let h = 5 * s;
-        let left = js_round(n.x) as i32 - w / 2;
+        // kept on the canvas, outline and all: a word over a fighter at the wall is not cut by the edge
+        let left = (js_round(n.x) as i32 - w / 2).clamp(1, (canvas.w - w - 1).max(1));
         let top = js_round(ground - n.y) as i32 - h;
         // the face's dots in a grid with a pixel of room all round for the outline
         let (gw, gh) = (w + 2, h + 2);
@@ -205,5 +206,32 @@ pub fn dust(canvas: &mut Canvas, list: &[Dust], ground: f64) {
             }
             i += 1.0;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::feel::fight::NumberKind;
+
+    #[test]
+    fn a_word_by_the_wall_stays_on_the_canvas() {
+        let lit_at = |x: f64| {
+            let mut canvas = Canvas::new(200, 100);
+            let word = Number {
+                x,
+                y: 40.0,
+                alpha: 1.0,
+                text: "COUNTER!".to_owned(),
+                by: Some(0),
+                kind: NumberKind::Counter,
+            };
+            numbers(&mut canvas, &[word], 100.0, [Look::Thunder, Look::Frost]);
+            canvas.px.iter().filter(|p| p[3] > 0).count()
+        };
+        let whole = lit_at(100.0);
+        assert!(whole > 0);
+        assert_eq!(lit_at(199.0), whole, "cut by the right edge");
+        assert_eq!(lit_at(0.0), whole, "cut by the left edge");
     }
 }
