@@ -23,14 +23,13 @@ and seats); only plain arrays cross threads.
 | If the code... | It goes to |
 |---|---|
 | decides a reward, an episode's end, an opponent's play | `pixfx-duel` (`train`, `seat`, `scripted`) |
-| encodes what the policy sees or may do | `pixfx-mind` (`policy`) |
+| encodes what the policy sees or may do | `arena-mind` (`policy`) |
 | is the trainer | `train/` |
 
 ## Dependencies
 
-`pyo3`, `numpy`, `pixfx-duel`, `pixfx-mind`, `arena-bot` (`onnx` only: a bot's model), `pixfx-effects` (the
-registry list only). It is its own workspace
-(excluded from the root, like `pixfx-gpui`), so pyo3 never builds with the rest.
+`pyo3`, `numpy`, `pixfx-duel`, `arena-mind`, `arena-bot` (`onnx` only: a bot's model). It is its own workspace
+(excluded from the root), so pyo3 never builds with the rest.
 
 ## Traps
 

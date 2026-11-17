@@ -37,9 +37,9 @@ cooldown, a reach, a damage, and two timings:
 - **windup**: from the cast until the blow comes out;
 - **recover**: after the blow, before the fighter can act again.
 
-Reaches, speeds and places are in the arena's pixels, which are finer than the engine's: `UNIT` (4) of them make one
-of the engine's, so an HD fighter (a 256-pixel canvas, about 240 pixels tall) stands its full height. A bot is told every length in the
-engine's pixels (`docs/bot.md`), and an aim it gives is read in them too.
+Reaches, speeds and places are in the arena's pixels, which are finer than the world's (the screen's pixel art): `UNIT` (4) of them make one
+of the world's, so an HD fighter (a 256-pixel canvas, about 240 pixels tall) stands its full height. A bot is told every length in the
+world's pixels (`docs/bot.md`), and an aim it gives is read in them too.
 
 Areas and blinks can be aimed (`docs/bot.md` gives where each aim lands; a swap blink, which trades places with the foe, ignores its aim). Everything else aims at the foe. A skill that spends life (`blood`) pays it when the cast begins, never down to the last point, and each point paid adds 3% to its power (`BLOOD_POWER`).
 

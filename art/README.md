@@ -49,7 +49,7 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
   nowhere else on the body, so that recolour hits it and nothing else.
 - **White is the hit flash**: the painter draws a struck fighter all white. A character mostly in white (Thất Thải Đạo
   Nhân) needs its dark hair, sash and outline to carry the flash, or a flash that is not white. Check a hit frame.
-- Effects (qi, fire, lightning) are the engine's and take their colours from the effect palettes in
+- Effects (qi, fire, lightning) are the game's particles (`crates/arena-game/src/vfx`) and take their colours from the effect palettes in
   `crates/pixfx-duel/src/data.rs` (`Tint`). The character's own colours are never reused for an effect's glow.
 
 ## Making a character on PixelLab
@@ -99,7 +99,7 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
    clip. These are the required core; the
    optional clips, each falling back to a core one, are in `docs/specs/2026-11-17-fighter-clips-design.md`.
 4. Export (`get_character` → download) into `art/<character>/src/` and build the sheets with the character's
-   `tools/sheet.rs` into `site/assets/fighters/`: one layout `<name>.json` and one `<name>-<school>.png` per school.
+   `tools/sheet.rs` into `crates/arena-game/assets/fighters/` (built into the game): one layout `<name>.json` and one `<name>-<school>.png` per school.
    An effect the generator drew into a clip is taken out there, not left for the page.
 
 ## The sheet the game reads

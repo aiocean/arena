@@ -70,9 +70,10 @@ above.
 
 | Path | What it holds |
 |---|---|
-| `crates/pixfx-duel` | The rules: the two schools, their stats and skills, the rotating bar, statuses, frame data, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. Deterministic from a seed. |
+| `crates/pixfx-duel` | The rules: the two schools, their stats and skills, the rotating bar, statuses, frame data, bodies, rounds, the seats that decide for each corner, the training env, the ladder and matches between bots. A `bevy_ecs` world stepped by one schedule a tick; deterministic from a seed. |
+| `crates/arena-mind` | The minds: what a trained policy sees and may do and its timing (`policy`), and the rules' own utility brain. |
+| `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell particles, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm). |
 | `crates/pixfx-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
-| `crates/arena-wasm` | The rules for the page: `Duel`, a corner's bot module and the tables, as a wasm module the page loads beside the engine's. Translation only. |
 | `crates/pixfx-duel-py` | The rules as a Python module (`import pixfx_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
 | `crates/arena-bot` | A bot as a WebAssembly module: admits one (validate, meter, hash), runs it in a seat (`host`), runs an ONNX policy natively (`onnx`), and the commands a player builds, checks and measures a bot with (`onnx`, `check`, `match`, `ladder`). |
 | `bots/onnx` | The template that builds any ONNX policy into a bot module (its own workspace, wasm32 only). |
@@ -81,16 +82,13 @@ above.
 | `docs/` | The docs above, and the design history (`docs/specs`, `docs/plans`). |
 | `site/` | The arena's site: the duel full-screen with a slot in each corner for a player's bot module, and the docs as pages. `site/build.sh` builds it into `site/dist`. |
 
-The game runs on the [pixfx engine](https://github.com/aiocean/pixfx-rs), pinned to one commit: the engine draws,
-moves the bodies and plays the effects; the arena holds the rules, the training environment and the trainer. The duel
-is drawn by `site/assets/duel*.js`, which loads two wasm modules side by side: the engine's (built from the pinned
-engine at `.pixfx/`) and the arena's own (`crates/arena-wasm`). The pixfx site embeds the same duel through
-`site/embed.sh`.
+The game is made with [Bevy](https://bevy.org). The rules run inside it as they run in the trainer, the ladder and the
+tournament's host, so a seed and two bots are one fight in the window, on the page and in a test. To watch a fight
+natively: `cargo run --release -p arena-game -- --seed 7 --left house --right mine.wasm`.
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md): the engine pin, working on the engine beside the arena, the checks a change passes
-and how a release is made. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
+[CONTRIBUTING.md](CONTRIBUTING.md): the checks a change passes and how a release is made. A bug a bot could exploit, or a fight that replays differently: [SECURITY.md](SECURITY.md).
 
 ## License
 

@@ -1,20 +1,20 @@
 # The bot
 
 What a bot sees, what it can do, when it decides, and the file a player submits. The code is the source of truth:
-`crates/pixfx-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/pixfx-duel/src/seat.rs` and
+`crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/pixfx-duel/src/seat.rs` and
 `crates/arena-bot`.
 
 ## What it sees: 354 numbers
 
 Each decision the bot gets `OBS` = 354 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
-unless a scale is given. Lengths are in the engine's pixels, `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
-sees the same numbers whatever the arena's pixel size, and the pixels below are the engine's too.
+unless a scale is given. Lengths are in the world's pixels (the page's), `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
+sees the same numbers whatever the arena's pixel size, and the pixels below are the world's too.
 
 **Seeing late.** A blow the foe winds up reaches the bot 0.16 s after it starts (`TEMPERAMENT.reaction`), and a
 threat in flight appears once it is 0.16 s old: that is the time to react to a danger. Everything else about the foe
 (where it is, a walk, a cast it gathers that is not a blow, a recovery) is current, so an opening can be taken the
-moment it shows (`pixfx-mind/src/view.rs`).
+moment it shows (`arena-mind/src/view.rs`).
 
 | Range | Count | What |
 |---|---|---|

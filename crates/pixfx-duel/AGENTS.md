@@ -1,21 +1,24 @@
 # pixfx-duel
 
-Layer: **Game**. Read the root `AGENTS.md` ("The boundary" and "Layers and where code goes") before changing anything
-here; this file only says what this crate holds. The design is
+Read the root `AGENTS.md` ("Where code goes") before changing anything here; this file only says what this crate
+holds. The design is
 `docs/specs/2026-11-15-duel-rules-in-rust-design.md`.
 
 ## Job
 
 The landing duel's rules: two cultivators, Thunder and Frost, their stats and skills (`data`), the seeded dice every
-roll comes from (`pixfx_mind::Rng`), the fighters (`fighter`), statuses (`status`), the rotating bar (`bar`), casts
+roll comes from (`arena_mind::Rng`), the fighters (`fighter`), statuses (`status`), the rotating bar (`bar`), casts
 and blows (`act`), shots (`shot`), the round loop (`duel`), the seats that decide for each corner (`seat`: the brain from
-`pixfx-mind`, a bot (`BotSeat` over a `Decider`: a module or an ONNX policy, run by `crates/arena-bot`), `first_mind`, the yardstick a brain is
+`arena-mind`, a bot (`BotSeat` over a `Decider`: a module or an ONNX policy, run by `crates/arena-bot`), `first_mind`, the yardstick a brain is
 measured against, or the scripted fighters in `scripted`), each fighter's style (`style`), what a mind senses
-(`sense`), and the duel as the page reads it (`view`). For training and measuring a bot: the trainer's episodes
+(`sense`), the bodies (`body`, `pose`: gravity, flight, blows, getting up), JS number semantics (`js`), the effect ids
+the rules may play (`effects`), and the duel as the game reads it (`view`). The duel is a `bevy_ecs` world (`State` a
+resource, the seats a non-send resource) and one tick is a single-threaded schedule of chained systems in the rules'
+order (`duel::tick_schedule`). For training and measuring a bot: the trainer's episodes
 and rewards (`train`, driven from Python through `crates/pixfx-duel-py`) and the ladder (`ladder`, printed by
 `crates/arena-bot/examples/ladder.rs`). `weights/policy.onnx` is the house AI; this crate never reads it (`arena-bot`
-does), so it does not depend on an ONNX runtime or a wasm host. A seed replays the same fight on every target. The page (`site/assets/duel.js`, a
-wrapper over the wasm `Duel`) plays the effect commands and feels the events the duel returns; it decides nothing.
+does), so it does not depend on an ONNX runtime or a wasm host. A seed replays the same fight on every target. The game (`crates/arena-game`)
+plays the effect commands and feels the events the duel returns; it decides nothing.
 
 ## Belongs here
 
@@ -29,16 +32,14 @@ wrapper over the wasm `Duel`) plays the effect commands and feels the events the
 
 | If the code... | It goes to |
 |---|---|
-| decides what a fighter does | `pixfx-mind` (or a trained brain) |
-| moves a body or poses it | `pixfx-fighter` |
-| draws, shakes, plays an effect | the page, from the commands and events the duel returns |
-| is a JS binding | `crates/arena-wasm` |
+| decides what a fighter does | `crates/arena-mind` (or a trained brain) |
+| draws, shakes, plays an effect | `crates/arena-game`, from the commands and events the duel returns |
 
 ## Dependencies
 
-- Required: `libm`, `pixfx-draw` (JS-exact maths), `pixfx-fighter` (bodies), `pixfx-mind` (the brain).
-- Optional, behind `serde` / `ts`: `serde`, `tsify`, `wasm-bindgen`.
-- Never `pixfx-scene`, `pixfx-wasm` or a shell.
+- Required: `libm`, `arena-mind` (the minds), `bevy_ecs` (no default features: the world and its schedule).
+- Optional, behind `serde`: `serde`.
+- Never the renderer or the game (`bevy`, `arena-game`): the trainer builds this crate and stays light.
 
 ## Traps
 

@@ -37,9 +37,9 @@ png = "0.17"
 //! The same file serves every character (`art/<character>/tools/sheet.rs`; keep the copies alike, and move it into a
 //! crate when a third character needs it). From each character's folder, on its cleaned clips (`src/`, see
 //! `art/README.md` step 3):
-//!   cultivator (Vương Lâm): `cargo -Zscript tools/sheet.rs src/Idle/animations ../../site/assets/fighters cultivator
+//!   cultivator (Vương Lâm): `cargo -Zscript tools/sheet.rs src/Idle/animations ../../crates/arena-game/assets/fighters cultivator
 //!     --fps 20 --head 64`
-//!   Seven-Colored Daoist: `cargo -Zscript tools/sheet.rs src/Idle/animations ../../site/assets/fighters
+//!   Seven-Colored Daoist: `cargo -Zscript tools/sheet.rs src/Idle/animations ../../crates/arena-game/assets/fighters
 //!     seven-colored-daoist --fps 20 --keep-colors --head 64 --strip shocked=spark`
 
 use image::{Rgba, RgbaImage};

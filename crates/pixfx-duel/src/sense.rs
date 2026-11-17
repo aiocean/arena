@@ -1,4 +1,4 @@
-//! What a brain is told: each spell as pixfx-mind reads it (`skill_of`), and what a fighter could perceive this tick
+//! What a brain is told: each spell as arena-mind reads it (`skill_of`), and what a fighter could perceive this tick
 //! (`sense_of`). The minds think in the engine's pixels, the rules in the arena's (`UNIT` of them to one of the
 //! engine's): every length and speed a mind is told is divided by it, and what it chooses multiplied back (`chosen`).
 
@@ -31,7 +31,7 @@ pub fn chosen(c: Choice) -> Choice {
     }
 }
 
-/// Spell `name` as pixfx-mind reads it: what it does, never what it is called (a heal's `damage` is what it heals).
+/// Spell `name` as arena-mind reads it: what it does, never what it is called (a heal's `damage` is what it heals).
 pub fn skill_of(name: &str) -> Skill {
     let Some(s) = spell(name) else {
         return Skill {
@@ -128,7 +128,7 @@ fn inflicts_of(s: &Spell) -> Inflicts {
     }
 }
 
-/// The skill fighter `f` is using, as pixfx-mind reads it.
+/// The skill fighter `f` is using, as arena-mind reads it.
 fn acting_of(f: &Fighter) -> Option<Acting> {
     let a = f.act?;
     let (windup, recover) = spell(a.spell).map_or((0.0, 0.0), |s| (s.windup, recover_of(&a, s)));
@@ -151,7 +151,7 @@ fn stacks_of(f: &Fighter) -> Vec<f64> {
     f.spells.iter().map(|n| stacks_in(slot_of(f, n))).collect()
 }
 
-/// What fighter `f` is doing, as pixfx-mind reads it.
+/// What fighter `f` is doing, as arena-mind reads it.
 pub fn doing_of(f: &Fighter) -> Doing {
     if let (Some(a), Some(acting)) = (f.act, acting_of(f)) {
         let skill = skill_of(a.spell);
@@ -256,7 +256,7 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
     out
 }
 
-/// What fighter `me` could perceive this tick, as pixfx-mind reads it: the true state; it sees late on its own.
+/// What fighter `me` could perceive this tick, as arena-mind reads it: the true state; it sees late on its own.
 pub fn sense_of(state: &State, me: usize) -> Sense {
     let f = &state.fighters[me];
     let foe = &state.fighters[1 - me];

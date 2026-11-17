@@ -451,7 +451,7 @@ pub fn stats(school: School) -> &'static Stats {
 pub const QI_REGEN: f64 = 3.0;
 pub const MEDITATE_REGEN: f64 = 16.0;
 
-/// Each fighter's temperament for pixfx-mind.
+/// Each fighter's temperament for arena-mind.
 pub struct Temperament {
     pub spread: f64,
     pub risk: f64,

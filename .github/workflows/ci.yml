@@ -29,8 +29,9 @@ jobs:
         run: rustup show active-toolchain || rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace --all-targets
+      # the game (Bevy, and natively wasmtime and tract for its corners) is checked in the site job
+      - run: cargo clippy --workspace --exclude arena-game --all-targets -- -D warnings
+      - run: cargo test --workspace --exclude arena-game --all-targets
 
   trainer:
     name: trainer (python)
@@ -62,7 +63,7 @@ jobs:
         run: PYO3_PYTHON=$PWD/train/.venv/bin/python cargo clippy --manifest-path crates/pixfx-duel-py/Cargo.toml -- -D warnings
 
   site:
-    name: site (wasm)
+    name: game and site (wasm)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,9 +77,11 @@ jobs:
             bots/onnx -> target
       - uses: taiki-e/install-action@v2
         with:
-          tool: wasm-pack@0.15.0
+          tool: wasm-bindgen-cli@0.2.130
       - uses: oven-sh/setup-bun@v2
-      - name: Build the site (the engine at the pinned rev, the arena's wasm, the docs pages)
+      - name: wasm-opt
+        run: sudo apt-get update && sudo apt-get install -y binaryen
+      - name: The game for the browser
+        run: rustup target add wasm32-unknown-unknown && cargo clippy -p arena-game --lib --target wasm32-unknown-unknown -- -D warnings
+      - name: Build the site (the game for the browser, the house bot, the docs pages)
         run: site/build.sh
-      - name: The page's tests against the wasm
-        run: cd site && bun test tests
