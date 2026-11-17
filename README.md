@@ -43,7 +43,7 @@ cargo run --release -p arena-bot --features host,onnx --example match -- mine.wa
 cargo run --release -p arena-bot --features host,onnx --example ladder -- --bot mine.wasm --telemetry
 ```
 
-The same from Python (an ONNX model's bytes or a module's):
+The same from Python (an ONNX model's bytes):
 
 ```python
 import pixfx_duel as pd

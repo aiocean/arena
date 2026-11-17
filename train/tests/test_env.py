@@ -72,3 +72,13 @@ def test_a_model_that_is_not_a_policy_is_refused():
     except ValueError:
         return
     raise AssertionError("accepted")
+
+
+def test_a_bot_module_is_not_run_from_python():
+    env = pd.VecEnv(1, 1)
+    try:
+        env.set_model(0, b"\0asm\x01\0\0\0")
+    except ValueError as e:
+        assert "ONNX" in str(e)
+        return
+    raise AssertionError("accepted")

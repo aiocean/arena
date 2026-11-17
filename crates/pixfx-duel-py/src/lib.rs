@@ -4,7 +4,6 @@
 //! `pixfx_duel::train`'s.
 
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
-use arena_bot::host::Runner;
 use arena_bot::onnx::Onnx;
 use pixfx_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use pixfx_duel::seat::SharedDecider;
@@ -19,29 +18,23 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread::JoinHandle;
 
-/// A trained bot, ready to seat: an ONNX policy (run natively) or a bot module. Both cross threads.
+/// A trained bot, ready to seat: an ONNX policy, run natively. It crosses threads.
 #[derive(Clone)]
-enum Model {
-    Onnx(Onnx),
-    Module(Runner),
-}
+struct Model(Onnx);
 
 impl Model {
-    /// An ONNX model's or a bot module's bytes (a module starts with `\0asm`).
+    /// An ONNX model's bytes. A bot module (`\0asm`) is refused: Python trains against ONNX, and a module is checked
+    /// with `cargo run -p arena-bot --features host --example check`.
     fn load(bytes: &[u8]) -> Result<Model, String> {
         if bytes.starts_with(b"\0asm") {
-            let admitted = arena_bot::admit(bytes).map_err(|e| e.to_string())?;
-            return Runner::new(&admitted).map(Model::Module).map_err(|e| e.0);
+            return Err("a bot module (.wasm) is not run from Python: hand in its ONNX model".into());
         }
-        Onnx::load(bytes).map(Model::Onnx).map_err(|e| e.0)
+        Onnx::load(bytes).map(Model).map_err(|e| e.0)
     }
 
     /// A fresh decider: one match.
     fn decider(&self) -> SharedDecider {
-        match self {
-            Model::Onnx(o) => o.decider(),
-            Model::Module(r) => r.decider(),
-        }
+        self.0.decider()
     }
 
     fn bot(self) -> Bot {
@@ -203,7 +196,7 @@ impl VecEnv {
     }
 
     /// Hand every worker a model as `id`, for `policy` opponents: an ONNX policy's bytes (input float32 `[1, 354]`,
-    /// output the 30 acts' logits) or a bot module's.
+    /// output the 30 acts' logits).
     fn set_model(&self, id: u32, data: Vec<u8>) -> PyResult<()> {
         let model = Model::load(&data).map_err(PyValueError::new_err)?;
         for (tx, _, _) in &self.workers {
@@ -312,11 +305,11 @@ enum Spec {
 
 impl Spec {
     /// Read and check a contestant: a built-in name (`brain`, `first`, `aggressive`, `turtle`, `house`) or an ONNX
-    /// policy's or a bot module's bytes.
+    /// policy's bytes.
     fn of(x: &Bound<'_, PyAny>) -> PyResult<Spec> {
         if let Ok(name) = x.extract::<String>() {
             if name == "house" {
-                return Onnx::house().map(|o| Spec::Model(Model::Onnx(o))).map_err(|e| PyValueError::new_err(e.0));
+                return Onnx::house().map(|o| Spec::Model(Model(o))).map_err(|e| PyValueError::new_err(e.0));
             }
             return match Bot::named(&name) {
                 Some(_) => Ok(Spec::Named(name)),
@@ -366,7 +359,7 @@ fn bout<'py>(py: Python<'py>, a: &Bound<'py, PyAny>, b: &Bound<'py, PyAny>, seed
     record(py, &r.map_err(PyValueError::new_err)?)
 }
 
-/// Measure a bot (an ONNX policy's or a bot module's bytes, or `house`) against the tournament's entry bar over
+/// Measure a bot (an ONNX policy's bytes, or `house`) against the tournament's entry bar over
 /// `seeds` (the ladder's 1-150 by default): `passed`, and the records `vs_brain` and `vs_first`.
 #[pyfunction]
 #[pyo3(signature = (bot, seeds = (1, 151)))]

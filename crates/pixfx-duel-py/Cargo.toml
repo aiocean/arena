@@ -11,8 +11,8 @@ name = "pixfx_duel"
 crate-type = ["cdylib"]
 
 [dependencies]
-# a bot: an ONNX policy run natively, or a bot module
-arena-bot = { path = "../arena-bot", features = ["host", "onnx"] }
+# a bot: an ONNX policy, run natively (no wasm host: a module is checked with arena-bot's `check`, not trained against)
+arena-bot = { path = "../arena-bot", features = ["onnx"] }
 numpy = "0.30"
 pixfx-duel = { path = "../pixfx-duel" }
 # the effect registry the page has: some duel rules play only when their effect is there

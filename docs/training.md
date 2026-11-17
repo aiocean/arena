@@ -29,7 +29,7 @@ uv run pytest
 import pixfx_duel as pd
 
 env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker threads
-env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes or a bot module's
+env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
 env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
 obs, mask = env.observe()                  # float32[n, 354], bool[n, 30]
 reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
@@ -103,7 +103,7 @@ per-school win rates in the log; a school you lose with needs more of the traini
 | You want | Change |
 |---|---|
 | A different style of play | the reward (`train.rs` today) |
-| Different sparring partners | `MIX` in `league.py`, or other models (ONNX or modules) through `set_model` |
+| Different sparring partners | `MIX` in `league.py`, or other ONNX models through `set_model` |
 | Another algorithm or model | anything that drives `VecEnv` and ends in an ONNX model (`net.py`'s `to_onnx`) |
 | A bigger network | `--width`, `--hidden`, `--blocks` |
 | A head start | `--init ../crates/pixfx-duel/weights/policy.onnx` |
@@ -151,7 +151,7 @@ legal acts with the arena's draw). To pick otherwise, keep memory between decisi
 ONNX, change `bots/onnx/src/lib.rs` or write your own module (`docs/bot.md`, "The bot module"). The check prints the
 fuel the module uses a decision; the budget is 20M (the house AI: about 3M).
 
-To fight your model in training, hand its ONNX bytes (or its module's) to `set_model`.
+To fight your model in training, hand its ONNX bytes to `set_model`.
 
 ## Measure it
 

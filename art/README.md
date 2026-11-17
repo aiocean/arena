@@ -88,6 +88,10 @@ Why HD, the pictures that decided it, and the other generators looked at: `art/r
      (the first half: `pick.rs` plays it by the wind-up's progress) and which land (the second half).
    - Look at every frame. Leave out a frame the generator drew an effect into, and a standing frame at the start of
      `defeat` or `getting-up`; write what was left out in `src/picks.json` and keep the cleaned frames in `src/`.
+   - `launched` and `knockdown` start in the air, thrown by a blow: the body is already flying when the painter
+     cuts to them (`launched` while it rises, `knockdown` again from its first frame as it falls), so every frame
+     still standing at their start is left out, up to the first one where the body is clearly thrown back. Left in,
+     the fighter flies off standing upright and only then falls.
    - Where pixminimax fails twice: `v3` (8 frames at most at 256, one generation a frame), with "strictly from the
      side, right-facing profile" or the body turns to the viewer.
 
