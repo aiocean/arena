@@ -1,10 +1,10 @@
 //! A fighter of the duel and the duel's whole state.
 
+use crate::body::{Arena, Body};
 use crate::data::{Luck, Rarity, School, Stats, Trait, body_spec, stats};
 use crate::out::{Note, Out};
 use crate::shot::Shot;
 use crate::style::Style;
-use crate::body::{Arena, Body};
 use arena_mind::{Outcome, Rng};
 
 /// Where a cast is: gathering before it lands, or recovering after.
@@ -250,7 +250,7 @@ pub enum Told {
 }
 
 /// The duel's whole state: the arena, the dice, the clock, the rounds, the fighters and what this step emitted.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, bevy_ecs::resource::Resource)]
 pub struct State {
     pub seed: u32,
     pub rng: Rng,

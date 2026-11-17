@@ -2,9 +2,9 @@
 
 mod common;
 
-use common::*;
 use arena_mind::policy::{OBS, TAG, observe};
 use arena_mind::*;
+use common::*;
 
 fn slots() -> Vec<Option<usize>> {
     vec![Some(0), None, Some(2), Some(1), Some(3), None, Some(6)]

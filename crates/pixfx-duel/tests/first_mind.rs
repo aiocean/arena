@@ -2,12 +2,12 @@
 
 mod common;
 
+use arena_mind::{Choice, Outcome};
 use common::{all_effects, config, pinned};
 use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::State;
 use pixfx_duel::first_mind::FirstMind;
 use pixfx_duel::seat::{MakeSeat, Seat};
-use arena_mind::{Choice, Outcome};
 use serde_json::{Value, json};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;

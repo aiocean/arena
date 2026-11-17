@@ -47,7 +47,7 @@ fn the_house_modules_fights_are_pinned() -> Result<(), Box<dyn std::error::Error
         for _ in 0..60 * 60 {
             duel.step(TICK);
         }
-        let s = &duel.state;
+        let s = &duel.state();
         let fighters: Vec<Value> = s
             .fighters
             .iter()

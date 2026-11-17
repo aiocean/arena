@@ -6,9 +6,9 @@
 use crate::bar::ready;
 use crate::data::{Kind, Spell, UNIT, school, spell};
 use crate::fighter::{Fighter, Phase, State};
+use crate::js::{js_max, js_min, js_sign, or_one};
 use crate::seat::{MakeSeat, Seat};
 use crate::shot::{ShotKind, orb_at};
-use crate::js::{js_max, js_min, js_sign, or_one};
 use arena_mind::{Choice, Outcome, Rng};
 
 const REACTION: f64 = 0.16;

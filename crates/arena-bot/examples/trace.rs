@@ -55,9 +55,9 @@ fn write(file: &str, unit: f64) -> Res<()> {
         for _ in 0..(secs / TICK) as u32 {
             let out = duel.step(TICK);
             let senses: Vec<Value> = (0..2)
-                .map(|me| serde_json::to_value(sense_of(&duel.state, me)))
+                .map(|me| serde_json::to_value(sense_of(duel.state(), me)))
                 .collect::<Result<_, _>>()?;
-            let line = json!({ "view": view(&duel.state), "out": out, "sense": senses });
+            let line = json!({ "view": view(duel.state()), "out": out, "sense": senses });
             writeln!(w, "{line}")?;
         }
     }

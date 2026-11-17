@@ -1,8 +1,8 @@
 //! The duel's tables and numbers: skills, schools, stats, tiers, traits, luck, and the constants every rule reads.
 //! `tests/data.rs` pins each against `tests/fixtures/js_numbers.json`.
 
-use crate::js::js_min;
 use crate::body::BodySpec;
+use crate::js::js_min;
 
 /// Effects the arena itself shows when they are in the registry: the lamps and the night.
 pub const DECOR: [&str; 2] = ["fire/brazier", "weather/fireflies"];

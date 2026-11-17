@@ -6,8 +6,8 @@ use crate::data::{
     shock_interval,
 };
 use crate::fighter::{Fighter, Shocked, State};
-use crate::out::{Note, Out};
 use crate::js::{js_max, js_min, js_round};
+use crate::out::{Note, Out};
 
 /// A hard control: frozen (no moving, no acting), held by a shock, or stunned.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

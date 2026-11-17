@@ -5,10 +5,10 @@
 mod common;
 
 use common::arena;
-use pixfx_duel::js::{js_sign, or_one};
 use pixfx_duel::act::{advance, begin, clash, knock_out};
 use pixfx_duel::data::{KNOCKBACK, spell};
 use pixfx_duel::fighter::{Act, Phase, State};
+use pixfx_duel::js::{js_sign, or_one};
 use pixfx_duel::out::Out;
 use pixfx_duel::shot::{ShotKind, shot};
 use pixfx_duel::status::{add_shock, shocking};

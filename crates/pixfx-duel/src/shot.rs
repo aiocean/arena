@@ -6,9 +6,9 @@
 use crate::act::{blocks, burst, cast, clash, hurt, play, turn_aside, zone_height};
 use crate::data::{Blow, Spell, orb_offset, school, spell};
 use crate::fighter::State;
+use crate::js::{js_min, js_sign, or_one};
 use crate::out::{Note, Out, PlayOpts, Stop};
 use crate::status::{ControlKind, add_chill, add_shock, control, damage_of, take};
-use crate::js::{js_min, js_sign, or_one};
 
 /// What kind of shot, and its own state.
 #[derive(Clone, Copy, Debug, PartialEq)]

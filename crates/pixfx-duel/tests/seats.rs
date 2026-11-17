@@ -2,13 +2,13 @@
 
 mod common;
 
+use arena_mind::{Choice, Outcome};
 use common::{all_effects, config, pick};
 use pixfx_duel::bar::ready;
 use pixfx_duel::duel::Duel;
 use pixfx_duel::fighter::State;
 use pixfx_duel::scripted::Scripted;
 use pixfx_duel::seat::{BotSeat, MakeSeat, Seat};
-use arena_mind::{Choice, Outcome};
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -85,12 +85,12 @@ fn scripted_seats_finish_rounds_with_possible_choices() {
         );
         for _ in 0..(120 * 60) {
             duel.step(1.0 / 60.0);
-            if duel.state.round > 1 {
+            if duel.state().round > 1 {
                 break;
             }
         }
         assert!(
-            duel.state.round > 1,
+            duel.state().round > 1,
             "seed {seed}: a round ends within 120 s"
         );
     }

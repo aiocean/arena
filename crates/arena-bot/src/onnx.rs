@@ -4,8 +4,8 @@
 //! tournament runs modules (`host`).
 
 use crate::{ACTIONS, OBS};
-use pixfx_duel::seat::{Decider, Fault, SharedDecider};
 use arena_mind::policy::sample;
+use pixfx_duel::seat::{Decider, Fault, SharedDecider};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;

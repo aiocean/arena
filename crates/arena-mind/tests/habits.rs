@@ -1,8 +1,8 @@
 //! What the foe tends to do next (n-grams), and which level of reading pays (yomi).
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 fn pattern(h: &mut Habits, times: usize, now: f64) {
     for _ in 0..times {

@@ -15,8 +15,8 @@ fn slots_are_the_basics_the_bar_and_the_ultimate() {
         duel.step(1.0 / 60.0);
     }
     for me in 0..2 {
-        let f = &duel.state.fighters[me];
-        let s = sense_of(&duel.state, me);
+        let f = &duel.state().fighters[me];
+        let s = sense_of(duel.state(), me);
         assert_eq!(s.slots.len(), 7);
         let name = |i: usize| s.slots[i].map(|k| f.spells[k]);
         let d = school(f.school);
@@ -57,12 +57,12 @@ fn a_skill_says_what_it_inflicts_and_how_much() {
 
 #[test]
 fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
-    use pixfx_duel::fighter::{Act, Phase};
     use arena_mind::{ActPhase, Doing};
+    use pixfx_duel::fighter::{Act, Phase};
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
-    let ultimate = school(duel.state.fighters[1].school).ultimate;
-    duel.state.fighters[1].act = Some(Act {
+    let ultimate = school(duel.state().fighters[1].school).ultimate;
+    duel.state_mut().fighters[1].act = Some(Act {
         spell: ultimate,
         phase: Phase::Recover,
         t: 0.1,
@@ -73,13 +73,13 @@ fn a_fighter_senses_its_own_act_and_the_foes_ultimate() {
         circle: None,
         blocked: false,
     });
-    let me = sense_of(&duel.state, 1).me;
+    let me = sense_of(duel.state(), 1).me;
     let a = me.act.unwrap_or_else(|| unreachable!("it is acting"));
     assert_eq!(a.phase, ActPhase::Recover);
     assert_eq!(a.t, 0.1);
     assert!(a.recover > 0.0);
-    assert_eq!(sense_of(&duel.state, 0).me.act, None);
-    let Doing::Act { ultimate, .. } = sense_of(&duel.state, 0).foe.doing else {
+    assert_eq!(sense_of(duel.state(), 0).me.act, None);
+    let Doing::Act { ultimate, .. } = sense_of(duel.state(), 0).foe.doing else {
         unreachable!("the foe is acting")
     };
     assert!(ultimate);
@@ -90,7 +90,7 @@ fn a_lingering_or_evolved_bar_skill_lands_more_stacks() {
     use pixfx_duel::fighter::Slot;
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     duel.step(1.0 / 60.0);
-    let f = &mut duel.state.fighters[0];
+    let f = &mut duel.state_mut().fighters[0];
     let at = f.bar.iter().position(|s| s.spell().is_some());
     let at = at.unwrap_or_else(|| unreachable!("the bar holds a skill at the start"));
     if let Slot::Held {
@@ -102,8 +102,8 @@ fn a_lingering_or_evolved_bar_skill_lands_more_stacks() {
     }
     let name = f.bar[at].spell();
     let k = f.spells.iter().position(|n| Some(*n) == name);
-    let s = sense_of(&duel.state, 0);
+    let s = sense_of(duel.state(), 0);
     let k = k.unwrap_or_else(|| unreachable!("a held skill is one of its spells"));
     assert_eq!(s.stacks.get(k), Some(&2.0));
-    assert_eq!(s.stacks.len(), duel.state.fighters[0].spells.len());
+    assert_eq!(s.stacks.len(), duel.state().fighters[0].spells.len());
 }

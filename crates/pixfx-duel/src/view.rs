@@ -3,8 +3,8 @@
 use crate::bar::{Buff, SlotView, buffs_of, skill_bar};
 use crate::data::{Luck, School, Stats};
 use crate::fighter::{Fighter, Phase, State};
-use crate::style::Style;
 use crate::pose::Pose;
+use crate::style::Style;
 
 /// The duel this tick.
 #[derive(Clone, Debug, PartialEq)]

@@ -1,8 +1,8 @@
 //! The mind over a round: when it thinks, what it remembers, what it does in the moments that matter.
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 const DT: f64 = 1.0 / 60.0;
 

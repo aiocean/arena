@@ -1,8 +1,8 @@
 //! Candidate actions from the skills held (by kind, never name) and the threats seen; the rank-then-weight pick.
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 struct Case {
     me: Me,

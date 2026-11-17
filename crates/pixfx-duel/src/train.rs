@@ -195,7 +195,7 @@ impl Env {
     /// Answer the learner's decision with `action` (an act it may not do is a wait), run the duel to its next
     /// decision or the round's end, and pay for it. `shaping` weighs the damage term (the trainer anneals it to 0).
     pub fn step(&mut self, action: usize, shaping: f32) -> Step {
-        let length = self.duel.state.time;
+        let length = self.duel.state().time;
         if self.done {
             return Step {
                 reward: 0.0,
@@ -233,7 +233,7 @@ impl Env {
         self.wire.borrow_mut().answer = Some(act);
         let (dealt, taken, won) = self.advance();
         reward += shaping * ((dealt - taken) / 100.0) as f32;
-        let length = self.duel.state.time;
+        let length = self.duel.state().time;
         let cut = won.is_none() && length >= self.limit;
         if won.is_some() || cut {
             self.done = true;
@@ -254,11 +254,11 @@ impl Env {
         let (mut dealt, mut taken) = (0.0, 0.0);
         loop {
             let before = [
-                self.duel.state.fighters[0].hp,
-                self.duel.state.fighters[1].hp,
+                self.duel.state().fighters[0].hp,
+                self.duel.state().fighters[1].hp,
             ];
             self.duel.step(TICK);
-            let f = &self.duel.state.fighters;
+            let f = &self.duel.state().fighters;
             let (d, t) = (
                 (before[foe] - f[foe].hp).max(0.0),
                 (before[me] - f[me].hp).max(0.0),
@@ -270,10 +270,10 @@ impl Env {
             } else {
                 self.quiet + TICK
             };
-            if let Some(w) = self.duel.state.winner {
+            if let Some(w) = self.duel.state().winner {
                 return (dealt, taken, Some(w == me));
             }
-            if self.duel.state.time >= self.limit {
+            if self.duel.state().time >= self.limit {
                 return (dealt, taken, None);
             }
             if let Some(due) = self.wire.borrow_mut().ask.take() {

@@ -2,17 +2,19 @@
 
 use crate::act::{advance, begin, break_act, drop_barrier, knock_out, set_meditating, settle};
 use crate::bar::{draw, fight_pool};
+use crate::body::{Drive, Motion};
 use crate::data::{
     BAR, CHILL, DECOR, FLY, GRIT, MEDITATE_REGEN, QI_REGEN, ROUND_PAUSE, STALE, powi, school, spell,
 };
 use crate::fighter::{Fighter, Phase, Slot, State, Told};
+use crate::js::{js_max, js_min};
 use crate::out::Out;
 use crate::seat::{Brain, MakeSeat, Seat};
 use crate::shot::{shot, stop_shot};
 use crate::status::{burning, shocking};
-use crate::js::{js_max, js_min};
-use crate::body::{Drive, Motion};
 use arena_mind::Choice;
+use bevy_ecs::prelude::*;
+use bevy_ecs::schedule::{ScheduleLabel, SingleThreadedExecutor};
 
 /// One tick of the rules, in seconds: a seed is one fight at any frame rate.
 pub const TICK: f64 = 1.0 / 60.0;
@@ -31,10 +33,23 @@ pub struct DuelConfig {
     pub effects: Vec<String>,
 }
 
-/// A duel and the two seats that decide for its fighters.
+/// The two seats that decide for the fighters. They hold minds and bot instances that stay on one thread, so the
+/// world keeps them as a non-send resource.
+pub struct Seats(pub [Box<dyn Seat>; 2]);
+
+/// Whether this tick is fought (no winner yet when it began) or spent in the pause between rounds.
+#[derive(Resource, Clone, Copy, Debug, Default)]
+struct Fighting(bool);
+
+/// The schedule of one tick of the rules.
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Tick;
+
+/// A duel: its state and its two seats in one world, stepped in whole ticks of one single-threaded schedule, its
+/// systems chained in the rules' order (so a seed is one fight on every machine).
 pub struct Duel {
-    pub state: State,
-    seats: [Box<dyn Seat>; 2],
+    world: World,
+    tick: Schedule,
 }
 
 impl Duel {
@@ -77,10 +92,17 @@ impl Duel {
             f.style = style;
         }
         let [make0, make1] = seats;
-        let seats = [make0(&state, 0), make1(&state, 1)];
+        let seats = Seats([make0(&state, 0), make1(&state, 1)]);
         state.decor = DECOR.iter().any(|d| state.has(d));
-        let mut duel = Duel { state, seats };
-        duel.start_round();
+        let mut world = World::new();
+        world.insert_resource(state);
+        world.insert_non_send(seats);
+        world.insert_resource(Fighting(false));
+        let mut duel = Duel {
+            world,
+            tick: tick_schedule(),
+        };
+        duel.world.run_system_cached(start_round).ok();
         duel
     }
 
@@ -89,111 +111,174 @@ impl Duel {
         Duel::new(config, [Brain::make(), Brain::make()])
     }
 
+    /// The duel's state.
+    pub fn state(&self) -> &State {
+        self.world.resource::<State>()
+    }
+
+    /// The duel's state, to change by hand (tests and tools; the rules change it only in a tick).
+    pub fn state_mut(&mut self) -> &mut State {
+        self.world.resource_mut::<State>().into_inner()
+    }
+
+    /// The world the duel runs in: its `State` and its `Seats`.
+    pub fn world(&self) -> &World {
+        &self.world
+    }
+
     /// Fighter `me`'s seat.
     pub fn seat(&self, me: usize) -> &dyn Seat {
-        self.seats[me].as_ref()
+        self.world.non_send::<Seats>().0[me].as_ref()
     }
 
     /// Fighter `me`'s seat thinks nothing for `seconds`.
     pub fn hold(&mut self, me: usize, seconds: f64) {
-        self.seats[me].hold(seconds);
+        self.world.non_send_mut::<Seats>().0[me].hold(seconds);
     }
 
     /// Advance by `dt` seconds (at most `STEP_MAX`; a step that is not a positive number moves nothing); returns the
     /// effect commands and events of this step. The rules run in whole ticks: what is left of `dt` waits for the next
     /// call.
     pub fn step(&mut self, dt: f64) -> Vec<Out> {
-        self.state.out.clear();
-        self.state.notes.clear();
-        let dt = if dt > 0.0 { js_min(dt, STEP_MAX) } else { 0.0 };
-        self.state.carry += dt;
+        {
+            let mut state = self.world.resource_mut::<State>();
+            state.out.clear();
+            state.notes.clear();
+            let dt = if dt > 0.0 { js_min(dt, STEP_MAX) } else { 0.0 };
+            state.carry += dt;
+        }
         // a hair under a whole tick counts as one, so 1/60 steps at 60 Hz never drift a tick behind
-        while self.state.carry >= TICK - 1e-9 {
-            self.tick(TICK);
-            self.state.carry = js_max(0.0, self.state.carry - TICK);
+        while self.state().carry >= TICK - 1e-9 {
+            self.tick.run(&mut self.world);
+            let state = self.state_mut();
+            state.carry = js_max(0.0, state.carry - TICK);
         }
-        core::mem::take(&mut self.state.out)
+        core::mem::take(&mut self.state_mut().out)
     }
+}
 
-    /// Hand each seat what the rules told it, in order.
-    fn flush(&mut self) {
-        for (me, told) in core::mem::take(&mut self.state.told) {
-            match told {
-                Told::Outcome(o) => self.seats[me].tell(&o),
-                Told::Reset => self.seats[me].reset(),
-            }
+/// One tick of the rules as a schedule: the clock, the pause between rounds, each fighter's turn (seat 0's before
+/// seat 1's), the bodies kept apart, the shots in flight, the knock-outs, and what the seats are told.
+pub fn tick_schedule() -> Schedule {
+    let mut tick = Schedule::new(Tick);
+    tick.set_executor(SingleThreadedExecutor::new());
+    let fighting = |f: Res<Fighting>| f.0;
+    tick.add_systems(
+        (
+            clock,
+            between_rounds.run_if(not(fighting)),
+            (turn::<0>, turn::<1>, keep_apart, shots, knock_outs, flush)
+                .chain()
+                .run_if(fighting),
+        )
+            .chain(),
+    );
+    tick
+}
+
+/// Hand each seat what the rules told it, in order.
+fn flush(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
+    tell_seats(&mut state, &mut seats);
+}
+
+fn tell_seats(state: &mut State, seats: &mut Seats) {
+    for (me, told) in core::mem::take(&mut state.told) {
+        match told {
+            Told::Outcome(o) => seats.0[me].tell(&o),
+            Told::Reset => seats.0[me].reset(),
         }
     }
+}
 
-    fn start_round(&mut self) {
-        let state = &mut self.state;
-        let span = state.right - state.left;
-        state.round += 1;
-        state.pause = 0.0;
-        state.winner = None;
-        for s in core::mem::take(&mut state.shots) {
-            stop_shot(state, &s);
-        }
-        for f in 0..2 {
-            // what the last round left standing goes with it
-            break_act(state, f);
-            drop_barrier(state, f);
-            state.fighters[f].refresh();
-            state.tell(f, Told::Reset);
-            state.fighters[f].bar.clear();
-            let at = if f == 0 { 0.22 } else { 0.78 };
-            state.fighters[f].body.start_round(state.left + span * at);
-        }
-        // the draws come once both fighters are fresh: nothing the last round left on a foe steers them
-        for f in 0..2 {
-            for i in 0..BAR.slots {
-                draw(state, f, i, i == 0, None);
-            }
-        }
-        self.flush();
+/// The clock moves on, and whether this tick is fought is settled for all of it.
+fn clock(mut state: ResMut<State>, mut fighting: ResMut<Fighting>) {
+    state.time += TICK;
+    fighting.0 = state.winner.is_none();
+}
+
+/// Between rounds the fallen settle; after the pause the next round begins.
+fn between_rounds(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
+    state.pause += TICK;
+    for f in 0..2 {
+        settle(&mut state, f, TICK);
     }
+    if state.pause >= ROUND_PAUSE {
+        begin_round(&mut state, &mut seats);
+    }
+}
 
-    fn tick(&mut self, dt: f64) {
-        self.state.time += dt;
-        if self.state.winner.is_some() {
-            self.state.pause += dt;
-            for f in 0..2 {
-                settle(&mut self.state, f, dt);
-            }
-            if self.state.pause >= ROUND_PAUSE {
-                self.start_round();
-            }
-            return;
+fn start_round(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
+    begin_round(&mut state, &mut seats);
+}
+
+fn begin_round(state: &mut State, seats: &mut Seats) {
+    let span = state.right - state.left;
+    state.round += 1;
+    state.pause = 0.0;
+    state.winner = None;
+    for s in core::mem::take(&mut state.shots) {
+        stop_shot(state, &s);
+    }
+    for f in 0..2 {
+        // what the last round left standing goes with it
+        break_act(state, f);
+        drop_barrier(state, f);
+        state.fighters[f].refresh();
+        state.tell(f, Told::Reset);
+        state.fighters[f].bar.clear();
+        let at = if f == 0 { 0.22 } else { 0.78 };
+        state.fighters[f].body.start_round(state.left + span * at);
+    }
+    // the draws come once both fighters are fresh: nothing the last round left on a foe steers them
+    for f in 0..2 {
+        for i in 0..BAR.slots {
+            draw(state, f, i, i == 0, None);
         }
-        for me in 0..2 {
-            self.flush();
-            if let Some(choice) = self.seats[me].think(&self.state, me, dt) {
-                apply(&mut self.state, me, &choice);
-            }
-            body(&mut self.state, me, dt);
+    }
+    tell_seats(state, seats);
+}
+
+/// Fighter `ME`'s turn: its seat hears what happened, thinks, and its fighter does what it chose and moves.
+fn turn<const ME: usize>(mut state: ResMut<State>, mut seats: NonSendMut<Seats>) {
+    let state = state.as_mut();
+    tell_seats(state, &mut seats);
+    if let Some(choice) = seats.0[ME].think(state, ME, TICK) {
+        apply(state, ME, &choice);
+    }
+    body(state, ME, TICK);
+}
+
+/// Two living bodies never overlap.
+fn keep_apart(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    let [a, b] = &mut state.fighters;
+    if a.hp > 0.0 && b.hp > 0.0 {
+        let arena = crate::body::Arena {
+            left: state.left,
+            right: state.right,
+            top: state.top,
+        };
+        crate::body::separate(&mut a.body, &mut b.body, &arena);
+    }
+}
+
+/// The shots in flight at the start of the tick run, but not one another shot ended this tick.
+fn shots(mut state: ResMut<State>) {
+    let state = state.as_mut();
+    let ids: Vec<u32> = state.shots.iter().map(|s| s.id).collect();
+    for id in ids {
+        shot(state, id, TICK);
+    }
+}
+
+/// A life at 0 ends the round, and so does a seat that gives it up (a bot module's fault).
+fn knock_outs(mut state: ResMut<State>, seats: NonSend<Seats>) {
+    let state = state.as_mut();
+    for f in 0..2 {
+        let out = state.fighters[f].hp <= 0.0 || seats.0[f].forfeit();
+        if out && state.winner.is_none() {
+            knock_out(state, f);
         }
-        let [a, b] = &mut self.state.fighters;
-        if a.hp > 0.0 && b.hp > 0.0 {
-            let arena = crate::body::Arena {
-                left: self.state.left,
-                right: self.state.right,
-                top: self.state.top,
-            };
-            crate::body::separate(&mut a.body, &mut b.body, &arena);
-        }
-        // the shots in flight at the start of the tick run, but not one another shot ended this tick
-        let ids: Vec<u32> = self.state.shots.iter().map(|s| s.id).collect();
-        for id in ids {
-            shot(&mut self.state, id, dt);
-        }
-        // a life at 0 ends the round, and so does a seat that gives it up (a bot module's fault)
-        for f in 0..2 {
-            let out = self.state.fighters[f].hp <= 0.0 || self.seats[f].forfeit();
-            if out && self.state.winner.is_none() {
-                knock_out(&mut self.state, f);
-            }
-        }
-        self.flush();
     }
 }
 

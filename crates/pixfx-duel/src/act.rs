@@ -3,19 +3,19 @@
 //! dice in a fixed order.
 
 use crate::bar::{has_trait, slot_of, spend};
+use crate::body::{Blow as BodyBlow, BodySpec, Doing};
 use crate::data::{
     BLOOD_POWER, BURN, Blow, CAST_CIRCLE, CHIP, CLASH, FRAMES, FURY, GUARD_COST, KNOCKBACK, Kind,
     LUCKY, Luck, RING, Spell, Status, TRAITS, Trait, WARD, block_chance, body_spec, payoff, school,
     spell, tint,
 };
 use crate::fighter::{Act, Burning, Phase, Slot, State, Told};
+use crate::js::{js_max, js_min, js_round, js_sign, or_one};
 use crate::out::{How, Note, Out, PlayOpts, Stop};
 use crate::shot::{Shot, ShotKind};
 use crate::status::{
     ControlKind, add_chill, add_shock, cleanse, control, damage_of, gain_rage, take,
 };
-use crate::js::{js_max, js_min, js_round, js_sign, or_one};
-use crate::body::{Blow as BodyBlow, BodySpec, Doing};
 use arena_mind::Outcome;
 
 /// JS `clamp(v, lo, hi)`: `Math.max(lo, Math.min(hi, v))`.

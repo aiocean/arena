@@ -2,11 +2,11 @@
 
 mod common;
 
+use arena_mind::Rng;
+use arena_mind::policy::{ACTIONS, Act};
 use common::all_effects;
 use pixfx_duel::style::Style;
 use pixfx_duel::train::{Env, EnvConfig, Opponent, Step};
-use arena_mind::Rng;
-use arena_mind::policy::{ACTIONS, Act};
 
 fn cfg(seed: u32, learner: usize, opponent: Opponent) -> EnvConfig {
     EnvConfig {

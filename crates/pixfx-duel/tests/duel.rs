@@ -36,12 +36,12 @@ fn plan2(seed: u32) -> Duel {
 /// Each round's wins as it ended, over `seconds` at 60 Hz.
 fn rounds(duel: &mut Duel, seconds: f64) -> Vec<[u32; 2]> {
     let mut out = Vec::new();
-    let mut round = duel.state.round;
+    let mut round = duel.state().round;
     for _ in 0..(seconds * 60.0) as usize {
         duel.step(1.0 / 60.0);
-        if duel.state.round != round {
-            out.push(duel.state.wins);
-            round = duel.state.round;
+        if duel.state().round != round {
+            out.push(duel.state().wins);
+            round = duel.state().round;
         }
     }
     out
@@ -70,15 +70,15 @@ fn a_heavy_blow_throws_its_target_which_lands_lies_and_gets_up() {
     let mut duel = plan2(2);
     duel.hold(0, 1e9);
     duel.hold(1, 1e9);
-    for f in &mut duel.state.fighters {
+    for f in &mut duel.state_mut().fighters {
         f.stats.dodge = 0.0;
     }
-    duel.state.fighters[0].body.x = 400.0;
-    duel.state.fighters[1].body.x = 464.0;
-    duel.state.fighters[0].body.face = 1.0;
-    duel.state.fighters[1].body.face = -1.0;
+    duel.state_mut().fighters[0].body.x = 400.0;
+    duel.state_mut().fighters[1].body.x = 464.0;
+    duel.state_mut().fighters[0].body.face = 1.0;
+    duel.state_mut().fighters[1].body.face = -1.0;
     let windup = spell("palm").map_or(0.0, |s| s.windup);
-    duel.state.fighters[0].act = Some(pixfx_duel::fighter::Act {
+    duel.state_mut().fighters[0].act = Some(pixfx_duel::fighter::Act {
         spell: "palm",
         phase: pixfx_duel::fighter::Phase::Windup,
         t: windup - 1.0 / 60.0,
@@ -90,7 +90,7 @@ fn a_heavy_blow_throws_its_target_which_lands_lies_and_gets_up() {
         blocked: false,
     });
     duel.step(1.0 / 60.0);
-    assert!(duel.state.fighters[1].body.down.is_some());
+    assert!(duel.state().fighters[1].body.down.is_some());
     let mut lands = 0;
     let mut up = false;
     for _ in 0..240 {
@@ -99,7 +99,7 @@ fn a_heavy_blow_throws_its_target_which_lands_lies_and_gets_up() {
             .iter()
             .filter(|o| matches!(o, Out::Land { .. }))
             .count();
-        if duel.state.fighters[1].body.down.is_none() {
+        if duel.state().fighters[1].body.down.is_none() {
             up = true;
             break;
         }
@@ -131,10 +131,14 @@ fn a_cast_puts_its_spell_on_its_own_cooldown_and_a_bar_skills_one_cast_empties_i
         let mut duel = plan2(seed);
         let mut was: [Option<&str>; 2] = [None, None];
         for _ in 0..90 * 60 {
-            let before: Vec<Vec<Slot>> =
-                duel.state.fighters.iter().map(|f| f.bar.clone()).collect();
+            let before: Vec<Vec<Slot>> = duel
+                .state()
+                .fighters
+                .iter()
+                .map(|f| f.bar.clone())
+                .collect();
             duel.step(1.0 / 60.0);
-            for f in &duel.state.fighters {
+            for f in &duel.state().fighters {
                 let name = f.act.map(|a| a.spell);
                 let fresh = name.is_some()
                     && name != was[f.index]
@@ -167,7 +171,7 @@ fn a_cast_puts_its_spell_on_its_own_cooldown_and_a_bar_skills_one_cast_empties_i
 #[test]
 fn the_skill_bar_shows_four_slots_the_last_one_the_ultimate_charged_by_rage() {
     let mut duel = plan2(3);
-    for f in &mut duel.state.fighters {
+    for f in &mut duel.state_mut().fighters {
         let ult: Vec<bool> = skill_bar(f).iter().map(|s| s.ultimate).collect();
         assert_eq!(ult, [false, false, false, true]);
         f.rage = RAGE - 1.0;
@@ -203,9 +207,9 @@ fn fought(hz: f64, seconds: f64) -> ([u32; 2], u32, Vec<(f64, f64)>) {
         duel.step(1.0 / hz);
     }
     (
-        duel.state.wins,
-        duel.state.round,
-        duel.state
+        duel.state().wins,
+        duel.state().round,
+        duel.state()
             .fighters
             .iter()
             .map(|f| (f.hp, f.body.x))
@@ -222,9 +226,9 @@ fn a_seed_fights_the_same_at_60_hz_and_144_hz() {
 fn step_0_moves_nothing() {
     let mut duel = plan2(5);
     run(&mut duel, 1.5);
-    let before = (duel.state.time, duel.state.fighters.clone());
+    let before = (duel.state().time, duel.state().fighters.clone());
     assert!(duel.step(0.0).is_empty());
-    assert_eq!((duel.state.time, duel.state.fighters.clone()), before);
+    assert_eq!((duel.state().time, duel.state().fighters.clone()), before);
 }
 
 #[test]
@@ -233,17 +237,25 @@ fn zero_dt_holds_and_big_dt_is_capped() {
     for _ in 0..100 {
         assert!(duel.step(0.0).is_empty());
     }
-    assert_eq!(duel.state.time, 0.0);
+    assert_eq!(duel.state().time, 0.0);
     // one huge step runs at most a quarter second of whole ticks
     duel.step(10.0);
-    assert!((duel.state.time - 0.25).abs() < 1e-9, "{}", duel.state.time);
+    assert!(
+        (duel.state().time - 0.25).abs() < 1e-9,
+        "{}",
+        duel.state().time
+    );
     // NaN and negative steps hold too
     duel.step(f64::NAN);
     duel.step(-1.0);
-    assert!((duel.state.time - 0.25).abs() < 1e-9, "{}", duel.state.time);
+    assert!(
+        (duel.state().time - 0.25).abs() < 1e-9,
+        "{}",
+        duel.state().time
+    );
     // and the next real step still moves it on
     duel.step(1.0 / 60.0);
-    assert!(duel.state.time > 0.26);
+    assert!(duel.state().time > 0.26);
 }
 
 #[test]
@@ -254,7 +266,7 @@ fn missing_effects_leave_their_spells_out() {
         .collect();
     for seed in 1..=10 {
         let mut duel = Duel::with_brains(config(seed, effects.clone()));
-        for f in &duel.state.fighters {
+        for f in &duel.state().fighters {
             assert!(!f.spells.contains(&"icicle") && !f.spells.contains(&"orb"));
             assert!(!f.pool.contains(&"icicle") && !f.pool.contains(&"orb"));
         }
@@ -271,7 +283,7 @@ fn missing_effects_leave_their_spells_out() {
             .iter()
             .all(|o| !matches!(o, Out::Play { .. }))
     );
-    for f in &bare.state.fighters {
+    for f in &bare.state().fighters {
         assert!(
             f.spells.contains(&"slash") && f.spells.contains(&"dive"),
             "{:?}",

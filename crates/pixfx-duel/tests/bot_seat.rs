@@ -2,11 +2,11 @@
 
 mod common;
 
+use arena_mind::policy::{ACTIONS, OBS};
 use common::{all_effects, config, pick};
 use pixfx_duel::duel::{Duel, TICK};
 use pixfx_duel::ladder::{Bot, Match, bout};
 use pixfx_duel::seat::{BotSeat, Brain, Decider, Fault, MakeSeat, SharedDecider};
-use arena_mind::policy::{ACTIONS, OBS};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -52,11 +52,11 @@ fn shared(d: impl Decider + 'static) -> SharedDecider {
 fn trace(seats: [MakeSeat; 2], seed: u32, seconds: f64) -> Vec<([f64; 2], [u32; 2])> {
     let mut duel = Duel::new(config(seed, all_effects()), seats);
     let mut out = Vec::new();
-    while duel.state.time < seconds {
+    while duel.state().time < seconds {
         duel.step(TICK);
         out.push((
-            duel.state.fighters.each_ref().map(|f| f.hp),
-            duel.state.wins,
+            duel.state().fighters.each_ref().map(|f| f.hp),
+            duel.state().wins,
         ));
     }
     out
@@ -83,11 +83,11 @@ fn rounds(bot: Faulty, rounds: u32) -> Vec<usize> {
     );
     let mut winners = Vec::new();
     let mut last = [0, 0];
-    while duel.state.wins[0] + duel.state.wins[1] < rounds && duel.state.time < 600.0 {
+    while duel.state().wins[0] + duel.state().wins[1] < rounds && duel.state().time < 600.0 {
         duel.step(TICK);
-        if duel.state.wins != last {
-            winners.push(usize::from(duel.state.wins[1] != last[1]));
-            last = duel.state.wins;
+        if duel.state().wins != last {
+            winners.push(usize::from(duel.state().wins[1] != last[1]));
+            last = duel.state().wins;
         }
     }
     winners
@@ -109,13 +109,13 @@ fn a_bot_that_faults_every_decision_loses_every_round_at_once() {
         ],
     );
     let mut first = None;
-    while duel.state.wins[1] < 3 && duel.state.time < 60.0 {
+    while duel.state().wins[1] < 3 && duel.state().time < 60.0 {
         duel.step(TICK);
-        if first.is_none() && duel.state.wins[1] == 1 {
-            first = Some(duel.state.time);
+        if first.is_none() && duel.state().wins[1] == 1 {
+            first = Some(duel.state().time);
         }
     }
-    assert_eq!(duel.state.wins, [0, 3]);
+    assert_eq!(duel.state().wins, [0, 3]);
     // its first decision comes 0.4-0.7 s into the round
     assert!(first.is_some_and(|t| t < 1.0), "{first:?}");
 }
@@ -144,8 +144,8 @@ fn a_fault_in_start_gives_up_only_the_first_round() {
         ],
     );
     duel.step(TICK);
-    assert_eq!(duel.state.wins, [0, 1], "lost on the first tick");
-    while duel.state.round < 2 {
+    assert_eq!(duel.state().wins, [0, 1], "lost on the first tick");
+    while duel.state().round < 2 {
         duel.step(TICK);
     }
     assert!(!duel.seat(0).forfeit(), "the second round is played");
@@ -167,12 +167,12 @@ fn a_fault_in_round_gives_up_that_round() {
         ],
     );
     assert!(!duel.seat(0).forfeit());
-    while duel.state.round < 2 {
+    while duel.state().round < 2 {
         duel.step(TICK);
     }
-    let before = duel.state.wins;
+    let before = duel.state().wins;
     duel.step(TICK);
-    assert_eq!(duel.state.wins[1], before[1] + 1);
+    assert_eq!(duel.state().wins[1], before[1] + 1);
 }
 
 #[test]

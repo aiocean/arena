@@ -398,17 +398,17 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                 effects: m.effects.clone(),
             };
             let mut duel = Duel::new(config, seats);
-            let mut started = duel.state.time;
-            let mut round = duel.state.round;
+            let mut started = duel.state().time;
+            let mut round = duel.state().round;
             let mut ended = false;
-            while duel.state.wins[0] + duel.state.wins[1] < m.rounds {
-                let fighting = duel.state.winner.is_none();
-                let before = duel.state.fighters.each_ref().map(|f| f.hp);
+            while duel.state().wins[0] + duel.state().wins[1] < m.rounds {
+                let fighting = duel.state().winner.is_none();
+                let before = duel.state().fighters.each_ref().map(|f| f.hp);
                 let out = duel.step(TICK);
                 if fighting {
-                    account(&mut logs.borrow_mut(), before, &out, &duel.state);
+                    account(&mut logs.borrow_mut(), before, &out, duel.state());
                 }
-                let s = &duel.state;
+                let s = &duel.state();
                 if s.round != round {
                     // the next round has begun
                     started = s.time;
@@ -429,8 +429,8 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                     break;
                 }
             }
-            r.won[corner] += duel.state.wins[corner];
-            r.lost[corner] += duel.state.wins[1 - corner];
+            r.won[corner] += duel.state().wins[corner];
+            r.lost[corner] += duel.state().wins[1 - corner];
         }
     }
     let t = tally.borrow();

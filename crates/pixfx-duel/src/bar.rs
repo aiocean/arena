@@ -6,8 +6,8 @@ use crate::data::{
     evolves, fits, payoff, school, slot_power, spell,
 };
 use crate::fighter::{Fighter, Slot, State};
-use crate::out::Out;
 use crate::js::js_min;
+use crate::out::Out;
 
 /// `POOL_SIZE` skills of `school` a fighter plays this fight, by the duel's dice: always one of the school's
 /// signature kind and one that pays off its status, where it has them, then the rest at random.

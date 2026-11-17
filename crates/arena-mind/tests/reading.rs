@@ -1,8 +1,8 @@
 //! The reading of a moment: what is open, what threatens, how the foe is playing, every input in [0, 1].
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 #[test]
 fn opening_counts_recovery() {

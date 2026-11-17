@@ -2,9 +2,9 @@
 
 mod common;
 
-use common::*;
 use arena_mind::policy::{ACTIONS, Act, Aim, SLOTS, choice, legal};
 use arena_mind::*;
+use common::*;
 
 /// The kit's slots: slash, nothing, blink, bolt, icicle, nothing, prison.
 fn slotted(mut s: Sense) -> Sense {

@@ -320,9 +320,9 @@ fn decision_cost(new: &dyn Fn() -> SharedDecider, effects: &[String]) {
     let mut senses = Vec::new();
     while senses.len() < 5000 {
         duel.step(TICK);
-        senses.push(sense_of(&duel.state, 0));
+        senses.push(sense_of(duel.state(), 0));
     }
-    let mut mind = policy_mind(&duel.state, 0, Style::Balanced);
+    let mut mind = policy_mind(duel.state(), 0, Style::Balanced);
     let bot = new();
     let mut decided = 0_u32;
     let start = Instant::now();

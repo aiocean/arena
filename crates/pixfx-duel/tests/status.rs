@@ -2,9 +2,9 @@
 //! `site/tests/guard.test.js`. The cases that need a whole step of the duel (stacks fading, grit falling, payoffs,
 //! cleanses, the orb) come with `Duel::step`.
 
-use pixfx_duel::js::js_round;
 use pixfx_duel::data::{Blow, School, shock_interval, stats};
 use pixfx_duel::fighter::{Fighter, State};
+use pixfx_duel::js::js_round;
 use pixfx_duel::status::{ControlKind, add_chill, add_shock, control, damage_of, shocking, take};
 use serde_json::Value;
 

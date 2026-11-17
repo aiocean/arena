@@ -45,4 +45,3 @@ pub fn js_max(a: f64, b: f64) -> f64 {
         b
     }
 }
-

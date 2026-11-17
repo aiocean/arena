@@ -1,8 +1,8 @@
 //! Postures chosen by score: considerations as data, commitment to the posture held, interrupts that break it.
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 fn fresh(now: f64) -> Held {
     Held {

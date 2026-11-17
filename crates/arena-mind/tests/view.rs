@@ -1,8 +1,8 @@
 //! The foe seen late: what it does reaches the mind `reaction` seconds after it starts; where it is, at once.
 
 mod common;
-use common::*;
 use arena_mind::*;
+use common::*;
 
 /// Senses every 1/60 s from 0 to `until`; the foe starts a blade at t = 1.0.
 fn watch(until: f64) -> Delayed {

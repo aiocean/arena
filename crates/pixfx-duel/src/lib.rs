@@ -6,8 +6,8 @@
 #![forbid(unsafe_code)]
 
 pub mod act;
-pub mod body;
 pub mod bar;
+pub mod body;
 pub mod data;
 pub mod duel;
 pub mod effects;

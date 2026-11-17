@@ -1,10 +1,10 @@
 //! The duel's tables, dice and maths, pinned against `tests/fixtures/js_numbers.json`.
 
+use arena_mind::Rng;
 use pixfx_duel::data::{
     self, Blow, Kind, LUCKY, PAYOFF, RARITY, Rarity, School, Status, TRAITS, Trait, block_chance,
     fits, orb_offset, shock_interval, slot_power,
 };
-use arena_mind::Rng;
 use serde_json::{Map, Value, json};
 
 fn fixture() -> Value {

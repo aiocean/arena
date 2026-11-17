@@ -2,9 +2,9 @@
 
 mod common;
 
-use common::*;
 use arena_mind::policy::{Net, OBS, PolicyMind};
 use arena_mind::*;
+use common::*;
 
 const DT: f64 = 1.0 / 60.0;
 
