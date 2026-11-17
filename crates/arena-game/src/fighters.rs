@@ -141,7 +141,12 @@ fn show(
         let Some(look) = looks.0.get(f.look as usize) else {
             continue;
         };
-        let shot = pick(&appearance(f), look.layout.fps, |c| look.layout.len(c));
+        let shot = pick(
+            &appearance(f),
+            look.layout.fps,
+            |c| look.layout.len(c),
+            |c| arena_duel::frames::active(f.look, c),
+        );
         let Some(cell) = look.layout.cell(shot.clip, shot.frame) else {
             continue;
         };

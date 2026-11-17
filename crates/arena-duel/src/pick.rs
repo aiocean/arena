@@ -120,10 +120,11 @@ const fn whole(clip: &'static str, play: Play) -> Part {
     part(clip, 0.0, 1.0, play)
 }
 
-/// The part of an animation `a`'s pose plays. A blade blow and a spell are each one animation split in two: the
-/// wind-up (`Draw`, `Channel`) plays its first part by the wind-up's progress, the follow-through (`Slash`,
-/// `Cast`) the rest. A blow from the air (`dive`) is the overhead cut; a spell gathered by lunging is the dash.
-fn part_of(a: &Appearance) -> Part {
+/// The part of an animation `a`'s pose plays. A blade blow and a spell are each one animation split in two at
+/// `split` (a share of the clip: its active frame, where the blade or the hand reaches farthest, or half way): the
+/// wind-up (`Draw`, `Channel`) plays its first part by the wind-up's progress, ending on the frame the rules strike or
+/// cast on, the follow-through (`Slash`, `Cast`) the rest. A blow from the air (`dive`) is the overhead cut; a spell gathered by lunging is the dash.
+fn part_of(a: &Appearance, split: impl Fn(&'static str) -> f64) -> Part {
     let progress = a.act.and_then(|k| k.windup).map(|w| w.progress);
     let windup = |clip, to| match progress {
         Some(p) => part(clip, 0.0, to, Play::At(p)),
@@ -147,10 +148,10 @@ fn part_of(a: &Appearance) -> Part {
         Pose::Land => part("jump", 0.625, 1.0, Play::Once),
         Pose::Crouch => part("jump", 0.125, 0.125, Play::Once),
         Pose::Duck => part("duck", 0.0, 0.5, Play::Once),
-        Pose::Draw => windup(blade, 0.5),
-        Pose::Slash => part(blade, 0.5, 1.0, Play::Once),
-        Pose::Channel => windup(spell, 0.5),
-        Pose::Cast => part(spell, 0.5, 1.0, Play::Once),
+        Pose::Draw => windup(blade, split(blade)),
+        Pose::Slash => part(blade, split(blade), 1.0, Play::Once),
+        Pose::Channel => windup(spell, split(spell)),
+        Pose::Cast => part(spell, split(spell), 1.0, Play::Once),
         Pose::Guard => whole("guard", Play::Once),
         Pose::Meditate => whole("meditate", Play::Once),
         Pose::Hurt => whole("hit", Play::Once),
@@ -167,9 +168,22 @@ fn part_of(a: &Appearance) -> Part {
     }
 }
 
-/// The frame `a` shows, from an animation of `len(clip)` frames played at `fps` frames a second.
-pub fn pick(a: &Appearance, fps: f64, len: impl Fn(&str) -> usize) -> Shot {
-    let p = part_of(a);
+/// The frame `a` shows, from an animation of `len(clip)` frames played at `fps` frames a second, a striking or
+/// casting clip split at its `active(clip)` frame (half way when it has none).
+pub fn pick(
+    a: &Appearance,
+    fps: f64,
+    len: impl Fn(&str) -> usize,
+    active: impl Fn(&str) -> Option<usize>,
+) -> Shot {
+    let split = |clip: &'static str| {
+        let last = len(clip).saturating_sub(1);
+        match active(clip) {
+            Some(i) if last > 0 => i.min(last) as f64 / last as f64,
+            _ => 0.5,
+        }
+    };
+    let p = part_of(a, split);
     let last = len(p.clip).saturating_sub(1) as f64;
     let (first, end) = (js_round(p.from * last), js_round(p.to * last));
     let span = (end - first).max(0.0);
@@ -204,9 +218,14 @@ mod tests {
 
     const NINE: fn(&str) -> usize = |_| 9;
 
+    /// `pick` with every clip split half way.
+    fn pick_half(a: &Appearance, fps: f64, len: impl Fn(&str) -> usize) -> Shot {
+        pick(a, fps, len, |_| None)
+    }
+
     #[test]
     fn idle_loops_through_its_frames() {
-        let at = |t| pick(&stand(Pose::Idle, t), 10.0, NINE);
+        let at = |t| pick_half(&stand(Pose::Idle, t), 10.0, NINE);
         assert_eq!(
             at(0.0),
             Shot {
@@ -221,7 +240,7 @@ mod tests {
     #[test]
     fn a_blow_holds_its_last_frame() {
         assert_eq!(
-            pick(&stand(Pose::Hurt, 5.0), 10.0, NINE),
+            pick_half(&stand(Pose::Hurt, 5.0), 10.0, NINE),
             Shot {
                 clip: "hit",
                 frame: 8
@@ -238,7 +257,7 @@ mod tests {
                 dive: false,
                 windup: Some(Windup { progress: p }),
             });
-            pick(&a, 10.0, NINE)
+            pick_half(&a, 10.0, NINE)
         };
         assert_eq!(
             windup(0.0),
@@ -255,14 +274,14 @@ mod tests {
             }
         );
         assert_eq!(
-            pick(&stand(Pose::Slash, 0.0), 10.0, NINE),
+            pick_half(&stand(Pose::Slash, 0.0), 10.0, NINE),
             Shot {
                 clip: "slash",
                 frame: 4
             }
         );
         assert_eq!(
-            pick(&stand(Pose::Slash, 9.0), 10.0, NINE),
+            pick_half(&stand(Pose::Slash, 9.0), 10.0, NINE),
             Shot {
                 clip: "slash",
                 frame: 8
@@ -278,28 +297,28 @@ mod tests {
             dive: true,
             windup: None,
         });
-        assert_eq!(pick(&a, 10.0, NINE).clip, "overhead");
+        assert_eq!(pick_half(&a, 10.0, NINE).clip, "overhead");
         let mut b = stand(Pose::Cast, 0.0);
         b.act = Some(Act {
             how: Gather::Lunge,
             dive: false,
             windup: None,
         });
-        assert_eq!(pick(&b, 10.0, NINE).clip, "dash");
+        assert_eq!(pick_half(&b, 10.0, NINE).clip, "dash");
     }
 
     #[test]
     fn a_fighter_knocked_out_on_the_floor_plays_its_defeat() {
         let mut a = stand(Pose::Down, 0.0);
         assert_eq!(
-            pick(&a, 10.0, NINE),
+            pick_half(&a, 10.0, NINE),
             Shot {
                 clip: "knockdown",
                 frame: 8
             }
         );
         a.out = true;
-        assert_eq!(pick(&a, 10.0, NINE).clip, "defeat");
+        assert_eq!(pick_half(&a, 10.0, NINE).clip, "defeat");
     }
 
     #[test]
@@ -309,7 +328,7 @@ mod tests {
             Idle, Walk, Jump, Fly, Land, Crouch, Duck, Draw, Slash, Channel, Cast, Guard, Meditate,
             Hurt, Shocked, Launched, Tumble, Fall, Down, Roll, Sit, Kneel, Win,
         ] {
-            let shot = pick(&stand(pose, 0.3), 10.0, NINE);
+            let shot = pick_half(&stand(pose, 0.3), 10.0, NINE);
             assert!(CLIPS.contains(&shot.clip), "{pose:?} picks {}", shot.clip);
             assert!(shot.frame < 9, "{pose:?} picks frame {}", shot.frame);
         }

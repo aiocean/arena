@@ -76,8 +76,11 @@ impl Shot {
 pub fn launch_bolt(state: &mut State, sp: &'static Spell, p: Payload, o: Origin) {
     let me = p.by;
     let spec = state.fighters[me].body.spec;
-    let x = o.x + o.face * 32.0;
-    let y = o.air + spec.chest;
+    // a fighter's bolt leaves its hand as its clip draws it on the frame it casts on; a unit's, its middle
+    let (x, y) = match o.unit {
+        None => crate::frames::cast_hand(state, me).unwrap_or((o.x + o.face * 32.0, o.air + spec.chest)),
+        Some(_) => (o.x + o.face * 32.0, o.air + spec.chest),
+    };
     let fired = Fired {
         origin: Point::new(state.to_t(x), y / T),
         direction: Point::new(o.face, 0.0),
@@ -422,18 +425,15 @@ pub fn orb_at(s: &Shot) -> (f64, f64) {
     (x + ox, oy)
 }
 
-/// Does a point (`x`, `y` up from the ground) touch fighter `f`, give or take `r`?
+/// Does a point (`x`, `y` up from the ground) touch fighter `f`, give or take `r`? It touches one of the hurtboxes of
+/// the frame `f` shows (`frames::hurtboxes`): a crouch is hit low, a leap in the air, an arm held out where it is.
 pub fn overlaps(state: &State, f: usize, x: f64, y: f64, r: f64) -> bool {
-    let b = &state.fighters[f].body;
-    if b.untouchable() {
+    if state.fighters[f].body.untouchable() {
         return false;
     }
-    let top = if b.duck > 0.0 {
-        b.spec.duck
-    } else {
-        b.spec.body
-    };
-    (x - b.x).abs() < b.spec.half_width + r && y > b.air - r && y < b.air + top + r
+    crate::frames::hurtboxes(state, f)
+        .iter()
+        .any(|h| x > h[0] - r && x < h[2] + r && y > h[1] - r && y < h[3] + r)
 }
 
 /// Shot `s` ends: its effect stops and it leaves the list.

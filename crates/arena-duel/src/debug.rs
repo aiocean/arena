@@ -55,23 +55,26 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
     let mut out = Vec::new();
     for (me, f) in state.fighters.iter().enumerate() {
         let b = &f.body;
-        // shot::overlaps: |x - b.x| < half_width + r, and b.air - r < y < b.air + top + r
-        let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
-        out.push(Drawn {
-            owner: Some(me),
-            mark: if b.untouchable() {
-                Mark::Untouchable
-            } else {
-                Mark::Body
-            },
-            shape: Shape::Rect {
-                x0: b.x - b.spec.half_width,
-                y0: b.air,
-                x1: b.x + b.spec.half_width,
-                y1: b.air + top,
-            },
-            skill: "",
-        });
+        // the hurtboxes of the frame the fighter shows (frames::hurtboxes), as shot::overlaps and unit::strike_hits
+        // test them
+        let mark = if b.untouchable() {
+            Mark::Untouchable
+        } else {
+            Mark::Body
+        };
+        for h in crate::frames::hurtboxes(state, me) {
+            out.push(Drawn {
+                owner: Some(me),
+                mark,
+                shape: Shape::Rect {
+                    x0: h[0],
+                    y0: h[1],
+                    x1: h[2],
+                    y1: h[3],
+                },
+                skill: "",
+            });
+        }
 
         let Some(act) = f.act else { continue };
         // the strike is tested on the tick the windup ends, when the act turns to its recovery
@@ -83,25 +86,19 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         };
         let sp = f.kit.skills[k].motion;
         let foe = &state.fighters[1 - me].body.spec;
-        let (reach, level) = match sp.kind {
-            // act::strike, Melee: unit::in_front(x, air, face, range, chest + 16), its body test unit::strike_reaches
-            Kind::Melee => (sp.range.unwrap_or(0.0), b.spec.chest + 16.0),
-            // act::strike, Blast: unit::strike_reaches(x, air, face, range, foe's body)
-            Kind::Blast => (sp.range.unwrap_or(0.0), foe.body),
+        let (reach, level, blade) = match sp.kind {
+            // act::strike, Melee: unit::in_front -> unit::strike_hits, the blade's hitbox
+            Kind::Melee => (sp.range.unwrap_or(0.0), b.spec.chest + 16.0, true),
+            // act::strike, Blast: unit::strike_hits, its own box
+            Kind::Blast => (sp.range.unwrap_or(0.0), foe.body, false),
             _ => continue,
         };
-        // unit::strike_reaches: from the striker's x to `reach` ahead, from its feet to `level` up
         let face = if b.face < 0.0 { -1.0 } else { 1.0 };
-        let (x0, x1) = if face > 0.0 { (b.x, b.x + reach) } else { (b.x - reach, b.x) };
+        let [x0, y0, x1, y1] = crate::unit::strike_box(state, me, b.x, b.air, face, reach, level, blade);
         out.push(Drawn {
             owner: Some(me),
             mark: Mark::Strike,
-            shape: Shape::Rect {
-                x0,
-                y0: b.air,
-                x1,
-                y1: b.air + level,
-            },
+            shape: Shape::Rect { x0, y0, x1, y1 },
             skill: act.spell,
         });
     }

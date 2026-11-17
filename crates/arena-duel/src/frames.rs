@@ -1,0 +1,139 @@
+//! A fighter's boxes by the frame it shows: frame data tied to the clips, as a fighting game keeps it.
+//!
+//! Each look's every clip and frame carries the boxes measured on its sprite (`frames_data`, generated offline by
+//! `cargo run -p arena-game --example frame_boxes`): one to three **hurtboxes** (the head and torso, the legs, an arm
+//! held out), on a blade clip's active frame the **hitbox** where the hand and blade are, and on a cast's active frame
+//! the **hand** a bolt leaves from. The rules pick the frame a fighter shows as the game does (`pick`, from its pose,
+//! how long it has held it and the cast it gathers), so a fighter is struck where it is drawn: crouched, its boxes
+//! are low; jumping, they are where its body is in the air; striking, its arm is out and can be hit.
+//!
+//! Boxes are [x0, y0, x1, y1] in the rules' pixels from the feet, facing right; `place` puts one in the arena.
+
+use crate::data::Look;
+use crate::fighter::State;
+use crate::frames_data::LOOKS;
+use crate::pick::{appearance, pick};
+
+/// One frame's boxes.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Frame {
+    pub hurt: &'static [[f64; 4]],
+    pub hit: Option<[f64; 4]>,
+    pub hand: Option<[f64; 2]>,
+}
+
+/// One look's clips: the frames a second they play at, and each clip's active frame (where a blade or a casting hand
+/// reaches farthest ahead: the frame the rules strike or cast on) and frames in order.
+#[derive(Debug)]
+pub struct LookFrames {
+    pub fps: f64,
+    pub clips: &'static [(&'static str, Option<usize>, &'static [Frame])],
+}
+
+fn look_frames(look: Look) -> &'static LookFrames {
+    match look {
+        Look::Thunder => &LOOKS[0],
+        Look::Frost => &LOOKS[1],
+    }
+}
+
+/// Clip `clip` of look `look`: its active frame and its frames.
+fn clip_of(look: Look, clip: &str) -> Option<(Option<usize>, &'static [Frame])> {
+    look_frames(look)
+        .clips
+        .iter()
+        .find(|(n, _, _)| *n == clip)
+        .map(|(_, a, fr)| (*a, *fr))
+}
+
+/// How many frames clip `clip` of look `look` has (0 when it has none).
+pub fn len(look: Look, clip: &str) -> usize {
+    clip_of(look, clip).map_or(0, |(_, fr)| fr.len())
+}
+
+/// The active frame of clip `clip` of look `look`: where its wind-up ends and the blow or the cast goes out.
+pub fn active(look: Look, clip: &str) -> Option<usize> {
+    clip_of(look, clip).and_then(|(a, _)| a)
+}
+
+/// The frames a second look `look`'s clips play at.
+pub fn fps(look: Look) -> f64 {
+    look_frames(look).fps
+}
+
+/// The frame fighter `f` shows now, as `pick` chooses it (and the game draws it).
+pub fn frame_of(state: &State, f: usize) -> Option<&'static Frame> {
+    let fi = state.fighters.get(f)?;
+    let b = &fi.body;
+    let a = appearance(b.pose, b.pose_t, !fi.alive(), fi.act.map(|a| (a.spell, a.phase, a.t)));
+    let shot = pick(&a, fps(fi.look), |c| len(fi.look, c), |c| active(fi.look, c));
+    clip_of(fi.look, shot.clip)?.1.get(shot.frame)
+}
+
+/// Box `r` (from the feet, facing right) of a fighter standing at `x`, its feet at `air`, facing `face`.
+pub fn place(r: [f64; 4], x: f64, air: f64, face: f64) -> [f64; 4] {
+    if face < 0.0 {
+        [x - r[2], air + r[1], x - r[0], air + r[3]]
+    } else {
+        [x + r[0], air + r[1], x + r[2], air + r[3]]
+    }
+}
+
+/// Fighter `f`'s hurtboxes in the arena: its frame's, or its body's box when the frame has none.
+pub fn hurtboxes(state: &State, f: usize) -> Vec<[f64; 4]> {
+    let Some(fi) = state.fighters.get(f) else {
+        return Vec::new();
+    };
+    let b = &fi.body;
+    match frame_of(state, f) {
+        Some(fr) if !fr.hurt.is_empty() => fr.hurt.iter().map(|r| place(*r, b.x, b.air, b.face)).collect(),
+        _ => {
+            let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
+            vec![[b.x - b.spec.half_width, b.air, b.x + b.spec.half_width, b.air + top]]
+        }
+    }
+}
+
+/// Do boxes `a` and `b` overlap?
+pub fn overlap(a: [f64; 4], b: [f64; 4]) -> bool {
+    a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
+}
+
+/// The clip fighter `f`'s cast plays (a blade blow's `slash` or `overhead`, a spell's `cast` or `dash`), if it casts.
+fn act_clip(state: &State, f: usize) -> Option<&'static str> {
+    let fi = state.fighters.get(f)?;
+    let a = appearance(fi.body.pose, fi.body.pose_t, false, fi.act.map(|a| (a.spell, a.phase, a.t))).act?;
+    Some(match (a.how, a.dive) {
+        (crate::pose::Gather::Palm, true) => "overhead",
+        (crate::pose::Gather::Lunge, _) => "dash",
+        _ => {
+            let s = crate::data::spell(fi.act?.spell)?;
+            if s.kind == crate::data::Kind::Melee { "slash" } else { "cast" }
+        }
+    })
+}
+
+/// The active frame of fighter `f`'s cast: where its blade or casting hand reaches farthest (the frame the rules
+/// strike or cast on, as `pick` draws it when the wind-up ends).
+fn active_frame(state: &State, f: usize) -> Option<&'static Frame> {
+    let fi = state.fighters.get(f)?;
+    let clip = act_clip(state, f)?;
+    let (active, frames) = clip_of(fi.look, clip)?;
+    frames.get(active?)
+}
+
+/// The hitbox of fighter `f`'s blade blow in the arena, from its clip's active frame: where the hand and blade are
+/// drawn. `None` for a clip drawn with no blade out ahead (the rules then strike their own box).
+pub fn strike_hitbox(state: &State, f: usize) -> Option<[f64; 4]> {
+    let b = &state.fighters.get(f)?.body;
+    active_frame(state, f)?.hit.map(|r| place(r, b.x, b.air, b.face))
+}
+
+/// Where fighter `f`'s casting hand is in the arena (x, height above the ground) on its clip's active frame: where a
+/// bolt leaves it.
+pub fn cast_hand(state: &State, f: usize) -> Option<(f64, f64)> {
+    let b = &state.fighters.get(f)?.body;
+    let h = active_frame(state, f)?.hand?;
+    let x = if b.face < 0.0 { b.x - h[0] } else { b.x + h[0] };
+    Some((x, b.air + h[1]))
+}

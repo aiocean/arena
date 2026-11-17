@@ -615,7 +615,7 @@ pub fn strike(
                     }
                     // the blast goes off ahead of its caster: a foe behind it, or above or below its blast, is not caught
                     Target::Fighter(_)
-                        if !crate::unit::strike_reaches(&state.fighters[foe].body, mx, mair, face, range, fspec.body) => {}
+                        if !crate::unit::strike_hits(state, me, mx, mair, face, range, fspec.body, false) => {}
                     Target::Fighter(_) => {
                         let fx = state.fighters[foe].body.x;
                         let fair = state.fighters[foe].body.air;

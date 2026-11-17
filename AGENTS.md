@@ -16,6 +16,7 @@ resolve it there.
 |---|---|
 | is how damage is worked out: the kinds of damage and which beats which, ailments, fusion, ranks, daos, curses, intents, domains, supports, keystones, the shared skill pool, loadouts, and what the field-bound stats do on plain geometry (projectiles, motion, stored uses, devices) | `crates/arena-calc` (pure, no fight in it; `docs/specs/2026-11-17-damage-system-design.md`) |
 | measures loadouts, skills, supports and keystones against each other without the real fight (a headless 1D simulator for balance) | `crates/arena-sim` (`fight`, `units`, `balance`; it calls `arena-calc` as the fight does) |
+| is where a fighter can be hit and where its blow or bolt comes from, frame by frame (hurtboxes, hitboxes, hands, each clip's active frame; which frame a pose shows) | `crates/arena-duel` (`frames`, `pick`); the table `frames_data.rs` is generated from the sprite sheets by `cargo run -p arena-game --example frame_boxes`: run it again after a sheet changes (a rule change: ladder, goldens) |
 | is a rule of the fight: how a skill travels, a body, a cast, a unit on the field, frame data, a round | `crates/arena-duel` (`data.rs` for numbers; `strike` calls `arena-calc`, `unit` holds traps, mines, totems and minions) |
 | is the training env, its reward, an opponent, the ladder | `crates/arena-duel` (`train`, `seat`, `scripted`, `ladder`) |
 | admits, meters or runs a bot module, or builds one from a model | `crates/arena-bot` (the duel's side is `seat::Decider` / `BotSeat` in `arena-duel`); templates in `bots/` |

@@ -177,20 +177,25 @@ pub fn scatter(world: &mut World) {
 pub fn targets_of(state: &State, me: usize, floor: bool) -> Vec<Body> {
     let foe = 1 - me;
     let f = &state.fighters[foe];
-    let b = &f.body;
-    let height = if b.duck > 0.0 {
-        b.spec.duck
-    } else {
-        b.spec.body
-    };
-    let mut t = Body::new(
-        foe as u32,
-        state.to_t(b.x),
-        (b.air + height / 2.0) / T,
-        height / 2.0 / T,
-    );
-    t.alive = f.alive() && !b.untouchable();
-    let mut out = vec![t];
+    let alive = f.alive() && !f.body.untouchable();
+    // the foe's hurtboxes as the projectile's round bodies: each box a column of circles as wide as it, one target
+    // (the foe's id) however many, so a bolt strikes it once
+    let mut out = Vec::new();
+    for h in crate::frames::hurtboxes(state, foe) {
+        let r = ((h[2] - h[0]) / 2.0).max(1.0);
+        let cx = (h[0] + h[2]) / 2.0;
+        let mut y = h[1] + r;
+        loop {
+            let cy = y.min(h[3] - r).max(h[1] + r.min((h[3] - h[1]) / 2.0));
+            let mut t = Body::new(foe as u32, state.to_t(cx), cy / T, r / T);
+            t.alive = alive;
+            out.push(t);
+            if y + r >= h[3] {
+                break;
+            }
+            y += r;
+        }
+    }
     for u in state.units.iter().filter(|u| u.owner == foe) {
         if u.on_floor() && !floor {
             continue;
@@ -206,17 +211,42 @@ pub fn targets_of(state: &State, me: usize, floor: bool) -> Vec<Body> {
 }
 
 /// The nearest enemy body of seat `me` (the foe, a minion or a totem) a blade swung from `x` reaches: the foe within
-/// Does a strike from `x` (its striker's feet at `air`), reaching `reach` ahead the way `face` looks and `level` up
-/// from those feet, touch body `b`? The strike's box runs from `x` to `reach` ahead; the body's from its middle less
-/// its half width to its middle plus it, and from its feet to its top (its crouch when it ducks). A body behind the
-/// striker is not struck.
-pub fn strike_reaches(b: &crate::body::Body, x: f64, air: f64, face: f64, reach: f64, level: f64) -> bool {
-    let ahead = (b.x - x) * or_one(face);
-    let top = if b.duck > 0.0 { b.spec.duck } else { b.spec.body };
-    ahead >= -b.spec.half_width
-        && ahead <= reach + b.spec.half_width
-        && b.air < air + level
-        && b.air + top > air
+/// Does a strike by seat `me` from `x` (its feet at `air`), reaching `reach` ahead the way `face` looks and `level` up
+/// from those feet, touch the foe? The strike is a box from `x` to `reach` ahead; a fighter's own blade blow (`blade`)
+/// is its clip's hitbox on the active frame (`frames::strike_hitbox`: the drawn hand and blade's height, as long as
+/// the drawing or the reach, whichever is farther). It touches the foe when it overlaps one of the hurtboxes of the
+/// frame the foe shows (`frames::hurtboxes`). A foe behind the striker is not struck.
+#[allow(clippy::too_many_arguments)]
+pub fn strike_hits(state: &State, me: usize, x: f64, air: f64, face: f64, reach: f64, level: f64, blade: bool) -> bool {
+    let bx = strike_box(state, me, x, air, face, reach, level, blade);
+    crate::frames::hurtboxes(state, 1 - me)
+        .iter()
+        .any(|h| crate::frames::overlap(bx, *h))
+}
+
+/// The box `strike_hits` tests: from `x` to `reach` ahead, `level` up from `air`, or a fighter's blade's hitbox.
+#[allow(clippy::too_many_arguments)]
+pub fn strike_box(state: &State, me: usize, x: f64, air: f64, face: f64, reach: f64, level: f64, blade: bool) -> [f64; 4] {
+    let ahead = face >= 0.0;
+    let mut bx = if ahead {
+        [x, air, x + reach, air + level]
+    } else {
+        [x - reach, air, x, air + level]
+    };
+    let caster = (state.fighters[me].body.x - x).abs() < 1e-9;
+    if blade
+        && caster
+        && let Some(h) = crate::frames::strike_hitbox(state, me)
+    {
+        bx[1] = h[1];
+        bx[3] = h[3];
+        if ahead {
+            bx[2] = bx[2].max(h[2]);
+        } else {
+            bx[0] = bx[0].min(h[0]);
+        }
+    }
+    bx
 }
 
 /// `reach` of its edge either side and within `level` of `air`, a unit in front within `reach` of its edge.
@@ -232,7 +262,7 @@ pub fn in_front(
     let foe = 1 - me;
     let f = &state.fighters[foe];
     let mut best: Option<(Target, f64)> = None;
-    if f.alive() && strike_reaches(&f.body, x, air, face, reach, level) {
+    if f.alive() && strike_hits(state, me, x, air, face, reach, level, true) {
         best = Some((Target::Fighter(foe), (f.body.x - x).abs()));
     }
     for u in state
