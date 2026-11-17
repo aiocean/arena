@@ -13,6 +13,9 @@ libm.workspace = true
 # the examples read loadouts as JSON and write the balance table as JSON
 arena-calc = { workspace = true, features = ["serde"] }
 serde_json.workspace = true
+# --telemetry-otlp: a run's matches and rows as events in the telemetry store
+arena-telemetry = { path = "../arena-telemetry", features = ["duel"] }
+tracing = "0.1"
 
 [lints]
 workspace = true

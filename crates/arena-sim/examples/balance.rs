@@ -2,15 +2,28 @@
 //! support and keystone (`arena_sim::balance`), printed as a tier table and written as JSON.
 //!
 //! ```text
-//! cargo run --release -p arena-sim --example balance -- --seeds 20 --pairs 200 [--seed 1] [--threads N] [--out table.json]
+//! cargo run --release -p arena-sim --example balance -- --seeds 20 --pairs 200 [--seed 1] [--threads N] [--out table.json] [--telemetry-otlp]
 //! ```
+//!
+//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends the run and every row (each gem, support and keystone: its
+//! win rate, use, damage) to the telemetry store as `arena_ladder` events under one `run_id` (`ops/observe/README.md`).
 
 use std::time::Instant;
 
-use arena_sim::balance::{Config, run};
+use arena_sim::balance::{Config, Table, run};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    let _export = arena_telemetry::requested(&args)?.then(|| {
+        arena_telemetry::init(
+            "arena-ladder",
+            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+        )
+    });
+    let args: Vec<String> = args
+        .into_iter()
+        .filter(|a| a != arena_telemetry::FLAG)
+        .collect();
     let mut config = Config {
         seeds: 4,
         pairs: 20,
@@ -37,6 +50,7 @@ fn main() -> Result<(), String> {
     let start = Instant::now();
     let table = run(config);
     let took = start.elapsed().as_secs_f64();
+    export(&table, took);
     print!("{}", table.text());
     println!(
         "\n{:.1} s on {} threads ({:.1} ms a match)",
@@ -52,4 +66,19 @@ fn main() -> Result<(), String> {
         println!("wrote {path}");
     }
     Ok(())
+}
+
+/// The run and its rows as `arena_ladder` events (nothing when telemetry is off).
+fn export(table: &Table, took: f64) {
+    let run = arena_telemetry::run_id("balance");
+    let c = &table.config;
+    tracing::info!(target: "arena::ladder", run_id = %run, seeds = c.seeds, pairs = c.pairs, seed = c.seed,
+        matches = table.matches, seat0_wins = table.seat0_wins, drawn = table.drawn, rounds = table.rounds,
+        cut = table.cut, round_seconds = table.round_seconds, wall_seconds = took, "balance.run");
+    for r in &table.rows {
+        tracing::info!(target: "arena::ladder", run_id = %run, kind = %format!("{:?}", r.kind).to_lowercase(),
+            id = %r.id, tier = %r.tier, picks = r.picks, games = r.games, win = r.wr(), used = r.used,
+            used_rate = r.used_rate(), damage = r.damage, damage_per_game = r.avg_damage(), casts = r.casts,
+            hits = r.hits, cast_distance = r.avg_cast(), hit_distance = r.avg_hit(), "balance.row");
+    }
 }
