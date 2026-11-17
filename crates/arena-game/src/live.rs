@@ -9,9 +9,9 @@
 //! The folding of frames into a match ([`Watching`]) is plain code, tested natively; only the subscribing is the
 //! browser's.
 
+use arena_duel::seat::{Log, Recording};
 use arena_link::{Applied, Arena, Ended, Follow, Frame};
 use bevy::prelude::*;
-use arena_duel::seat::{Log, Recording};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -24,6 +24,8 @@ pub enum Event {
     Frame(Frame),
     /// How the connection stands, for the status line.
     Status(String),
+    /// The relay session is up (`true`) or lost (`false`).
+    Connected(bool),
 }
 
 /// A match as the page holds it: what the rules are built on, and the two corners' logs, growing.
@@ -119,6 +121,10 @@ pub struct Live {
     pub status: String,
     /// Set when the page must reload (another rules build).
     pub stale: Option<String>,
+    /// Whether a relay session is up, and how many frames came over it since the page loaded: what the page shows a
+    /// smoke test (`window.__arena.live`, `crates/arena-smoke`).
+    pub connected: bool,
+    pub frames: u64,
 }
 
 thread_local! {
@@ -137,7 +143,12 @@ impl Plugin for LivePlugin {
     fn build(&self, app: &mut App) {
         app.insert_non_send(Live::default())
             .add_systems(Startup, start)
-            .add_systems(Update, (pull, fall_back).chain().in_set(crate::Frame::Pace));
+            .add_systems(
+                Update,
+                (pull, fall_back, publish)
+                    .chain()
+                    .in_set(crate::Frame::Pace),
+            );
     }
 }
 
@@ -161,7 +172,11 @@ const WAIT_SECONDS: f32 = 8.0;
 
 /// No match on the relay (the server is down, the browser cannot reach it): the page seats the house bot in both
 /// corners and fights on its own, as it does without a relay.
-fn fall_back(time: Res<Time>, mut live: NonSendMut<Live>, mut seat: MessageWriter<crate::bots::Seat>) {
+fn fall_back(
+    time: Res<Time>,
+    mut live: NonSendMut<Live>,
+    mut seat: MessageWriter<crate::bots::Seat>,
+) {
     if !live.on || live.watching.current().is_some() || time.elapsed_secs() < WAIT_SECONDS {
         return;
     }
@@ -179,13 +194,44 @@ fn pull(mut live: NonSendMut<Live>) {
         match e {
             Event::NewMatch => live.watching.new_match(),
             Event::Status(s) => live.status = s,
+            Event::Connected(up) => live.connected = up,
             Event::Frame(f) => {
+                live.frames += 1;
                 if let Err(e) = live.watching.frame(f) {
                     live.stale = Some(e);
                 }
             }
         }
     }
+}
+
+/// How watching stands: on, connected, frames, the ticks through, the match's id.
+type Standing = (bool, bool, u64, u32, u32);
+
+/// How watching stands, on the page as `window.__arena.live` (`on`, `connected`, `frames`, `through`, `match`), so a
+/// smoke test can tell the relay is reached and the match moves. It is set only when it changes; nothing reads it.
+fn publish(live: NonSend<Live>) {
+    let now: Standing = (
+        live.on,
+        live.connected,
+        live.frames,
+        live.watching.current().map_or(0, |m| m.through),
+        live.watching.current().map_or(0, |m| m.id),
+    );
+    #[cfg(target_arch = "wasm32")]
+    {
+        use std::cell::Cell;
+        thread_local! {
+            static SHOWN: Cell<Option<Standing>> = const { Cell::new(None) };
+        }
+        if SHOWN.get() == Some(now) {
+            return;
+        }
+        SHOWN.set(Some(now));
+        net::show(now);
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = now;
 }
 
 /// The subscription, in the browser: the relay's WebTransport through moq-dev's `moq-net`, the frames to `push`.
@@ -196,11 +242,34 @@ mod net {
     use arena_link::moq::{NAMESPACE, TRACK};
     use wasm_bindgen_futures::spawn_local;
 
+    /// Set `window.__arena.live` to how watching stands.
+    pub fn show((on, connected, frames, through, id): super::Standing) {
+        use js_sys::{Object, Reflect};
+        use wasm_bindgen::JsValue;
+        let Some(window) = web_sys::window() else {
+            return;
+        };
+        let live = Object::new();
+        let set = |k: &str, v: JsValue| {
+            let _ = Reflect::set(&live, &JsValue::from_str(k), &v);
+        };
+        set("on", on.into());
+        set("connected", connected.into());
+        set("frames", (frames as f64).into());
+        set("through", through.into());
+        set("match", id.into());
+        let arena = Object::new();
+        let _ = Reflect::set(&arena, &JsValue::from_str("live"), &live);
+        let _ = Reflect::set(&window, &JsValue::from_str("__arena"), &arena);
+    }
+
     /// Watch the matches on the relay at `url` (a subscribe token in its path), one after another, until the page goes.
     pub fn watch(url: String) {
         spawn_local(async move {
             loop {
-                if let Err(e) = session(&url).await {
+                let ended = session(&url).await;
+                push(Event::Connected(false));
+                if let Err(e) = ended {
                     push(Event::Status(format!("Lost the arena ({e}); reconnecting")));
                 }
                 // a short wait before dialling again
@@ -240,6 +309,7 @@ mod net {
         spawn_local(async move {
             let _ = moq_net::time::run(origin_driver).await;
         });
+        push(Event::Connected(true));
         push(Event::Status("Waiting for a match".into()));
 
         let scope = moq_net::Pattern::subtree(NAMESPACE)
@@ -268,7 +338,10 @@ mod net {
     }
 
     /// Read one match's frames until it ends.
-    async fn follow(consumer: &moq_net::origin::Consumer, prefix: &moq_net::PathOwned) -> Result<(), String> {
+    async fn follow(
+        consumer: &moq_net::origin::Consumer,
+        prefix: &moq_net::PathOwned,
+    ) -> Result<(), String> {
         let broadcast = consumer
             .request_broadcast(prefix)
             .await
@@ -324,7 +397,10 @@ mod tests {
         w.frame(Frame::Keyframe(key.clone()))?;
         let id = w.current().map(|m| m.id);
         w.frame(Frame::Decision(d(4, 0)))?;
-        w.frame(Frame::Through(arena_link::Through { tick: 42, sent_ms: 0 }))?;
+        w.frame(Frame::Through(arena_link::Through {
+            tick: 42,
+            sent_ms: 0,
+        }))?;
         // the group's next keyframe repeats what is held: nothing is taken twice
         key.decisions.push(d(4, 0));
         key.ticks = 60;
