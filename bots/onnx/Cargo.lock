@@ -595,7 +595,7 @@ dependencies = [
 [[package]]
 name = "pixfx-mind"
 version = "0.1.0"
-source = "git+https://github.com/aiocean/pixfx-rs?rev=2b9db8ebcedafb0559a903d2c80a92c7860588d6#2b9db8ebcedafb0559a903d2c80a92c7860588d6"
+source = "git+https://github.com/aiocean/pixfx-rs?rev=ad1612b09af290290a86318a12ca66a48aa19605#ad1612b09af290290a86318a12ca66a48aa19605"
 dependencies = [
  "libm",
 ]
