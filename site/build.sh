@@ -65,6 +65,8 @@ if [[ -n "${ARENA_LIVE_URL:-}" ]]; then
   printf '{"url":"%s","build":{"commit":"%s","dirty":%s}}\n' "$ARENA_LIVE_URL" "$commit" "$dirty" > "$out/live.json"
 fi
 cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
+# the site's icon at its root: browsers ask for /favicon.ico on every page that names none
+cp "$here"/assets/favicon.ico "$here"/assets/favicon.svg "$out/"
 sed -i.bak "s#\"../game/arena_game.js\"#\"../game/$game/arena_game.js\"#" "$out/assets/arena.js" && rm "$out/assets/arena.js.bak"
 for f in "$out/assets/arena.js" "$out/index.html"; do
   grep -q "game/$game/arena_game.js" "$f" || { echo "site/build.sh: $f does not name the game's folder" >&2; exit 1; }
