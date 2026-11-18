@@ -32,7 +32,8 @@ env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker thre
 env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
 env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
 obs, mask = env.observe()                  # float32[n, 1741], bool[n, 27]
-reward, done, won, length = env.step(actions, shaping)   # actions int64[n]
+reward, done, won, length = env.step(actions, shaping, whiff)   # actions int64[n]; whiff defaults to 0
+env.casts()                                # the learners' casts since the last call, by kind (below)
 ```
 
 - `reset` starts env `i` on a fresh round. `learner` is the seat (0 left, 1 right; each fight draws both seats' loadouts, and the fighters' looks from its seed,
@@ -43,6 +44,11 @@ apart from the seats: `ladder::looks_of`); `style` and
 - One step runs the duel to the learner's next decision. `done` marks the round's end; `won` is 1, -1, or 0 for a cut
   round; `length` is the round's seconds.
 - A done env ignores its action until it is reset.
+- `casts()` sums the learners' casts since it was last called, over every env, by kind in `data::Kind` order (melee,
+  dash, blast, bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, damage)` each. A cast
+  is out of reach when its blade's, blast's or dash's reach does not get to the foe's hurtboxes as it begins; a whiff
+  is a damaging skill cast as its motion that lands nothing (no hit, not guarded, not turned aside) once it and its
+  shots are over; `damage` is in % of a life.
 - The trainer's fight seeds start at 1,000,000 + 10,000,000 x `--seed` (11,000,000 by default). The ladder plays
   seeds 1-150; never train on them.
 
@@ -57,6 +63,7 @@ Today the reward is computed in Rust (`crates/arena-duel/src/train.rs`), per dec
 | A fight gone quiet (no damage either way for 6 s) | -0.002 a decision |
 | The same act (not wait) 6 times in a row | -0.002 |
 | An act already 40% of the last 40 decisions | -0.004 |
+| A damaging cast that lands nothing (a whiff, as `casts()` counts it) | `whiff` handed to `step` (0 by default; the house AI's fine-tunes use 0.01) |
 
 To pay your bot differently today, edit those constants or `Env::step` and rebuild the module. A reward written in
 Python, from facts `step` hands back, is the first item of `docs/roadmap.md`.
@@ -67,7 +74,7 @@ Python, from facts `step` hands back, is the first item of `docs/roadmap.md`.
 
 ```sh
 uv run python ppo.py --run v1                                    # from scratch: 3000 updates
-uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0
+uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0 --whiff 0.01
 uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a run that stopped
 ```
 
@@ -78,6 +85,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--lr` | 3e-4 | learning rate, falling linearly to 0 |
 | `--ent` | 0.01 0.002 | entropy weight, from the first to the second over the run |
 | `--shaping-until` | 0.6 | share of the run over which the damage term falls to 0 (0: none at all) |
+| `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--snapshot-every` | 20 | how often the latest self joins the league |
 | `--gamma`, `--lam` | 0.995, 0.95 | discount and GAE lambda |
@@ -88,7 +96,9 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--resume` | | continue a run, optimiser and schedule included; the league restarts with only the current policy (past selves are not saved) |
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
-each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...) and `runs/<run>/last.pt` every 25.
+each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...; the share of each act, `acts`; and the
+learner's casts: `casts`, `whiff`, `out_of_reach`, `dmg_cast`, `melee_out_of_reach`, `melee_whiff`) and
+`runs/<run>/last.pt` every 25.
 
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
 pair 15%; seats, styles and both loadouts drawn per fight.

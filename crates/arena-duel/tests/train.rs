@@ -186,3 +186,53 @@ fn an_act_that_fills_its_recent_decisions_pays_for_the_habit() {
         steps.len()
     );
 }
+
+#[test]
+fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
+    // a hand that casts its first slot whenever it may, from wherever it stands, against a turtle: the same fight
+    // paid with and without the whiff cost differs by that cost for every whiff counted
+    let hand = |e: &Env| {
+        let (_, legal) = e.observe();
+        [
+            Act::Cast {
+                slot: 0,
+                aim: arena_mind::policy::Aim::Foe,
+            }
+            .index(),
+            Act::Toward.index(),
+        ]
+        .into_iter()
+        .find(|&a| legal[a])
+        .unwrap_or(0)
+    };
+    let run = |whiff: f32| {
+        let mut env = Env::new(cfg(11, 0, Opponent::Turtle));
+        let mut paid = 0.0_f32;
+        for _ in 0..5000 {
+            let s = env.step_with(hand(&env), 0.0, whiff);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        (paid, env.take_casts())
+    };
+    let (free, casts) = run(0.0);
+    let (costly, again) = run(0.01);
+    assert_eq!(
+        casts, again,
+        "the cost changes what is paid, not what happens"
+    );
+    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.0.iter().map(f).sum::<u32>();
+    let (n, far, whiffs) = (
+        total(|c| c.casts),
+        total(|c| c.out_of_reach),
+        total(|c| c.whiffs),
+    );
+    assert!(n > 0 && whiffs > 0 && whiffs <= n && far <= n, "{casts:?}");
+    let want = free - 0.01 * whiffs as f32;
+    assert!(
+        (costly - want).abs() < 1e-3,
+        "{costly} against {want} ({whiffs} whiffs)"
+    );
+}

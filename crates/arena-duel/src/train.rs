@@ -6,7 +6,12 @@
 //! so stalling never pays); `shaping` x (dealt - taken) / 100, which the trainer anneals to 0; minus
 //! `STALL` a decision once `QUIET` seconds pass with no damage either way; minus `REPEAT` when one act (other than
 //! waiting) is chosen `RUN` times in a row; minus `HABIT` when the act chosen is already `SHARE` or more of the last
-//! `HABITS` decisions.
+//! `HABITS` decisions; minus the trainer's `whiff` cost for each damaging cast that lands nothing (no hit, not guarded,
+//! not turned aside).
+//!
+//! It also counts the learner's casts by kind (`Casts`): how many, how many began out of reach (a blade, blast or dash
+//! whose reach does not get to the foe's hurtboxes), how many landed nothing, and the damage they dealt. Only a skill
+//! cast as its motion strikes for this: a device's or a domain's blows come later, from the field.
 
 use crate::duel::{Duel, DuelConfig, TICK};
 use crate::fighter::State;
@@ -31,6 +36,43 @@ const RUN: u32 = 6;
 const HABIT: f32 = 0.004;
 const HABITS: usize = 40;
 const SHARE: f64 = 0.4;
+
+/// The kinds of cast `Casts` counts, in `data::Kind` order.
+pub const CAST_KINDS: usize = 11;
+
+/// The learner's casts of one kind: begun, begun out of reach, landed nothing, and the damage they dealt (shares of
+/// the foe's full life, 0 to 100 a life).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct CastLog {
+    pub casts: u32,
+    pub out_of_reach: u32,
+    pub whiffs: u32,
+    pub damage: f64,
+}
+
+/// The learner's casts by kind (`data::Kind` order).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Casts(pub [CastLog; CAST_KINDS]);
+
+impl Casts {
+    pub fn add(&mut self, o: &Casts) {
+        for (a, b) in self.0.iter_mut().zip(o.0.iter()) {
+            a.casts += b.casts;
+            a.out_of_reach += b.out_of_reach;
+            a.whiffs += b.whiffs;
+            a.damage += b.damage;
+        }
+    }
+}
+
+/// The learner's cast in progress: its skill, its kind's index, whether it deals damage, and what it has done.
+#[derive(Clone, Copy, Debug)]
+struct Open {
+    spell: &'static str,
+    kind: usize,
+    strikes: bool,
+    landed: bool,
+}
 
 /// Who the learner fights.
 #[derive(Clone)]
@@ -132,6 +174,12 @@ pub struct Env {
     /// The last `HABITS` acts it chose.
     recent: VecDeque<usize>,
     done: bool,
+    /// The cast under way, the casts ended whose shots or later blows are still out, the learner's casts since the
+    /// trainer last took them, and the whiffs not yet paid for.
+    open: Option<Open>,
+    trailing: Vec<Open>,
+    casts: Casts,
+    whiffed: u32,
 }
 
 impl Env {
@@ -182,6 +230,10 @@ impl Env {
             run: 0,
             recent: VecDeque::with_capacity(HABITS + 1),
             done: false,
+            open: None,
+            trailing: Vec::new(),
+            casts: Casts::default(),
+            whiffed: 0,
         };
         env.advance();
         env
@@ -195,6 +247,16 @@ impl Env {
     /// Answer the learner's decision with `action` (an act it may not do is a wait), run the duel to its next
     /// decision or the round's end, and pay for it. `shaping` weighs the damage term (the trainer anneals it to 0).
     pub fn step(&mut self, action: usize, shaping: f32) -> Step {
+        self.step_with(action, shaping, 0.0)
+    }
+
+    /// The learner's casts since this was last called, by kind.
+    pub fn take_casts(&mut self) -> Casts {
+        core::mem::take(&mut self.casts)
+    }
+
+    /// As `step`, with `whiff` taken from the reward for each damaging cast that landed nothing.
+    pub fn step_with(&mut self, action: usize, shaping: f32, whiff: f32) -> Step {
         let length = self.duel.state().time;
         if self.done {
             return Step {
@@ -233,6 +295,7 @@ impl Env {
         self.wire.borrow_mut().answer = Some(act);
         let (dealt, taken, won) = self.advance();
         reward += shaping * ((dealt - taken) / 100.0) as f32;
+        reward -= whiff * core::mem::take(&mut self.whiffed) as f32;
         let length = self.duel.state().time;
         let cut = won.is_none() && length >= self.limit;
         if won.is_some() || cut {
@@ -257,7 +320,11 @@ impl Env {
                 self.duel.state().fighters[0].hp(),
                 self.duel.state().fighters[1].hp(),
             ];
-            self.duel.step(TICK);
+            let out = self.duel.step(TICK);
+            self.follow(
+                &out,
+                (before[foe] - self.duel.state().fighters[foe].hp()).max(0.0),
+            );
             let f = &self.duel.state().fighters;
             let (d, t) = (
                 (before[foe] - f[foe].hp()).max(0.0),
@@ -279,6 +346,105 @@ impl Env {
             if let Some(due) = self.wire.borrow_mut().ask.take() {
                 self.due = due;
                 return (dealt, taken, None);
+            }
+        }
+    }
+
+    /// Follow the learner's casts over one tick of `out`, `dealt` of the foe's life taken in it: a new cast opens
+    /// (counted, out of reach or not), its blows land or are stopped, and a cast that has ended, with none of its shots
+    /// or later blows still out, having landed nothing is a whiff.
+    fn follow(&mut self, out: &[crate::out::Out], dealt: f64) {
+        use crate::data::{Kind, spell};
+        use crate::out::{Note, Out};
+        let (me, foe) = (self.me, 1 - self.me);
+        let state = self.duel.state();
+        let act = state.fighters[me].act;
+        let fresh = act.filter(|a| a.phase == crate::fighter::Phase::Windup && a.t <= TICK * 1.5);
+        let ended = match (&self.open, act) {
+            (Some(o), Some(a)) => fresh.is_some() || a.spell != o.spell,
+            (Some(_), None) => true,
+            _ => false,
+        };
+        if ended && let Some(o) = self.open.take() {
+            self.trailing.push(o);
+        }
+        if let Some(a) = fresh
+            && self.open.is_none()
+            && let Some(sp) = spell(a.spell)
+        {
+            // a skill cast as its motion: a device's or a domain's blows come later, from the field
+            let ks = state.fighters[me].kit.get(a.spell);
+            let motion = ks.is_none_or(|k| k.way == crate::kit::Way::Motion);
+            let mo = ks.map_or(sp, |k| k.motion);
+            let k = mo.kind;
+            let kind = k as usize;
+            let strikes = motion
+                && matches!(
+                    k,
+                    Kind::Melee
+                        | Kind::Dash
+                        | Kind::Blast
+                        | Kind::Bolt
+                        | Kind::Orb
+                        | Kind::Zone
+                        | Kind::Void
+                );
+            // from the caster's x to the nearest edge of the foe's hurtboxes
+            let x = state.fighters[me].body.x;
+            let gap = crate::frames::hurtboxes(state, foe)
+                .iter()
+                .map(|h| (h[0] - x).max(x - h[2]).max(0.0))
+                .fold(f64::INFINITY, f64::min);
+            let reach = match k {
+                Kind::Melee | Kind::Blast if motion => mo.range,
+                Kind::Dash if motion => mo.distance,
+                _ => None,
+            };
+            let log = &mut self.casts.0[kind.min(CAST_KINDS - 1)];
+            log.casts += 1;
+            if reach.is_some_and(|r| gap > r) {
+                log.out_of_reach += 1;
+            }
+            self.open = Some(Open {
+                spell: a.spell,
+                kind: kind.min(CAST_KINDS - 1),
+                strikes,
+                landed: false,
+            });
+        }
+        let mut credited = false;
+        for o in self.open.iter_mut().chain(self.trailing.iter_mut()) {
+            let hit = out
+                .iter()
+                .any(|e| matches!(e, Out::Hit { by, spell, .. } if *by == me && *spell == o.spell));
+            let stopped = state
+                .notes
+                .iter()
+                .any(|(_, n)| matches!(n, Note::Stopped { by, spell, .. } if *by == me && *spell == o.spell));
+            if hit || stopped {
+                o.landed = true;
+            }
+            // the tick's damage goes to one cast of the spell that hit
+            if hit && !credited {
+                self.casts.0[o.kind].damage += dealt;
+                credited = true;
+            }
+        }
+        let out_still = |name: &str| {
+            state.shots.iter().any(|s| s.owner == me && s.name == name)
+                || state
+                    .pending
+                    .iter()
+                    .any(|p| p.payload.by == me && p.payload.skill == name)
+        };
+        let (done, keep): (Vec<Open>, Vec<Open>) = core::mem::take(&mut self.trailing)
+            .into_iter()
+            .partition(|o| o.landed || !out_still(o.spell));
+        self.trailing = keep;
+        for o in done {
+            if o.strikes && !o.landed {
+                self.casts.0[o.kind].whiffs += 1;
+                self.whiffed += 1;
             }
         }
     }

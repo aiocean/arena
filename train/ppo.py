@@ -1,14 +1,20 @@
 """PPO for the duel's policy (CleanRL-style, one file): many envs, short rollouts, masked actions, an HL-Gauss critic.
 
     uv run python ppo.py --run v1 [--updates 3000] [--envs 512] [--device cpu|mps] [--resume runs/v1/last.pt]
-    uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0
+    uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0 --whiff 0.01
 
 `--resume` continues a run where it stopped (its optimiser and its place in the schedule); `--init` starts a new run,
 with its own schedule, from another run's network (a `.pt` checkpoint, critic included, or an ONNX model such as the
 house AI's, `../crates/arena-duel/weights/policy.onnx`, at that model's size). The network's size is yours:
 `--width`, `--hidden`, `--blocks` (a bot may be any size within its fuel; the house AI is 128, 256, 2).
 
-Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end).
+`--whiff` is taken from the reward for each damaging cast that lands nothing (no hit, not guarded, not turned aside).
+
+Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end). A
+line holds, over its 10 updates, the share of each act (`acts`, in `Act` order) and the learner's casts: how many
+damaging ones (`casts`), the share of them that landed nothing (`whiff`), the share of the blades', blasts' and
+dashes' that began with the foe out of their reach (`out_of_reach`), the damage a cast (`dmg_cast`, % of a life), and
+for blades alone `melee_out_of_reach` and `melee_whiff`.
 """
 
 import argparse
@@ -34,6 +40,30 @@ def schedule(update, updates, lr, ent, shaping_until):
     return lr * (1 - frac), ent[0] + (ent[1] - ent[0]) * frac, shaping
 
 
+# the cast kinds `VecEnv.casts` counts, in its order; which deal damage, and which have a reach
+KINDS = ["melee", "dash", "blast", "bolt", "orb", "zone", "void", "heal", "ward", "barrier", "blink"]
+STRIKING = {"melee", "dash", "blast", "bolt", "orb", "zone", "void"}
+REACHED = {"melee", "dash", "blast"}
+
+
+def cast_stats(casts):
+    """The log's cast fields from `VecEnv.casts()`: (casts, out of reach, whiffs, damage) by kind."""
+    by = dict(zip(KINDS, casts))
+    share = lambda a, b: round(a / b, 4) if b else 0.0
+    hit = [by[k] for k in STRIKING]
+    reach = [by[k] for k in REACHED]
+    n = sum(c[0] for c in hit)
+    melee = by["melee"]
+    return {
+        "casts": n,
+        "whiff": share(sum(c[2] for c in hit), n),
+        "out_of_reach": share(sum(c[1] for c in reach), sum(c[0] for c in reach)),
+        "dmg_cast": share(sum(c[3] for c in hit), n),
+        "melee_out_of_reach": share(melee[1], melee[0]),
+        "melee_whiff": share(melee[2], melee[0]),
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
@@ -49,6 +79,7 @@ def main():
     ap.add_argument("--minibatches", type=int, default=8)
     ap.add_argument("--ent", type=float, nargs=2, default=[0.01, 0.002])
     ap.add_argument("--shaping-until", type=float, default=0.6, help="share of updates over which shaping falls to 0")
+    ap.add_argument("--whiff", type=float, default=0.0, help="reward cost of a damaging cast that lands nothing")
     ap.add_argument("--snapshot-every", type=int, default=20)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--seed", type=int, default=1)
@@ -126,7 +157,7 @@ def main():
                 obs_b[t], mask_b[t], act_b[t] = o, m, a.cpu()
                 logp_b[t] = dist.log_prob(a).cpu()
                 val_b[t] = policy.value_of(vlog).cpu()
-            r, d, won, length = env.step(a.cpu().numpy().astype(np.int64), shaping)
+            r, d, won, length = env.step(a.cpu().numpy().astype(np.int64), shaping, args.whiff)
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))
             for i in np.nonzero(d)[0]:
@@ -192,6 +223,8 @@ def main():
                 **{f: round(v / k, 4) for f, v in stats.items()},
                 "len": round(float(np.mean(lengths)), 1) if lengths else 0,
                 "top_act": round(float(acts.max() / max(acts.sum(), 1)), 3),
+                "acts": [round(float(x), 4) for x in acts / max(acts.sum(), 1)],
+                **cast_stats(env.casts()),
                 **{f"win/{o}": round(float(np.mean(v)), 3) for o, v in sorted(results.items())},
             }
             acts[:] = 0

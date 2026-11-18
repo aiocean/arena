@@ -8,7 +8,7 @@ uv sync
 uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml   # after any change to the Rust rules
 uv run pytest
 uv run python ppo.py --run v1                     # runs/v1/log.jsonl, runs/v1/last.pt
-uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0
+uv run python ppo.py --run v2 --init runs/v1/last.pt --updates 600 --lr 1e-4 --ent 0.003 0.002 --shaping-until 0 --whiff 0.01
                                                   # a fine-tune: a new run from v1's network
 uv run python ppo.py --run v3 --init runs/v2/last.pt ... --seat0 0.9
                                                   # the learner sits in seat 0 in 90% of its fights (0.5 by default)

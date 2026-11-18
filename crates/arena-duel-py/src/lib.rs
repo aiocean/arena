@@ -7,7 +7,7 @@ use arena_bot::onnx::Onnx;
 use arena_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use arena_duel::seat::SharedDecider;
 use arena_duel::style::Style;
-use arena_duel::train::{Env, EnvConfig, Opponent};
+use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent};
 use arena_mind::policy::{ACTIONS, OBS};
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
@@ -97,8 +97,11 @@ enum Wire {
     Step {
         actions: Vec<i64>,
         shaping: f32,
+        whiff: f32,
         reply: Sender<Vec<Out>>,
     },
+    /// The learners' casts since the last ask, summed over the worker's envs.
+    Casts { reply: Sender<Casts> },
 }
 
 /// A worker's envs and the models it has been handed.
@@ -106,6 +109,8 @@ struct Worker {
     envs: Vec<Option<Env>>,
     models: HashMap<u32, Model>,
     effects: Vec<String>,
+    /// The casts of envs since reset, until `Wire::Casts` takes them.
+    casts: Casts,
 }
 
 impl Worker {
@@ -115,6 +120,7 @@ impl Worker {
             envs: (0..n).map(|_| None).collect(),
             models: HashMap::new(),
             effects,
+            casts: Casts::default(),
         };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
@@ -138,9 +144,16 @@ impl Worker {
             } => {
                 let _ = reply.send(self.reset(slot, seed, learner, style, foe_style, foe, limit));
             }
+            Wire::Casts { reply } => {
+                for env in self.envs.iter_mut().flatten() {
+                    self.casts.add(&env.take_casts());
+                }
+                let _ = reply.send(core::mem::take(&mut self.casts));
+            }
             Wire::Step {
                 actions,
                 shaping,
+                whiff,
                 reply,
             } => {
                 let outs = self
@@ -149,7 +162,7 @@ impl Worker {
                     .zip(actions)
                     .map(|(env, a)| match env {
                         Some(env) => {
-                            let s = env.step(usize::try_from(a).unwrap_or(0), shaping);
+                            let s = env.step_with(usize::try_from(a).unwrap_or(0), shaping, whiff);
                             let mut out = snapshot(env);
                             out.reward = s.reward;
                             out.done = s.done;
@@ -207,6 +220,9 @@ impl Worker {
             .envs
             .get_mut(slot)
             .ok_or(format!("no env slot {slot}"))?;
+        if let Some(old) = place.as_mut() {
+            self.casts.add(&old.take_casts());
+        }
         *place = Some(env);
         Ok(Out { done: false, ..out })
     }
@@ -367,14 +383,34 @@ impl VecEnv {
         Ok((obs.into_any(), mask.into_any()))
     }
 
+    /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: melee, dash,
+    /// blast, bolt, orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, damage)`.
+    fn casts(&self) -> PyResult<Vec<(u32, u32, u32, f64)>> {
+        let mut total = Casts::default();
+        for (tx, _, _) in &self.workers {
+            let (reply, rx) = channel();
+            tx.send(Wire::Casts { reply })
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            total.add(&rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?);
+        }
+        Ok((0..CAST_KINDS)
+            .map(|k| {
+                let c = total.0[k];
+                (c.casts, c.out_of_reach, c.whiffs, c.damage)
+            })
+            .collect())
+    }
+
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     #[allow(clippy::type_complexity)]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
         actions: PyReadonlyArray1<'py, i64>,
         shaping: f32,
+        whiff: f32,
     ) -> PyResult<(
         Bound<'py, PyAny>,
         Bound<'py, PyAny>,
@@ -399,6 +435,7 @@ impl VecEnv {
                 tx.send(Wire::Step {
                     actions: slice,
                     shaping,
+                    whiff,
                     reply,
                 })
                 .map_err(|e| e.to_string())?;
