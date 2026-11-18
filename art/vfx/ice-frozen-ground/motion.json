@@ -1,0 +1,10 @@
+{
+  "fx": "ice/frozen-ground",
+  "fps": 13.33,
+  "loop": true,
+  "anchor": [
+    64,
+    40
+  ],
+  "exit": "disappear/fade"
+}

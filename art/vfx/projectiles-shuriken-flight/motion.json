@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/shuriken-flight",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    22,
+    12
+  ],
+  "exit": "disappear/fade"
+}

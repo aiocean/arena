@@ -230,7 +230,14 @@ impl Drawn {
             })
         };
         if self.layout.looping {
-            return frame((t * fps).floor() as usize % n.max(1), (0.0, 0.0));
+            let at = if self.fx == "lightning/ball-lightning" {
+                let (ox, oy) = arena_duel::data::orb_offset(f64::from(t));
+                let u = arena_duel::data::UNIT;
+                ((ox / u) as f32, (oy / u) as f32)
+            } else {
+                (0.0, 0.0)
+            };
+            return frame((t * fps).floor() as usize % n.max(1), at);
         }
         let m = &self.layout.motion;
         let from = m.fly.map_or((0.0, 0.0), |f| (f.from[0], f.from[1]));

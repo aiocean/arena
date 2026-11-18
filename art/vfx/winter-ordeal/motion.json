@@ -1,28 +1,9 @@
 {
   "fx": "shadow/winter-ordeal",
-  "fps": 5.0,
+  "fps": 12.5,
   "loop": false,
   "anchor": [
-    90,
-    122
-  ],
-  "px": 0.6667,
-  "grow": {
-    "from": 0.3,
-    "secs": 0.45
-  },
-  "idle": {
-    "from": 3,
-    "to": 3,
-    "secs": 0.48
-  },
-  "fly": {
-    "from": [
-      0,
-      -33
-    ],
-    "secs": 0.3,
-    "hold": 6
-  },
-  "exit": "disappear/fade"
+    40,
+    108
+  ]
 }

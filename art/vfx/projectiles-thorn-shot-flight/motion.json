@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/thorn-shot-flight",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    46,
+    14
+  ],
+  "exit": "disappear/fade"
+}

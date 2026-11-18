@@ -3,6 +3,9 @@
 [package]
 edition = "2024"
 
+[profile.dev]
+opt-level = 2
+
 [dependencies]
 image = { version = "0.24", default-features = false, features = ["png"] }
 webp = "0.3"
@@ -262,33 +265,45 @@ fn build(
     let lossless = px.is_none();
     let (cw, ch) = clips.values().next().and_then(|f| f.first()).map(RgbaImage::dimensions).unwrap_or((0, 0));
 
-    // pack: one row per school, a new page when a row would pass the page's foot
+    // pack: shelf by shelf per school, wrapping to a new row (or page) when a frame would pass PAGE
     let mut cells: BTreeMap<String, Vec<Value>> = BTreeMap::new();
     let mut placed: Vec<(RgbaImage, usize, u32, u32)> = Vec::new();
     let mut sizes: Vec<(u32, u32)> = vec![(0, 0)];
     for (school, frames) in &clips {
         let pieces: Vec<_> = frames.iter().map(|im| (im, bbox(im).unwrap_or((0, 0, 1, 1)))).collect();
-        let row_w: u32 = pieces.iter().map(|(_, (a, _, c, _))| c - a + 1).sum();
-        let row_h = pieces.iter().map(|(_, (_, b, _, d))| d - b).max().unwrap_or(0);
-        if row_w > PAGE || row_h > PAGE {
-            return Err(format!("{school}: a row of {row_w}x{row_h} does not fit on a {PAGE}-pixel page").into());
-        }
-        if sizes.last().is_some_and(|&(_, h)| h > 0 && h + row_h > PAGE) {
-            sizes.push((0, 0));
-        }
-        let page = sizes.len() - 1;
-        let (width, y) = sizes[page];
         let mut x = 0u32;
+        let mut shelf = 0u32;
         for (im, (a, b, c, d)) in pieces {
-            let piece = image::imageops::crop_imm(im, a, b, c - a, d - b).to_image();
+            let (pw, ph) = (c - a, d - b);
+            if pw > PAGE || ph > PAGE {
+                return Err(format!("{school}: a frame of {pw}x{ph} does not fit on a {PAGE}-pixel page").into());
+            }
+            if x > 0 && x + pw > PAGE {
+                let page = sizes.len() - 1;
+                sizes[page] = (sizes[page].0.max(x), sizes[page].1 + shelf + 1);
+                x = 0;
+                shelf = 0;
+            }
+            if sizes.last().is_some_and(|&(_, h)| h > 0 && h + ph > PAGE) {
+                sizes.push((0, 0));
+                x = 0;
+                shelf = 0;
+            }
+            let page = sizes.len() - 1;
+            let y = sizes[page].1;
+            let piece = image::imageops::crop_imm(im, a, b, pw, ph).to_image();
             cells.entry(school.clone()).or_default().push(json!({
-                "page": page, "x": x, "y": y, "w": c - a, "h": d - b,
+                "page": page, "x": x, "y": y, "w": pw, "h": ph,
                 "dx": a as i32 - anchor.0, "dy": b as i32 - anchor.1,
             }));
             placed.push((piece, page, x, y));
-            x += c - a + 1;
+            x += pw + 1;
+            shelf = shelf.max(ph);
         }
-        sizes[page] = (width.max(x), y + row_h + 1);
+        if x > 0 || shelf > 0 {
+            let page = sizes.len() - 1;
+            sizes[page] = (sizes[page].0.max(x), sizes[page].1 + shelf + 1);
+        }
     }
     let mut pages: Vec<RgbaImage> = sizes.iter().map(|&(w, h)| RgbaImage::new(w.max(1), h.max(1))).collect();
     for (piece, page, x, y) in &placed {

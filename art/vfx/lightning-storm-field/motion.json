@@ -1,0 +1,10 @@
+{
+  "fx": "lightning/storm-field",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    62,
+    95
+  ],
+  "exit": "disappear/fade"
+}

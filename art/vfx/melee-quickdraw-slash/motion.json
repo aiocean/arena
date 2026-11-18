@@ -1,0 +1,9 @@
+{
+  "fx": "melee/quickdraw-slash",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    52,
+    32
+  ]
+}

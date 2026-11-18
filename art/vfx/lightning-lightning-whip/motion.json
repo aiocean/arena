@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/lightning-whip",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    14,
+    44
+  ]
+}

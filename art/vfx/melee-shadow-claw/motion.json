@@ -1,0 +1,9 @@
+{
+  "fx": "melee/shadow-claw",
+  "fps": 20.0,
+  "loop": false,
+  "anchor": [
+    28,
+    28
+  ]
+}

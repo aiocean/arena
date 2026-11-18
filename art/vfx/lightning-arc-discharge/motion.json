@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/arc-discharge",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    50,
+    36
+  ]
+}

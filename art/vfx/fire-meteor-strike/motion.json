@@ -1,0 +1,9 @@
+{
+  "fx": "fire/meteor-strike",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    47,
+    82
+  ]
+}

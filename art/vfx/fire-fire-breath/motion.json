@@ -1,0 +1,9 @@
+{
+  "fx": "fire/fire-breath",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    8,
+    50
+  ]
+}

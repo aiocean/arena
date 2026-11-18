@@ -295,16 +295,21 @@ fn effects(wiki: &mut Wiki, book: &mut Book, assets: &Path) -> Result<(), String
                     dy: c.dy,
                 })
                 .collect();
+            let smooth = d.layout.motion.px.is_some();
             let tallest = pics.iter().map(|p| p.h).max().unwrap_or(1).max(1);
-            let scale = (110.0 / f64::from(tallest)).min(1.0);
-            if let Some(strip) = img::strip(&pages, &pics, &[], scale, true) {
+            let scale = if smooth {
+                (110.0 / f64::from(tallest)).min(1.0)
+            } else {
+                1.0
+            };
+            if let Some(strip) = img::strip(&pages, &pics, &[], scale, smooth) {
                 let (w, h) = strip.dimensions();
-                shown.push((
-                    format!("drawn, {school}"),
-                    wiki.picture(img::webp(&strip, false)),
-                    w,
-                    h,
-                ));
+                let label = if smooth {
+                    format!("drawn, {school}")
+                } else {
+                    format!("drawn, pixel, {school}")
+                };
+                shown.push((label, wiki.picture(img::webp(&strip, !smooth)), w, h));
             }
         }
         book.fx.insert(d.fx.clone(), shown);
@@ -840,7 +845,7 @@ fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
                     match book.fx.get(fx) {
                         Some(shown) if !shown.is_empty() => {
                             for (label, url, w, h) in shown {
-                                let pixel = label.starts_with("baked");
+                                let pixel = label.starts_with("baked") || label.contains("pixel");
                                 let _ = write!(body, "<p class=\"gen\">{}</p>", esc(label));
                                 body.push_str(&strip_html(&(url.clone(), *w, *h), fx, pixel));
                             }

@@ -1,0 +1,9 @@
+{
+  "fx": "melee/uppercut",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    24,
+    28
+  ]
+}

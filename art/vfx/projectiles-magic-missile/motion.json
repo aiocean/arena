@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/magic-missile",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    78,
+    30
+  ],
+  "exit": "disappear/fade"
+}

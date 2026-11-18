@@ -1,0 +1,10 @@
+{
+  "fx": "arcane/arcane-orb-projectile",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    64,
+    26
+  ],
+  "exit": "disappear/fade"
+}

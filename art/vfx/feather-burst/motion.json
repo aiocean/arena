@@ -1,20 +1,9 @@
 {
   "fx": "holy/feather-burst",
-  "fps": 8.0,
+  "fps": 12.5,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.3429,
-  "grow": {
-    "from": 0.4,
-    "secs": 0.15
-  },
-  "idle": {
-    "from": 4,
-    "to": 5,
-    "secs": 1.5
-  },
-  "exit": "disappear/fade"
+    32,
+    32
+  ]
 }

@@ -1,0 +1,9 @@
+{
+  "fx": "scifi/emp-pulse",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    60,
+    60
+  ]
+}

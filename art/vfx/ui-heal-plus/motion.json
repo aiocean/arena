@@ -1,0 +1,9 @@
+{
+  "fx": "ui/heal-plus",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    23,
+    38
+  ]
+}

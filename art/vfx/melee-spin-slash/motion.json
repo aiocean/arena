@@ -1,0 +1,9 @@
+{
+  "fx": "melee/spin-slash",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    60,
+    34
+  ]
+}

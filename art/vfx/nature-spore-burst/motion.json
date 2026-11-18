@@ -1,0 +1,9 @@
+{
+  "fx": "nature/spore-burst",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    32,
+    18
+  ]
+}

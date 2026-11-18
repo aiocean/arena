@@ -1,0 +1,9 @@
+{
+  "fx": "arcane/shield-shatter",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    32,
+    64
+  ]
+}

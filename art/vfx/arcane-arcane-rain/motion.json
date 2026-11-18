@@ -1,0 +1,9 @@
+{
+  "fx": "arcane/arcane-rain",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    64,
+    60
+  ]
+}

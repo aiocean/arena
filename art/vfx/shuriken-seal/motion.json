@@ -1,12 +1,9 @@
 {
   "fx": "arcane/shuriken-seal",
-  "fps": 10.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.2744,
-  "turns": 1.0,
-  "exit": "disappear/fade"
+    64,
+    79
+  ]
 }

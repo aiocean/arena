@@ -1,12 +1,9 @@
 {
   "fx": "arcane/vortex-ring",
-  "fps": 10.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.2885,
-  "turns": 1.5,
-  "exit": "disappear/fade"
+    48,
+    48
+  ]
 }

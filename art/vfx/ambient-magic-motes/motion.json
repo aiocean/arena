@@ -1,0 +1,10 @@
+{
+  "fx": "ambient/magic-motes",
+  "fps": 12.5,
+  "loop": true,
+  "anchor": [
+    32,
+    64
+  ],
+  "exit": "disappear/fade"
+}

@@ -1,0 +1,9 @@
+{
+  "fx": "scifi/warp-jump",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    32,
+    88
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "fx": "fire/phoenix-burst",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    64,
+    50
+  ]
+}

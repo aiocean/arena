@@ -1,15 +1,9 @@
 {
   "fx": "arcane/sword-slash",
-  "fps": 10.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.3019,
-  "grow": {
-    "from": 0.6,
-    "secs": 0.12
-  },
-  "exit": "disappear/fade"
+    52,
+    66
+  ]
 }

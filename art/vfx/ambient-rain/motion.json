@@ -1,0 +1,10 @@
+{
+  "fx": "ambient/rain",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    64,
+    96
+  ],
+  "exit": "disappear/fade"
+}

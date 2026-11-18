@@ -440,7 +440,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "step",
         kind: Kind::Dash,
-        fx: Some("spawn/poof"),
+        fx: Some("lightning/lightning-dash"),
         cost: 24.0,
         windup: 0.26,
         recover: 0.45,
@@ -469,7 +469,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "lotus",
         kind: Kind::Blast,
-        fx: Some("holy/feather-burst"),
+        fx: Some("ice/frost-nova"),
         cost: 24.0,
         windup: 0.3,
         recover: 0.45,
@@ -542,7 +542,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "palm",
         kind: Kind::Blast,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("impacts/shockwave-ring"),
         cost: 27.0,
         windup: 0.32,
         recover: 0.5,
@@ -556,7 +556,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "tribulation",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("lightning/chain-lightning"),
         cost: 0.0,
         windup: 0.7,
         recover: 0.8,
@@ -604,7 +604,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "ward",
         kind: Kind::Ward,
-        fx: Some("holy/feather-burst"),
+        fx: Some("holy/angel-feathers"),
         cost: 45.0,
         windup: 0.5,
         recover: 0.25,
@@ -630,7 +630,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "mirror",
         kind: Kind::Barrier,
-        fx: Some("arcane/rune-circle"),
+        fx: Some("water/bubble-shield"),
         cost: 18.0,
         windup: 0.06,
         recover: 0.1,
@@ -654,7 +654,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "spark",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("scifi/bullet-tracer"),
         cost: 10.0,
         windup: 0.18,
         recover: 0.18,
@@ -667,7 +667,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "burst",
         kind: Kind::Blast,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("lightning/arc-discharge"),
         cost: 30.0,
         windup: 0.36,
         recover: 0.5,
@@ -723,7 +723,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "fireball",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("projectiles/fireball-flight"),
         cost: 14.0,
         windup: 0.26,
         recover: 0.24,
@@ -754,7 +754,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "earthsplit",
         kind: Kind::Zone,
-        fx: Some("explosions/small-explosion"),
+        fx: Some("nature/fissure"),
         cost: 28.0,
         windup: 0.32,
         recover: 0.3,
@@ -771,7 +771,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "finger",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("scifi/laser-beam"),
         cost: 28.0,
         windup: 0.4,
         recover: 0.3,
@@ -784,7 +784,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "jithunder",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("scifi/plasma-bolt-flight"),
         cost: 24.0,
         windup: 0.3,
         recover: 0.25,
@@ -797,7 +797,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "gather",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("lightning/static-burst"),
         cost: 36.0,
         windup: 0.4,
         recover: 0.35,
@@ -813,7 +813,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "ancientgod",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("melee/hammer-smash"),
         cost: 36.0,
         windup: 0.5,
         recover: 0.55,
@@ -870,7 +870,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "onestep",
         kind: Kind::Dash,
-        fx: Some("spawn/poof"),
+        fx: Some("arcane/blink-dash"),
         cost: 30.0,
         windup: 0.2,
         recover: 0.4,
@@ -883,7 +883,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "mountain",
         kind: Kind::Zone,
-        fx: Some("explosions/small-explosion"),
+        fx: Some("fire/meteor-strike"),
         cost: 44.0,
         windup: 0.6,
         recover: 0.45,
@@ -900,7 +900,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "heartbeat",
         kind: Kind::Blast,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("wind/sonic-boom"),
         cost: 20.0,
         windup: 0.24,
         recover: 0.35,
@@ -926,7 +926,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "nineturn",
         kind: Kind::Blast,
-        fx: Some("arcane/vortex-ring"),
+        fx: Some("explosions/arcane-burst"),
         cost: 40.0,
         windup: 0.85,
         recover: 0.5,
@@ -939,7 +939,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "indestructible",
         kind: Kind::Heal,
-        fx: Some("feedback/power-up"),
+        fx: Some("holy/resurrect"),
         cost: 40.0,
         windup: 0.7,
         recover: 0.4,
@@ -963,7 +963,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "vermilion",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("fire/phoenix-burst"),
         cost: 30.0,
         windup: 0.35,
         recover: 0.4,
@@ -976,7 +976,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "summonrain",
         kind: Kind::Void,
-        fx: Some("water/splash"),
+        fx: Some("ambient/rain"),
         cost: 30.0,
         windup: 0.4,
         recover: 0.3,
@@ -994,7 +994,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "summonwind",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("wind/wind-gust"),
         cost: 26.0,
         windup: 0.3,
         recover: 0.4,
@@ -1007,7 +1007,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "beans",
         kind: Kind::Void,
-        fx: Some("critters/wisp"),
+        fx: Some("ambient/magic-motes"),
         cost: 36.0,
         windup: 0.5,
         recover: 0.3,
@@ -1040,7 +1040,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "soulsearch",
         kind: Kind::Blast,
-        fx: Some("arcane/vortex-ring"),
+        fx: Some("shadow/shadow-tendrils"),
         cost: 28.0,
         windup: 0.4,
         recover: 0.4,
@@ -1053,7 +1053,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "spiritchange",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("arcane/arcane-orb-projectile"),
         cost: 20.0,
         windup: 0.28,
         recover: 0.25,
@@ -1066,7 +1066,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "bodyfix",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("status/petrified"),
         cost: 36.0,
         windup: 0.4,
         recover: 0.3,
@@ -1145,7 +1145,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "dreamback",
         kind: Kind::Ward,
-        fx: Some("arcane/restriction"),
+        fx: Some("arcane/mana-shield"),
         feet: true,
         cost: 44.0,
         windup: 0.5,
@@ -1157,7 +1157,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "dreamdao",
         kind: Kind::Blast,
-        fx: Some("explosions/puff-burst"),
+        fx: Some("arcane/polymorph-poof"),
         cost: 26.0,
         windup: 0.4,
         recover: 0.4,
@@ -1170,7 +1170,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "flowingmoon",
         kind: Kind::Heal,
-        fx: Some("holy/feather-burst"),
+        fx: Some("holy/purify"),
         cost: 38.0,
         windup: 0.8,
         recover: 0.4,
@@ -1213,7 +1213,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "thirdeye",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("arcane/arcane-beam"),
         cost: 20.0,
         windup: 0.3,
         recover: 0.25,
@@ -1239,7 +1239,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "umbrella",
         kind: Kind::Zone,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("fire/flame-ring"),
         cost: 34.0,
         windup: 0.4,
         recover: 0.3,
@@ -1268,7 +1268,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "starfall",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("arcane/arcane-rain"),
         cost: 40.0,
         windup: 0.4,
         recover: 0.35,
@@ -1287,7 +1287,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "seize",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("projectiles/acid-glob-flight"),
         cost: 18.0,
         windup: 0.25,
         recover: 0.25,
@@ -1300,7 +1300,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "yellowspring",
         kind: Kind::Blast,
-        fx: Some("impacts/twin-converge"),
+        fx: Some("melee/shadow-claw"),
         cost: 24.0,
         windup: 0.3,
         recover: 0.4,
@@ -1313,7 +1313,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "ancientthunder",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("lightning/lightning-strike"),
         cost: 38.0,
         windup: 0.4,
         recover: 0.35,
@@ -1332,7 +1332,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "demonfinger",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("shadow/shadow-bolt"),
         cost: 22.0,
         windup: 0.3,
         recover: 0.25,
@@ -1345,7 +1345,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "kunjiwhip",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("lightning/lightning-whip"),
         cost: 26.0,
         windup: 0.32,
         recover: 0.4,
@@ -1358,7 +1358,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "tigerflag",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("projectiles/holy-lance-flight"),
         cost: 26.0,
         windup: 0.34,
         recover: 0.3,
@@ -1371,7 +1371,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "timerestrict",
         kind: Kind::Zone,
-        fx: Some("arcane/restriction"),
+        fx: Some("arcane/time-stop"),
         cost: 38.0,
         windup: 0.45,
         recover: 0.35,
@@ -1406,7 +1406,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "soulbanner",
         kind: Kind::Void,
-        fx: Some("critters/wisp"),
+        fx: Some("lightning/storm-field"),
         cost: 44.0,
         windup: 0.55,
         recover: 0.3,
@@ -1424,7 +1424,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "servitude",
         kind: Kind::Zone,
-        fx: Some("arcane/comma-seal"),
+        fx: Some("shadow/curse"),
         cost: 34.0,
         windup: 0.4,
         recover: 0.3,
@@ -1442,7 +1442,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "voidnail",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("projectiles/shuriken-flight"),
         cost: 34.0,
         windup: 0.4,
         recover: 0.3,
@@ -1455,7 +1455,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "fingerdeath",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("shadow/shadow-spikes"),
         cost: 34.0,
         windup: 0.35,
         recover: 0.3,
@@ -1474,7 +1474,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "heavenlychop",
         kind: Kind::Blast,
-        fx: Some("arcane/sword-slash"),
+        fx: Some("melee/spin-slash"),
         cost: 34.0,
         windup: 0.45,
         recover: 0.5,
@@ -1487,7 +1487,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "fireescape",
         kind: Kind::Dash,
-        fx: Some("spawn/poof"),
+        fx: Some("fire/fire-dash"),
         cost: 28.0,
         windup: 0.22,
         recover: 0.4,
@@ -1500,7 +1500,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "flameorigin",
         kind: Kind::Zone,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("fire/fire-pillar"),
         cost: 34.0,
         windup: 0.4,
         recover: 0.3,
@@ -1516,7 +1516,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "warprint",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("impacts/crater-impact"),
         cost: 32.0,
         windup: 0.4,
         recover: 0.5,
@@ -1541,7 +1541,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "celestialslaughter",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("scifi/drone-thruster"),
         cost: 36.0,
         windup: 0.5,
         recover: 0.35,
@@ -1590,7 +1590,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "soulrefine",
         kind: Kind::Heal,
-        fx: Some("holy/feather-burst"),
+        fx: Some("nature/bloom-heal"),
         cost: 28.0,
         windup: 0.7,
         recover: 0.4,
@@ -1602,7 +1602,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "starrotation",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("explosions/firework-burst"),
         cost: 38.0,
         windup: 0.4,
         recover: 0.35,
@@ -1621,7 +1621,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "meritspirit",
         kind: Kind::Ward,
-        fx: Some("holy/lotus"),
+        fx: Some("holy/halo-crown"),
         feet: true,
         cost: 42.0,
         windup: 0.5,
@@ -1633,7 +1633,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "bodyformation",
         kind: Kind::Heal,
-        fx: Some("feedback/power-up"),
+        fx: Some("holy/regen-aura"),
         cost: 34.0,
         windup: 0.75,
         recover: 0.4,
@@ -1660,7 +1660,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "ancientcauldron",
         kind: Kind::Blink,
-        fx: Some("arcane/vortex-ring"),
+        fx: Some("scifi/warp-jump"),
         swap: true,
         cost: 30.0,
         windup: 0.2,
@@ -1673,7 +1673,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "eightextremes",
         kind: Kind::Zone,
-        fx: Some("explosions/plasma-explosion"),
+        fx: Some("fire/lava-burst"),
         cost: 40.0,
         windup: 0.45,
         recover: 0.35,
@@ -1692,7 +1692,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "daofusion",
         kind: Kind::Blast,
-        fx: Some("explosions/swirl-blast"),
+        fx: Some("holy/holy-nova"),
         cost: 46.0,
         windup: 0.8,
         recover: 0.5,
@@ -1705,7 +1705,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "daoyellow",
         kind: Kind::Void,
-        fx: Some("critters/wisp"),
+        fx: Some("ice/frozen-ground"),
         cost: 42.0,
         windup: 0.5,
         recover: 0.3,
@@ -1723,7 +1723,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "springsoul",
         kind: Kind::Bolt,
-        fx: Some("projectiles/laser-bolt"),
+        fx: Some("projectiles/water-bolt-flight"),
         cost: 26.0,
         windup: 0.4,
         recover: 0.3,
@@ -1736,7 +1736,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "starsoul",
         kind: Kind::Blast,
-        fx: Some("arcane/vortex-ring"),
+        fx: Some("shadow/shadow-cast"),
         cost: 30.0,
         windup: 0.45,
         recover: 0.4,
@@ -1749,7 +1749,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "spiritsummon",
         kind: Kind::Zone,
-        fx: Some("impacts/twin-converge"),
+        fx: Some("fire/incinerate"),
         cost: 36.0,
         windup: 0.4,
         recover: 0.3,
@@ -1766,7 +1766,7 @@ static SPELLS: [Spell; 93] = [
     Spell {
         name: "starcompass",
         kind: Kind::Blink,
-        fx: Some("explosions/puff-burst"),
+        fx: Some("arcane/teleport-in"),
         swap: true,
         cost: 18.0,
         windup: 0.1,
@@ -1800,6 +1800,7 @@ fn skills() -> &'static [Spell] {
                 });
                 Some(Spell {
                     name: g.id,
+                    fx: gem_fx(g.id).or(m.fx),
                     cost: qi,
                     windup: g.windup,
                     recover: g.recover,
@@ -1814,6 +1815,88 @@ fn skills() -> &'static [Spell] {
 }
 
 /// Skill `id` of the shared pool as the duel casts it (see `skills`).
+/// The effect skill `id` plays of its own when it borrows another skill's motion (`Gem::spell`).
+pub fn gem_fx(id: &str) -> Option<&'static str> {
+    Some(match id {
+        "hundredfist" => "impacts/punch-hit",
+        "tenfist" => "melee/uppercut",
+        "manshen" => "melee/axe-smear",
+        "devourbody" => "shadow/shadow-step",
+        "manspear" => "melee/spear-thrust",
+        "autumn" => "melee/scythe-reap",
+        "godquake" => "melee/shield-bash",
+        "banspear" => "melee/quickdraw-slash",
+        "starbreak" => "explosions/fire-nova",
+        "bloodpowder" => "impacts/blood-splat",
+        "threeslay" => "melee/sword-combo",
+        "liphong" => "fire/fire-breath",
+        "bindingword" => "status/silenced",
+        "extremesense" => "scifi/scanner-sweep",
+        "silentfinger" => "projectiles/poison-dart",
+        "fivearrows" => "projectiles/arrow-flight",
+        "libow" => "scifi/railgun-shot",
+        "godfinger" => "projectiles/magic-missile",
+        "slaughterbolt" => "scifi/rocket-exhaust",
+        "timereverse" => "ui/treasure-glint",
+        "manhair" => "projectiles/thorn-shot-flight",
+        "skyqueen" => "projectiles/ice-shard",
+        "movemountain" => "nature/rockfall",
+        "threerestrict" => "nature/thorn-wall",
+        "karmaseal" => "holy/divine-beam",
+        "remnantdusk" => "explosions/cluster-bomb",
+        "sukiep" => "explosions/barrel-explosion",
+        "thunderchart" => "scifi/emp-pulse",
+        "fourforms" => "nature/earth-spike",
+        "soulburst" => "shadow/shadow-burst",
+        "heaventhread" => "lightning/lightning-cast",
+        "bannertribulation" => "scifi/mech-explosion",
+        "cursewords" => "explosions/toxic-explosion",
+        "ninedeaths" => "impacts/death-poof",
+        "fiveorgans" => "nature/spore-burst",
+        "threebreaths" => "arcane/arcane-cast",
+        "strawknot" => "nature/nature-cast",
+        "ancestorcurse" => "ui/debuff-arrow",
+        "agingcurse" => "smoke/soot-burst",
+        "exposemark" => "status/target-mark",
+        "deathseal" => "shadow/doom-mark",
+        "sealgod" => "arcane/shield-shatter",
+        "wanderingsouls" => "ambient/dust-motes",
+        "restrictbanner" => "arcane/gravity-well",
+        "yellowfinger" => "water/whirlpool",
+        "moonwing" => "ambient/rising-embers",
+        "soulmerge" => "lightning/thunder-cloud",
+        "realfake" => "scifi/cloak-shimmer",
+        "defiance" => "scifi/shield-hit",
+        "warseal" => "ice/frost-armor",
+        "godform" => "ui/level-up",
+        "fate" => "holy/holy-cast",
+        "soularmour" => "ice/ice-cast",
+        "deathlessbreath" => "ui/heal-plus",
+        "teleport" => "scifi/teleport-beam",
+        "stillwind" => "wind/tornado",
+        "fixedrule" => "ice/freeze-encase",
+        "truepressure" => "nature/quicksand",
+        "windrain" => "ice/blizzard",
+        "slaughteraura" => "status/bleeding",
+        "timeaura" => "status/slowed",
+        "fourseasons" => "nature/leaf-storm",
+        "belief" => "status/blessed",
+        "waraura" => "status/berserk",
+        "ease" => "wind/updraft",
+        "dispassion" => "status/frozen-chill",
+        "frenzy" => "status/burning-aura",
+        "moods" => "status/confused",
+        "rebirth" => "water/ripple",
+        "desire" => "fire/fire-cast",
+        "soullock" => "status/electrified",
+        "memory" => "status/sleep",
+        "infatuation" => "status/poisoned",
+        "severance" => "wind/whirlwind",
+        "charm" => "status/charm-hearts",
+        _ => return None,
+    })
+}
+
 pub fn spell(id: &str) -> Option<&'static Spell> {
     skills().iter().find(|s| s.name == id)
 }

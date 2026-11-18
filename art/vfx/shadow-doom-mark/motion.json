@@ -1,0 +1,9 @@
+{
+  "fx": "shadow/doom-mark",
+  "fps": 12.5,
+  "loop": false,
+  "anchor": [
+    22,
+    56
+  ]
+}

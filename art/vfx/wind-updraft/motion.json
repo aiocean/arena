@@ -1,0 +1,9 @@
+{
+  "fx": "wind/updraft",
+  "fps": 13.33,
+  "loop": false,
+  "anchor": [
+    28,
+    74
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "fx": "melee/shield-bash",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    14,
+    28
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/static-burst",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    56,
+    58
+  ]
+}

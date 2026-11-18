@@ -1,0 +1,9 @@
+{
+  "fx": "melee/spear-thrust",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    12,
+    48
+  ]
+}

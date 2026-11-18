@@ -1,0 +1,9 @@
+{
+  "fx": "holy/regen-aura",
+  "fps": 12.5,
+  "loop": false,
+  "anchor": [
+    24,
+    3
+  ]
+}

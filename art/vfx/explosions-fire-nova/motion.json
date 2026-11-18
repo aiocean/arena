@@ -1,0 +1,9 @@
+{
+  "fx": "explosions/fire-nova",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    48,
+    44
+  ]
+}

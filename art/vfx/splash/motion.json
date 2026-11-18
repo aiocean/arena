@@ -1,11 +1,9 @@
 {
   "fx": "water/splash",
-  "fps": 5.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    134
-  ],
-  "px": 0.4375,
-  "exit": "disappear/fade"
+    56,
+    66
+  ]
 }

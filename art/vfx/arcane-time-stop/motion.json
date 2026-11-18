@@ -1,0 +1,9 @@
+{
+  "fx": "arcane/time-stop",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    72,
+    100
+  ]
+}

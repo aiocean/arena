@@ -1,0 +1,10 @@
+{
+  "fx": "ui/treasure-glint",
+  "fps": 13.33,
+  "loop": true,
+  "anchor": [
+    24,
+    24
+  ],
+  "exit": "disappear/fade"
+}

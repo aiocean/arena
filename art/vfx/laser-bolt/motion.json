@@ -1,17 +1,10 @@
 {
   "fx": "projectiles/laser-bolt",
-  "fps": 16.0,
+  "fps": 16.67,
   "loop": true,
   "anchor": [
-    158,
-    93
+    58,
+    16
   ],
-  "px": 0.2679,
-  "tail": {
-    "secs": 0.25,
-    "taper": 0,
-    "soft": 0.15,
-    "breakup": 1
-  },
   "exit": "disappear/fade"
 }

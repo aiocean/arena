@@ -1,0 +1,14 @@
+{
+  "fx": "scifi/shield-hit",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    44,
+    57
+  ],
+  "idle": {
+    "from": 2,
+    "to": 8,
+    "secs": 2.2
+  }
+}

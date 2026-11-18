@@ -1,15 +1,10 @@
 {
   "fx": "nature/poison-cloud",
-  "fps": 4.0,
+  "fps": 12.5,
   "loop": true,
   "anchor": [
-    169,
-    122
+    32,
+    45
   ],
-  "px": 0.3526,
-  "grow": {
-    "from": 0.4,
-    "secs": 0.4
-  },
   "exit": "disappear/fade"
 }

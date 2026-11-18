@@ -1,0 +1,9 @@
+{
+  "fx": "shadow/shadow-spikes",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    68,
+    22
+  ]
+}

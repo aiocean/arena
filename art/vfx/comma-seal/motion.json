@@ -1,12 +1,9 @@
 {
   "fx": "arcane/comma-seal",
-  "fps": 10.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.3003,
-  "turns": 0.75,
-  "exit": "disappear/fade"
+    32,
+    36
+  ]
 }

@@ -29,7 +29,7 @@ const PLAN2: [&str; 16] = [
 ];
 
 fn plan2(seed: u32) -> Duel {
-    Duel::with_brains(config(seed, PLAN2.iter().map(|s| s.to_string()).collect()))
+    Duel::with_brains(config(seed, all_effects()))
 }
 
 /// Each round's wins as it ended, over `seconds` at 60 Hz.
@@ -320,8 +320,9 @@ fn random_loadouts_come_from_dice_of_their_own() {
     assert_ne!(arena_duel::duel::loadouts(1), arena_duel::duel::loadouts(2));
     // a duel drawn at random fights exactly as one given the same loadouts: drawing them moved no rule's dice
     let mut drawn = plan2(4);
+    let _ = PLAN2;
     let mut given = Duel::with_loadouts(
-        config(4, PLAN2.iter().map(|s| s.to_string()).collect()),
+        config(4, all_effects()),
         [
             arena_duel::seat::Brain::make(),
             arena_duel::seat::Brain::make(),

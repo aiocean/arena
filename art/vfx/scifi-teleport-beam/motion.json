@@ -1,0 +1,9 @@
+{
+  "fx": "scifi/teleport-beam",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    24,
+    66
+  ]
+}

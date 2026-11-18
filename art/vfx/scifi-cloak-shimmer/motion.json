@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/cloak-shimmer",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    22,
+    69
+  ],
+  "exit": "disappear/fade"
+}

@@ -1,0 +1,10 @@
+{
+  "fx": "lightning/thunder-cloud",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    28,
+    69
+  ],
+  "exit": "disappear/fade"
+}

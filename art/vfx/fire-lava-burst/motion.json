@@ -1,0 +1,9 @@
+{
+  "fx": "fire/lava-burst",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    32,
+    28
+  ]
+}

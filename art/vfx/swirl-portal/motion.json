@@ -1,21 +1,9 @@
 {
   "fx": "spawn/swirl-portal",
-  "fps": 10.0,
+  "fps": 12.5,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.2809,
-  "grow": {
-    "from": 0.3,
-    "secs": 0.15
-  },
-  "turns": 1.5,
-  "idle": {
-    "from": 2,
-    "to": 3,
-    "secs": 0.2
-  },
-  "exit": "disappear/fade"
+    54,
+    108
+  ]
 }

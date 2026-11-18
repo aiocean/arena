@@ -1,0 +1,10 @@
+{
+  "fx": "arcane/arcane-beam",
+  "fps": 13.33,
+  "loop": true,
+  "anchor": [
+    18,
+    32
+  ],
+  "exit": "disappear/fade"
+}

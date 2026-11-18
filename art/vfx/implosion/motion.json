@@ -1,20 +1,9 @@
 {
   "fx": "explosions/implosion",
-  "fps": 7.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.3226,
-  "grow": {
-    "from": 1.4,
-    "secs": 0.57
-  },
-  "idle": {
-    "from": 4,
-    "to": 4,
-    "secs": 0.35
-  },
-  "exit": "disappear/fade"
+    48,
+    48
+  ]
 }

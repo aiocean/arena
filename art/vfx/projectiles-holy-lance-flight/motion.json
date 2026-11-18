@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/holy-lance-flight",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    64,
+    14
+  ],
+  "exit": "disappear/fade"
+}

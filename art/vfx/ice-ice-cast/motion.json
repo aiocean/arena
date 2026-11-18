@@ -1,0 +1,9 @@
+{
+  "fx": "ice/ice-cast",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    32,
+    60
+  ]
+}

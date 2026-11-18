@@ -1,16 +1,9 @@
 {
   "fx": "arcane/hex-shield",
-  "fps": 10.0,
+  "fps": 13.33,
   "loop": false,
   "anchor": [
-    83,
-    186
-  ],
-  "px": 0.4217,
-  "idle": {
-    "from": 3,
-    "to": 3,
-    "secs": 2.9
-  },
-  "exit": "disappear/fade"
+    44,
+    57
+  ]
 }

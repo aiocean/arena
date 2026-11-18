@@ -1,16 +1,9 @@
 {
   "fx": "arcane/restriction",
-  "fps": 8.0,
+  "fps": 15.38,
   "loop": false,
   "anchor": [
-    83,
-    186
-  ],
-  "px": 0.3184,
-  "idle": {
-    "from": 2,
-    "to": 4,
-    "secs": 2.6
-  },
-  "exit": "disappear/fade"
+    32,
+    39
+  ]
 }

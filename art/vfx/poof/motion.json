@@ -1,15 +1,9 @@
 {
   "fx": "spawn/poof",
-  "fps": 6.0,
+  "fps": 16.67,
   "loop": false,
   "anchor": [
-    83,
-    161
-  ],
-  "px": 0.302,
-  "grow": {
-    "from": 0.5,
-    "secs": 0.12
-  },
-  "exit": "disappear/fade"
+    32,
+    72
+  ]
 }

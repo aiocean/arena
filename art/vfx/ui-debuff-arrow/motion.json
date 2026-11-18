@@ -1,0 +1,9 @@
+{
+  "fx": "ui/debuff-arrow",
+  "fps": 12.5,
+  "loop": false,
+  "anchor": [
+    22,
+    47
+  ]
+}

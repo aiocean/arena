@@ -1,0 +1,9 @@
+{
+  "fx": "holy/holy-nova",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    64,
+    48
+  ]
+}

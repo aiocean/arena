@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/drone-thruster",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    12,
+    9
+  ],
+  "exit": "disappear/fade"
+}

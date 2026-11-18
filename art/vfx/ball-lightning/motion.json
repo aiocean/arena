@@ -1,18 +1,10 @@
 {
   "fx": "lightning/ball-lightning",
-  "fps": 12.0,
+  "fps": 16.67,
   "loop": true,
   "anchor": [
-    83,
-    93
+    48,
+    24
   ],
-  "px": 0.1202,
-  "turns": 0.6,
-  "tail": {
-    "secs": 0.4,
-    "taper": 0,
-    "soft": 0.15,
-    "breakup": 1
-  },
   "exit": "disappear/fade"
 }

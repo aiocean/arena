@@ -1,12 +1,9 @@
 {
   "fx": "impacts/twin-converge",
-  "fps": 9.0,
+  "fps": 16.67,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.2171,
-  "turns": 0.3,
-  "exit": "disappear/fade"
+    44,
+    44
+  ]
 }

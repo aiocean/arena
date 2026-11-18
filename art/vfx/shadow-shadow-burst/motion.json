@@ -1,0 +1,9 @@
+{
+  "fx": "shadow/shadow-burst",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    56,
+    54
+  ]
+}

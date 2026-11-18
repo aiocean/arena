@@ -1,0 +1,10 @@
+{
+  "fx": "shadow/shadow-bolt",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    56,
+    28
+  ],
+  "exit": "disappear/fade"
+}

@@ -1,15 +1,10 @@
 {
   "fx": "water/water-jet",
-  "fps": 12.0,
+  "fps": 16.67,
   "loop": true,
   "anchor": [
-    326,
-    58
+    8,
+    20
   ],
-  "px": 0.378,
-  "grow": {
-    "from": 0.3,
-    "secs": 0.12
-  },
   "exit": "disappear/fade"
 }

@@ -1,19 +1,9 @@
 {
   "fx": "arcane/sword-strike",
-  "fps": 18.0,
+  "fps": 16.67,
   "loop": false,
   "anchor": [
-    143,
-    153
-  ],
-  "px": 0.2536,
-  "fly": {
-    "from": [
-      -26,
-      -22
-    ],
-    "secs": 0.1,
-    "hold": 0
-  },
-  "exit": "disappear/fade"
+    52,
+    100
+  ]
 }

@@ -198,7 +198,7 @@ fn every_skill_is_its_gem_on_its_motion() {
         assert_eq!(s.name, g.id);
         assert_eq!(
             (s.kind, s.fx, s.range, s.speed),
-            (m.kind, m.fx, m.range, m.speed),
+            (m.kind, data::gem_fx(g.id).or(m.fx), m.range, m.speed),
             "{}",
             g.id
         );

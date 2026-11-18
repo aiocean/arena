@@ -1,0 +1,9 @@
+{
+  "fx": "wind/sonic-boom",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    44,
+    48
+  ]
+}

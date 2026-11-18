@@ -1,0 +1,9 @@
+{
+  "fx": "fire/incinerate",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    22,
+    26
+  ]
+}

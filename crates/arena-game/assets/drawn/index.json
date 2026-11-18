@@ -1,7 +1,43 @@
 [
   {
+    "fx": "ambient/dust-motes",
+    "file": "ambient-dust-motes"
+  },
+  {
+    "fx": "ambient/magic-motes",
+    "file": "ambient-magic-motes"
+  },
+  {
+    "fx": "ambient/rain",
+    "file": "ambient-rain"
+  },
+  {
+    "fx": "ambient/rising-embers",
+    "file": "ambient-rising-embers"
+  },
+  {
+    "fx": "arcane/arcane-beam",
+    "file": "arcane-arcane-beam"
+  },
+  {
+    "fx": "arcane/arcane-cast",
+    "file": "arcane-arcane-cast"
+  },
+  {
+    "fx": "arcane/arcane-orb-projectile",
+    "file": "arcane-arcane-orb-projectile"
+  },
+  {
+    "fx": "arcane/arcane-rain",
+    "file": "arcane-arcane-rain"
+  },
+  {
     "fx": "arcane/bagua-mirror",
     "file": "arcane-bagua-mirror"
+  },
+  {
+    "fx": "arcane/blink-dash",
+    "file": "arcane-blink-dash"
   },
   {
     "fx": "arcane/comet-rings",
@@ -12,8 +48,20 @@
     "file": "arcane-comma-seal"
   },
   {
+    "fx": "arcane/gravity-well",
+    "file": "arcane-gravity-well"
+  },
+  {
     "fx": "arcane/hex-shield",
     "file": "arcane-hex-shield"
+  },
+  {
+    "fx": "arcane/mana-shield",
+    "file": "arcane-mana-shield"
+  },
+  {
+    "fx": "arcane/polymorph-poof",
+    "file": "arcane-polymorph-poof"
   },
   {
     "fx": "arcane/restriction",
@@ -22,6 +70,10 @@
   {
     "fx": "arcane/rune-circle",
     "file": "arcane-rune-circle"
+  },
+  {
+    "fx": "arcane/shield-shatter",
+    "file": "arcane-shield-shatter"
   },
   {
     "fx": "arcane/shuriken-seal",
@@ -40,6 +92,14 @@
     "file": "arcane-sword-strike"
   },
   {
+    "fx": "arcane/teleport-in",
+    "file": "arcane-teleport-in"
+  },
+  {
+    "fx": "arcane/time-stop",
+    "file": "arcane-time-stop"
+  },
+  {
     "fx": "arcane/twin-shuriken",
     "file": "arcane-twin-shuriken"
   },
@@ -52,8 +112,28 @@
     "file": "critters-wisp"
   },
   {
+    "fx": "explosions/arcane-burst",
+    "file": "explosions-arcane-burst"
+  },
+  {
+    "fx": "explosions/barrel-explosion",
+    "file": "explosions-barrel-explosion"
+  },
+  {
+    "fx": "explosions/cluster-bomb",
+    "file": "explosions-cluster-bomb"
+  },
+  {
     "fx": "explosions/dirt-explosion",
     "file": "explosions-dirt-explosion"
+  },
+  {
+    "fx": "explosions/fire-nova",
+    "file": "explosions-fire-nova"
+  },
+  {
+    "fx": "explosions/firework-burst",
+    "file": "explosions-firework-burst"
   },
   {
     "fx": "explosions/implosion",
@@ -76,8 +156,56 @@
     "file": "explosions-swirl-blast"
   },
   {
+    "fx": "explosions/toxic-explosion",
+    "file": "explosions-toxic-explosion"
+  },
+  {
     "fx": "feedback/power-up",
     "file": "feedback-power-up"
+  },
+  {
+    "fx": "fire/fire-breath",
+    "file": "fire-fire-breath"
+  },
+  {
+    "fx": "fire/fire-cast",
+    "file": "fire-fire-cast"
+  },
+  {
+    "fx": "fire/fire-dash",
+    "file": "fire-fire-dash"
+  },
+  {
+    "fx": "fire/fire-pillar",
+    "file": "fire-fire-pillar"
+  },
+  {
+    "fx": "fire/flame-ring",
+    "file": "fire-flame-ring"
+  },
+  {
+    "fx": "fire/incinerate",
+    "file": "fire-incinerate"
+  },
+  {
+    "fx": "fire/lava-burst",
+    "file": "fire-lava-burst"
+  },
+  {
+    "fx": "fire/meteor-strike",
+    "file": "fire-meteor-strike"
+  },
+  {
+    "fx": "fire/phoenix-burst",
+    "file": "fire-phoenix-burst"
+  },
+  {
+    "fx": "holy/angel-feathers",
+    "file": "holy-angel-feathers"
+  },
+  {
+    "fx": "holy/divine-beam",
+    "file": "holy-divine-beam"
   },
   {
     "fx": "holy/feather-burst",
@@ -88,8 +216,80 @@
     "file": "holy-golden-bell"
   },
   {
+    "fx": "holy/halo-crown",
+    "file": "holy-halo-crown"
+  },
+  {
+    "fx": "holy/holy-cast",
+    "file": "holy-holy-cast"
+  },
+  {
+    "fx": "holy/holy-nova",
+    "file": "holy-holy-nova"
+  },
+  {
     "fx": "holy/lotus",
     "file": "holy-lotus"
+  },
+  {
+    "fx": "holy/purify",
+    "file": "holy-purify"
+  },
+  {
+    "fx": "holy/regen-aura",
+    "file": "holy-regen-aura"
+  },
+  {
+    "fx": "holy/resurrect",
+    "file": "holy-resurrect"
+  },
+  {
+    "fx": "ice/blizzard",
+    "file": "ice-blizzard"
+  },
+  {
+    "fx": "ice/freeze-encase",
+    "file": "ice-freeze-encase"
+  },
+  {
+    "fx": "ice/frost-armor",
+    "file": "ice-frost-armor"
+  },
+  {
+    "fx": "ice/frost-nova",
+    "file": "ice-frost-nova"
+  },
+  {
+    "fx": "ice/frozen-ground",
+    "file": "ice-frozen-ground"
+  },
+  {
+    "fx": "ice/ice-cast",
+    "file": "ice-ice-cast"
+  },
+  {
+    "fx": "impacts/blood-splat",
+    "file": "impacts-blood-splat"
+  },
+  {
+    "fx": "impacts/crater-impact",
+    "file": "impacts-crater-impact"
+  },
+  {
+    "fx": "impacts/death-poof",
+    "file": "impacts-death-poof"
+  },
+  {
+    "fx": "impacts/parry",
+    "file": "impacts-parry"
+  },
+  {
+    "fx": "impacts/punch-hit",
+    "file": "impacts-punch-hit"
+  },
+  {
+    "fx": "impacts/shockwave-ring",
+    "file": "impacts-shockwave-ring"
   },
   {
     "fx": "impacts/star-converge",
@@ -100,16 +300,252 @@
     "file": "impacts-twin-converge"
   },
   {
+    "fx": "lightning/arc-discharge",
+    "file": "lightning-arc-discharge"
+  },
+  {
     "fx": "lightning/ball-lightning",
     "file": "lightning-ball-lightning"
+  },
+  {
+    "fx": "lightning/chain-lightning",
+    "file": "lightning-chain-lightning"
+  },
+  {
+    "fx": "lightning/lightning-cast",
+    "file": "lightning-lightning-cast"
+  },
+  {
+    "fx": "lightning/lightning-dash",
+    "file": "lightning-lightning-dash"
+  },
+  {
+    "fx": "lightning/lightning-strike",
+    "file": "lightning-lightning-strike"
+  },
+  {
+    "fx": "lightning/lightning-whip",
+    "file": "lightning-lightning-whip"
+  },
+  {
+    "fx": "lightning/static-burst",
+    "file": "lightning-static-burst"
+  },
+  {
+    "fx": "lightning/storm-field",
+    "file": "lightning-storm-field"
+  },
+  {
+    "fx": "lightning/thunder-cloud",
+    "file": "lightning-thunder-cloud"
+  },
+  {
+    "fx": "melee/axe-smear",
+    "file": "melee-axe-smear"
+  },
+  {
+    "fx": "melee/hammer-smash",
+    "file": "melee-hammer-smash"
+  },
+  {
+    "fx": "melee/quickdraw-slash",
+    "file": "melee-quickdraw-slash"
+  },
+  {
+    "fx": "melee/scythe-reap",
+    "file": "melee-scythe-reap"
+  },
+  {
+    "fx": "melee/shadow-claw",
+    "file": "melee-shadow-claw"
+  },
+  {
+    "fx": "melee/shield-bash",
+    "file": "melee-shield-bash"
+  },
+  {
+    "fx": "melee/spear-thrust",
+    "file": "melee-spear-thrust"
+  },
+  {
+    "fx": "melee/spin-slash",
+    "file": "melee-spin-slash"
+  },
+  {
+    "fx": "melee/sword-combo",
+    "file": "melee-sword-combo"
+  },
+  {
+    "fx": "melee/uppercut",
+    "file": "melee-uppercut"
+  },
+  {
+    "fx": "nature/bloom-heal",
+    "file": "nature-bloom-heal"
+  },
+  {
+    "fx": "nature/earth-spike",
+    "file": "nature-earth-spike"
+  },
+  {
+    "fx": "nature/fissure",
+    "file": "nature-fissure"
+  },
+  {
+    "fx": "nature/leaf-storm",
+    "file": "nature-leaf-storm"
+  },
+  {
+    "fx": "nature/nature-cast",
+    "file": "nature-nature-cast"
   },
   {
     "fx": "nature/poison-cloud",
     "file": "nature-poison-cloud"
   },
   {
+    "fx": "nature/quicksand",
+    "file": "nature-quicksand"
+  },
+  {
+    "fx": "nature/rockfall",
+    "file": "nature-rockfall"
+  },
+  {
+    "fx": "nature/spore-burst",
+    "file": "nature-spore-burst"
+  },
+  {
+    "fx": "nature/thorn-wall",
+    "file": "nature-thorn-wall"
+  },
+  {
+    "fx": "projectiles/acid-glob-flight",
+    "file": "projectiles-acid-glob-flight"
+  },
+  {
+    "fx": "projectiles/arrow-flight",
+    "file": "projectiles-arrow-flight"
+  },
+  {
+    "fx": "projectiles/fireball-flight",
+    "file": "projectiles-fireball-flight"
+  },
+  {
+    "fx": "projectiles/holy-lance-flight",
+    "file": "projectiles-holy-lance-flight"
+  },
+  {
+    "fx": "projectiles/ice-shard",
+    "file": "projectiles-ice-shard"
+  },
+  {
     "fx": "projectiles/laser-bolt",
     "file": "projectiles-laser-bolt"
+  },
+  {
+    "fx": "projectiles/magic-missile",
+    "file": "projectiles-magic-missile"
+  },
+  {
+    "fx": "projectiles/poison-dart",
+    "file": "projectiles-poison-dart"
+  },
+  {
+    "fx": "projectiles/shuriken-flight",
+    "file": "projectiles-shuriken-flight"
+  },
+  {
+    "fx": "projectiles/thorn-shot-flight",
+    "file": "projectiles-thorn-shot-flight"
+  },
+  {
+    "fx": "projectiles/water-bolt-flight",
+    "file": "projectiles-water-bolt-flight"
+  },
+  {
+    "fx": "scifi/bullet-tracer",
+    "file": "scifi-bullet-tracer"
+  },
+  {
+    "fx": "scifi/cloak-shimmer",
+    "file": "scifi-cloak-shimmer"
+  },
+  {
+    "fx": "scifi/drone-thruster",
+    "file": "scifi-drone-thruster"
+  },
+  {
+    "fx": "scifi/emp-pulse",
+    "file": "scifi-emp-pulse"
+  },
+  {
+    "fx": "scifi/laser-beam",
+    "file": "scifi-laser-beam"
+  },
+  {
+    "fx": "scifi/mech-explosion",
+    "file": "scifi-mech-explosion"
+  },
+  {
+    "fx": "scifi/plasma-bolt-flight",
+    "file": "scifi-plasma-bolt-flight"
+  },
+  {
+    "fx": "scifi/railgun-shot",
+    "file": "scifi-railgun-shot"
+  },
+  {
+    "fx": "scifi/rocket-exhaust",
+    "file": "scifi-rocket-exhaust"
+  },
+  {
+    "fx": "scifi/scanner-sweep",
+    "file": "scifi-scanner-sweep"
+  },
+  {
+    "fx": "scifi/shield-hit",
+    "file": "scifi-shield-hit"
+  },
+  {
+    "fx": "scifi/teleport-beam",
+    "file": "scifi-teleport-beam"
+  },
+  {
+    "fx": "scifi/warp-jump",
+    "file": "scifi-warp-jump"
+  },
+  {
+    "fx": "shadow/curse",
+    "file": "shadow-curse"
+  },
+  {
+    "fx": "shadow/doom-mark",
+    "file": "shadow-doom-mark"
+  },
+  {
+    "fx": "shadow/shadow-bolt",
+    "file": "shadow-shadow-bolt"
+  },
+  {
+    "fx": "shadow/shadow-burst",
+    "file": "shadow-shadow-burst"
+  },
+  {
+    "fx": "shadow/shadow-cast",
+    "file": "shadow-shadow-cast"
+  },
+  {
+    "fx": "shadow/shadow-spikes",
+    "file": "shadow-shadow-spikes"
+  },
+  {
+    "fx": "shadow/shadow-step",
+    "file": "shadow-shadow-step"
+  },
+  {
+    "fx": "shadow/shadow-tendrils",
+    "file": "shadow-shadow-tendrils"
   },
   {
     "fx": "shadow/void-orb",
@@ -120,6 +556,10 @@
     "file": "shadow-winter-ordeal"
   },
   {
+    "fx": "smoke/soot-burst",
+    "file": "smoke-soot-burst"
+  },
+  {
     "fx": "spawn/poof",
     "file": "spawn-poof"
   },
@@ -128,11 +568,115 @@
     "file": "spawn-swirl-portal"
   },
   {
+    "fx": "status/berserk",
+    "file": "status-berserk"
+  },
+  {
+    "fx": "status/bleeding",
+    "file": "status-bleeding"
+  },
+  {
+    "fx": "status/blessed",
+    "file": "status-blessed"
+  },
+  {
+    "fx": "status/burning-aura",
+    "file": "status-burning-aura"
+  },
+  {
+    "fx": "status/charm-hearts",
+    "file": "status-charm-hearts"
+  },
+  {
+    "fx": "status/confused",
+    "file": "status-confused"
+  },
+  {
+    "fx": "status/electrified",
+    "file": "status-electrified"
+  },
+  {
+    "fx": "status/frozen-chill",
+    "file": "status-frozen-chill"
+  },
+  {
+    "fx": "status/petrified",
+    "file": "status-petrified"
+  },
+  {
+    "fx": "status/poisoned",
+    "file": "status-poisoned"
+  },
+  {
+    "fx": "status/silenced",
+    "file": "status-silenced"
+  },
+  {
+    "fx": "status/sleep",
+    "file": "status-sleep"
+  },
+  {
+    "fx": "status/slowed",
+    "file": "status-slowed"
+  },
+  {
+    "fx": "status/target-mark",
+    "file": "status-target-mark"
+  },
+  {
+    "fx": "ui/debuff-arrow",
+    "file": "ui-debuff-arrow"
+  },
+  {
+    "fx": "ui/heal-plus",
+    "file": "ui-heal-plus"
+  },
+  {
+    "fx": "ui/level-up",
+    "file": "ui-level-up"
+  },
+  {
+    "fx": "ui/treasure-glint",
+    "file": "ui-treasure-glint"
+  },
+  {
+    "fx": "water/bubble-shield",
+    "file": "water-bubble-shield"
+  },
+  {
+    "fx": "water/ripple",
+    "file": "water-ripple"
+  },
+  {
     "fx": "water/splash",
     "file": "water-splash"
   },
   {
     "fx": "water/water-jet",
     "file": "water-water-jet"
+  },
+  {
+    "fx": "water/whirlpool",
+    "file": "water-whirlpool"
+  },
+  {
+    "fx": "wind/sonic-boom",
+    "file": "wind-sonic-boom"
+  },
+  {
+    "fx": "wind/tornado",
+    "file": "wind-tornado"
+  },
+  {
+    "fx": "wind/updraft",
+    "file": "wind-updraft"
+  },
+  {
+    "fx": "wind/whirlwind",
+    "file": "wind-whirlwind"
+  },
+  {
+    "fx": "wind/wind-gust",
+    "file": "wind-wind-gust"
   }
 ]

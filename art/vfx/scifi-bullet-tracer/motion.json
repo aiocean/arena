@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/bullet-tracer",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    46,
+    8
+  ],
+  "exit": "disappear/fade"
+}

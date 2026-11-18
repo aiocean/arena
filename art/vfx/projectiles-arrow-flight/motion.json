@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/arrow-flight",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    45,
+    7
+  ],
+  "exit": "disappear/fade"
+}

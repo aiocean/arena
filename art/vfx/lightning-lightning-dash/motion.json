@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/lightning-dash",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    12,
+    64
+  ]
+}

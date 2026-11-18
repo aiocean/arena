@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/railgun-shot",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    9,
+    16
+  ],
+  "exit": "disappear/fade"
+}

@@ -1,12 +1,9 @@
 {
   "fx": "arcane/twin-shuriken",
-  "fps": 10.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    93
-  ],
-  "px": 0.2603,
-  "turns": 2,
-  "exit": "disappear/fade"
+    28,
+    12
+  ]
 }

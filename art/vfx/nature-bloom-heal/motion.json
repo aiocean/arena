@@ -1,0 +1,9 @@
+{
+  "fx": "nature/bloom-heal",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    28,
+    1
+  ]
+}

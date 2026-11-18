@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/fireball-flight",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    58,
+    16
+  ],
+  "exit": "disappear/fade"
+}

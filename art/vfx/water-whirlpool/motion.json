@@ -1,0 +1,10 @@
+{
+  "fx": "water/whirlpool",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    36,
+    33
+  ],
+  "exit": "disappear/fade"
+}

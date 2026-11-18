@@ -1,0 +1,9 @@
+{
+  "fx": "arcane/teleport-in",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    20,
+    57
+  ]
+}

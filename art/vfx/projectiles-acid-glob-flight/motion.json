@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/acid-glob-flight",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    38,
+    16
+  ],
+  "exit": "disappear/fade"
+}

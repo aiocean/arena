@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/ice-shard",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    56,
+    24
+  ],
+  "exit": "disappear/fade"
+}

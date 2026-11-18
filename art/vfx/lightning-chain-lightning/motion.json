@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/chain-lightning",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    10,
+    40
+  ]
+}

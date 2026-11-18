@@ -479,6 +479,15 @@ pub fn strike(
         Kind::Melee => {
             if caster && first {
                 state.fighters[me].body.vx += face * 200.0;
+                if let Some(fx) = sp.fx
+                    && state.has(fx)
+                {
+                    let opts = PlayOpts {
+                        seed: Some(me as u32 + 31),
+                        ..PlayOpts::default()
+                    };
+                    play(state, fx, mx + face * 36.0, g - mspec.chest - mair, opts);
+                }
                 if sp.dive {
                     state.fighters[me].fly = false;
                     // a dive that ends on the ground cracks it

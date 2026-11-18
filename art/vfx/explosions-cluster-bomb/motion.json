@@ -1,0 +1,9 @@
+{
+  "fx": "explosions/cluster-bomb",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    88,
+    74
+  ]
+}

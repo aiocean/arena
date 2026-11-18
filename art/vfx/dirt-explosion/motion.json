@@ -1,16 +1,9 @@
 {
   "fx": "explosions/dirt-explosion",
-  "fps": 6.0,
+  "fps": 14.29,
   "loop": false,
   "anchor": [
-    83,
-    167
-  ],
-  "px": 0.2273,
-  "idle": {
-    "from": 5,
-    "to": 5,
-    "secs": 0.4
-  },
-  "exit": "disappear/fade"
+    44,
+    40
+  ]
 }

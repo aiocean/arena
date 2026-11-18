@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/plasma-bolt-flight",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    65,
+    14
+  ],
+  "exit": "disappear/fade"
+}

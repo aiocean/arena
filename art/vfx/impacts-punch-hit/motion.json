@@ -1,0 +1,9 @@
+{
+  "fx": "impacts/punch-hit",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    17,
+    21
+  ]
+}

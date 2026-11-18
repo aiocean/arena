@@ -1,0 +1,9 @@
+{
+  "fx": "ice/blizzard",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    40,
+    50
+  ]
+}

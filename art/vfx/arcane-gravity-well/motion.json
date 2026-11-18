@@ -1,0 +1,10 @@
+{
+  "fx": "arcane/gravity-well",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    56,
+    82
+  ],
+  "exit": "disappear/fade"
+}

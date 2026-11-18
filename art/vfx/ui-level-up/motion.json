@@ -1,0 +1,9 @@
+{
+  "fx": "ui/level-up",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    32,
+    88
+  ]
+}

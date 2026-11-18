@@ -1,0 +1,9 @@
+{
+  "fx": "lightning/lightning-strike",
+  "fps": 12.5,
+  "loop": false,
+  "anchor": [
+    38,
+    84
+  ]
+}

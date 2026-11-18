@@ -162,17 +162,22 @@ fn fetch(
     if !drawings.pages.is_empty() || sheets_in.is_some_and(|s| !s.0) {
         return;
     }
-    drawings.pages = drawings
-        .files
+    drawings.pages = all()
         .iter()
-        .map(|names| {
+        .zip(&drawings.files)
+        .map(|(d, names)| {
+            let linear = d.layout.motion.px.is_some();
             names
                 .iter()
                 .map(|name| {
                     assets
                         .load_builder()
-                        .with_settings(|s: &mut ImageLoaderSettings| {
-                            s.sampler = ImageSampler::linear()
+                        .with_settings(move |s: &mut ImageLoaderSettings| {
+                            s.sampler = if linear {
+                                ImageSampler::linear()
+                            } else {
+                                ImageSampler::nearest()
+                            };
                         })
                         .load(name.clone())
                 })

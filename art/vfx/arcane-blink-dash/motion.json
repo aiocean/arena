@@ -1,0 +1,9 @@
+{
+  "fx": "arcane/blink-dash",
+  "fps": 16.67,
+  "loop": false,
+  "anchor": [
+    64,
+    56
+  ]
+}

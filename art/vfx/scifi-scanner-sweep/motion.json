@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/scanner-sweep",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    52,
+    30
+  ],
+  "exit": "disappear/fade"
+}

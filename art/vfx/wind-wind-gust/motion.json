@@ -1,0 +1,9 @@
+{
+  "fx": "wind/wind-gust",
+  "fps": 14.29,
+  "loop": false,
+  "anchor": [
+    48,
+    24
+  ]
+}

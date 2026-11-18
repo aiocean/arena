@@ -1,0 +1,10 @@
+{
+  "fx": "projectiles/water-bolt-flight",
+  "fps": 14.29,
+  "loop": true,
+  "anchor": [
+    40,
+    14
+  ],
+  "exit": "disappear/fade"
+}

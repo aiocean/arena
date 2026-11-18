@@ -1,0 +1,9 @@
+{
+  "fx": "explosions/arcane-burst",
+  "fps": 15.38,
+  "loop": false,
+  "anchor": [
+    36,
+    38
+  ]
+}

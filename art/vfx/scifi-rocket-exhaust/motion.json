@@ -1,0 +1,10 @@
+{
+  "fx": "scifi/rocket-exhaust",
+  "fps": 16.67,
+  "loop": true,
+  "anchor": [
+    90,
+    20
+  ],
+  "exit": "disappear/fade"
+}
