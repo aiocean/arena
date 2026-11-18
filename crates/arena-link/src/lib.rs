@@ -36,11 +36,12 @@ use serde::{Deserialize, Serialize};
 /// 9: the arm hurt to the wrist, the blade from the hilt, tracked on the hand; 10: a recovery drawn over the rules'
 /// recover, as the wind-up is over its windup; 11: a lying or falling fighter struck by a bolt only where it lies, a
 /// blade's retry gone with its window or its broken act; 12: bot ABI 3, 1741 inputs: the casts' frames, the slots'
-/// builds and supports, both fighters' effects, the units, the foe's slots). A page whose rules differ steps a
+/// builds and supports, both fighters' effects, the units, the foe's slots; 13: the balance pass, a bleed the same on a
+/// moving bearer, every bare cast under 40% of a life and its shield). A page whose rules differ steps a
 /// different fight from the same decisions, so it says so and stops (`Applied::OtherRules`). Bump this with any change
 /// to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are
 /// re-pinned.
-pub const RULES_VERSION: u32 = 12;
+pub const RULES_VERSION: u32 = 13;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.
