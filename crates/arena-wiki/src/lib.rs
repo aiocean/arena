@@ -553,6 +553,53 @@ fn cap_forms(g: &Gem) -> String {
     )
 }
 
+/// Where the game's pictures are on the site: `site/build.sh` names their folder (`ARENA_ASSETS`) before it builds
+/// the wiki; the game's own folder when built alone.
+fn assets_url() -> String {
+    format!(
+        "/{}",
+        std::env::var("ARENA_ASSETS").unwrap_or_else(|_| "game/assets".to_owned())
+    )
+}
+
+/// The skill's player: one cast at a foe standing still, recorded tick by tick (`hits::record`) into
+/// `play/<skill>.json` and played by `player.js` from the game's sheets, with every box the rules test.
+fn player_section(wiki: &mut Wiki, book: &Book, g: &Gem, sheets: &hits::Sheets) -> String {
+    let cell = |look: Look, clip: &str, i: usize| {
+        let (_, sheet) = book.sheets.iter().find(|(l, _)| *l == look)?;
+        let p = sheet.clips.get(clip)?.get(i)?;
+        Some([
+            i64::from(p.page),
+            i64::from(p.x),
+            i64::from(p.y),
+            i64::from(p.w),
+            i64::from(p.h),
+            i64::from(p.dx),
+            i64::from(p.dy),
+        ])
+    };
+    let Some(mut rec) = hits::record(g.id, sheets, &cell) else {
+        return String::new();
+    };
+    // each seat's sheet, under the game's pictures (`fighters/<stem>-<school>[-<page>].webp`)
+    rec["sheets"] = serde_json::json!(looks().map(|l| {
+        let (stem, school) = sheet_of(l);
+        format!("fighters/{stem}-{school}")
+    }));
+    let path = format!("play/{}.json", g.id);
+    wiki.files
+        .insert(path.clone(), serde_json::to_vec(&rec).unwrap_or_default());
+    wiki.files
+        .insert("player.js".to_owned(), PLAYER.as_bytes().to_vec());
+    format!(
+        "<h2>Player</h2><p class=\"gen\">One cast at a foe standing still, as the rules fight it, tick by tick (60 a second): the fighters' frames from their sheets, its effects as the game draws them, and every shape the rules test, the hurtboxes, its blows, shots, fields and units, the hands. Step a tick with ⟨ ⟩ or the arrow keys; the red marks under the bar are the ticks it can hit.</p><div class=\"fx-player\" data-src=\"/wiki/{path}\" data-assets=\"{}\"></div><script src=\"/wiki/player.js\" defer></script>",
+        esc(&assets_url())
+    )
+}
+
+/// The skill player's script.
+const PLAYER: &str = include_str!("player.js");
+
 /// Where a skill can hit, as the rules test it: one cast at a foe standing still, its hit shapes over its effect on
 /// the moments they are tested (`hits`).
 fn hit_section(wiki: &mut Wiki, g: &Gem, sheets: &hits::Sheets) -> String {
@@ -856,6 +903,7 @@ fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
                 }
             }
         }
+        body.push_str(&player_section(wiki, book, g, sheets));
         let hit = hit_section(wiki, g, sheets);
         body.push_str(&hit);
         body.push_str(&cap_forms(g));

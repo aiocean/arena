@@ -74,7 +74,7 @@ pub fn fps(look: Look) -> f64 {
 }
 
 /// The clip and frame fighter `f` shows now, as `pick` chooses them (and the game draws them).
-fn shown(state: &State, f: usize) -> Option<(&'static str, usize)> {
+pub fn shown(state: &State, f: usize) -> Option<(&'static str, usize)> {
     let fi = state.fighters.get(f)?;
     let b = &fi.body;
     let a = appearance(

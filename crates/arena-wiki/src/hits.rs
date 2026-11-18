@@ -409,10 +409,11 @@ impl Sheets {
     }
 }
 
-/// A picture placed in the arena: a cell of a page, its centre (arena pixels, `y` down), arena pixels per sheet
-/// pixel, turned `angle` radians clockwise, mirrored.
+/// A picture placed in the arena: a cell of a page (and the page's file under the game's assets), its centre (arena
+/// pixels, `y` down), arena pixels per sheet pixel, turned `angle` radians clockwise, mirrored.
 struct Placed<'a> {
     page: &'a RgbaImage,
+    file: String,
     cell: (u32, u32, u32, u32),
     cx: f64,
     cy: f64,
@@ -448,8 +449,14 @@ fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed
             cx = -cx;
         }
         let ay = if d.layout.motion.ground { ground } else { p.y };
+        let i = s.cell.page;
         return vec![Placed {
             page,
+            file: if i == 0 {
+                format!("drawn/{}.webp", d.file)
+            } else {
+                format!("drawn/{}-{i}.webp", d.file)
+            },
             cell: (s.cell.x, s.cell.y, s.cell.w, s.cell.h),
             cx: p.x + cx * UNIT,
             cy: ay + cy * UNIT,
@@ -487,6 +494,7 @@ fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed
             let cy = f64::from(c.dy) + f64::from(c.h) / 2.0;
             Some(Placed {
                 page,
+                file: format!("vfx/{}", sheets.baked.pages.get(c.page as usize)?.0),
                 cell: (c.x, c.y, c.w, c.h),
                 cx: p.x + (if flip { -cx } else { cx }) * UNIT,
                 cy: p.y + cy * UNIT,
@@ -725,4 +733,156 @@ fn blit(img: &mut RgbaImage, p: &Placed, to: &dyn Fn(f64, f64) -> (f64, f64)) {
             }
         }
     }
+}
+
+/// A fighter's frame on its sheet, from its feet (sheet pixels, one an arena pixel, `y` down): page, x, y, w, h, dx, dy.
+pub type FrameCell = [i64; 7];
+
+/// One cast of skill `id` as the player shows it, tick by tick from the cast on, until a while after the last tick
+/// it could hit (or its effects end): each fighter's clip and frame on its sheet (`cell`), where it stands and faces,
+/// its act's phase; every shape the rules test (`arena_duel::debug::shapes`: bodies, blows, shots, fields, units,
+/// hands) and a bolt's sweep in the tick; every effect as the game draws it. Arena pixels, `y` up from the floor.
+/// `None` when the skill cannot be cast alone.
+pub fn record(
+    id: &'static str,
+    sheets: &Sheets,
+    cell: &dyn Fn(arena_duel::data::Look, &str, usize) -> Option<FrameCell>,
+) -> Option<serde_json::Value> {
+    use serde_json::json;
+    let r1 = |v: f64| (v * 10.0).round() / 10.0;
+    let mut duel = one_cast(id)?;
+    let mut playing: BTreeMap<u32, Playing> = BTreeMap::new();
+    let mut bolts: BTreeMap<u32, (f64, f64)> = BTreeMap::new();
+    let mut frames = Vec::new();
+    let (mut clock, mut began, mut last_hit) = (0.0, None::<f64>, None::<f64>);
+    while clock < LONGEST {
+        let out = duel.step(TICK);
+        clock += TICK;
+        let state = duel.state();
+        if began.is_none() {
+            began = state.fighters[0]
+                .act
+                .filter(|a| a.spell == id)
+                .map(|a| clock - a.t);
+            if began.is_none() {
+                if clock > 3.0 {
+                    return None;
+                }
+                continue;
+            }
+        }
+        let t = clock - began.unwrap_or(clock);
+        for o in out {
+            match o {
+                Out::Play {
+                    key,
+                    fx,
+                    x,
+                    y,
+                    opts,
+                } => {
+                    playing.insert(
+                        key,
+                        Playing {
+                            fx,
+                            x,
+                            y,
+                            opts,
+                            born: t,
+                        },
+                    );
+                }
+                Out::Move { key, x, y } => {
+                    if let Some(p) = playing.get_mut(&key) {
+                        p.x = x;
+                        p.y = y;
+                    }
+                }
+                Out::Stop { key } => {
+                    playing.remove(&key);
+                }
+                _ => {}
+            }
+        }
+        let fighters: Vec<serde_json::Value> = state
+            .fighters
+            .iter()
+            .enumerate()
+            .map(|(me, f)| {
+                let b = &f.body;
+                let (clip, i) = arena_duel::frames::shown(state, me).unwrap_or(("", 0));
+                let (window, all) = arena_duel::frames::clip_of(f.look, clip).unwrap_or((None, &[]));
+                json!({
+                    "clip": clip, "i": i, "n": all.len(), "window": window,
+                    "x": r1(b.x), "air": r1(b.air), "face": b.face,
+                    "cell": cell(f.look, clip, i),
+                    "act": f.act.map(|a| json!({
+                        "spell": a.spell,
+                        "phase": match a.phase { arena_duel::fighter::Phase::Windup => "windup", arena_duel::fighter::Phase::Recover => "recover" },
+                        "t": r1(a.t * 1000.0) / 1000.0, "windup": a.windup, "recover": a.recover,
+                    })),
+                })
+            })
+            .collect();
+        let all = shapes(state);
+        let shapes_now: Vec<serde_json::Value> = all
+            .iter()
+            .filter(|d| !hits(d.mark) || d.skill == id)
+            .map(|d| {
+                let shape = match d.shape {
+                    Shape::Rect { x0, y0, x1, y1 } => {
+                        json!({"rect": [r1(x0), r1(y0), r1(x1), r1(y1)]})
+                    }
+                    Shape::Circle { x, y, r } => json!({"circle": [r1(x), r1(y), r1(r)]}),
+                };
+                json!({"mark": format!("{:?}", d.mark), "owner": d.owner, "shape": shape})
+            })
+            .collect();
+        if all.iter().any(|d| d.skill == id && hits(d.mark)) {
+            last_hit = Some(t);
+        }
+        let mut sweeps = Vec::new();
+        let mut now = BTreeMap::new();
+        for s in state.shots.iter().filter(|s| s.name == id) {
+            if let (ShotKind::Bolt { .. }, Some((x, y, _))) = (&s.kind, s.bolt_at(state)) {
+                if let Some(&(px, py)) = bolts.get(&s.id) {
+                    sweeps.push(json!([
+                        r1(px),
+                        r1(py),
+                        r1(x),
+                        r1(y),
+                        r1(s.spell.radius.unwrap_or(0.0))
+                    ]));
+                }
+                now.insert(s.id, (x, y));
+            }
+        }
+        bolts = now;
+        let effects: Vec<serde_json::Value> = playing
+            .values()
+            .flat_map(|p| place(sheets, p, t, FLOOR))
+            .map(|pl| {
+                json!({
+                    "file": pl.file,
+                    "cell": [pl.cell.0, pl.cell.1, pl.cell.2, pl.cell.3],
+                    "cx": r1(pl.cx), "cy": r1(FLOOR - pl.cy), "k": pl.k,
+                    "angle": (pl.angle * 1000.0).round() / 1000.0, "flip": pl.flip,
+                })
+            })
+            .collect();
+        frames.push(json!({
+            "t": (t * 1000.0).round() / 1000.0,
+            "fighters": fighters, "shapes": shapes_now, "sweeps": sweeps, "effects": effects,
+        }));
+        // a while after the last tick it could hit, or after its act and its effects are over
+        let busy = state.fighters[0].act.is_some_and(|a| a.spell == id) || !playing.is_empty();
+        let done = match last_hit {
+            Some(h) => t - h > 0.6 && (!busy || t - h > QUIET),
+            None => !busy && t > 0.3,
+        };
+        if done || t > 6.0 {
+            break;
+        }
+    }
+    (!frames.is_empty()).then(|| json!({ "skill": id, "tick": TICK, "frames": frames }))
 }

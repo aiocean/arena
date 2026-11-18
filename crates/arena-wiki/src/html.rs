@@ -139,6 +139,11 @@ pub const CSS: &str = r#"
 .wiki-menu{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px}
 .wiki-menu a{color:inherit;opacity:.75;text-decoration:none}.wiki-menu a[aria-current]{opacity:1;font-weight:600;text-decoration:underline}
 .wiki-main{max-width:1200px;margin:0 auto;padding:16px 20px 60px;line-height:1.55}
+.fx-player{max-width:960px;margin:8px 0 18px;outline:none}.fx-canvas{display:block;border-radius:6px;background:#14121c}
+.fx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}.fx-bar button,.fx-bar select{font:inherit;padding:2px 10px}
+.fx-layers{display:flex;flex-wrap:wrap;gap:10px;margin-left:8px;font-size:13px}.fx-track{margin-top:4px}.fx-scrub{width:100%;margin:0}
+.fx-marks{display:block;width:100%;height:6px}.fx-info{font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums}
+.fx-legend{font-size:12px;opacity:.8;margin-top:2px}.fx-can-hit{color:rgb(255,70,70)}
 .wiki-main h1{font-size:26px;margin:.4em 0}.wiki-main h2{font-size:19px;margin-top:1.6em}
 .wiki-main code{font-size:.9em}
 .scroll{overflow-x:auto;max-width:100%}

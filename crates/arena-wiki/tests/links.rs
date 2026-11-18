@@ -59,7 +59,10 @@ fn every_skill_has_a_page_and_every_link_resolves() -> Result<(), String> {
             } else if let Some(file) = target.strip_prefix("/wiki/") {
                 let file = if file.is_empty() || file.ends_with('/') {
                     format!("{file}index.html")
-                } else if file.starts_with("img/") || file.ends_with(".css") {
+                } else if file.starts_with("img/")
+                    || [".css", ".js", ".json"].iter().any(|e| file.ends_with(e))
+                {
+                    // a picture, the styles, the skill player and its recordings: files, not pages
                     file.to_owned()
                 } else {
                     format!("{file}.html")
