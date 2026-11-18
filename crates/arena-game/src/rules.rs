@@ -139,30 +139,16 @@ fn begin_fight(
     shown.fight += 1;
 }
 
-/// Moves a rules' event's rows by `dy` rules' pixels. The game stands its fighters on its layout's ground
-/// (`fighters::show`: the layout's ground less a fighter's height), so an event's row, measured down from the top of
-/// the rules' arena, is moved by the layout's ground less the rules' (in the rules' pixels): an effect, a number or a
-/// spark then sits where its fighter stands. On the page's own fights the two grounds are one and nothing moves; a
-/// live match is fought on the server's arena, whose ground a window of another size does not share.
+/// Moves an effect's row by `dy` rules' pixels. The rules play an effect at a screen row, measured down from the top of
+/// the rules' arena (`out`), and the game stands its fighters on its layout's ground (`fighters::show`), so an effect
+/// is moved by the layout's ground less the rules' (in the rules' pixels) to sit where its fighter stands. A fighter's
+/// event (a hit, a tick, a heal, a block, a clash, a streak...) gives a height up from the ground, which the feel
+/// draws up from the layout's ground (`feel::draw`): it is left as it is. On the page's own fights the two grounds are
+/// one and nothing moves; a live match is fought on the server's arena, whose ground a window of another size does not
+/// share.
 pub fn lift(out: &mut Out, dy: f64) {
     match out {
-        Out::Play { y, .. }
-        | Out::Move { y, .. }
-        | Out::Hit { y, .. }
-        | Out::Tick { y, .. }
-        | Out::Block { y, .. }
-        | Out::Clash { y, .. }
-        | Out::Dodge { y, .. }
-        | Out::Heal { y, .. }
-        | Out::Ward { y, .. }
-        | Out::Barrier { y, .. }
-        | Out::Ko { y, .. }
-        | Out::Bump { y, .. }
-        | Out::Unyielding { y, .. } => *y += dy,
-        Out::Streak { y0, y1, .. } => {
-            *y0 += dy;
-            *y1 += dy;
-        }
+        Out::Play { y, .. } | Out::Move { y, .. } => *y += dy,
         _ => {}
     }
 }
@@ -218,4 +204,84 @@ fn step(
         fx.write(Fx(out));
     }
     shown.view = Some(view(duel.state()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::feel::fight::FightFeel;
+    use arena_duel::out::{How, PlayOpts};
+
+    /// On a live match (the server's ground) in windows of every size and shape, a hit's number stands over the
+    /// struck fighter, and an effect played at its chest is drawn at its chest: the window's ground is not the
+    /// server's, and only the effect's screen row is moved for it.
+    #[test]
+    fn a_hits_number_and_effect_stand_on_the_struck_fighter_in_any_window() {
+        let server_ground = 632.0;
+        let (chest, body) = (152.0, 228.0);
+        for (w, h, dpr) in [
+            (1280.0, 800.0, 1.0),
+            (1920.0, 1080.0, 1.0),
+            (1366.0, 768.0, 1.0),
+            (390.0, 293.0, 1.0),
+            (1170.0, 879.0, 3.0),
+            (2560.0, 1440.0, 2.0),
+            (800.0, 1200.0, 1.0),
+        ] {
+            let layout = Layout::of(w, h, dpr, 0);
+            let dy = f64::from(layout.ground) * UNIT - server_ground;
+            let mut hit = Out::Hit {
+                by: 0,
+                spell: "x",
+                power: 1.0,
+                launch: false,
+                ranged: false,
+                damage: 12.0,
+                crit: false,
+                how: How::Counter,
+                share: 10.0,
+                x: 400.0,
+                y: chest,
+            };
+            lift(&mut hit, dy);
+            let mut feel = FightFeel::default();
+            feel.react(&hit);
+            let world = |v: f64| f64::from(Layout::world(v));
+            let (feet, top) = (
+                f64::from(layout.ground),
+                f64::from(layout.ground) - world(body),
+            );
+            for n in feel.numbers() {
+                let row = f64::from(layout.ground) - n.y;
+                assert!(
+                    row <= feet && row >= top - 40.0,
+                    "{w}x{h}: {:?} at row {row}, the fighter from {top} to {feet}",
+                    n.text
+                );
+                assert!(
+                    (n.x - world(400.0)).abs() <= 12.0,
+                    "{w}x{h}: {:?} at x {}",
+                    n.text,
+                    n.x
+                );
+            }
+            let mut play = Out::Play {
+                key: 1,
+                fx: "x",
+                x: 400.0,
+                y: server_ground - chest,
+                opts: PlayOpts::default(),
+            };
+            lift(&mut play, dy);
+            let Out::Play { y, .. } = play else {
+                unreachable!()
+            };
+            assert!(
+                (world(y) - (f64::from(layout.ground) - world(chest))).abs() < 1e-6,
+                "{w}x{h}: the effect at row {}, the chest at {}",
+                world(y),
+                f64::from(layout.ground) - world(chest)
+            );
+        }
+    }
 }
