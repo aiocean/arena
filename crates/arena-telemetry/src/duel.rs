@@ -337,7 +337,8 @@ impl Observer {
             }, "round.end");
         }
         if self.every > 0.0 && s.time >= self.next_snapshot {
-            self.next_snapshot = s.time + self.every;
+            // on the cadence, not from the tick that met it: a tick up to 1/60 s late would stretch every period
+            self.next_snapshot = (self.next_snapshot + self.every).max(s.time);
             self.snapshot(s);
         }
     }
