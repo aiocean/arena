@@ -30,6 +30,11 @@ expect_used = "deny"
 panic = "deny"
 disallowed_methods = "deny"
 
+# Debug and test builds keep line tables only: backtraces still name file and line, and a clone's target/ is about
+# half the size (several clones build side by side on the kiosk, whose disk runs short). Release and web are untouched.
+[profile.dev]
+debug = "line-tables-only"
+
 # The machinery that runs bots (wasmtime's compiler, tract's kernels) optimised in test builds too: a bot module of
 # the house AI's size compiles and plays in seconds instead of minutes.
 [profile.dev.package.cranelift-codegen]
