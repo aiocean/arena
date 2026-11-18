@@ -1,0 +1,33 @@
+[package]
+name = "physics-spike"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+parry = ["dep:parry2d-f64"]
+rapier = ["parry", "dep:rapier2d-f64"]
+avian = ["dep:avian2d", "dep:bevy"]
+rapier32 = ["parry", "dep:rapier2d"]
+
+[dependencies]
+libm = "0.2"
+arena-duel = { path = "../../crates/arena-duel" }
+parry2d-f64 = { version = "0.31", optional = true, features = ["enhanced-determinism"] }
+rapier2d-f64 = { version = "0.36.1", optional = true, features = ["enhanced-determinism"] }
+rapier2d = { version = "0.36.1", optional = true, features = ["enhanced-determinism"] }
+avian2d = { version = "0.8", optional = true, default-features = false, features = ["2d", "parry-f64", "enhanced-determinism"] }
+bevy = { version = "0.20", optional = true, default-features = false, features = ["std"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.130"
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
