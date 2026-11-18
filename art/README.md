@@ -61,7 +61,7 @@ generators looked at and the pictures that decided the route: `art/research/READ
 - One **main colour** (the robe) and one **accent** (a lining, a sash, a trim). The two fighters of a duel must not share
   a main colour, and each must stand out against the stage's dark night ground.
 - The **look's colour** is the accent: a look's sheet turns the accent (the cultivator's crimson lining) into the
-  look's glow (Thunder `#ffe066`, Frost `#a6ecff`). A new character keeps its accent in one hue family, used
+  look's glow (Vương Lâm `#ffe066`, Thất Thải `#a6ecff`). A new character keeps its accent in one hue family, used
   nowhere else on the body, so that recolour hits it and nothing else.
 - **White is the hit flash**: the painter draws a struck fighter all white. A character mostly in white (Thất Thải Đạo
   Nhân) needs its dark hair, sash and outline to carry the flash, or a flash that is not white. Check a hit frame.
@@ -121,7 +121,7 @@ redrawn on the route above; this is how they were made, for reading them, not fo
    optional clips, each falling back to a core one, are in `docs/specs/2026-11-17-fighter-clips-design.md`.
 4. Export (`get_character` → download) into `art/<character>/src/` and build the sheets with the character's
    `tools/sheet.rs` into `crates/arena-game/assets/fighters/` (built into the game): one layout `<name>.json` and the look's pages, `<name>-<look>.png`, then `<name>-<look>-1.png` and on (each under
-   4096 pixels a side). Each character ships one look today: the cultivator Thunder, the Seven-Colored Daoist Frost.
+   4096 pixels a side). Each character ships one look today: Vương Lâm (the cultivator), and Thất Thải Đạo Nhân (the Seven-Colored Daoist); their files keep the old schools' names (`cultivator-thunder`, `seven-colored-daoist-frost`).
    An effect the generator drew into a clip is taken out there, not left for the page.
 
 ## The sheet the game reads
@@ -165,7 +165,7 @@ plays in place of its baked recipe.
 
 ## Known faults to redraw
 
-- **The Seven-Colored Daoist's (Frost's) `slash`** is drawn backwards: from frame 6 the arm sweeps out behind him while
+- **Thất Thải Đạo Nhân's (the Seven-Colored Daoist's) `slash`** is drawn backwards: from frame 6 the arm sweeps out behind him while
   his face and body turn to the foe (`assets/fighters/seven-colored-daoist.json`, `slash`), so the blow's hand
   reaches away from what it hits. Mirroring the clip as a stand-in was tried (2026-11-18) and does not read: mirrored,
   the arm reaches the foe but the face and chest turn away from it, and the six stance frames before the swing would

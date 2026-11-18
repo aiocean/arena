@@ -10,8 +10,8 @@ numbers only where they explain a mechanic. When a number here and the code disa
 
 - Two fighters on a flat arena with walls, seat 0 on the left and seat 1 on the right. They walk, jump, duck, guard,
   fly and meditate, and cast skills. There are no classes: both start from the same base (3000 life, a 600 energy
-  shield, 100 sense, 100 qi, 400 might, 600 armour, no resistances; design 1). A fighter looks as Vương Lâm in
-  Thunder's colours or as the Seven-Colored Daoist in Frost's: its art, so its frames and the boxes its body and
+  shield, 100 sense, 100 qi, 400 might, 600 armour, no resistances; design 1). A fighter looks as Vương Lâm (the
+  cultivator, in gold) or as Thất Thải Đạo Nhân (the Seven-Colored Daoist, in blue): its art, so its frames and the boxes its body and
   blows have, and nothing else. The ladder, the trainer and the server draw the looks apart from the seats
   (`ladder::looks_of`): the looks swap every other seed, and the ladder fights each seed in both, so neither seat
   keeps one look's art. A bot is told its look, never its seat (`docs/bot.md`).
@@ -125,13 +125,13 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
 - **A strike's active window is where the picture strikes.** A blade or casting clip's active window starts on the
   frame whose blade or hand reaches farthest ahead (the generator finds it); the wind-up plays the clip up to it, so
   the rules strike, and a bolt leaves, on that frame. A blade's window runs on while its blade stays out ahead (the
-  Thunder slash: the thrust, frames 3 to 5; its sweep then swings behind it and strikes nothing ahead).
+  Vương Lâm's slash: the thrust, frames 3 to 5; its sweep then swings behind it and strikes nothing ahead).
 - **A melee strike** is the hitbox of the frame shown in the window: as high as the drawn hand and blade, as long as
   the drawing or the skill's reach, whichever is farther, from the hilt in the striker's hand out (`unit::strike_box`):
   a foe pressed inside the hilt is not cut. It is tested on
   the tick the wind-up ends and, if it missed, again on each tick while the window lasts, **one hit a swing**: once it
   lands it is done. A retry strikes only if the window is still open on its tick, and a broken act (a fighter struck
-  out of its swing) takes its retries with it: a stunned fighter's blade never lands. A clip drawn with nothing held out ahead (the Frost slash, drawn striking behind) strikes its own
+  out of its swing) takes its retries with it: a stunned fighter's blade never lands. A clip drawn with nothing held out ahead (Thất Thải's slash, drawn striking behind) strikes its own
   box once: from the striker's middle to its reach ahead, from its feet to its shoulders and a little more. **A
   blast** strikes a box from the caster's middle to its reach ahead, as tall as the foe, once. Each is tested against
   the foe's hurtboxes (`unit::strike_hits`). A foe behind the striker is not struck.

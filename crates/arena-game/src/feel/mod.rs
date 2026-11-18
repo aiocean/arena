@@ -107,7 +107,7 @@ pub fn looks(shown: &Shown) -> [Look; 2] {
         .view
         .as_ref()
         .map(|v| [v.fighters[0].look, v.fighters[1].look])
-        .unwrap_or([Look::Thunder, Look::Frost])
+        .unwrap_or([Look::VuongLam, Look::ThatThai])
 }
 
 /// The dust, the streaks and the numbers over the fighters, the numbers clear of the bubbles painted before them.

@@ -20,8 +20,9 @@ pub struct Look {
     pub pages: Vec<Handle<Image>>,
 }
 
-/// Each look's fighter: Thunder (Vương Lâm) first, then Frost (the Seven-Colored Daoist). Seat 0 looks like the
-/// first, seat 1 like the second (`arena_duel::data::Look`).
+/// Each look's fighter: Vương Lâm (the cultivator) first, then Thất Thải Đạo Nhân (the Seven-Colored Daoist); their
+/// sheets' files keep the old schools' names. Seat 0 looks like the first, seat 1 like the second
+/// (`arena_duel::data::Look`).
 #[derive(Resource)]
 pub struct Looks(pub Vec<Look>);
 
@@ -31,7 +32,7 @@ pub struct Looks(pub Vec<Look>);
 #[derive(Resource, Default)]
 pub struct SheetsIn(pub bool);
 
-/// The sprite of fighter `0` (Thunder) or `1` (Frost).
+/// The sprite of fighter `0` (Vương Lâm) or `1` (Thất Thải Đạo Nhân).
 #[derive(Component)]
 pub struct FighterSprite(pub usize);
 

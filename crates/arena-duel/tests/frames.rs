@@ -245,7 +245,7 @@ fn close_heavies_dive_dash_heal_and_the_top_tier_recover_slowly_and_pokes_stay_s
     }
 }
 
-/// Fighter 0 casts `name` on a guarding Frost until a seed turns it aside; its act, just blocked.
+/// Fighter 0 casts `name` on a guarding Thất Thải until a seed turns it aside; its act, just blocked.
 fn blocked(name: &'static str) -> Option<State> {
     (1..=40).find_map(|seed| {
         let mut s = still(seed);

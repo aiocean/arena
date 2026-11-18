@@ -37,9 +37,9 @@ fn size(kind: Kind) -> Vec2 {
 
 /// Its owner's glow, darker for what lies on the floor.
 fn tint(u: &UnitView, looks: [Look; 2]) -> Color {
-    let (r, g, b) = match looks.get(u.owner).copied().unwrap_or(Look::Thunder) {
-        Look::Thunder => (1.0, 0.85, 0.35),
-        Look::Frost => (0.6, 0.9, 1.0),
+    let (r, g, b) = match looks.get(u.owner).copied().unwrap_or(Look::VuongLam) {
+        Look::VuongLam => (1.0, 0.85, 0.35),
+        Look::ThatThai => (0.6, 0.9, 1.0),
     };
     let k = if u.floor { 0.7 } else { 1.0 };
     Color::srgb(r * k, g * k, b * k)

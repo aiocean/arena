@@ -39,7 +39,8 @@ fn clip_of(kind: Kind, dive: bool) -> &'static str {
 /// One skill in one look: (the table's line, whether its wind-up has a frame of its own).
 fn rows() -> Vec<(String, bool)> {
     let mut out = Vec::new();
-    for (look, name) in [(Look::Thunder, "thunder"), (Look::Frost, "frost")] {
+    for look in [Look::VuongLam, Look::ThatThai] {
+        let name = look.name();
         for s in spells() {
             let clip = clip_of(s.kind, s.dive);
             let n = len(look, clip);

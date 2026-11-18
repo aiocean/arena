@@ -216,7 +216,7 @@ fn every_skill_is_its_gem_on_its_motion() {
 #[test]
 fn each_look_is_ported() -> Result<(), String> {
     let f = fixture();
-    for (key, l) in [("thunder", Look::Thunder), ("frost", Look::Frost)] {
+    for (key, l) in [("thunder", Look::VuongLam), ("frost", Look::ThatThai)] {
         let d = data::look(l);
         let js = &f["looks"][key];
         assert_eq!(json!(d.name), js["name"]);

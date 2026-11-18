@@ -46,10 +46,10 @@ pub struct Record {
     pub mean_distance: f64,
     /// What each seat (0 left, 1 right) did, whoever sat in it.
     pub seats: [SeatLog; 2],
-    /// Rounds won by each look (Thunder, Frost), whoever fought in it: the looks are drawn apart from the seats
+    /// Rounds won by each look (Vương Lâm, Thất Thải), whoever fought in it: the looks are drawn apart from the seats
     /// (`looks_of`), so in a mirror this tells the art's edge from a seat's.
     pub by_look: [u32; 2],
-    /// Rounds the first contestant won and lost in each look (Thunder, Frost).
+    /// Rounds the first contestant won and lost in each look (Vương Lâm, Thất Thải).
     pub won_as: [u32; 2],
     pub lost_as: [u32; 2],
 }
@@ -58,9 +58,9 @@ pub struct Record {
 /// one look's art (its frames and hit boxes) over a match.
 pub fn looks_of(seed: u32) -> [Look; 2] {
     if seed.is_multiple_of(2) {
-        [Look::Thunder, Look::Frost]
+        [Look::VuongLam, Look::ThatThai]
     } else {
-        [Look::Frost, Look::Thunder]
+        [Look::ThatThai, Look::VuongLam]
     }
 }
 
@@ -130,7 +130,7 @@ impl Record {
     }
 
     /// The share it won in seat `i`.
-    /// The first contestant's share of the rounds it fought in look `i` (0 Thunder, 1 Frost).
+    /// The first contestant's share of the rounds it fought in look `i` (0 Vương Lâm, 1 Thất Thải).
     pub fn as_look(&self, i: usize) -> f64 {
         let (w, l) = (
             self.won_as.get(i).copied().unwrap_or(0),
@@ -454,9 +454,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
             r.won[corner] += duel.state().wins[corner];
             r.lost[corner] += duel.state().wins[1 - corner];
             for (seat, look) in looks.iter().enumerate() {
-                r.by_look[usize::from(*look == Look::Frost)] += duel.state().wins[seat];
+                r.by_look[usize::from(*look == Look::ThatThai)] += duel.state().wins[seat];
             }
-            let mine = usize::from(looks[corner] == Look::Frost);
+            let mine = usize::from(looks[corner] == Look::ThatThai);
             r.won_as[mine] += duel.state().wins[corner];
             r.lost_as[mine] += duel.state().wins[1 - corner];
         }

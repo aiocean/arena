@@ -7,8 +7,8 @@ how much a blow deals is the damage system, `docs/specs/2026-11-17-damage-system
 ## Job
 
 The landing duel's rules: two seats with no class, each fighting with a loadout of the shared pool
-(`arena_calc::loadout`), drawn at random from the seed on dice of their own or given (`Duel::with_loadouts`). Thunder
-and Frost are how a fighter looks (`data::Look`): its sprites and colours, and so its hurtboxes and hitboxes, which are
+(`arena_calc::loadout`), drawn at random from the seed on dice of their own or given (`Duel::with_loadouts`). Vương
+Lâm and Thất Thải Đạo Nhân are how a fighter looks (`data::Look`, `VuongLam`, `ThatThai`): its sprites and colours, and so its hurtboxes and hitboxes, which are
 measured from its frames. Looks are drawn apart from the seats (`Duel::new_with_looks`, `ladder::looks_of`); the rules
 decide nothing else by them, and a bot is told its look, never its seat.
 

@@ -1,7 +1,7 @@
 //! Seat 0 against seat 1: the same mind in both seats on each seed's random loadouts, rounds counted by the seat that
-//! won them and by the look (Thunder's art or Frost's) that won them. Each seed is fought twice, the looks swapped
+//! won them and by the look (Vương Lâm or Thất Thải Đạo Nhân) that won them. Each seed is fought twice, the looks swapped
 //! between the seats, so a seat's edge and a look's edge are told apart: with fair rules and fair art, seat 0 and
-//! Thunder each win about half.
+//! Vương Lâm each win about half.
 //!
 //! `cargo run -p arena-duel --example seats -- [--seeds N] [--rounds R] [--mind first|brain|aggressive|turtle]`
 
@@ -33,11 +33,14 @@ fn main() {
     let mind = arg("--mind").unwrap_or_else(|| "first".to_string());
     // a round past this many seconds is cut and counts for neither seat
     let limit = 120.0;
-    // rounds won by seat 0, by Thunder, and decided
-    let (mut seat0, mut thunder, mut decided) = (0_u32, 0_u32, 0_u32);
+    // rounds won by seat 0, by Vương Lâm, and decided
+    let (mut seat0, mut vuong_lam, mut decided) = (0_u32, 0_u32, 0_u32);
     let (mut cut, mut seconds) = (0_u32, 0.0);
     for seed in 1..=seeds {
-        for looks in [[Look::Thunder, Look::Frost], [Look::Frost, Look::Thunder]] {
+        for looks in [
+            [Look::VuongLam, Look::ThatThai],
+            [Look::ThatThai, Look::VuongLam],
+        ] {
             let config = DuelConfig {
                 seed,
                 left: 0.0,
@@ -57,7 +60,7 @@ fn main() {
                     Some(w) => {
                         decided += 1;
                         seat0 += u32::from(w == 0);
-                        thunder += u32::from(looks[w] == Look::Thunder);
+                        vuong_lam += u32::from(looks[w] == Look::VuongLam);
                         seconds += duel.state().time - start;
                     }
                     None => {
@@ -73,9 +76,9 @@ fn main() {
     }
     let share = |n: u32| 100.0 * f64::from(n) / f64::from(decided.max(1));
     println!(
-        "{mind} mirror, {seeds} seeds x both looks, random loadouts: {decided} rounds; seat 0 won {:.1}%, Thunder won {:.1}%; {cut} cut; mean round {:.1} s",
+        "{mind} mirror, {seeds} seeds x both looks, random loadouts: {decided} rounds; seat 0 won {:.1}%, Vương Lâm won {:.1}%; {cut} cut; mean round {:.1} s",
         share(seat0),
-        share(thunder),
+        share(vuong_lam),
         seconds / f64::from(decided.max(1)),
     );
 }

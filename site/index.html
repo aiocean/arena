@@ -17,7 +17,7 @@
 </head>
 <body class="landing arena" data-page="home">
   <section class="hero arena-hero" aria-labelledby="hero-title">
-    <canvas id="scene" aria-label="A live duel on a mountain dais at night: Thunder (Vương Lâm) on the left, Frost (Thất Thải Đạo Tôn, the Seven-Colored Daoist) on the right, each played by the trained bot that ships with the rules."></canvas>
+    <canvas id="scene" aria-label="A live duel on a mountain dais at night: Vương Lâm on the left, Thất Thải Đạo Nhân (the Seven-Colored Daoist) on the right, each played by the trained bot that ships with the rules."></canvas>
     <div class="loader" role="status" aria-live="polite">
       <div class="loader-clash" aria-hidden="true"><span class="thunder-orb"></span><span class="spark"></span><span class="frost-orb"></span></div>
       <p class="loader-text">Loading the arena</p>
@@ -42,14 +42,14 @@
       <p id="status" class="status" role="status" aria-live="polite"></p>
       <form id="match" class="match">
         <label class="seat" data-school="thunder">
-          <span class="seat-side">Thunder · Vương Lâm</span>
+          <span class="seat-side">Vương Lâm</span>
           <input type="file" name="left" accept=".wasm">
           <span class="seat-file" data-empty="house bot">house bot</span>
           <span class="seat-pick">Drop in a .wasm</span>
         </label>
         <div class="vs" aria-hidden="true">VS</div>
         <label class="seat" data-school="frost">
-          <span class="seat-side">Frost · Thất Thải Đạo Tôn</span>
+          <span class="seat-side">Thất Thải Đạo Nhân</span>
           <input type="file" name="right" accept=".wasm">
           <span class="seat-file" data-empty="house bot">house bot</span>
           <span class="seat-pick">Drop in a .wasm</span>
@@ -67,7 +67,7 @@
     <section class="intro-panel frame" aria-labelledby="hero-title">
       <div class="pitch">
         <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above · the house bot in both corners until you put yours in, every frame decided by a network</p>
-        <h1 id="hero-title">Train a bot.<br><span class="thunder">Thunder</span> or <span class="frost">Frost</span>, it fights for you.</h1>
+        <h1 id="hero-title">Train a bot.<br><span class="thunder">Vương Lâm</span> or <span class="frost">Thất Thải Đạo Nhân</span>, it fights for you.</h1>
         <p class="lede">Two cultivators fight round after round. Neither is played by a person: each corner is a neural network trained to win. Train your own, any size, hand it in as ONNX, and it fights everyone else's.</p>      </div>
       <div class="actions">
         <a class="button" href="docs/training.html">Train a bot</a>
@@ -90,7 +90,7 @@
         </article>
         <div class="vs" aria-hidden="true">VS</div>
         <article class="school frame" data-school="frost">
-          <header><span class="corner">Right corner · Thất Thải Đạo Tôn</span><h3>Seat 1</h3></header>
+          <header><span class="corner">Right corner · Thất Thải Đạo Nhân</span><h3>Seat 1</h3></header>
           <p>Ten kinds of damage, their ailments, fusion and the five phases decide every blow.</p>
           <ul>
             <li>Traps, mines, totems and minions stand on the field and can be struck down.</li>

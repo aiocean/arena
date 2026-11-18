@@ -42,12 +42,12 @@ pub fn draw(seed: u32) -> [Style; 2] {
     [one(), one()]
 }
 
-/// Who a fighter is, as the policy reads it: its look (Thunder, Frost: its art, so its body's boxes; the slots that
+/// Who a fighter is, as the policy reads it: its look (Vương Lâm, Thất Thải: its art, so its body's boxes; the slots that
 /// held the old schools) and its style, one-hot. Never its seat: the observation is seen from the fighter's side, so
 /// a seat tells it nothing but lets a policy learn to play one seat better than the other.
 pub fn tag(look: Look, style: Style) -> [f32; TAG] {
     let mut t = [0.0; TAG];
-    if let Some(v) = t.get_mut(usize::from(look == Look::Frost)) {
+    if let Some(v) = t.get_mut(usize::from(look == Look::ThatThai)) {
         *v = 1.0;
     }
     if let Some(v) = t.get_mut(2 + style.index()) {

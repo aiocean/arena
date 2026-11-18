@@ -50,7 +50,7 @@ fn the_entry_bar_is_75_against_the_brain_65_as_each_school_and_80_against_the_fi
     let bar = |vs_brain, vs_first| EntryBar { vs_brain, vs_first };
     // 80% overall, 70% and 90% by school; 80% against the first mind: in
     assert!(bar(rounds([7, 9], [3, 1]), rounds([8, 8], [2, 2])).passed());
-    // 80% overall, but 60% as Thunder: out
+    // 80% overall, but 60% as Vương Lâm: out
     assert!(!bar(rounds([6, 10], [4, 0]), rounds([8, 8], [2, 2])).passed());
     // 70% against the brain: out
     assert!(!bar(rounds([7, 7], [3, 3]), rounds([8, 8], [2, 2])).passed());

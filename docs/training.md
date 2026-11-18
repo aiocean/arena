@@ -114,16 +114,16 @@ scratch on ABI 2 (305 inputs, 27 acts). Both were moved onto each rule change as
 checkpoints; the model was laddered and shipped on RULES_VERSION 10.
 
 Its ladder (150 seeds):
-- vs the brain: 92.0% (seats 90.9 / 93.2; Thunder 94.4 / Frost 89.6);
+- vs the brain: 92.0% (seats 90.9 / 93.2; Vương Lâm 94.4 / Thất Thải 89.6);
 - vs the first mind: 92.8%;
 - vs the aggressive and turtle scripts: 89.8% and 98.6%;
 - its own mirror: seat 0 49.1%.
 
-The known skew: in its own mirror Thunder wins 67% of the rounds, against 53% in the brain's mirror. The policy
-leans on Frost's slash, which is drawn backwards and still strikes with its reach box (`art/README.md`).
+The known skew: in its own mirror Vương Lâm wins 67% of the rounds, against 53% in the brain's mirror. The policy
+leans on Thất Thải's slash, which is drawn backwards and still strikes with its reach box (`art/README.md`).
 
 Next:
-1. Redraw Frost's slash.
+1. Redraw Thất Thải's slash.
 2. Fine-tune from `runs/abi2b/last.pt` on that main, kept in the trainer's clone (`projects/arena-train`, with
    `u1510.pt` beside it; `runs/` stays out of git).
 3. Ship only a checkpoint that beats this one on the ladder, on the rules it ships with.
@@ -208,10 +208,10 @@ Under the table it prints the bot's share in each look against each opponent, an
 each look won (each seed is fought in both looks).
 
 **The look gap.** A new house AI ships when it beats the shipped one on the ladder, on the rules it ships with. Its
-look gap (Thunder's share against Frost's) is judged against the built-in opponents, with a margin for noise: 150
+look gap (Vương Lâm's share against Thất Thải's) is judged against the built-in opponents, with a margin for noise: 150
 seeds give each look about 450 rounds, a point or two either way. The house AI's own mirror look share is tracked,
-not gating, while Frost's slash is drawn backwards (`art/README.md`): a stronger policy leans on that defect harder
-in self-play (Thunder won 67% of the house mirror at the 2026-11-18 ship, against 53% in the brain's mirror, which
+not gating, while Thất Thải's slash is drawn backwards (`art/README.md`): a stronger policy leans on that defect harder
+in self-play (Vương Lâm won 67% of the house mirror at the 2026-11-18 ship, against 53% in the brain's mirror, which
 shows the rules' own fairness). Redrawing the slash should close it; until then a policy gains nothing in fairness
 by playing worse.
 `--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,

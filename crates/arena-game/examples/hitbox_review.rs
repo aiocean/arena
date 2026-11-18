@@ -6,7 +6,7 @@
 //! cargo run -p arena-game --example hitbox_review -- <out dir>
 //! ```
 //!
-//! For each fighter (Thunder, Frost) and moment (standing, ducking, meditating, in the air, a blade blow on its
+//! For each fighter (Vương Lâm, Thất Thải Đạo Nhân) and moment (standing, ducking, meditating, in the air, a blade blow on its
 //! active frame, a bolt leaving the hand), it writes `<look>-<moment>.png`: the fighters' frames (`pick`, placed as
 //! `fighters::placed` places them), each **hurtbox** (`frames::hurtboxes`) filled and outlined in the fighter's colour,
 //! the **hitbox** of a blade blow (`unit::strike_box`) in red, and the **launch** point of a bolt
@@ -270,13 +270,13 @@ fn shoot(
     }
     for g in 0..2 {
         let sheet = &sheets[match state.fighters[g].look {
-            Look::Thunder => 0,
-            Look::Frost => 1,
+            Look::VuongLam => 0,
+            Look::ThatThai => 1,
         }];
         draw_fighter(&mut img, &v, state, g, sheet);
     }
     let colour = |g: usize| {
-        if state.fighters[g].look == Look::Thunder {
+        if state.fighters[g].look == Look::VuongLam {
             [255, 200, 40]
         } else {
             [60, 220, 255]
@@ -417,11 +417,7 @@ fn shoot(
             }
         }
     }
-    let who = if fi.look == Look::Thunder {
-        "Thunder"
-    } else {
-        "Frost"
-    };
+    let who = fi.look.display();
     let a = appearance(
         b.pose,
         b.pose_t,
@@ -429,7 +425,7 @@ fn shoot(
         fi.act
             .map(|a| (a.spell, a.phase, a.t, arena_duel::act::phase_span(&a))),
     );
-    let sheet = &sheets[if fi.look == Look::Thunder { 0 } else { 1 }];
+    let sheet = &sheets[if fi.look == Look::VuongLam { 0 } else { 1 }];
     let look = fi.look;
     let shot = pick(
         &a,

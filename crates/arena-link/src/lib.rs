@@ -88,7 +88,7 @@ pub struct Snapshot {
     pub seed: u32,
     /// The arena it is fought in.
     pub arena: Arena,
-    /// The two corners' names (the bots seated), Thunder then Frost.
+    /// The two corners' names (the bots seated), Vương Lâm's then Thất Thải's.
     pub corners: [String; 2],
     /// Every decision made so far, in tick order.
     pub decisions: Vec<Decision>,

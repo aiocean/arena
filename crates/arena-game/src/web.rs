@@ -56,7 +56,7 @@ pub fn live(url: String) {
     crate::app(start).run();
 }
 
-/// Put bot module `bytes` (named `name`) into corner `corner` (0 Thunder, 1 Frost); the fight starts over.
+/// Put bot module `bytes` (named `name`) into corner `corner` (0 Vương Lâm, 1 Thất Thải Đạo Nhân); the fight starts over.
 #[wasm_bindgen(js_name = setCorner)]
 pub fn set_corner(corner: usize, name: String, bytes: Vec<u8>) {
     let c = Corner::Module {
@@ -185,7 +185,7 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
         let text = match (&live.stale, live.watching.current(), &shown.view) {
             (Some(e), _, _) => e.clone(),
             (None, Some(m), Some(v)) => format!(
-                "Seed {} · live · round {} · Thunder ({}) {} – {} Frost ({})",
+                "Seed {} · live · round {} · Vương Lâm ({}) {} – {} Thất Thải ({})",
                 m.seed, v.round, m.names[0], v.wins[0], v.wins[1], m.names[1]
             ),
             _ => live.status.clone(),
@@ -196,7 +196,7 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
     let text = match (&seating.error, &shown.view) {
         (Some(e), _) => format!("Not a bot for this season: {e}"),
         (None, Some(v)) => format!(
-            "Seed {} · round {} · Thunder ({}) {} – {} Frost ({})",
+            "Seed {} · round {} · Vương Lâm ({}) {} – {} Thất Thải ({})",
             shown.seed, v.round, shown.names[0], v.wins[0], v.wins[1], shown.names[1]
         ),
         (None, None) => "Seating the bots".to_string(),

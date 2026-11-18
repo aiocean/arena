@@ -42,8 +42,8 @@ pub type Clip = (&'static str, Window, &'static [Frame]);
 
 fn look_frames(look: Look) -> &'static LookFrames {
     match look {
-        Look::Thunder => &LOOKS[0],
-        Look::Frost => &LOOKS[1],
+        Look::VuongLam => &LOOKS[0],
+        Look::ThatThai => &LOOKS[1],
     }
 }
 

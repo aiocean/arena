@@ -65,26 +65,42 @@ pub const POWER: f64 = arena_calc::gem::TODAY_ATK * arena_calc::gem::TODAY_DEFEN
 pub const T: f64 = 60.0 * UNIT;
 
 /// How a fighter looks: the sprites and colours the game draws it in. The rules never decide anything by it; they
-/// only play a fighter's effects in its look's colours. Seat 0 looks like Thunder, seat 1 like Frost.
+/// only play a fighter's effects in its look's colours. The looks are the characters: seat 0 is Vương Lâm (the
+/// cultivator), seat 1 Thất Thải Đạo Nhân (the Seven-Colored Daoist). Their colours keep the old schools' palettes
+/// (`look`: Vương Lâm's gold, Thất Thải's blue).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum Look {
-    Thunder,
-    Frost,
+    #[cfg_attr(feature = "serde", serde(rename = "vuong-lam"))]
+    VuongLam,
+    #[cfg_attr(feature = "serde", serde(rename = "that-thai"))]
+    ThatThai,
 }
 
 impl Look {
+    /// Its id: `vuong-lam`, `that-thai`.
     pub fn name(self) -> &'static str {
         match self {
-            Look::Thunder => "thunder",
-            Look::Frost => "frost",
+            Look::VuongLam => "vuong-lam",
+            Look::ThatThai => "that-thai",
+        }
+    }
+
+    /// The character's name as the game writes it.
+    pub fn display(self) -> &'static str {
+        match self {
+            Look::VuongLam => "Vương Lâm",
+            Look::ThatThai => "Thất Thải Đạo Nhân",
         }
     }
 
     /// The look of seat `i`.
     pub fn of_seat(i: usize) -> Look {
-        if i == 0 { Look::Thunder } else { Look::Frost }
+        if i == 0 {
+            Look::VuongLam
+        } else {
+            Look::ThatThai
+        }
     }
 }
 
@@ -2153,8 +2169,8 @@ static FROST: LookData = LookData {
 /// A look's colours.
 pub fn look(l: Look) -> &'static LookData {
     match l {
-        Look::Thunder => &THUNDER,
-        Look::Frost => &FROST,
+        Look::VuongLam => &THUNDER,
+        Look::ThatThai => &FROST,
     }
 }
 

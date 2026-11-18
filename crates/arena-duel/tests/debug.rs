@@ -31,7 +31,7 @@ fn span(d: &Duel, f: usize) -> (f64, f64) {
 
 #[test]
 fn every_clip_has_frame_data_for_every_look() {
-    for look in [Look::Thunder, Look::Frost] {
+    for look in [Look::VuongLam, Look::ThatThai] {
         for clip in CLIPS {
             assert!(len(look, clip) > 0, "{look:?} has no frames for {clip}");
         }

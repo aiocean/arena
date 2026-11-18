@@ -39,11 +39,11 @@ pub struct Colors {
 
 pub fn colors(s: Look) -> Colors {
     match s {
-        Look::Thunder => Colors {
+        Look::VuongLam => Colors {
             ribbon: [hex("#e0443a"), hex("#a8241c")],
             glow: hex("#ffe066"),
         },
-        Look::Frost => Colors {
+        Look::ThatThai => Colors {
             ribbon: [hex("#bff2ff"), hex("#7ab8e0")],
             glow: hex("#a6ecff"),
         },

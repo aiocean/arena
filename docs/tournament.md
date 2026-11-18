@@ -53,7 +53,7 @@ A module with the same hash as one already entered is refused.
 - A **match** between bots A and B is a set of seeds; each seed is played **both ways**: A in seat 0 and B in seat
   1, then swapped, 3 rounds each. Each seed draws both seats' loadouts, so a seat's edge and a seed's lucky loadout
   cancel out, and the bot that wins is the bot that plays both sides of each pair of loadouts better. The fighters'
-  looks (Thunder, Frost) are drawn apart from the seats, and each seed is fought in both (`ladder::looks_of`).
+  looks (Vương Lâm, Thất Thải Đạo Nhân) are drawn apart from the seats, and each seed is fought in both (`ladder::looks_of`).
 - A match is one sequence: a bot module keeps one instance, and its memory, through every fight of it, so a
   match runs on one machine, in the order its seeds are listed. Each fight's act log is published, so any one fight
   can be checked alone by playing its log.

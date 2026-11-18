@@ -155,7 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (name, r) in &all {
         if !mirrors.iter().any(|(n, _)| n == name) {
             println!(
-                "  {name:<36} as Thunder {:.1}%, as Frost {:.1}%",
+                "  {name:<36} as Vương Lâm {:.1}%, as Thất Thải {:.1}%",
                 100.0 * r.as_look(0),
                 100.0 * r.as_look(1)
             );
@@ -164,7 +164,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (name, r) in &mirrors {
         let all = f64::from((r.by_look[0] + r.by_look[1]).max(1));
         println!(
-            "  {name:<36} Thunder won {:.1}% of the rounds, Frost {:.1}%",
+            "  {name:<36} Vương Lâm won {:.1}% of the rounds, Thất Thải {:.1}%",
             100.0 * f64::from(r.by_look[0]) / all,
             100.0 * f64::from(r.by_look[1]) / all
         );
