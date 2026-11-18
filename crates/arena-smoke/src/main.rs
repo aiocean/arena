@@ -28,6 +28,10 @@
 //!   (`body[data-boxes-shown]`).
 //! - `fps` (never fails the run): the page's frame rate over ten seconds of the match, from the gaps between painted
 //!   frames (`requestAnimationFrame`): the rate, the median, the 95th percentile and the longest gap.
+//! - `frame`: the game's own measure of its frames (`window.__arena.profile`, `arena_game::profile`): each phase's
+//!   mean on the page's main thread, the worst frame, the gaps from frame to frame, and the pictures sent to the GPU a
+//!   frame. It fails when all three world pictures go to the GPU every frame, changed or not; a build without the
+//!   measure passes with a note.
 //! - `module`: the deployed house bot module (`bots/policy.wasm`, fetched beside the page) has the sha256 pinned at
 //!   the deployed commit (`crates/arena-bot/tests/goldens/house_module.sha256`, read with `git show` from the clone
 //!   this binary was built in, or from its working tree when its HEAD is that commit). Another hash fails; a pin not
@@ -59,8 +63,8 @@
 //! `~/.cache/arena-smoke`.
 
 use arena_smoke::{
-    Check, Fps, Load, Picture, Profile, Summary, Weight, changed, ignored_console, ignored_request,
-    paint, redact, stamp,
+    Check, Fps, FrameCost, Load, Picture, Profile, Summary, Weight, changed, ignored_console,
+    ignored_request, paint, redact, stamp,
 };
 use arena_telemetry::target::METRICS;
 use chromiumoxide::cdp::browser_protocol::network::{
@@ -827,6 +831,17 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         true,
         fps.as_ref()
             .map_or("no frames painted".to_string(), Fps::line),
+    ));
+    // the game's own measure of its frames (`window.__arena.profile`, `crates/arena-game/src/profile.rs`)
+    let profile = eval_json(&page, "window.__arena?.profile ?? null").await;
+    let frame = FrameCost::of(&profile);
+    checks.push(Check::new(
+        "frame",
+        frame.as_ref().is_none_or(FrameCost::ok),
+        frame.as_ref().map_or(
+            "this build does not measure its frames (no window.__arena.profile)".to_string(),
+            FrameCost::line,
+        ),
     ));
     // the window's picture from the top of the page (a phone's page may have scrolled under the run)
     let _ = eval_json(&page, "(() => { window.scrollTo(0, 0); return true })()").await;

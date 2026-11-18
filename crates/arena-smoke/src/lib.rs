@@ -299,6 +299,81 @@ impl Fps {
     }
 }
 
+/// The game's own measure of its frames (`window.__arena.profile`, `arena_game::profile`): each phase's mean on the
+/// main thread, the worst frame, the gaps from one frame to the next, and what the world's pictures send to the GPU.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct FrameCost {
+    pub frames: u32,
+    /// Each phase's mean, ms, in the game's order, and their sum.
+    pub phases: Vec<(String, f64)>,
+    pub total_ms: f64,
+    pub worst_ms: f64,
+    pub gap_ms: f64,
+    pub worst_gap_ms: f64,
+    pub upload_kb: f64,
+    pub uploads: f64,
+}
+
+impl FrameCost {
+    /// The world's pictures (back, front, HUD) all sent again every frame: one of them that has not changed is sent
+    /// for nothing, which is what `ok` refuses.
+    pub const EVERY_PICTURE: f64 = 2.95;
+
+    /// From the page's `window.__arena.profile`; `None` when the build has none.
+    pub fn of(v: &serde_json::Value) -> Option<FrameCost> {
+        let f = |k: &str| v.get(k).and_then(serde_json::Value::as_f64);
+        let ms = v.get("ms")?.as_object()?;
+        let phases = ["pace", "rules", "react", "paint", "upload"]
+            .iter()
+            .filter_map(|p| {
+                ms.get(*p)
+                    .and_then(serde_json::Value::as_f64)
+                    .map(|m| ((*p).to_string(), m))
+            })
+            .collect();
+        Some(FrameCost {
+            frames: f("frames")? as u32,
+            phases,
+            total_ms: ms.get("total").and_then(serde_json::Value::as_f64)?,
+            worst_ms: f("worst_ms")?,
+            gap_ms: f("gap_ms").unwrap_or(0.0),
+            worst_gap_ms: f("worst_gap_ms").unwrap_or(0.0),
+            upload_kb: f("upload_kb")?,
+            uploads: f("uploads")?,
+        })
+    }
+
+    /// Whether the frames send only the pictures that changed.
+    pub fn ok(&self) -> bool {
+        self.uploads < Self::EVERY_PICTURE
+    }
+
+    /// `2.10 ms a frame (paint 1.20, ...), worst 9.0 ms; frame to frame 16.7 ms, longest 40 ms; 1.0 picture sent a
+    /// frame, 900 KB`.
+    pub fn line(&self) -> String {
+        let phases: Vec<String> = self
+            .phases
+            .iter()
+            .map(|(p, m)| format!("{p} {m:.2}"))
+            .collect();
+        format!(
+            "{:.2} ms a frame ({}), worst {:.1} ms; frame to frame {:.1} ms, longest {:.0} ms; {:.1} pictures sent a frame, {:.0} KB{}",
+            self.total_ms,
+            phases.join(", "),
+            self.worst_ms,
+            self.gap_ms,
+            self.worst_gap_ms,
+            self.uploads,
+            self.upload_kb,
+            if self.ok() {
+                ""
+            } else {
+                " (every picture every frame, changed or not)"
+            }
+        )
+    }
+}
+
 /// Bytes as megabytes, one decimal place below 10 MB, two above none.
 pub fn mb(bytes: u64) -> String {
     let m = bytes as f64 / 1_000_000.0;
@@ -898,6 +973,26 @@ pub fn write_review(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_frame_cost_reads_the_game_profile_and_refuses_every_picture_every_frame()
+    -> Result<(), String> {
+        let v = serde_json::json!({"frames": 120, "ms": {"pace": 0.1, "rules": 0.2, "react": 0.3, "paint": 1.0,
+            "upload": 0.4, "total": 2.0}, "worst_ms": 9.0, "gap_ms": 16.7, "worst_gap_ms": 40.0, "upload_kb": 900.0,
+            "uploads": 1.0});
+        let f = FrameCost::of(&v).ok_or("no profile")?;
+        assert_eq!(f.phases.len(), 5);
+        assert!(
+            f.ok() && f.line().starts_with("2.00 ms a frame (pace 0.10"),
+            "{}",
+            f.line()
+        );
+        let all = FrameCost { uploads: 3.0, ..f };
+        assert!(!all.ok() && all.line().contains("every picture every frame"));
+        assert_eq!(FrameCost::of(&serde_json::Value::Null), None);
+        Ok(())
+    }
+
     use super::*;
     use std::time::Duration;
 

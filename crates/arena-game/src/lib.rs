@@ -23,6 +23,7 @@ pub mod layers;
 pub mod layout;
 pub mod light;
 pub mod live;
+pub mod profile;
 pub use arena_vfx::raster;
 pub mod rules;
 pub mod scene;
@@ -138,6 +139,7 @@ pub fn app(start: Start) -> App {
         units::UnitsPlugin,
         hud::HudPlugin,
         boxes::BoxesPlugin,
+        profile::ProfilePlugin,
     ));
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(shots::ShotsPlugin);
