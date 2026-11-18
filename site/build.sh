@@ -80,6 +80,9 @@ else
   echo "site/build.sh: no brotli here, gzip only" >&2
 fi
 bun "$here/docs.js" "$root/docs" "$out/docs"
+# the wiki, generated from the code (crates/arena-wiki): a page per skill, support, ailment, keystone, aura, domain,
+# curse, unit and look, its pictures drawn from the sheets
+(cd "$root" && cargo run -q --release -p arena-wiki -- "$out/wiki" >/dev/null)
 echo "arena site: $out (game/$game, game/$assets)"
 
 if [[ "${1:-}" == "--serve" ]]; then

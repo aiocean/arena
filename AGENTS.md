@@ -43,6 +43,7 @@ resolve it there.
 | decides how a fighter is drawn: canvas, height, outline, colours, clips, the checks before it ships | `art/README.md` (the art direction; not a player doc) |
 | starts the game on the page, hands it a dropped bot module and a seed | `site/assets/arena.js` (it decides nothing) |
 | is a page of the arena site (arena.aiocean.io): home (the duel and the bot slots), the docs pages | this folder's `site/` (`build.sh`; the docs pages are rendered from `docs/*.md`, never edited by hand) |
+| is the game's wiki (arena.aiocean.io/wiki/): a page per skill, support, ailment, aura, domain, curse, keystone, unit and look, its pictures drawn offline from the sheets | `crates/arena-wiki` (generated from the code by `site/build.sh` into `dist/wiki/`; never edited by hand) |
 | explains the game to a player | `docs/` |
 
 ## Traps

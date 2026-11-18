@@ -48,7 +48,7 @@ fn look_frames(look: Look) -> &'static LookFrames {
 }
 
 /// Clip `clip` of look `look`: its active window and its frames.
-fn clip_of(look: Look, clip: &str) -> Option<(Window, &'static [Frame])> {
+pub fn clip_of(look: Look, clip: &str) -> Option<(Window, &'static [Frame])> {
     look_frames(look)
         .clips
         .iter()

@@ -60,6 +60,7 @@ export function docPage(name, markdown) {
       <a href="rules.html"${name === "rules" ? ' aria-current="page"' : ""}>Rules</a>
       <a href="training.html"${name === "training" ? ' aria-current="page"' : ""}>Train a bot</a>
       <a href="tournament.html"${name === "tournament" ? ' aria-current="page"' : ""}>Tournament</a>
+      <a href="../wiki/">Wiki</a>
       <a href="https://github.com/aiocean/arena">GitHub</a>
     </nav>
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar">Menu</button>
