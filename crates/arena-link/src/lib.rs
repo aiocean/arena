@@ -48,7 +48,7 @@ use serde::{Deserialize, Serialize};
 /// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 22;
+pub const RULES_VERSION: u32 = 23;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

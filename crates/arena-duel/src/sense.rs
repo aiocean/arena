@@ -8,7 +8,7 @@
 use crate::act::recover_of;
 use crate::bar::{cooldown_left, ready};
 use crate::data::{BAR, FRAMES, Kind, Spell, T, UNIT, spell};
-use crate::fighter::{Fighter, Phase, Slot, State};
+use crate::fighter::{Fighter, Phase, Sit, Slot, State};
 use crate::frames::{CAST, strike_hitbox, window_of};
 use crate::kit::Place;
 use crate::shot::{ShotKind, orb_at};
@@ -204,7 +204,7 @@ pub fn doing_of(f: &Fighter) -> Doing {
     }
     if f.guard > 0.0 {
         Doing::Guard
-    } else if f.medit {
+    } else if f.meditating() {
         Doing::Meditate
     } else if f.fly {
         Doing::Fly
@@ -299,7 +299,10 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
     let foe = &state.fighters[1 - me];
     let b = &f.body;
     let slots = slots_of(f);
+    // sitting down to meditate or getting up, it cannot act; sitting, it may stay or get up
     let free = !(f.act.is_some()
+        || f.sits(Sit::Down)
+        || f.sits(Sit::Up)
         || b.reeling()
         || b.squat > 0.0
         || b.duck > 0.0

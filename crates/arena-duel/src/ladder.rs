@@ -401,7 +401,7 @@ fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State
         log.life_lost += before[f] - me.hp() + healed[f];
         let on = |b: bool| if b { TICK } else { 0.0 };
         log.seconds += TICK;
-        log.meditating += on(me.medit);
+        log.meditating += on(me.meditating());
         log.guarding += on(me.guard > 0.0);
         log.flying += on(me.fly);
     }

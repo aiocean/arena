@@ -110,10 +110,13 @@ it is played) is dropped, and the fighter keeps doing what it was doing.
 
 - The bot thinks every 0.12 s, jittered between 0.8x and 1.2x on its own seeded dice (`TEMPERAMENT.think`): at most
   about eight decisions a second.
-- A decision comes only while the fighter can act: never during its own cast, a stagger, a freeze or shock, the
+- A decision comes only while the fighter can act: never during its own cast, while it sits down or gets up, a stagger, a freeze or shock, the
   crouch before a jump, or the 0.4 s of a duck. After a round starts, the first decision comes 0.4-0.7 s in.
 - What it decides on one tick is played on the next.
-- An act lasts until the next one: walking and meditating carry on, and `wait` stops both.
+- An act lasts until the next one: walking carries on and `wait` stops it. Meditating is a skill with phases
+  (`docs/rules.md`, "Meditation"): `meditate` sits down (0.4 s, no decision), sitting carries on through `meditate`
+  and `wait`, and any other act gets up (0.4 s, no decision; that act is dropped). Its qi comes in 0.5 s blocks
+  after a first whole second, and a blow on a meditating fighter does 1.5x.
 - Hit-stop on the page pauses the whole duel, so it changes nothing for a bot.
 
 These are the same for every bot and every style, and the same as the hand-written brain's, so no bot is faster than

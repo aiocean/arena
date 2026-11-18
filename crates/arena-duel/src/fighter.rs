@@ -43,6 +43,24 @@ pub struct Act {
     pub blocked: bool,
 }
 
+/// Where a fighter's meditation is (`data::MEDITATE`): sitting down (it cannot act), sitting (the channel: qi in
+/// blocks, a free choice of staying or getting up), getting up (it cannot act).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
+pub enum Sit {
+    Down,
+    Sitting,
+    Up,
+}
+
+/// A fighter meditating: its phase and the seconds it has been in it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Meditation {
+    pub phase: Sit,
+    pub t: f64,
+}
+
 /// A slot of the rotating bar: counting down to a draw, or holding a skill of the loadout (bar tiers, traits, luck
 /// and evolving pairs are off while the damage system is balanced: design 2).
 #[derive(Clone, Debug, PartialEq)]
@@ -80,7 +98,8 @@ pub struct Fighter {
     pub bar: Vec<Slot>,
     pub act: Option<Act>,
     pub guard: f64,
-    pub medit: bool,
+    /// Meditating, in any phase (`None` not at all).
+    pub medit: Option<Meditation>,
     pub fly: bool,
     pub hover: f64,
     /// Blinking locked (Không Khóa, Chặn Lui).
@@ -147,7 +166,7 @@ impl Fighter {
             bar: Vec::new(),
             act: None,
             guard: 0.0,
-            medit: false,
+            medit: None,
             fly: false,
             hover: 0.0,
             sealed: 0.0,
@@ -185,7 +204,7 @@ impl Fighter {
         let witch = self.loadout.keystones.contains(&Keystone::Witch);
         self.act = None;
         self.guard = 0.0;
-        self.medit = false;
+        self.medit = None;
         self.fly = false;
         self.hover = 0.0;
         self.sealed = 0.0;
@@ -232,6 +251,16 @@ impl Fighter {
     /// Whether it holds keystone `k`.
     pub fn has(&self, k: Keystone) -> bool {
         crate::kit::holds(&self.loadout, k)
+    }
+
+    /// Meditating, in any phase: sitting down, sitting or getting up.
+    pub fn meditating(&self) -> bool {
+        self.medit.is_some()
+    }
+
+    /// In the phase of meditation `phase`.
+    pub fn sits(&self, phase: Sit) -> bool {
+        self.medit.is_some_and(|m| m.phase == phase)
     }
 
     /// Silenced: its soul lost (thất hồn), only attacks answer.

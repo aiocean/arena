@@ -1,10 +1,10 @@
 //! The duel: two fighters and their seats, stepped in whole ticks, round after round.
 
-use crate::act::{advance, begin, break_act, drop_barrier, knock_out, set_meditating, settle};
+use crate::act::{advance, begin, break_act, drop_barrier, get_up, knock_out, settle, sit_down};
 use crate::bar::draw;
 use crate::body::{Drive, Motion};
 use crate::data::{BAR, DECOR, FLY, Look, QI_REGEN, ROUND_PAUSE, STALE};
-use crate::fighter::{Fighter, Slot, State, Told};
+use crate::fighter::{Fighter, Sit, Slot, State, Told};
 use crate::js::{js_max, js_min};
 use crate::seat::{Brain, MakeSeat, Seat};
 use crate::shot::{shot, stop_shot};
@@ -532,7 +532,7 @@ fn body(state: &mut State, me: usize, dt: f64) {
     let drive = Drive {
         alive: f.alive(),
         acting: f.act.is_some(),
-        meditating: f.medit,
+        meditating: f.meditating(),
         guarding: f.guard > 0.0,
         intent: f.intent * speed,
         motion,
@@ -552,11 +552,16 @@ fn body(state: &mut State, me: usize, dt: f64) {
     advance(state, me, dt);
 }
 
-/// Fighter `me` does what its seat chose.
+/// Fighter `me` does what its seat chose. Meditating, it cannot act while it sits down or gets up; sitting, meditating
+/// or waiting keeps it sitting and anything else gets it up, the choice dropped (`data::MEDITATE`). Meditating begins
+/// only from free on the ground.
 pub fn apply(state: &mut State, me: usize, choice: &Choice) {
     state.fighters[me].intent = 0.0;
-    if !matches!(choice, Choice::Meditate) {
-        set_meditating(state, me, false);
+    if let Some(m) = state.fighters[me].medit {
+        if m.phase == Sit::Sitting && !matches!(choice, Choice::Meditate | Choice::Wait) {
+            get_up(state, me);
+        }
+        return;
     }
     let f = &mut state.fighters[me];
     match choice {
@@ -577,7 +582,20 @@ pub fn apply(state: &mut State, me: usize, choice: &Choice) {
                 f.body.vy = f.body.spec.jump_speed * 0.6;
             }
         }
-        Choice::Meditate => set_meditating(state, me, true),
+        Choice::Meditate => {
+            let b = &f.body;
+            let free = f.act.is_none()
+                && f.alive()
+                && !f.fly
+                && b.air == 0.0
+                && !b.reeling()
+                && b.squat == 0.0
+                && b.duck == 0.0
+                && b.shocked == 0.0;
+            if free {
+                sit_down(state, me);
+            }
+        }
         Choice::Cast { skill, target } => {
             if let Some(name) = state.fighters[me].kit.get(skill).map(|k| k.gem.id) {
                 begin(state, me, name, *target);

@@ -1934,14 +1934,24 @@
   "constants": {
     "STALE": 6,
     "POOL_SIZE": 8,
+    "MEDITATE": {
+      "sitDown": 0.4,
+      "getUp": 0.4,
+      "block": 0.5,
+      "first": 1.0,
+      "struck": {
+        "power": 1.5,
+        "stagger": 0.3
+      }
+    },
     "FRAMES": {
       "counter": {
-        "power": 1.2,
-        "stagger": 0.1
+        "power": 1.4,
+        "stagger": 0.15
       },
       "punish": {
-        "power": 1.2,
-        "stagger": 0.2
+        "power": 1.35,
+        "stagger": 0.25
       },
       "blockedRecover": 0.15,
       "unsafeOnBlock": [

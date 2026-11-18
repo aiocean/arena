@@ -53,7 +53,7 @@ const STATUSES: [&str; 9] = [
 fn statuses(f: &Fighter) -> [bool; STATUSES.len()] {
     [
         f.guard > 0.0,
-        f.medit,
+        f.meditating(),
         f.fly,
         f.sealed > 0.0,
         f.root > 0.0,
@@ -157,6 +157,7 @@ fn how(h: How) -> &'static str {
         How::Plain => "plain",
         How::Counter => "counter",
         How::Punish => "punish",
+        How::Meditate => "meditate",
     }
 }
 

@@ -190,6 +190,8 @@ impl FightFeel {
                     How::Plain => 0.0,
                     How::Counter => STOP_COUNTER,
                     How::Punish => STOP_PUNISH,
+                    // caught meditating: the longest stop of all
+                    How::Meditate => STOP_PUNISH,
                 };
                 let stop = js_min(FREEZE_CAP * 60.0, frames) / 60.0;
                 self.freeze(stop);
@@ -217,6 +219,7 @@ impl FightFeel {
                     How::Plain => None,
                     How::Counter => Some(("COUNTER!", NumberKind::Counter)),
                     How::Punish => Some(("PUNISH!", NumberKind::Punish)),
+                    How::Meditate => Some(("BROKEN!", NumberKind::Punish)),
                 };
                 if let (Some((word, kind)), Some(last)) = (word, self.numbers.last()) {
                     let over = Floating {

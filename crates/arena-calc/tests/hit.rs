@@ -531,13 +531,17 @@ fn grit_halves_each_control_and_falls_back() {
 }
 
 #[test]
-fn counter_and_punish_add_a_fifth() {
-    let mut t = bare();
+fn counter_and_punish_deal_more() {
     let mut h = Hit::split(100.0, &[(Element::Earth, 1.0)]);
     h.frame = Frame::Counter;
     close(
-        resolve(&h, None, &mut t, NO_CRIT).dealt[Element::Earth.index()],
-        120.0,
+        resolve(&h, None, &mut bare(), NO_CRIT).dealt[Element::Earth.index()],
+        140.0,
+    );
+    h.frame = Frame::Punish;
+    close(
+        resolve(&h, None, &mut bare(), NO_CRIT).dealt[Element::Earth.index()],
+        135.0,
     );
 }
 

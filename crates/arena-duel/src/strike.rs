@@ -4,9 +4,9 @@
 //! go into the queue (`event::Queue`), whose triggers cast skills the duel delivers at once. Hard controls land on
 //! the body; time wears the fighters each tick (`Cultivator::tick_with`: burns, bleeds, regen, timers).
 
-use crate::act::{break_act, clash, set_meditating};
+use crate::act::{break_act, break_meditation, clash};
 use crate::body::Blow as BodyBlow;
-use crate::data::{FRAMES, Kind, POWER, Spell, T, body_spec};
+use crate::data::{FRAMES, Kind, MEDITATE, POWER, Spell, T, body_spec};
 use crate::fighter::{Phase, State, Told};
 use crate::out::{How, Note, Out, Stop};
 use arena_calc::ailment::{Ailment, Control};
@@ -258,8 +258,8 @@ fn life_share(c: &Cultivator, amount: f64) -> f64 {
 }
 
 /// Fighter `f` takes blow `p`, pushed toward `dir`: through a barrier, a ward's charge, a
-/// dodge, then the damage system. Caught gathering a cast it is a COUNTER, caught recovering a PUNISH (never from a
-/// field's strike): the blow says so (`Hit::frame`), and the body is staggered longer. Returns whether it landed.
+/// dodge, then the damage system. Caught gathering a cast it is a COUNTER, caught recovering a PUNISH, caught
+/// meditating worse still (`MEDITATE.struck`; never from a field's strike): the blow says so (`Hit::frame`), and the body is staggered longer. Returns whether it landed.
 pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
     if !state.fighters[f].alive() || state.fighters[f].body.untouchable() {
         return false;
@@ -292,6 +292,7 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         _ if field_strike => How::Plain,
         Some(Phase::Windup) => How::Counter,
         Some(Phase::Recover) => How::Punish,
+        None if state.fighters[f].meditating() => How::Meditate,
         None => How::Plain,
     };
     let mut hit = p.hit.clone();
@@ -299,6 +300,7 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         How::Plain => Frame::Plain,
         How::Counter => Frame::Counter,
         How::Punish => Frame::Punish,
+        How::Meditate => Frame::Meditate,
     };
     let mut qi = 0.0;
     for k in state.fighters[f].loadout.keystones.clone() {
@@ -388,6 +390,7 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         How::Plain => None,
         How::Counter => Some(FRAMES.counter),
         How::Punish => Some(FRAMES.punish),
+        How::Meditate => Some(MEDITATE.struck),
     };
     let power = dealt / POWER;
     let launch = BodyBlow {
@@ -453,7 +456,8 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         }
         break_act(state, f);
         state.fighters[f].guard = 0.0;
-        set_meditating(state, f, false);
+        // a blow breaks a meditation outright: no getting up, the blow's reaction takes over
+        break_meditation(state, f);
     }
     // controls: the skill's own, then a full ailment's
     if let Some(g) = gem::gem(p.skill) {
@@ -705,7 +709,8 @@ pub fn buff(state: &mut State, me: usize, id: &'static str, built: &Built) {
 }
 
 /// Time wears both fighters, seat 0 then seat 1: their curses beat, then their cultivators tick (burns and bleeds,
-/// regen, timers), each damage-over-time tick shown and queued.
+/// regen, timers, meditation's blocks), their meditation moves on a phase when it is due (`act::meditate`), each
+/// damage-over-time tick shown and queued.
 pub fn wear(state: &mut State, dt: f64) {
     state.queue.tick(dt);
     for me in 0..2 {
@@ -719,9 +724,10 @@ pub fn wear(state: &mut State, dt: f64) {
         }
         let ticked = {
             let f = &mut state.fighters[me];
-            f.c.meditating = f.medit;
             f.c.tick_with(dt, f.moving, &f.sheet)
         };
+        // after the tick: the time a fighter sits down counts for nothing
+        crate::act::meditate(state, me, dt);
         let events = event::dot_events(&ticked, me, &state.fighters[me].c);
         for e in events {
             state.queue.push(e.against(foe));

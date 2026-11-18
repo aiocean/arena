@@ -4,7 +4,6 @@
 
 mod common;
 
-use arena_calc::hit::FRAME_MORE;
 use arena_duel::act::{advance, begin};
 use arena_duel::body::BodySpec;
 use arena_duel::data::{FRAMES, POWER, body_spec, spell};
@@ -140,7 +139,10 @@ fn a_blow_on_a_fighter_gathering_a_cast_is_a_counter_harder_and_staggering_longe
     let (damage, how) = hit(&out, "qiburst").unwrap_or((0.0, How::Plain));
     assert_eq!(how, How::Counter);
     let (plain, _, _) = plain_burst(3);
-    assert!(close(damage, plain * FRAME_MORE), "{damage} {plain}");
+    assert!(
+        close(damage, plain * FRAMES.counter.power),
+        "{damage} {plain}"
+    );
     // the harder blow staggers longer, or throws (a thrown fighter is not staggered: it flies)
     assert!(
         thrown(&s)
@@ -163,7 +165,10 @@ fn a_blow_on_a_fighter_recovering_is_a_punish_harder_and_staggering_longer() {
     let (damage, how) = hit(&out, "qiburst").unwrap_or((0.0, How::Plain));
     assert_eq!(how, How::Punish);
     let (plain, _, _) = plain_burst(3);
-    assert!(close(damage, plain * FRAME_MORE), "{damage} {plain}");
+    assert!(
+        close(damage, plain * FRAMES.punish.power),
+        "{damage} {plain}"
+    );
     assert!(
         thrown(&s)
             || close(
@@ -256,7 +261,9 @@ fn close_heavies_heal_and_the_top_tier_recover_slowly_and_pokes_stay_safe() {
         ("tribulation", 0.8),
         ("bolt", 0.22),
     ] {
-        assert_eq!(recover(name), want, "{name}");
+        // the gem's recover, paced (`build::PACE`)
+        let want = want * arena_calc::build::PACE.recover;
+        assert!((recover(name) - want).abs() < 1e-9, "{name}");
     }
 }
 

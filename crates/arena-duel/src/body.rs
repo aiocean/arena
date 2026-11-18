@@ -279,8 +279,8 @@ pub struct Drive {
     pub foe_x: f64,
 }
 
-/// What the rules have a fighter doing, for its pose, in their order: an action, then a guard, meditating, flying,
-/// walking. The body's own state (thrown, down, stunned, ducking, landing, in the air) comes first where it should.
+/// What the rules have a fighter doing, for its pose, in their order: an action, then a guard, meditating (or getting
+/// up from it), flying, walking. The body's own state (thrown, down, stunned, ducking, landing, in the air) comes first where it should.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Doing {
     /// Winding up a spell.
@@ -288,7 +288,10 @@ pub enum Doing {
     /// Following through.
     Recover,
     Guard,
+    /// Sitting down to meditate, or sitting.
     Meditate,
+    /// Getting up from meditating.
+    GetUp,
     Fly,
     Walk,
     Idle,
@@ -751,6 +754,7 @@ impl Body {
             Doing::Recover => Pose::Cast,
             Doing::Guard => Pose::Guard,
             Doing::Meditate => Pose::Meditate,
+            Doing::GetUp => Pose::Kneel,
             Doing::Fly | Doing::Walk | Doing::Idle => {
                 if self.land > 0.0 {
                     Pose::Land

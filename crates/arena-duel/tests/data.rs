@@ -198,7 +198,12 @@ fn every_skill_is_its_gem_on_its_motion() {
         );
         assert_eq!(
             (s.windup, s.recover, s.cooldown, s.cost),
-            (g.windup, g.recover, g.cooldown, qi),
+            (
+                arena_calc::build::PACE.of(g).0,
+                arena_calc::build::PACE.of(g).1,
+                g.cooldown,
+                qi
+            ),
             "{}",
             g.id
         );
@@ -274,6 +279,15 @@ fn the_constants_are_ported() {
         "unsafeOnBlock": fr.unsafe_on_block,
     });
     assert_eq!(norm(&frames), norm(&f["constants"]["FRAMES"]));
+    let m = data::MEDITATE;
+    let meditate = json!({
+        "sitDown": m.sit_down,
+        "getUp": m.get_up,
+        "block": m.blocks.block,
+        "first": m.blocks.first,
+        "struck": { "power": m.struck.power, "stagger": m.struck.stagger },
+    });
+    assert_eq!(norm(&meditate), norm(&f["constants"]["MEDITATE"]));
     assert_eq!(
         json!({ "lamp": data::DECOR[0], "night": data::DECOR[1] }),
         f["constants"]["DECOR"]

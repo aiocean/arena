@@ -3,7 +3,7 @@
 //! pass whatever `GEMS` holds.
 
 use arena_calc::ailment::{Ailment, ForceAilment};
-use arena_calc::build::{BLOOD_POWER, Built, Situation, Skill, build, build_skill};
+use arena_calc::build::{BLOOD_POWER, Built, PACE, Situation, Skill, build, build_skill};
 use arena_calc::cultivator::{BASE, Cultivator};
 use arena_calc::element::{Element, N};
 use arena_calc::gem::{GEMS, Gem, Resource, Tier};
@@ -803,7 +803,7 @@ fn cold_rewrites_the_base_never_converting_backward() {
 #[test]
 fn heavy_adds_earth_that_conversions_see() {
     let b = made("palm", &["heavy"], &[]);
-    close(b.windup, 0.5 * sp::HEAVY_WINDUP);
+    close(b.windup, 0.5 * PACE.windup * sp::HEAVY_WINDUP);
     let o = land(&b.hit);
     close(
         o.dealt[Element::Earth.index()],
@@ -836,14 +836,14 @@ fn cost_multipliers_multiply_and_timings_follow_supports() {
     let b = made("palm", &["focus", "afterimage", "surehit"], &[]);
     close(b.costs[0].1, 20.0 * 1.2 * 1.5 * 1.2);
     assert_eq!(b.strikes, 2);
-    close(b.windup, 0.5 * sp::SURE_WINDUP);
+    close(b.windup, 0.5 * PACE.windup * sp::SURE_WINDUP);
     assert!(!b.hit.evadable);
     assert_eq!(b.hit.more, vec![sp::FOCUS_MORE, sp::AFTERIMAGE_MORE]);
     let b = made("bolt", &["multishot"], &[]);
     assert_eq!(b.projectiles, 2);
     assert!(b.hit.evadable);
     let b = made("bolt", &["ninechanges"], &[]);
-    close(b.windup, 0.5 * sp::CHANGES_WINDUP);
+    close(b.windup, 0.5 * PACE.windup * sp::CHANGES_WINDUP);
 }
 
 #[test]
@@ -1504,7 +1504,7 @@ fn melee_supports() {
     close(b.hit.more_by[Element::Force.index()], sp::MELEE_FORCE_MORE);
     close(
         b.windup,
-        pool_gem("palm").windup / (1.0 + sp::MELEE_FORCE_SPEED),
+        pool_gem("palm").windup * PACE.windup / (1.0 + sp::MELEE_FORCE_SPEED),
     );
     let near = Situation {
         distance: 1.0,
@@ -1556,7 +1556,7 @@ fn melee_supports() {
     // Tốc Kích, Tam Liên Ảnh
     close(
         plain("palm", &["fasterattacks"]).windup,
-        pool_gem("palm").windup / (1.0 + sp::FASTER_ATTACKS),
+        pool_gem("palm").windup * PACE.windup / (1.0 + sp::FASTER_ATTACKS),
     );
     let b = plain("palm", &["triplestrike"]);
     assert_eq!(b.strikes, 3);
@@ -1568,12 +1568,12 @@ fn spell_supports() {
     let fb = pool_gem("fireball");
     close(
         plain("fireball", &["fastercasting"]).windup,
-        fb.windup / (1.0 + sp::FASTER_CASTING),
+        fb.windup * PACE.windup / (1.0 + sp::FASTER_CASTING),
     );
     let b = plain("fireball", &["spellecho"]);
     assert_eq!(b.strikes, 2);
     assert!(has_more(&b, sp::ECHO_MORE));
-    close(b.windup, fb.windup / (1.0 + sp::ECHO_SPEED));
+    close(b.windup, fb.windup * PACE.windup / (1.0 + sp::ECHO_SPEED));
     // Linh Triều: only after spending its qi
     let spent = Situation {
         counts: arena_calc::stat::Counts {
@@ -1972,4 +1972,16 @@ fn outburst_counts_each_curse_up_to_its_cap() {
     assert_eq!(at(1), vec![sp::OUTBURST_MORE]);
     close(at(2)[0], 2.0 * sp::OUTBURST_MORE);
     close(at(3)[0], sp::OUTBURST_MAX);
+}
+
+#[test]
+fn a_skill_is_cast_slower_than_its_gem_lists_but_the_blink_is_not() {
+    let fb = pool_gem("fireball");
+    let s = Skill::of(fb, 1, BASE.might);
+    close(s.windup, fb.windup * PACE.windup);
+    close(s.recover, fb.recover * PACE.recover);
+    let blink = pool_gem("blink");
+    let s = Skill::of(blink, 1, BASE.might);
+    close(s.windup, blink.windup);
+    close(s.recover, blink.recover);
 }

@@ -226,12 +226,56 @@ pub struct Cultivator {
     pub wind_lock: f64,
     /// Thất hồn: silenced, intents out.
     pub soul_lost: f64,
-    pub meditating: bool,
+    /// Sitting in meditation (its channel, not sitting down or getting up), and how far its extra qi is paid
+    /// ([`Sitting`]); `None` standing. The caller sits it down and stands it up; [`tick_with`](Cultivator::tick_with)
+    /// keeps the count.
+    pub sitting: Option<Sitting>,
     /// Seconds since each thing that "recently" conditions read.
     pub recent: Recent,
     /// Timed effects on this fighter (blessings, intents, curses, domain rules, ailments' own modifiers): each a
     /// list of modifiers and the seconds it has left (`None` while it is held).
     pub effects: Vec<Active>,
+}
+
+/// How meditation's extra qi (the meditate rate over the normal one) is paid: in whole blocks of `block` seconds of
+/// sitting, and nothing at all until the first `first` seconds have been sat (then every block in them at once). A
+/// block not yet full when the sitting ends is lost.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct Blocks {
+    pub block: f64,
+    pub first: f64,
+}
+
+/// A fighter sitting in meditation: how its extra qi is paid, the seconds it has sat and the blocks paid so far.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct Sitting {
+    pub blocks: Blocks,
+    pub sat: f64,
+    pub paid: u32,
+}
+
+impl Sitting {
+    /// Sitting down now, nothing sat or paid.
+    pub fn new(blocks: Blocks) -> Sitting {
+        Sitting {
+            blocks,
+            sat: 0.0,
+            paid: 0,
+        }
+    }
+
+    /// The blocks its time sat has earned: none before `first` seconds, then one per whole `block`.
+    pub fn earned(&self) -> u32 {
+        // a tick's sum of steps falls a hair short of the second it adds up to
+        let sat = self.sat + 1e-9;
+        if sat < self.blocks.first || self.blocks.block <= 0.0 {
+            0
+        } else {
+            libm::floor(sat / self.blocks.block) as u32
+        }
+    }
 }
 
 /// A timed effect on a fighter: its modifiers, where they come from, and the seconds it has left (`None` until it is
@@ -295,7 +339,7 @@ impl Cultivator {
             rot: 0.0,
             wind_lock: 0.0,
             soul_lost: 0.0,
-            meditating: false,
+            sitting: None,
             recent: Recent::default(),
             effects: Vec::new(),
         }
@@ -633,8 +677,10 @@ impl Cultivator {
     /// - Tâm ma, a share of full life a second;
     /// - shield regen `ShieldRegen` (base `BASE.shield_regen`) once the wait is over; life regen `LifeRegen` (base 0,
     ///   a flat amount a second) as healing, so wither cuts it and rot turns it; qi regen `QiRegen` (base
-    ///   `BASE.qi_regen`, `BASE.meditate_regen` meditating), which soak, Ly Phong and pressing intents cut through
-    ///   their modifiers; nothing while choked or wind-locked.
+    ///   `BASE.qi_regen`), which soak, Ly Phong and pressing intents cut through their modifiers; nothing while
+    ///   choked or wind-locked;
+    /// - while [`sitting`](Cultivator::sitting), meditation's extra: `QiRegen` on the base `BASE.meditate_regen` less
+    ///   the normal rate, paid for each block its time sat has earned ([`Sitting::earned`]) as the block falls due.
     pub fn tick_with(&mut self, dt: f64, moving: bool, sheet: &Sheet) -> Ticked {
         let t = self.bearer_table(sheet, moving);
         let mut out = Ticked::default();
@@ -685,14 +731,21 @@ impl Cultivator {
         self.choke = (self.choke - dt).max(0.0);
         self.rot = (self.rot - dt).max(0.0);
         self.wind_lock = (self.wind_lock - dt).max(0.0);
-        if self.choke <= 0.0 && self.wind_lock <= 0.0 {
-            let base = if self.meditating {
-                BASE.meditate_regen
-            } else {
-                BASE.qi_regen
-            };
-            let rate = t.get(Stat::QiRegen, base).max(0.0);
+        let regen = self.choke <= 0.0 && self.wind_lock <= 0.0;
+        let rate = t.get(Stat::QiRegen, BASE.qi_regen).max(0.0);
+        if regen {
             self.qi = (self.qi + rate * dt).min(self.qi_max);
+        }
+        // meditation's extra comes in whole blocks of sitting; one due while choked or wind-locked is lost
+        if let Some(s) = &mut self.sitting {
+            s.sat += dt;
+            let due = s.earned().saturating_sub(s.paid);
+            s.paid += due;
+            if regen && due > 0 {
+                let extra = (t.get(Stat::QiRegen, BASE.meditate_regen).max(0.0) - rate).max(0.0);
+                let gain = extra * s.blocks.block * f64::from(due);
+                self.qi = (self.qi + gain).min(self.qi_max);
+            }
         }
 
         for w in &mut self.window {

@@ -4,7 +4,7 @@
 
 use arena_calc::ailment::{AIL, Ailment, ForceAilment};
 use arena_calc::aura::{AURA, AURAS, AuraKind, Auras, sync};
-use arena_calc::build::{Situation, build};
+use arena_calc::build::{PACE, Situation, build};
 use arena_calc::cultivator::{Active, BASE, Cultivator, RES, Star};
 use arena_calc::curse::{Curse, Curses, Kind, NUMBERS};
 use arena_calc::domain::{DOMAINS, DomainKind, Field};
@@ -531,8 +531,8 @@ fn stars_are_modifiers() {
     let mut c = Cultivator::new();
     c.stars[Star::Speed as usize] = 3.0;
     let b = build(&SPARK, 1, &[], &c, &EMPTY, &Situation::default());
-    close(b.windup, 0.5 / (1.0 + 3.0 * RES.star_speed));
-    close(b.recover, 0.4 / (1.0 + 3.0 * RES.star_speed));
+    close(b.windup, 0.5 * PACE.windup / (1.0 + 3.0 * RES.star_speed));
+    close(b.recover, 0.4 * PACE.recover / (1.0 + 3.0 * RES.star_speed));
     // body stars: less taken, more resistance (capped)
     let mut t = bare();
     t.stars[Star::Body as usize] = 2.0;
@@ -584,8 +584,8 @@ fn ailments_on_the_bearer_are_modifiers() {
     close(table.get(Stat::MoveSpeed, 1.0), 1.0 - 2.0 * AIL.bind_slow);
     // dread lengthens the bearer's windups, not its recover
     let b = build(&SPARK, 1, &[], &t, &EMPTY, &Situation::default());
-    close(b.windup, 0.5 * (1.0 + AIL.dread_windup));
-    close(b.recover, 0.4);
+    close(b.windup, 0.5 * PACE.windup * (1.0 + AIL.dread_windup));
+    close(b.recover, 0.4 * PACE.recover);
     // healing reads it
     t.life = 1000.0;
     close(t.heal(100.0), 100.0 * (1.0 - 3.0 * AIL.wither_heal));
@@ -703,8 +703,9 @@ fn the_empty_sheet_gives_exactly_the_old_numbers() {
     want.tags = PALM.all_tags();
     want.evadable = PALM.all_tags().evadable();
     assert_eq!(b.hit, want);
-    assert_eq!(b.windup, 0.5);
-    assert_eq!(b.recover, 0.4);
+    // the timings are the gem's, paced
+    assert_eq!(b.windup, 0.5 * PACE.windup);
+    assert_eq!(b.recover, 0.4 * PACE.recover);
     assert_eq!(b.cooldown, 4.0);
     assert_eq!(b.costs, vec![(Resource::Qi, 20.0)]);
     assert_eq!(

@@ -23,7 +23,7 @@
 use arena_calc::ailment::{AIL, Ailment, Control};
 use arena_calc::aura;
 use arena_calc::build::{Built, Situation, Skill, build_skill};
-use arena_calc::cultivator::{Active, Cultivator, RES};
+use arena_calc::cultivator::{Active, Cultivator, RES, Sitting};
 use arena_calc::curse::{self, Curse, Lay};
 use arena_calc::domain;
 use arena_calc::element::Element;
@@ -50,8 +50,8 @@ use crate::report::SideReport;
 use crate::rng::Rng;
 use crate::units::{Group, Unit};
 use crate::{
-    BODY, COUNTER_STAGGER, DT, FIELD, HITSTUN, MAX_ROUNDS, PUNISH_STAGGER, ROUND_TIME,
-    ROUNDS_TO_WIN, RUN_SPEED, WALL, brain,
+    BODY, COUNTER_STAGGER, DT, FIELD, HITSTUN, MAX_ROUNDS, MEDITATE_BLOCKS, MEDITATE_STAGGER,
+    PUNISH_STAGGER, ROUND_TIME, ROUNDS_TO_WIN, RUN_SPEED, WALL, brain,
 };
 
 /// Rolls handed to the event queue each time it runs (its chance checks take them in order).
@@ -363,8 +363,11 @@ impl Fight {
                 Order::Cast { slot, dir } => {
                     self.begin_cast(me, slot, dir);
                 }
-                Order::Meditate => self.c[me].meditating = self.f[me].free(),
-                _ => self.c[me].meditating = false,
+                Order::Meditate if self.f[me].free() => {
+                    let c = &mut self.c[me];
+                    c.sitting = c.sitting.or(Some(Sitting::new(MEDITATE_BLOCKS)));
+                }
+                _ => self.c[me].sitting = None,
             }
         }
         for me in 0..2 {
@@ -638,7 +641,7 @@ impl Fight {
             }
             c.pay_life(built.life);
             c.on_cast();
-            c.meditating = false;
+            c.sitting = None;
         }
         let tags = built.hit.tags;
         let d = self.distance();
@@ -1132,6 +1135,7 @@ impl Fight {
         hit.frame = match self.f[on].act {
             Act::Windup { .. } => Frame::Counter,
             Act::Recover { .. } => Frame::Punish,
+            Act::Idle if self.c[on].sitting.is_some() => Frame::Meditate,
             Act::Idle => Frame::Plain,
         };
         let mut qi = 0.0;
@@ -1251,9 +1255,12 @@ impl Fight {
             let extra = match hit.frame {
                 Frame::Counter => COUNTER_STAGGER,
                 Frame::Punish => PUNISH_STAGGER,
+                Frame::Meditate => MEDITATE_STAGGER,
                 Frame::Plain => 0.0,
             };
             fo.stun = fo.stun.max(HITSTUN + extra);
+            // a blow breaks a meditation
+            self.c[on].sitting = None;
         }
         if p.knockback > 0.0 {
             let field = play::Field { width: FIELD };
@@ -1282,6 +1289,7 @@ impl Fight {
                 match hit.frame {
                     Frame::Counter => " counter",
                     Frame::Punish => " punish",
+                    Frame::Meditate => " meditating",
                     Frame::Plain => "",
                 },
                 if ails.is_empty() {

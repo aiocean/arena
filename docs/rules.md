@@ -63,6 +63,10 @@ ward, barrier, blink), with two timings built for the cast (supports and keyston
 - **windup**: from the cast until the blow comes out;
 - **recover**: after the blow, before the fighter can act again.
 
+Since RULES 23 every skill is cast 1.6x slower in its windup and 1.5x in its recover than its gem lists
+(`arena_calc::build::PACE`), the blink excepted: a cast is a commitment, open to a counter or a punish, to be made
+from a safe distance. The gem's own timings still rate its tier.
+
 Its role comes first: an intent (aura), a domain, a curse with no blow, a buff (stance, blessing), or a trap, mine,
 totem or minion (its tag, or a support's), each does what the design says; anything else moves as its motion.
 
@@ -90,10 +94,25 @@ cast spends one and they come back one at a time.
 
 ## Resources
 
-- **Qi** pays for most casts and for flying (3 a second, and it stops the regen). It refills on its own and fast
-  while meditating. **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
+- **Qi** pays for most casts and for flying (3 a second, and it stops the regen). It refills on its own, 3 a second,
+  and faster while meditating (below). **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
   skills (design 1, 10). Souls come from soul damage dealt (one each 100), from kills, and from each minion that dies
   within 4 T.
+
+## Meditation
+
+Meditation (ngồi thiền) is a skill every fighter has, in three phases (`data::MEDITATE`):
+
+- **Sitting down**, 0.4 s, once chosen while free on the ground (no cast, not flying, not reeling): it cannot act,
+  move or guard.
+- **Sitting**, as long as its seat keeps choosing meditate or wait. Its qi refills 3 a second as always, and
+  meditation's extra (up to 16 a second in all) comes in blocks of 0.5 s: nothing until it has sat a whole first
+  second, then that second's two blocks, then a block for each further whole 0.5 s. A block not yet full when it
+  ends is lost.
+- **Getting up**, 0.4 s, once it chooses anything else (that choice is dropped): it cannot act, move or guard.
+
+Struck in any phase, it is broken (the blow's reaction takes over, no getting up) and the blow is the worst of the
+weak moments (Frame data, below). Sitting down and getting up earn nothing.
 
 ## A blow
 
@@ -224,8 +243,9 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
 The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `data::FRAMES`.
 
 - **A blow during a windup breaks the cast**: the cast is lost.
-- **Counter:** a blow on a fighter in its windup does 1.2x (the damage system's step 10) and staggers 0.10 s longer.
-- **Punish:** a blow on a fighter in its recover does 1.2x and staggers 0.20 s longer.
+- **Counter:** a blow on a fighter in its windup does 1.4x (the damage system's step 10) and staggers 0.15 s longer.
+- **Punish:** a blow on a fighter in its recover does 1.35x and staggers 0.25 s longer.
+- **Meditation:** a blow on a fighter meditating, in any phase, does 1.5x, staggers 0.3 s longer and breaks it.
 - **The body shows both windows for exactly as long as they are open.** A skill's clip is split at its active frame:
   the windup plays the first part stretched over the act's windup, the recover the rest stretched over its recover
   (longer when an unsafe blow was guarded). A fighter looks open, and is hit where it is drawn, until it can act again,

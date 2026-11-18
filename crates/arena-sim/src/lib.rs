@@ -56,5 +56,14 @@ pub const MAX_ROUNDS: u8 = 5;
 /// Seconds a landing blow staggers its target (it cannot act), and the extra for a counter and a punish (rules,
 /// "Frame data").
 pub const HITSTUN: f64 = 0.1;
-pub const COUNTER_STAGGER: f64 = 0.1;
-pub const PUNISH_STAGGER: f64 = 0.2;
+pub const COUNTER_STAGGER: f64 = 0.15;
+pub const PUNISH_STAGGER: f64 = 0.25;
+/// The extra stagger of a blow on a meditating fighter, as the duel's `data::MEDITATE.struck.stagger`.
+pub const MEDITATE_STAGGER: f64 = 0.3;
+/// How meditation's extra qi is paid, as the duel's `data::MEDITATE` pays it (rules, "Meditation"): a block each
+/// half second sat, none until the first whole second. The sim sits and stands at once (no sitting down or getting
+/// up).
+pub const MEDITATE_BLOCKS: arena_calc::cultivator::Blocks = arena_calc::cultivator::Blocks {
+    block: 0.5,
+    first: 1.0,
+};

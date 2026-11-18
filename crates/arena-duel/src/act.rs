@@ -5,10 +5,10 @@
 use crate::bar::{ready, spend};
 use crate::body::{BodySpec, Doing};
 use crate::data::{
-    CAST_CIRCLE, CHIP, CLASH, FRAMES, KNOCKBACK, Kind, RING, Spell, T, WARD, block_chance, look,
-    motion, spell, tint,
+    CAST_CIRCLE, CHIP, CLASH, FRAMES, KNOCKBACK, Kind, MEDITATE, RING, Spell, T, WARD,
+    block_chance, look, motion, spell, tint,
 };
-use crate::fighter::{Act, Phase, State};
+use crate::fighter::{Act, Meditation, Phase, Sit, State};
 use crate::js::{js_max, js_min, js_sign, or_one};
 use crate::kit::Way;
 use crate::out::{Note, Out, PlayOpts, Stop};
@@ -19,6 +19,7 @@ use crate::strike::{
 };
 use crate::unit::{UNIT_RADIUS, enemies_near, hurt_unit, place};
 use arena_calc::build::Built;
+use arena_calc::cultivator::Sitting;
 use arena_calc::domain;
 use arena_calc::event::{Event, EventKind};
 use arena_calc::gem;
@@ -137,7 +138,8 @@ pub fn pose(state: &mut State, f: usize) {
             ..
         }) => Doing::Recover,
         None if me.guard > 0.0 => Doing::Guard,
-        None if me.medit => Doing::Meditate,
+        None if me.sits(Sit::Up) => Doing::GetUp,
+        None if me.meditating() => Doing::Meditate,
         None if me.fly => Doing::Fly,
         None if me.intent != 0.0 => Doing::Walk,
         None => Doing::Idle,
@@ -167,7 +169,6 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
         let f = &mut state.fighters[me];
         let qi = pay(&mut f.c, &built);
         f.c.on_cast();
-        f.c.meditating = false;
         let ks = &mut f.kit.skills[k];
         let fresh = arena_calc::charge::Uses::of(&built);
         ks.uses.max = fresh.max;
@@ -227,7 +228,7 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
     });
     // a fighter casting is not guarding, as its pose shows
     state.fighters[me].guard = 0.0;
-    set_meditating(state, me, false);
+    break_meditation(state, me);
     // longer casts stand in a rune circle while they gather
     let kind = state.fighters[me].kit.skills[k].motion.kind;
     if !matches!(kind, Kind::Blink | Kind::Barrier) && state.has(CAST_CIRCLE) {
@@ -981,9 +982,9 @@ pub fn knock_out(state: &mut State, f: usize) {
     state.winner = Some(other);
     state.wins[other] += 1;
     break_act(state, f);
-    set_meditating(state, f, false);
+    break_meditation(state, f);
     break_act(state, other);
-    set_meditating(state, other, false);
+    break_meditation(state, other);
 }
 
 /// Fighter `f` stops what it was doing: a cast still gathering loses its rune circle.
@@ -1013,10 +1014,53 @@ pub fn settle(state: &mut State, f: usize, dt: f64) {
     }
 }
 
-/// Fighter `f` sits down to meditate, or gets up (the page draws it outlined while it sits).
-pub fn set_meditating(state: &mut State, f: usize, on: bool) {
-    state.fighters[f].medit = on;
-    state.fighters[f].c.meditating = on;
+/// Fighter `f` sits down to meditate (`MEDITATE`): it drops its guard and cannot act until it sits (the page draws
+/// it outlined while it meditates).
+pub fn sit_down(state: &mut State, f: usize) {
+    let me = &mut state.fighters[f];
+    me.guard = 0.0;
+    me.medit = Some(Meditation {
+        phase: Sit::Down,
+        t: 0.0,
+    });
+}
+
+/// Fighter `f`, sitting, begins getting up: it cannot act until it stands, and a block of qi still filling is lost.
+pub fn get_up(state: &mut State, f: usize) {
+    let me = &mut state.fighters[f];
+    if me.sits(Sit::Sitting) {
+        me.medit = Some(Meditation {
+            phase: Sit::Up,
+            t: 0.0,
+        });
+        me.c.sitting = None;
+    }
+}
+
+/// Fighter `f` stops meditating at once, in any phase, with no getting up (a blow, a cast, a knockout).
+pub fn break_meditation(state: &mut State, f: usize) {
+    let me = &mut state.fighters[f];
+    me.medit = None;
+    me.c.sitting = None;
+}
+
+/// Time passes for fighter `f`'s meditation, after its cultivator's tick: sitting down, it sits once `sit_down`
+/// seconds are over (its qi's blocks count from then); getting up, it stands once `get_up` seconds are.
+pub fn meditate(state: &mut State, f: usize, dt: f64) {
+    let me = &mut state.fighters[f];
+    let Some(m) = &mut me.medit else { return };
+    m.t += dt;
+    match m.phase {
+        Sit::Down if m.t >= MEDITATE.sit_down - 1e-9 => {
+            *m = Meditation {
+                phase: Sit::Sitting,
+                t: 0.0,
+            };
+            me.c.sitting = Some(Sitting::new(MEDITATE.blocks));
+        }
+        Sit::Up if m.t >= MEDITATE.get_up - 1e-9 => me.medit = None,
+        _ => {}
+    }
 }
 
 /// A blow that was due (`strike::Pending`) lands now: a stored force on what it was stored for, or a skill's repeat

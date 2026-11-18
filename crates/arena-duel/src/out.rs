@@ -26,8 +26,8 @@ pub struct PlayOpts {
     pub seed: Option<u32>,
 }
 
-/// When a blow caught the one it struck: at no weak moment, gathering a cast (a COUNTER) or recovering from one (a
-/// PUNISH).
+/// When a blow caught the one it struck: at no weak moment, gathering a cast (a COUNTER), recovering from one (a
+/// PUNISH) or meditating, in any phase (worse than a counter: `data::MEDITATE.struck`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
@@ -36,6 +36,7 @@ pub enum How {
     Plain,
     Counter,
     Punish,
+    Meditate,
 }
 
 /// One command or event of a step, in the order the rules made it.

@@ -522,8 +522,9 @@ fn a_totem_casts_on_its_cadence_and_the_cap_removes_the_oldest() {
     let b = cast("fireball", &["totem"], &EMPTY);
     let s = spawn(&b).unwrap_or_else(|| unreachable!());
     assert_eq!((s.kind, s.cap), (Kind::Totem, 1));
-    // the first cast after its windup, then every max(windup + recover, cooldown) = 1.5 s
-    close(s.first_cast, 0.26);
+    // the first cast after its windup (paced), then every max(windup + recover, cooldown) = 1.5 s
+    let first = 0.26 * arena_calc::build::PACE.windup;
+    close(s.first_cast, first);
     close(s.cast_interval, 1.5);
     close(s.life, dv::TOTEM_LIFE);
     let mut p = Placed::new(s);
@@ -535,10 +536,11 @@ fn a_totem_casts_on_its_cadence_and_the_cap_removes_the_oldest() {
         casts.extend(t.casts.iter().map(|c| clock + c.1));
         clock += 0.1;
     }
-    // over its 8 s lifetime (81 ticks of 0.1: the sum of 80 falls a hair short of 8): 0.26, 1.76, 3.26, 4.76, 6.26, 7.76, then it falls apart
+    // over its 8 s lifetime (81 ticks of 0.1: the sum of 80 falls a hair short of 8): 0.416, 1.916, 3.416, 4.916,
+    // 6.416, 7.916, then it falls apart
     assert_eq!(casts.len(), 6);
     for (k, at) in casts.iter().enumerate() {
-        close(*at, 0.26 + 1.5 * k as f64);
+        close(*at, first + 1.5 * k as f64);
     }
     assert!(clock >= TOTEM_LIFETIME && p.standing.is_empty());
     // a second totem past the cap of one removes the first

@@ -125,6 +125,36 @@ pub const MIND: MindProfile = MindProfile {
 pub const QI_REGEN: f64 = 3.0;
 pub const MEDITATE_REGEN: f64 = 16.0;
 
+/// Meditation (ngồi thiền), a skill every fighter has, in three phases. Chosen while free (no cast, on the ground,
+/// not flying, not reeling) it sits down for `sit_down` seconds, sits as long as its seat keeps choosing to meditate
+/// or wait, and gets up for `get_up` seconds once it chooses anything else (that choice is dropped). Sitting down
+/// and getting up it cannot act, move or guard.
+/// Sitting, its qi regen runs as usual and meditation's extra (the meditate rate over the normal one, through the
+/// stat table) comes in `blocks`: nothing until the first whole `blocks.first` seconds, then a block per further
+/// whole `blocks.block`; a block not yet full when it gets up is lost, and sitting down and getting up count for
+/// nothing.
+/// Struck in any phase it is broken (no getting up: the blow's reaction takes over) and the blow is a weak-moment
+/// blow worse than a counter, `struck` (`How::Meditate`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Meditate {
+    pub sit_down: f64,
+    pub get_up: f64,
+    pub blocks: arena_calc::cultivator::Blocks,
+    pub struck: Bonus,
+}
+pub const MEDITATE: Meditate = Meditate {
+    sit_down: 0.4,
+    get_up: 0.4,
+    blocks: arena_calc::cultivator::Blocks {
+        block: 0.5,
+        first: 1.0,
+    },
+    struck: Bonus {
+        power: arena_calc::hit::FRAME_MEDITATE,
+        stagger: 0.3,
+    },
+};
+
 /// Each fighter's temperament for arena-mind.
 pub struct Temperament {
     pub spread: f64,
@@ -234,13 +264,14 @@ pub struct Frames {
     pub unsafe_on_block: &'static [&'static str],
 }
 pub const FRAMES: Frames = Frames {
+    // the power is the damage system's (`hit::Frame::more`): one number, read there for the blow
     counter: Bonus {
-        power: 1.2,
-        stagger: 0.1,
+        power: arena_calc::hit::FRAME_COUNTER,
+        stagger: 0.15,
     },
     punish: Bonus {
-        power: 1.2,
-        stagger: 0.2,
+        power: arena_calc::hit::FRAME_PUNISH,
+        stagger: 0.25,
     },
     blocked_recover: 0.15,
     // the close blasts
@@ -1699,8 +1730,8 @@ static SPELLS: [Spell; 88] = [
 ];
 
 /// Every skill of the shared pool as the duel casts it: the motion it borrows (`Gem::spell`: how it moves and looks),
-/// with its own name, qi cost, timings and power (`POWER`s of what it is expected to deal). Built once, in the pool's
-/// order.
+/// with its own name, qi cost, timings (paced, `build::PACE`) and power (`POWER`s of what it is expected to deal).
+/// Built once, in the pool's order.
 fn skills() -> &'static [Spell] {
     static SKILLS: OnceLock<Vec<Spell>> = OnceLock::new();
     SKILLS.get_or_init(|| {
@@ -1719,12 +1750,14 @@ fn skills() -> &'static [Spell] {
                     Effect::Heal(h) => Some(*h * 100.0),
                     _ => None,
                 });
+                // cast as the damage system builds it: paced (`build::PACE`), the basics not
+                let (windup, recover) = arena_calc::build::PACE.of(g);
                 Some(Spell {
                     name: g.id,
                     fx: gem_fx(g.id).or(m.fx),
                     cost: qi,
-                    windup: g.windup,
-                    recover: g.recover,
+                    windup,
+                    recover,
                     cooldown: g.cooldown,
                     damage: g.deals_damage().then(|| gem::expected_damage(g) / POWER),
                     amount: heal.or(m.amount),

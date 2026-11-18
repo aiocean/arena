@@ -28,6 +28,32 @@ pub const THUNDER_VS_MINION: f64 = 0.5;
 /// Qi paid in life ([`Stat::CostAsLife`]): this share of full life a point of qi.
 pub const LIFE_PER_QI: f64 = 0.002;
 
+/// How much longer a skill takes to cast than its gem lists: its windup and its recover are multiplied by these.
+/// Casting felt rapid-fire, a skill thrown after a skill; a slower cast is costlier (it is committed to longer) and
+/// riskier (longer windups to be countered in, longer recovers to be punished in) (owner, 2026-11-18). The gems keep
+/// their own timings: `gem::power_score` and the tiers read them raw. The basics (`loadout::BASICS`, the blink) are
+/// not paced: the way out stays as quick as it was.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Pace {
+    pub windup: f64,
+    pub recover: f64,
+}
+pub const PACE: Pace = Pace {
+    windup: 1.6,
+    recover: 1.5,
+};
+
+impl Pace {
+    /// `gem`'s windup and recover as it is cast: paced, unless it is a basic.
+    pub fn of(&self, gem: &Gem) -> (f64, f64) {
+        if crate::loadout::BASICS.contains(&gem.id) {
+            (gem.windup, gem.recover)
+        } else {
+            (gem.windup * self.windup, gem.recover * self.recover)
+        }
+    }
+}
+
 /// A skill as one fighter casts it: a [`Gem`] at a level and the striker's might, or two fused by Dung
 /// (`support::fuse`).
 #[derive(Clone, Debug, PartialEq)]
@@ -62,6 +88,7 @@ impl Skill {
     /// `gem` at `level` (hỏa hầu 1..20) for a striker of `might`.
     pub fn of(gem: &Gem, level: u8, might: f64) -> Skill {
         let attack = gem.is_attack();
+        let (windup, recover) = PACE.of(gem);
         Skill {
             id: gem.id,
             tags: gem.tags(),
@@ -84,8 +111,8 @@ impl Skill {
                 .map(|&(r, v)| (r, if r == Resource::Life { v / 100.0 } else { v }))
                 .collect(),
             cooldown: gem.cooldown,
-            windup: gem.windup,
-            recover: gem.recover,
+            windup,
+            recover,
             force: gem.force,
             effects: gem.effects,
             basic: crate::loadout::BASICS.contains(&gem.id),

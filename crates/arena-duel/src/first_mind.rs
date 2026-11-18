@@ -277,7 +277,7 @@ impl FirstMind {
                 value("orb", if d > 320.0 { 0.8 } else { 0.5 }, None),
             ));
         }
-        let pace = if foe.act.is_some() || foe.body.reeling() || foe.medit {
+        let pace = if foe.act.is_some() || foe.body.reeling() || foe.meditating() {
             0.0
         } else {
             foe.intent * foe.body.spec.walk

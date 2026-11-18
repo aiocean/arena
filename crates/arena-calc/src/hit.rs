@@ -14,7 +14,7 @@ use crate::sheet::{EMPTY, Sheet};
 use crate::stat::{Ctx, Happened, Mod, Source, Stat, Table};
 use crate::tag::Tags;
 
-/// Whether the blow caught the target in its windup (counter) or its recover (punish).
+/// Whether the blow caught the target in its windup (counter), its recover (punish) or meditating.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
@@ -23,10 +23,28 @@ pub enum Frame {
     Plain,
     Counter,
     Punish,
+    Meditate,
 }
 
-/// Counter and punish multiply the blow by this.
-pub const FRAME_MORE: f64 = 1.2;
+/// A counter (the target caught in its windup) multiplies the blow by this (the duel's `data::FRAMES.counter.power`).
+pub const FRAME_COUNTER: f64 = 1.4;
+/// A punish (the target caught in its recover) multiplies the blow by this (the duel's `data::FRAMES.punish.power`).
+pub const FRAME_PUNISH: f64 = 1.35;
+/// A blow on a meditating target (sitting down, sitting or getting up) multiplies the blow by this, worse than a
+/// counter (the duel's `data::MEDITATE.struck.power`).
+pub const FRAME_MEDITATE: f64 = 1.5;
+
+impl Frame {
+    /// How much more a blow deals for the moment it caught its target in.
+    pub fn more(self) -> f64 {
+        match self {
+            Frame::Plain => 1.0,
+            Frame::Counter => FRAME_COUNTER,
+            Frame::Punish => FRAME_PUNISH,
+            Frame::Meditate => FRAME_MEDITATE,
+        }
+    }
+}
 
 /// The fire tier that is dao fire (black, the fourth): it overcomes a water root at step 7 and draws sense when its
 /// burn fills.
@@ -582,11 +600,7 @@ pub fn resolve_with(
     let mut fused = out.fusion.map(|(f, v)| (f, v * taken));
 
     // step 10
-    let frame = if hit.frame == Frame::Plain {
-        1.0
-    } else {
-        FRAME_MORE
-    };
+    let frame = hit.frame.more();
     for p in &mut parts {
         *p *= frame;
     }
