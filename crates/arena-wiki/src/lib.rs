@@ -14,6 +14,7 @@ pub mod img;
 
 use arena_calc::ailment::{Ailment, ForceAilment};
 use arena_calc::aura::AuraKind;
+use arena_calc::cap;
 use arena_calc::domain::DomainKind;
 use arena_calc::element::Element;
 use arena_calc::gem::{self, Effect, GEMS, Gem};
@@ -479,6 +480,65 @@ fn generated(g: &Gem, sp: Option<&Spell>) -> String {
     s
 }
 
+/// One bare cast's damage against the one-cast cap (`arena_calc::cap`), for a skill that deals damage.
+fn cap_row(g: &Gem) -> String {
+    if !cap::damaging(g) {
+        return "deals no damage".to_owned();
+    }
+    let of = cap::cap_life();
+    let d = cap::cast_of(g, &[]);
+    format!(
+        "{}% of a life and its shield ({} at hit + {} over time = {} of {}); the cap is {}%{}",
+        num((d.share(of) * 1000.0).round() / 10.0),
+        num(d.hit.round()),
+        num(d.over_time.round()),
+        num(d.total().round()),
+        num(of),
+        num(cap::CAST_CAP * 100.0),
+        if d.over(of) { ", <b>over it</b>" } else { "" }
+    )
+}
+
+/// One cast with each support that fits it, against the cap: measured, not held to it.
+fn cap_forms(g: &Gem) -> String {
+    if !cap::damaging(g) {
+        return String::new();
+    }
+    let of = cap::cap_life();
+    let mut forms: Vec<(&str, &str, cap::Dealt)> = cap::fitting(&cap::skill_of(g))
+        .into_iter()
+        .map(|s| (s.id, s.name, cap::cast_of(g, &[s])))
+        .collect();
+    if forms.is_empty() {
+        return String::new();
+    }
+    forms.sort_by(|a, b| b.2.total().total_cmp(&a.2.total()));
+    let rows: Vec<Vec<String>> = forms
+        .iter()
+        .map(|(id, name, d)| {
+            vec![
+                format!(
+                    "<a href=\"/wiki/supports.html#{}\">{}</a>",
+                    esc(id),
+                    esc(name)
+                ),
+                num(d.total().round()),
+                format!(
+                    "{}%{}",
+                    num((d.share(of) * 1000.0).round() / 10.0),
+                    if d.over(of) { " (over)" } else { "" }
+                ),
+            ]
+        })
+        .collect();
+    format!(
+        "<h2>One cast with a support</h2><p class=\"gen\">One cast with each support that fits it, against the one-cast cap ({}% of {}). Measured, not held to the cap: the rule holds the bare skill.</p>{}",
+        num(cap::CAST_CAP * 100.0),
+        num(of),
+        table(&["Support", "Damage", "Share"], &rows)
+    )
+}
+
 fn spell_numbers(sp: &Spell) -> Vec<(&'static str, String)> {
     let opt = |v: Option<f64>, unit: &str| v.map_or(String::new(), |v| format!("{}{unit}", num(v)));
     vec![
@@ -613,7 +673,7 @@ fn skills(wiki: &mut Wiki, book: &Book) {
             ),
             ("Motion borrowed", format!("<code>{}</code>", esc(g.spell))),
             ("Source", format!("<code>{}</code>", esc(g.source))),
-            ("40% cap", "not in the rules yet".to_owned()),
+            ("One-cast cap", cap_row(g)),
         ];
         if let Some(sp) = sp {
             rows.extend(spell_numbers(sp));
@@ -673,6 +733,7 @@ fn skills(wiki: &mut Wiki, book: &Book) {
                 }
             }
         }
+        body.push_str(&cap_forms(g));
         let fit: Vec<String> = SUPPORTS
             .iter()
             .filter(|s| s.fits(g.all_tags()))
@@ -1199,6 +1260,7 @@ fn rules(wiki: &mut Wiki) {
 <li><b>Turn order.</b> Both fighters' turns, the first of them swapping every tick: seat 0 first on an even tick, seat 1 on an odd one.</li>
 <li><b>A blow plays out before the next.</b> While what a skill that binds its caster sent is still out (<i>Binds the caster</i> on its page), the caster casts no other such skill; curses, auras, blessings, movement, guard, recovery and stances never bind.</li>
 <li><b>Recovery by progress.</b> A skill's clip plays its wind-up over the skill's wind-up and its follow-through stretched over the skill's recovery.</li>
+<li><b>One cast, at most 40% of a life.</b> One bare cast of a skill, at hit and over time, deals at most that share of a base fighter's life and shield; each skill's page gives its own share (<code>arena_calc::cap</code>).</li>
 <li><b>Boxes from the pictures.</b> Hurtboxes and hitboxes follow the frame a fighter shows, measured from the sprite sheets (see <a href="/wiki/looks.html">Fighters</a>).</li>
 </ul>
 <p>The full rules: <a href="/docs/rules.html">docs: Rules</a>. Training a bot: <a href="/docs/training.html">docs: Train a bot</a>. The season: <a href="/docs/tournament.html">docs: Tournament</a>.</p>"#,
