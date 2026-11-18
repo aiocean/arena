@@ -3,7 +3,10 @@
 //! runs of whiffed blade blows thrown from out of reach, and, for the house AI's, what it saw and chose.
 //!
 //! `cargo run --release -p arena-bot --features host,onnx --example whiff -- [--seeds 150] [--rounds 3] [--limit 120]
-//! [--moments 5] [--out whiff.json]`
+//! [--moments 5] [--out whiff.json] [--moments-out moments.json] [--onnx FILE]`
+//!
+//! `--onnx` seats another model as the house AI (a checkpoint's export); `--moments-out` writes what the house saw at
+//! the example moments' far blade casts, for the critic's value in `train/`.
 //!
 //! Reach is the skill's motion's `range` (a blade, a blast) or `distance` (a dash); the other kinds (bolts, orbs,
 //! areas, fields) land wherever the foe is and have none. The gap is from the caster's x to the nearest edge of the
@@ -279,7 +282,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let moments: usize = arg("--moments").map_or(Ok(5), |s| s.parse())?;
     let out = arg("--out");
     let moments_out = arg("--moments-out");
-    let onnx = Onnx::house().map_err(|e| e.0)?;
+    let onnx = match arg("--onnx") {
+        Some(path) => Onnx::load(&std::fs::read(path)?).map_err(|e| e.0)?,
+        None => Onnx::house().map_err(|e| e.0)?,
+    };
     let effects = arena_duel::effects::all();
     let log: Log = Rc::new(RefCell::new(Vec::new()));
     let fight_id = Rc::new(RefCell::new(0_usize));
