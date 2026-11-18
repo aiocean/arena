@@ -209,3 +209,31 @@ fn overcharge_adds_thunder_damage_and_jolt() {
             > a.stacks[arena_calc::ailment::Ailment::Jolt.index()]
     );
 }
+
+/// Lôi Bạo Trễ's mine: a share of the stopped blow, armed after the mine's arming, at most its cap standing, and
+/// the support carries the behaviour the fight reads.
+#[test]
+fn a_stopped_shots_mine_arms_caps_and_carries_a_share() {
+    assert!(
+        sup("delayedthunder")
+            .behaviours
+            .contains(&support::Behaviour::MineOnBlock)
+    );
+    let s = dv::STOPPED_MINE;
+    assert_eq!(s.kind, Kind::Mine);
+    assert!(s.damage > 0.0 && s.damage < 1.0);
+    let mut p = Placed::new(s);
+    for i in 0..5 {
+        let made = p.place(Point::new(f64::from(i), 0.0)).made;
+        assert_eq!(made.len(), 1);
+    }
+    assert_eq!(p.standing.len(), dv::STOPPED_CAP as usize);
+    // the oldest went: the three standing are the last placed
+    let at: Vec<f64> = p.standing.iter().map(|d| d.at.x).collect();
+    assert_eq!(at, vec![2.0, 3.0, 4.0]);
+    // not armed yet: nothing goes off
+    assert!(p.detonate().is_empty());
+    p.tick(dv::MINE_ARM);
+    assert_eq!(p.detonate().len(), dv::STOPPED_CAP as usize);
+    assert!(p.standing.is_empty());
+}

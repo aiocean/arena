@@ -112,7 +112,8 @@ pub enum Behaviour {
     LeapToTarget,
     /// Dịch Linh: the shot grows with distance and can be called back.
     Recall,
-    /// Lôi Bạo Trễ: a blocked or swallowed shot stays in what stopped it as a mine, set off on command.
+    /// Lôi Bạo Trễ: a blocked or swallowed shot stays in what stopped it as a mine, set off on command
+    /// (`device::STOPPED_MINE`).
     MineOnBlock,
     /// Nhử Đòn: controls last longer if the target just guarded (the factor is in [`Mods::bait_control`]).
     Bait,

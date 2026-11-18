@@ -12,7 +12,9 @@
 //!   windup and recover or its cooldown, whichever is longer, but never more than [`TOTEM_CADENCE_SHARE`] of the
 //!   totem's lifetime, so a skill whose cooldown outlasts the totem (Vạn Kiếm Trận, 9 s against 8 s) still casts
 //!   several times on it, as a PoE totem casts at its own pace;
-//! - a minion is a record with life: the fight moves it and has it strike.
+//! - a minion is a record with life: the fight moves it and has it strike;
+//! - a shot of a skill under Lôi Bạo Trễ that a guard, a ward, a barrier or a unit stops becomes a mine there
+//!   ([`STOPPED_MINE`]), its blow a share of the stopped one ([`STOPPED_SHARE`]).
 //!
 //! A device's blow is the built hit itself: the support's less (Bẫy Trận, Địa Lôi Trận 10%, Pháp Đàn 30%) is in it
 //! already, so its [`Spawn::damage`] is 1. A minion's blows are the fight's to build; they carry
@@ -49,6 +51,29 @@ pub const MIN_CAST_INTERVAL: f64 = 0.1;
 /// `1 / TOTEM_CADENCE_SHARE` times before it falls apart, whatever the skill's cooldown. The cooldown still paces
 /// the hand that raises totems; on the totem it only slows the cadence up to this.
 pub const TOTEM_CADENCE_SHARE: f64 = 0.25;
+
+/// Lôi Bạo Trễ (`support::Behaviour::MineOnBlock`): a stopped shot's mine deals this share of the blow it carried
+/// when it was stopped. With a guard's chip (a fifth of the blow) it is the blow once, never more: what one shot
+/// reaches the foe with stays within its cast (rules, "One cast, 40% of a life").
+pub const STOPPED_SHARE: f64 = 0.8;
+/// Stopped shots' mines one skill of one owner has standing at once; past it the oldest goes.
+pub const STOPPED_CAP: u32 = 3;
+
+/// What a stopped shot of a skill under Lôi Bạo Trễ becomes: one mine where it stopped, a trap's life, armed after
+/// [`MINE_ARM`], standing [`MINE_LIFETIME`], at most [`STOPPED_CAP`] of them, each striking with the stopped blow
+/// times [`STOPPED_SHARE`]. It goes off as any mine does, on its owner's command.
+pub const STOPPED_MINE: Spawn = Spawn {
+    kind: Kind::Mine,
+    count: 1,
+    life: DEVICE_LIFE,
+    damage: STOPPED_SHARE,
+    lifetime: Some(MINE_LIFETIME),
+    cap: STOPPED_CAP,
+    arm: MINE_ARM,
+    trigger_radius: 0.0,
+    first_cast: 0.0,
+    cast_interval: 0.0,
+};
 
 /// What a skill makes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
