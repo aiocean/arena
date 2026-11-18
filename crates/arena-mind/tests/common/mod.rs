@@ -195,7 +195,7 @@ pub fn quiet() -> Reading {
         urgency: 0.0,
         foe_posture: Posture::Neutral,
         want: 100.0,
-        inputs: [0.5; 17],
+        inputs: [0.5; 18],
     };
     with(
         r,

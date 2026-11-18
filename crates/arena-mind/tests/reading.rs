@@ -111,7 +111,7 @@ fn cornered_reads_my_back_to_the_wall() {
     assert!(reading(&me(110.0), &foe(140.0), &[]).input(Input::Cornered) < 0.1);
 }
 
-const ALL: [Input; 17] = [
+const ALL: [Input; 18] = [
     Input::Qi,
     Input::Hp,
     Input::FoeHpLow,
@@ -129,6 +129,7 @@ const ALL: [Input; 17] = [
     Input::FoeZoning,
     Input::FoeRecovering,
     Input::Calm,
+    Input::Late,
 ];
 
 #[test]

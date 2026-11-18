@@ -120,8 +120,10 @@ update 1200 with a far cost on top (`--whiff-far 0.02`); it gave up the aggressi
 far whiffs and was dropped.
 
 Its ladder (150 seeds, RULES_VERSION 14), u1510's on the same rules in brackets:
-- vs the brain: 94.4% [90.3] (seats 94.0 / 94.7; Vương Lâm 96.8 / Thất Thải 91.9);
-- vs the first mind: 94.4% [91.2];
+- vs the brain: 94.4% [90.3] (seats 94.0 / 94.7; Vương Lâm 96.8 / Thất Thải 91.9), against the old brain, which
+  stalled: 10 of its fights with the house AI were cut. Against the brain that presses (2026-11-18, RULES_VERSION 15):
+  83.9% (seats 83.1 / 84.7; Vương Lâm 92.7 / Thất Thải 75.1), no fight cut, rounds 17.4 s;
+- vs the first mind: 94.4% [91.2] (seats 93.3 / 95.5; unchanged on RULES_VERSION 15 with the new brain);
 - vs the aggressive and turtle scripts: 88.6% [93.3] and 99.7% [99.6];
 - its own mirror: seat 0 50.0%; Vương Lâm wins 71.8% of its rounds [64.7].
 - Whiffs: 5.6 a minute [13.6]; begun more than 60 px beyond reach 0.35 [5.18]; runs of 3 or more far whiffs in

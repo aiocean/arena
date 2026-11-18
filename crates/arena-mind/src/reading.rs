@@ -35,7 +35,7 @@ pub struct Reading {
     pub foe_posture: Posture,
     /// The range I want to fight at now.
     pub want: f64,
-    pub inputs: [f64; 17],
+    pub inputs: [f64; 18],
 }
 
 fn unit(x: f64) -> f64 {
@@ -61,6 +61,7 @@ const fn slot(input: Input) -> usize {
         Input::FoeZoning => 14,
         Input::FoeRecovering => 15,
         Input::Calm => 16,
+        Input::Late => 17,
     }
 }
 
@@ -190,6 +191,26 @@ fn urgency(me: &Me, foe: &Foe, threats: &[Threat], body: &BodySize) -> f64 {
     worst
 }
 
+/// The distance to press from: the farthest a ready close skill strikes from (a blade or a blast at its reach, a
+/// rush from inside its stride), or `None` with none ready. A fighter pressing comes in to it instead of keeping the
+/// range it likes, or it waits outside its own reach for an opening that never comes.
+pub fn press_range(skills: &[Skill], ready: &[bool]) -> Option<f64> {
+    skills
+        .iter()
+        .zip(ready)
+        .filter(|(s, r)| **r && s.damage > 0.0)
+        .filter_map(|(s, _)| match s.kind {
+            SkillKind::Melee => Some(s.reach),
+            SkillKind::Blast => Some(s.reach - 4.0),
+            SkillKind::Dash if s.reach > 40.0 => Some(s.reach - 20.0),
+            _ => None,
+        })
+        .filter(|r| *r > 0.0)
+        .fold(None, |most: Option<f64>, r| {
+            Some(most.map_or(r, |m| m.max(r)))
+        })
+}
+
 /// How the foe seems to be playing, from what it does now.
 pub fn read_posture(me: &Me, foe: &Foe) -> Posture {
     let d = (foe.x - me.x).abs();
@@ -305,7 +326,7 @@ impl Reading {
             (30.0 - foe.qi) / 30.0
         };
 
-        let mut inputs = [0.0; 17];
+        let mut inputs = [0.0; 18];
         let mut set = |input: Input, v: f64| inputs[slot(input)] = unit(v);
         set(Input::Qi, me.qi_level() / 100.0);
         set(Input::Hp, me.hp / 100.0);

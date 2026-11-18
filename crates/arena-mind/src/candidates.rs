@@ -40,6 +40,10 @@ pub struct Ctx<'a> {
     /// The breath after my last attack still left, seconds.
     pub calm: f64,
     pub now: f64,
+    /// Pressing (its posture presses or finishes, or the round runs out): it closes in instead of hovering at range.
+    pub press: bool,
+    /// How near the round is to being cut, 0 to 1 (`Input::Late`): a miss's cost weighs less and less.
+    pub late: f64,
     /// What the foe will likely do next (yomi level 1), and how sure.
     pub predicted: Option<(FoeMove, f64)>,
     /// What the foe likely answers my usual move with (yomi level 2), and how sure.
@@ -174,6 +178,7 @@ impl Ctx<'_> {
                 )
                 * (1.0 - chance)
                 * (1.0 + self.profile.lead * r.lead)
+                * (1.0 - self.late)
         } else {
             0.0
         };
@@ -626,15 +631,25 @@ fn positions(out: &mut Out) {
             out.cast(b, Some(behind), 2.5, Some(Category::Evade));
         }
     }
-    // the height I want: my own while I have the qi to cast from it, the foe's when I must close in
+    // the height I want: my own while I have the qi to cast from it, the foe's when I must close in. Flying spends
+    // qi and stops its regen, so it rises only with qi to spare and comes down when it runs low, never on one mark:
+    // on one mark it would hover there with its qi pinned on it, never affording a spell. The rules ground a flier
+    // whose bar is all but empty, by its share whatever the bar holds (`qi`, not `qi_level`).
     let casts_from_afar = ctx.holds(|k| crate::reading::is_ranged(k) || crate::reading::is_area(k));
-    let mut want = if me.qi_level() > 40.0 && casts_from_afar {
+    let qi = me.qi_level();
+    let (sky_qi, chase_qi, share, high) = if me.flying {
+        (40.0, 20.0, 2.0, 10.0)
+    } else {
+        (60.0, 35.0, 6.0, 16.0)
+    };
+    let can_fly = me.qi > share;
+    let mut want = if can_fly && qi > sky_qi && casts_from_afar && !ctx.press {
         ctx.profile.sky
     } else {
         0.0
     };
-    if me.qi_level() < 25.0 || d < 40.0 {
-        want = if foe.air > 16.0 && me.qi_level() > 20.0 {
+    if qi < 25.0 || d < 40.0 || ctx.press {
+        want = if foe.air > high && can_fly && qi > chase_qi {
             arena.top.min(foe.air)
         } else {
             want

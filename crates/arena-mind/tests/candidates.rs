@@ -12,6 +12,8 @@ struct Case {
     ready: Vec<bool>,
     read: Read,
     now: f64,
+    /// Pressing, as the mind does: it fights from its blows' reach.
+    press: bool,
 }
 
 impl Case {
@@ -27,11 +29,12 @@ impl Case {
             ready,
             read,
             now: 10.0,
+            press: false,
         }
     }
 
     fn candidates(&self) -> Vec<Candidate> {
-        let reading = Reading::of(
+        let mut reading = Reading::of(
             &self.me,
             &self.foe,
             &self.threats,
@@ -42,6 +45,11 @@ impl Case {
             &profile(),
             0.0,
         );
+        if self.press
+            && let Some(range) = press_range(&self.skills, &self.ready)
+        {
+            reading.want = reading.want.min(range);
+        }
         let ctx = Ctx {
             me: &self.me,
             foe: &self.foe,
@@ -56,6 +64,8 @@ impl Case {
             read: &self.read,
             calm: 0.0,
             now: self.now,
+            press: self.press,
+            late: 0.0,
             predicted: None,
             answer: None,
             level: 0,
@@ -327,4 +337,61 @@ fn pick_prefers_what_the_posture_weighs() {
         .filter(|_| pick(&cands, recover, &mut rng).map(|p| p.0) == Some(1))
         .count();
     assert!(meditates > 180, "{meditates}");
+}
+
+#[test]
+fn the_press_range_is_the_farthest_ready_close_blow() {
+    let skills = kit();
+    let n = skills.len();
+    // the palm (40, from 36) outreaches the blade (24)
+    assert_eq!(press_range(&skills, &vec![true; n]), Some(36.0));
+    let only = |name: &str| -> Vec<bool> { skills.iter().map(|s| s.name == name).collect() };
+    assert_eq!(press_range(&skills, &only("slash")), Some(24.0));
+    // a bolt is no blow to press with
+    assert_eq!(press_range(&skills, &only("bolt")), None);
+}
+
+/// Whether it walks toward the foe (to its right).
+fn comes_in(cands: &[Candidate]) -> bool {
+    has(cands, |c| matches!(c, Choice::Move { dir } if *dir > 0.0))
+}
+
+#[test]
+fn pressing_with_only_a_blade_ready_walks_into_its_reach() {
+    // low on qi, 45 off: it would keep its dry distance (80) and never reach the foe with the blade it has ready
+    let mut m = me(40.0);
+    m.qi = 20.0;
+    let mut case = Case::new(m, foe(85.0));
+    case.ready = case.skills.iter().map(|s| s.name == "slash").collect();
+    assert!(!comes_in(&case.candidates()));
+    case.press = true;
+    assert!(comes_in(&case.candidates()));
+}
+
+#[test]
+fn it_does_not_take_off_and_land_on_one_mark_of_qi() {
+    // between the mark it lands at (40) and the one it rises at (60): grounded it stays down, aloft it stays up
+    let mut m = me(40.0);
+    m.qi = 50.0;
+    let rises = |cands: &[Candidate]| {
+        has(
+            cands,
+            |c| matches!(c, Choice::Fly { height } if *height > 0.0),
+        )
+    };
+    let lands = |cands: &[Candidate]| {
+        has(
+            cands,
+            |c| matches!(c, Choice::Fly { height } if *height == 0.0),
+        )
+    };
+    assert!(!rises(&Case::new(m.clone(), foe(140.0)).candidates()));
+    m.flying = true;
+    m.hover = profile().sky;
+    m.air = profile().sky;
+    assert!(!lands(&Case::new(m.clone(), foe(140.0)).candidates()));
+    // and a bar all but empty by its share grounds it, however much a bottomless bar holds
+    m.qi = 1.5;
+    m.qi_max = 10_000.0;
+    assert!(lands(&Case::new(m, foe(140.0)).candidates()));
 }

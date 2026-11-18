@@ -76,6 +76,9 @@ pub enum Input {
     FoeRecovering,
     /// How much of my breath after an attack is left.
     Calm,
+    /// How near the round is to being cut: 0 until its last stretch, 1 at the end. The mind sets it from its own
+    /// round clock (`Reading::of` leaves it 0).
+    Late,
 }
 
 /// Something that can read every input: the `Reading`, or a test's stand-in.

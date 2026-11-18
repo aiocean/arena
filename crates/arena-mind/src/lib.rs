@@ -26,7 +26,7 @@ pub use habits::{Answers, FoeMove, Habits, foe_move};
 pub use mind::Mind;
 pub use pick::{Read, pick};
 pub use posture::{Category, Held, POSTURES, PostureDef, choose_posture};
-pub use reading::{Reading, is_area, is_close, is_ranged, punisher, read_posture};
+pub use reading::{Reading, is_area, is_close, is_ranged, press_range, punisher, read_posture};
 pub use rng::Rng;
 pub use sense::{
     AILMENTS, AURAS, ActFrames, ActPhase, Acting, AilmentOn, Arena, CURSES, Doing, Effects, Foe,

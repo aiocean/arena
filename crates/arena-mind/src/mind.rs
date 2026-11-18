@@ -3,10 +3,11 @@
 
 use crate::candidates::{Candidate, Ctx, candidates};
 use crate::choice::{Choice, Outcome, Posture, Thought, Why};
+use crate::curve::Input;
 use crate::habits::{Answers, FoeMove, Habits, foe_move};
 use crate::pick::{Read, pick};
 use crate::posture::{Category, Held, POSTURES, choose_posture};
-use crate::reading::{Reading, read_posture};
+use crate::reading::{Reading, press_range, read_posture};
 use crate::rng::Rng;
 use crate::sense::{Foe, Sense};
 use crate::skill::{BodySize, Profile, Skill};
@@ -17,6 +18,10 @@ use crate::yomi::Yomi;
 const ANSWER_WINDOW: f64 = 1.0;
 /// How many candidates a `Why` lists.
 const WHY_TOP: usize = 5;
+/// The round's last stretch, seconds into it: from `LATE_FROM` the mind presses more and more, wholly from
+/// `LATE_FULL`. Rounds are cut at 120 s (the ladder, training), and a cut round is won by nobody.
+const LATE_FROM: f64 = 80.0;
+const LATE_FULL: f64 = 105.0;
 
 pub struct Mind {
     profile: Profile,
@@ -32,6 +37,8 @@ pub struct Mind {
     held: Held,
     level: u8,
     now: f64,
+    /// When this round began, by the clock of its first sense.
+    began: Option<f64>,
     view: Delayed,
     seen: Option<Foe>,
     habits: Habits,
@@ -61,6 +68,7 @@ impl Mind {
             },
             level: 0,
             now: 0.0,
+            began: None,
             view: Delayed::new(),
             seen: None,
             habits: Habits::new(),
@@ -83,6 +91,7 @@ impl Mind {
             since: f64::NEG_INFINITY,
         };
         self.level = 0;
+        self.began = None;
         self.view.clear();
         self.seen = None;
         self.habits.clear();
@@ -114,6 +123,7 @@ impl Mind {
     /// Take in this tick's sense, `dt` seconds after the last; a thought when it is time to think and free to act.
     pub fn think(&mut self, sense: &Sense, dt: f64) -> Option<Thought> {
         self.now = sense.time;
+        let began = *self.began.get_or_insert(sense.time);
         if dt > 0.0 {
             self.clock -= dt;
             self.calm = (self.calm - dt).max(0.0);
@@ -129,7 +139,7 @@ impl Mind {
         // each skill as hard as it strikes now
         let skills = powered(&self.skills, &sense.power);
 
-        let reading = Reading::of(
+        let mut reading = Reading::of(
             &sense.me,
             &foe,
             &threats,
@@ -140,7 +150,14 @@ impl Mind {
             &self.profile,
             self.calm,
         );
+        let late = ((sense.time - began - LATE_FROM) / (LATE_FULL - LATE_FROM)).clamp(0.0, 1.0);
+        reading.set(Input::Late, late);
         let (posture, scores) = choose_posture(&self.held, sense.time, &reading, &self.profile);
+        // pressing, finishing, or out of time, it fights from where its blows reach, not from the range it likes
+        let press = matches!(posture, Posture::Pressure | Posture::Finish) || late > 0.0;
+        if press && let Some(range) = press_range(&skills, &sense.ready) {
+            reading.want = reading.want.min(range);
+        }
         if posture != self.held.posture {
             self.held = Held {
                 posture,
@@ -167,6 +184,8 @@ impl Mind {
             read: &self.read,
             calm: self.calm,
             now: sense.time,
+            press,
+            late,
             predicted,
             answer,
             level: self.level,

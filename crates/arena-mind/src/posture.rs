@@ -90,6 +90,8 @@ pub static POSTURES: [PostureDef; 8] = [
                 c(Input::CloseReady, READY),
                 c(Input::Close, LINE),
             ],
+            // the round is running out: a round that is cut is won by nobody, so go and finish it
+            &[c(Input::Late, LINE), c(Input::CloseReady, READY)],
         ],
         weights: [2.0, 0.3, 2.5, 0.8, 1.0, 0.8, 0.6, 0.6, 0.1, 0.3],
     },
