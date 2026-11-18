@@ -1,5 +1,7 @@
-//! The shapes the rules test hits against, for tests and tools (the art kept in step with the rules): each fighter's body (where it can be hit), the area a
-//! cast under way will strike when its windup ends, and every shot, field and unit on the field. Read only: nothing
+//! The shapes the rules test hits against, for tests and tools (the art kept in step with the rules) and the page's
+//! hitbox overlay (`arena-game`'s `boxes`): each fighter's body (where it can be hit), the area a cast strikes while
+//! the rules test it, every shot, field and unit on the field, and the points a blow and a bolt come from (the hand's
+//! wrist and hilt, a bolt's launch). Read only: nothing
 //! here decides anything. Each shape mirrors the test that uses it, named beside it, so a change to a test changes
 //! the shape drawn here in the same change.
 //!
@@ -29,6 +31,12 @@ pub enum Mark {
     Field,
     /// A trap, mine, totem or minion standing on the field.
     Unit,
+    /// The wrist of the hand held out ahead: the arm's hurtbox ends there (`frames::Frame::wrist`), a point.
+    Wrist,
+    /// The hilt (or a palm's fingertips): a blade's hitbox starts there (`frames::Frame::hilt`), a point.
+    Hilt,
+    /// Where a bolt leaves the casting hand (`frames::cast_hand`), a point.
+    Launch,
 }
 
 /// A shape in the arena's pixels.
@@ -85,9 +93,31 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
             });
         }
 
+        // the hand's points on the frame shown, placed as the boxes are (a point is a circle of radius 0)
+        let point = |mark: Mark, x: f64, y: f64| Drawn {
+            owner: Some(me),
+            mark,
+            shape: Shape::Circle { x, y, r: 0.0 },
+            skill: "",
+        };
+        if let Some(fr) = crate::frames::frame_of(state, me) {
+            for (mark, p) in [(Mark::Wrist, fr.wrist), (Mark::Hilt, fr.hilt)] {
+                if let Some([px, py]) = p {
+                    let [x, y, _, _] = crate::frames::place([px, py, px, py], b.x, b.air, b.face);
+                    out.push(point(mark, x, y));
+                }
+            }
+        }
+
         let Some(act) = f.act else { continue };
-        // the strike is tested on the tick the windup ends, when the act turns to its recovery
-        if act.phase != Phase::Recover || act.t > STRIKE_SHOWN {
+        if let Some((x, y)) = crate::frames::cast_hand(state, me) {
+            out.push(point(Mark::Launch, x, y));
+        }
+        // the strike is tested on the tick the windup ends, when the act turns to its recovery, and a blade that
+        // missed again on each tick while its clip is in the active window (a retry due, `act::due`)
+        let retrying = state.pending.iter().any(|p| p.retry && p.payload.by == me)
+            && crate::frames::in_window(state, me);
+        if !retrying && (act.phase != Phase::Recover || act.t > STRIKE_SHOWN) {
             continue;
         }
         let Some(k) = f.kit.index(act.spell) else {
