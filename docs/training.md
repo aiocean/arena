@@ -66,6 +66,7 @@ Today the reward is computed in Rust (`crates/arena-duel/src/train.rs`), per dec
 | An act already 40% of the last 40 decisions | -0.004 |
 | A damaging cast that lands nothing (a whiff, as `casts()` counts it) | `whiff` handed to `step` (0 by default) |
 | A whiff begun with the foe out of reach (a far whiff) | `whiff_far` handed to `step`, on top of `whiff` (0 by default) |
+| Every decision (about 8 a second) | `-time_cost`, taken in `ppo.py` (`--time-cost`, 0 by default) |
 | Damage the learner's actives deal with their blows (not slash, dive or blink) | `variety` x dealt / 100 (0 by default) |
 
 To pay your bot differently today, edit those constants or `Env::step` and rebuild the module. A reward written in
@@ -91,6 +92,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--variety` | 0 | reward weight of the damage the actives' blows deal (a bonus for using the whole kit) |
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
+| `--time-cost` | 0 | reward cost of every decision, so a round that drags on costs more than one closed |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--keep-every` | 0 | also keep `runs/<run>/u<update>.pt` every so many updates (a multiple of 25), for the ladder |
 | `--snapshot-every` | 20 | how often the latest self joins the league |
