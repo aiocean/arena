@@ -144,9 +144,11 @@ fn a_live_match_reports_its_whole_fight() -> Result<(), String> {
             return Err(format!("no {name} event in {ticks} ticks; got {c:?}"));
         }
     }
-    // a snapshot of each fighter each second of fight time: the whole fight, not only its first tick
+    // a snapshot of each fighter each second of fight time: the whole fight, not only its first tick. Each round's
+    // clock starts again, so a round's last part second and its turn to the next take no snapshot: a second a round.
     let seconds = ticks as f64 / 60.0;
-    if (n("snapshot") as f64) < 2.0 * (seconds - 1.0) {
+    let rounds = n("round.end").max(1) as f64;
+    if (n("snapshot") as f64) < 2.0 * (seconds - rounds) {
         return Err(format!(
             "{} snapshots in {seconds:.1} s; got {c:?}",
             n("snapshot")
