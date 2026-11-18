@@ -11,7 +11,7 @@ use crate::fighter::State;
 use crate::js::{js_min, js_sign, or_one};
 use crate::out::{Note, Out, PlayOpts, Stop};
 use crate::strike::{Origin, Payload, Target, hurt};
-use crate::unit::{UNIT_ID, enemies_near, hurt_unit, targets_of};
+use crate::unit::{UNIT_ID, enemies_near, hurt_unit, lay_stopped, targets_of};
 use arena_calc::play::Point;
 use arena_calc::projectile::{Flight, Shot as Fired};
 
@@ -55,6 +55,9 @@ pub struct Shot {
     pub kind: ShotKind,
     /// It holds its caster (`Fighter::bound`) until it is over; a bolt sent back holds no one.
     pub binds: bool,
+    /// Lôi Bạo Trễ: stopped by a guard, a ward, a barrier or a unit, it stays there as its caster's mine
+    /// (`unit::lay_stopped`); a bolt a mirror sent back does not.
+    pub mines: bool,
 }
 
 impl Shot {
@@ -169,6 +172,7 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         s.owner = foe;
         s.payload.by = foe;
         s.binds = false;
+        s.mines = false;
         flight.dir = Point::new(-flight.dir.x, flight.dir.y);
         flight.pos = flight.pos.plus(flight.dir, 40.0 / T);
         flight.struck.clear();
@@ -196,12 +200,17 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         });
     }
     let mut stopped = false;
+    // what the last strike stopped in (a unit, a guard, a ward, a barrier): the blow and where, for Lôi Bạo Trễ
+    let mut stop: Option<(Payload, f64)> = None;
     for k in &step.strikes {
         let mut p = s.payload.clone();
         p.hit = k.blow(&p.hit);
         let dir = or_one(js_sign(flight.dir.x));
         if k.target >= UNIT_ID {
-            hurt_unit(state, k.target - UNIT_ID, &p);
+            let id = k.target - UNIT_ID;
+            let ux = state.units.iter().find(|u| u.id == id).map(|u| u.x);
+            hurt_unit(state, id, &p);
+            stop = ux.map(|x| (p, x));
             continue;
         }
         let f = k.target as usize;
@@ -211,10 +220,13 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         let hx = state.from_t(k.at.x);
         if blocks(state, f, hx - dir, &p) {
             clash(state, hx, g - k.at.y * T, &[]);
+            stop = Some((p, hx));
             stopped = true;
             break;
         }
+        let wall = walled(state, f);
         hurt(state, f, &p, dir);
+        stop = wall.then_some((p, hx));
     }
     for fork in step.forks {
         let key = bolt_effect(state, sp, s.owner, &fork);
@@ -222,6 +234,13 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         crate::act::push(state, sp, p, Some(key), ShotKind::Bolt { flight: fork });
     }
     let off = nx < state.left - 160.0 || nx > state.right + 160.0;
+    // a bolt spent in what stopped it stays there as a mine
+    if s.mines
+        && (stopped || flight.done)
+        && let Some((p, at)) = stop
+    {
+        lay_stopped(state, &p, sp, at);
+    }
     if stopped || flight.done || off {
         s.kind = ShotKind::Bolt { flight };
         end_shot(state, s);
@@ -248,11 +267,18 @@ fn run(state: &mut State, s: &mut Shot, dt: f64) -> bool {
             }
             let (bx, by) = orb_at(s);
             if overlaps(state, foe, bx, -by, sp.radius.unwrap_or(0.0)) {
-                if blocks(state, foe, bx, &s.payload) {
+                // a guard, a ward or a barrier stops it whole: under Lôi Bạo Trễ it stays there as a mine
+                let stops = if blocks(state, foe, bx, &s.payload) {
                     clash(state, bx, g + by, &[]);
+                    true
                 } else {
+                    let wall = walled(state, foe);
                     let dir = or_one(js_sign(state.fighters[foe].body.x - bx));
                     hurt(state, foe, &s.payload, dir);
+                    wall
+                };
+                if stops && s.mines {
+                    lay_stopped(state, &s.payload, sp, bx);
                 }
                 burst(state, sp.hit_fx, bx, g + by);
                 end_shot(state, s);
@@ -436,6 +462,13 @@ pub fn overlaps(state: &State, f: usize, x: f64, y: f64, r: f64) -> bool {
     crate::frames::hurtboxes(state, f)
         .iter()
         .any(|h| x > h[0] - r && x < h[2] + r && y > h[1] - r && y < h[3] + r)
+}
+
+/// Does fighter `f` stop a blow whole before it lands (a barrier turns it aside, a ward's charge erases it)? What
+/// `strike::hurt` tries first, read without the dice.
+fn walled(state: &State, f: usize) -> bool {
+    let me = &state.fighters[f];
+    me.alive() && !me.body.untouchable() && (me.barrier > 0.0 || me.charges > 0.0)
 }
 
 /// Shot `s` ends: its effect stops and it leaves the list.

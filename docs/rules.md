@@ -181,6 +181,15 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
 - **Traps, mines, totems and minions** are bodies on the field the foe can strike and destroy (design 17.8): a trap
   springs on the foe that steps on it, a mine goes off when the foe stands in its blast (its owner sets it off: a
   seat has no act for it yet), a totem casts its skill on its cadence, a minion walks at the foe and strikes it.
+- **Lôi Bạo Trễ** (`delayedthunder`, "Lôi, bạo!"): a bolt or orb of a skill under it that a guard, a ward, a barrier
+  or one of the foe's units stops (the shot spent there) stays where it stopped as its caster's mine
+  (`arena_calc::device::STOPPED_MINE`). Its blow is the stopped one at 80% (`STOPPED_SHARE`), so a guard's 20% chip
+  and the mine together are the blow once and what a shot reaches the foe with stays within its cast. It arms
+  after 0.3 s, at most 3 stand for the skill (the oldest goes), and it lasts 12 s. There is no act to set it off
+  (the bot's acts are unchanged): like any mine, the rules set it off for its owner as soon as the foe stands within
+  its blast, so a mine laid in a guard or a ward goes off 0.3 s later on a foe that stays. A bolt a mirror sends back
+  lays none (it is the foe's now), nor do two shots that meet, a shot a unit fired (a totem's), or a shot that
+  pierces on. No domain swallows a shot in the duel yet; when one does, it will lay its mine there too.
 
 ## Frame data
 

@@ -887,8 +887,10 @@ pub fn push(
     if binds {
         state.fighters[p.by].bound = true;
     }
+    let mines = crate::unit::mines_when_stopped(state, &p);
     state.shots.push(Shot {
         binds,
+        mines,
         id,
         owner: p.by,
         name: p.skill,

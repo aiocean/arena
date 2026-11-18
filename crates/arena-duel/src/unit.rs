@@ -10,6 +10,10 @@
 //! - **Mine**: thrown where the cast aimed; its owner sets off every armed mine, the oldest first, as soon as the foe
 //!   stands within a mine's blast (`DEVICE_RADIUS`). A seat has no act to detonate (the bot inputs and acts are
 //!   unchanged), so the rules set them off for it; all go off in the tick it is decided (no stagger).
+//! - **A stopped shot** (Lôi Bạo Trễ, `device::STOPPED_MINE`): a fighter's bolt or orb of a skill under the support
+//!   that a guard, a ward, a barrier or a unit stops (the shot spent there) stays where it stopped as its caster's
+//!   mine, in the skill's group, striking with the stopped blow times `device::STOPPED_SHARE`; it arms and goes off
+//!   as a thrown mine does. A bolt a mirror sends back, two shots meeting, and a unit's shot leave none.
 //! - **Totem**: stands in front of its owner and casts the skill on the totem's cadence (`Spawn::first_cast`,
 //!   `cast_interval`), each cast one blow from where it stands, moving as the skill's motion does.
 //! - **Minion**: walks at the foe at a fighter's walking speed until the blade (`MINION_BLADE`) reaches it, and
@@ -32,6 +36,7 @@ use arena_calc::event::{Event, EventKind};
 use arena_calc::hit::{Defence, Hit, resolve_with};
 use arena_calc::play::{Point, Target as Body};
 use arena_calc::projectile::Powers;
+use arena_calc::support::Behaviour;
 use bevy_ecs::prelude::*;
 
 /// `play::Target` ids: a fighter is its seat, a unit `UNIT_ID + id`.
@@ -396,6 +401,57 @@ pub fn place(state: &mut State, me: usize, k: usize, built: &Built, aim: Option<
         Kind::Totem | Kind::Minion => x0 + toward * hw * 2.0,
     };
     let x = x.clamp(state.left + hw, state.right - hw);
+    let mut hit = built.hit.clone();
+    scale_hit(&mut hit, sp.damage);
+    put(
+        state,
+        me,
+        skill,
+        sp,
+        x,
+        (hit, built.control, Powers::of_built(built)),
+        m,
+    );
+}
+
+/// Whether a shot carrying `p` stays as a mine where it is stopped (Lôi Bạo Trễ, `Behaviour::MineOnBlock`): a
+/// fighter's own shot of a skill under the support. A unit's shot (a totem's cast) does not.
+pub fn mines_when_stopped(state: &State, p: &Payload) -> bool {
+    let kit = &state.fighters[p.by].kit;
+    p.unit.is_none()
+        && kit.index(p.skill).is_some_and(|k| {
+            kit.skills[k]
+                .supports
+                .iter()
+                .any(|s| s.behaviours.contains(&Behaviour::MineOnBlock))
+        })
+}
+
+/// Lôi Bạo Trễ: seat `p.by`'s shot of motion `m` carrying `p`, stopped at `x` by a guard, a ward, a barrier or a
+/// unit, stays there as its mine (`device::STOPPED_MINE`): its blow the stopped one times `device::STOPPED_SHARE`,
+/// armed after `device::MINE_ARM` and set off as any mine (`detonate`). No dice are rolled.
+pub fn lay_stopped(state: &mut State, p: &Payload, m: &'static Spell, x: f64) {
+    let me = p.by;
+    let sp = device::STOPPED_MINE;
+    let hw = state.fighters[me].body.spec.half_width;
+    let x = x.clamp(state.left + hw, state.right - hw);
+    let mut hit = p.hit.clone();
+    scale_hit(&mut hit, sp.damage);
+    put(state, me, p.skill, sp, x, (hit, p.control, p.powers), m);
+}
+
+/// Seat `me`'s skill `skill` makes what `sp` says at `x`, each striking with `blow` (its hit, its control factor,
+/// its projectile powers) moving as `m`: into its group (made on the first), the oldest past the cap removed.
+fn put(
+    state: &mut State,
+    me: usize,
+    skill: &'static str,
+    sp: device::Spawn,
+    x: f64,
+    blow: (Hit, f64, Powers),
+    m: &'static Spell,
+) {
+    let (hit, control, powers) = blow;
     let gi = match state
         .groups
         .iter()
@@ -419,8 +475,6 @@ pub fn place(state: &mut State, me: usize, k: usize, built: &Built, aim: Option<
             remove(state, i);
         }
     }
-    let mut hit = built.hit.clone();
-    scale_hit(&mut hit, sp.damage);
     for dev in placement.made {
         state.unit_id += 1;
         let id = state.unit_id;
@@ -433,8 +487,8 @@ pub fn place(state: &mut State, me: usize, k: usize, built: &Built, aim: Option<
             x,
             c: body(sp.life),
             hit: hit.clone(),
-            control: built.control,
-            powers: Powers::of_built(built),
+            control,
+            powers,
             motion: m,
             next_strike: state.time + MINION_EVERY / 2.0,
         });
