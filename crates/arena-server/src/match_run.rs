@@ -49,9 +49,11 @@ pub fn config_for(seed: u32, arena: Arena) -> DuelConfig {
     }
 }
 
-/// How many round-wins takes a match, and the tick a match is cut off at even if neither gets there.
+/// How many round-wins takes a match, and the tick a match is cut off at even if neither gets there: three rounds run
+/// out to the rules' two minutes each. Two minutes for the whole match drew half the house mirrors on RULES 22 (rounds
+/// of 40-60 s), the match cut before its second win.
 pub const WINS_TO_TAKE: u32 = 2;
-pub const MAX_TICKS: u32 = 120 * 60; // two minutes
+pub const MAX_TICKS: u32 = 3 * 120 * 60; // six minutes
 
 /// Who sits in a live corner, by kind: what [`Seats`] turns into a seat. The house AI is a model run natively (ONNX
 /// through tract, `arena-bot`); the minds are built into the rules. A bot module a player uploads (`arena-bot`'s host)
