@@ -222,11 +222,12 @@ fn case_02_bleed_build_presses_eight_bleeds_on_a_running_target() {
     // each 270 blow was over 8% of full life (240): two body stars, damage taken × (1 − 2 × 4%) = 0.92, and that
     // reaches the bleeds too (`Taken` at each tick)
     close(t.stars[Star::Body as usize], 2.0);
-    // every bleed bleeds, twice while the target runs: 1 s moving 2 × 459 × 0.92 = 844.56, then 1 s still 422.28
+    // every bleed bleeds, the same whether the target runs or not (`BLEED_MOVING` 1): 1 s moving 459 × 0.92 =
+    // 422.28, then 1 s still 422.28
     let life = t.life;
     let ticked = t.tick_with(1.0, true, &EMPTY);
-    close(ticked.lost, 2.0 * 459.0 * 0.92);
-    close(life - t.life, 844.56);
+    close(ticked.lost, arena_calc::dot::BLEED_MOVING * 459.0 * 0.92);
+    close(life - t.life, 422.28);
     close(t.tick_with(1.0, false, &EMPTY).lost, 422.28);
 }
 

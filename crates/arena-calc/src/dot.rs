@@ -31,8 +31,8 @@ pub const BURN_TIME: f64 = 4.0;
 pub const BLEED_RATE: f64 = 0.35;
 /// ...for this many seconds (before the ailment duration)...
 pub const BLEED_TIME: f64 = 5.0;
-/// ...and this many times as much while its bearer moves.
-pub const BLEED_MOVING: f64 = 2.0;
+/// ...and this many times as much while its bearer moves (1: a bleed runs the same whether its bearer moves or not).
+pub const BLEED_MOVING: f64 = 1.0;
 /// Instances of one ailment a fighter carries at most; reaching it is the ailment's full.
 pub const DOT_CAP: usize = 8;
 /// Burn more by the fire's tier (rules, 4.3): red, blue, purple, black (dao fire).
@@ -220,7 +220,7 @@ impl Instances {
 
     /// The damage they deal over the next `dt` seconds before mitigation, each for no longer than it has left:
     /// every one (bleed), or only the strongest standing at each moment (burn: when it runs out, the next strongest
-    /// takes over for the rest of `dt`). `moving` doubles a bleed.
+    /// takes over for the rest of `dt`). `moving` multiplies a bleed by [`BLEED_MOVING`].
     pub fn damage(&self, dt: f64, moving: bool) -> f64 {
         let Some(first) = self.0.first() else {
             return 0.0;

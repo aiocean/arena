@@ -529,15 +529,15 @@ mod pool {
         attack("dive", "Lao Kiếm", &[Attack, Sword, Near, Melee, Dash], &[(E::Force, 1.0)], 11.0, &[(R::Qi, 12.0)], [0.22, 0.5, 1.6], "dive", "arena", C),
         body("blink", "Độn", &[Body, Escape, Mid, Movement, Space], &[(R::Qi, 20.0)], [0.06, 0.12, 1.8], "blink", "arena", C),
         // ---- 11.2 close attacks: strike, slam, dash ----
-        attack("step", "Bộ", &[Attack, Escape, Mid, Dash], &[(E::Force, 1.0)], 15.0, &[(R::Qi, 24.0)], [0.26, 0.45, 3.4], "step", "arena", B),
+        attack("step", "Bộ", &[Attack, Escape, Mid, Dash], &[(E::Force, 1.0)], 13.0, &[(R::Qi, 24.0)], [0.26, 0.45, 3.4], "step", "arena", B),
         attack("palm", "Chưởng", &[Attack, Palm, Near, Melee, Slam], &[(E::Force, 1.0)], 20.0, &[(R::Qi, 27.0)], [0.32, 0.5, 2.8], "palm", "arena", B),
         attack("burst", "Bạo", &[Attack, Palm, Near, Nova], &[(E::Thunder, 1.0)], 24.0, &[(R::Qi, 30.0)], [0.36, 0.5, 3.0], "burst", "arena", B),
         attack("lotus", "Liên Hoa", &[Attack, Palm, Near, Melee], &[(E::Light, 1.0)], 18.0, &[(R::Qi, 24.0)], [0.3, 0.45, 2.2], "lotus", "arena", B),
         attack("ancientgod", "Cổ Thần Huyết", &[Attack, Fist, Transform, Near, Melee, Slam, Ancient], &[(E::Force, 1.0)], 28.0, &[(R::Qi, 36.0)], [0.5, 0.55, 5.0], "ancientgod", "TN190", B),
         attack("slashluo", "Trảm La", &[Attack, Sword, Mid, Dash, Line], &[(E::Metal, 1.0)], 22.0, &[(R::Qi, 30.0)], [0.3, 0.5, 3.8], "slashluo", "TN684", B),
         attack("onestep", "Nhất Bộ Đăng Thiên", &[Attack, Escape, Mid, Dash], &[(E::Force, 1.0)], 14.0, &[(R::Qi, 30.0)], [0.2, 0.4, 4.0], "onestep", "TN", B),
-        attack("nineturn", "Cửu Chuyển Luyện Tiên", &[Attack, Palm, Near, Slam, Charged, Immortal], &[(E::Force, 1.0)], 34.0, &[(R::Qi, 40.0)], [0.85, 0.5, 6.5], "nineturn", "TN493", B),
-        attack("vermilion", "Chu Tước Biến", &[Attack, Transform, Palm, Near, Melee], &[(E::Fire, 1.0)], 18.0, &[(R::Qi, 30.0)], [0.35, 0.4, 3.0], "vermilion", "TN1085", B),
+        attack("nineturn", "Cửu Chuyển Luyện Tiên", &[Attack, Palm, Mid, Slam, Charged, Immortal], &[(E::Force, 1.0)], 34.0, &[(R::Qi, 40.0)], [0.85, 0.5, 6.5], "nineturn", "TN493", B),
+        attack("vermilion", "Chu Tước Biến", &[Attack, Transform, Palm, Near, Melee], &[(E::Fire, 1.0)], 10.0, &[(R::Qi, 30.0)], [0.35, 0.4, 3.0], "vermilion", "TN1085", B),
         attack("heavenlychop", "Thiên Trảm", &[Attack, Sword, Near, Melee, Strike], &[(E::Metal, 1.0)], 26.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN", B),
         attack("fireescape", "Hỏa Độn", &[Attack, Escape, Mid, Dash], &[(E::Fire, 1.0)], 10.0, &[(R::Qi, 28.0)], [0.22, 0.4, 3.6], "fireescape", "TN1127", C),
         attack("warprint", "Chiến Hồn Ấn", &[Attack, Seal, Near, Melee, Slam], &[(E::Force, 0.5), (E::Metal, 0.5)], 22.0, &[(R::Qi, 32.0)], [0.4, 0.5, 4.0], "warprint", "TN", B),
@@ -554,7 +554,7 @@ mod pool {
         // A cone that cuts by the foe's remaining lifespan and gives half back.
         rank(attack("autumn", "Thu Ý", &[Attack, Sword, Near, Melee, Cone, Area, Fate], &[(E::Metal, 0.5), (E::Yin, 0.5)], 22.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "CM746", B), RULE),
         // One cut that strikes the unseen too and breaks shots and zones in its way.
-        rank(attack("manspear", "Man Thương", &[Attack, Sword, Mid, Dash, Line], &[(E::Force, 1.0)], 22.0, &[(R::Qi, 30.0)], [0.3, 0.5, 3.8], "slashluo", "CM238", A), DIVINE),
+        rank(attack("manspear", "Man Thương", &[Attack, Sword, Mid, Dash, Line], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 30.0)], [0.3, 0.5, 3.8], "slashluo", "CM238", A), DIVINE),
         // Drags the foe into a row before the palm and breaks shield after shield.
         rank(attack("godquake", "Thần Chấn", &[Attack, Palm, Mid, Slam, Cone, Ancient], &[(E::Earth, 1.0)], 22.0, &[(R::Qi, 30.0)], [0.35, 0.5, 3.2], "palm", "TN1468", A), DIVINE),
         // ---- 11.3 projectiles and instants ----
@@ -567,7 +567,7 @@ mod pool {
         // Turns the foe's immortal qi to demon qi; silences.
         rank(with(magic("demonfinger", "Hóa Ma Chỉ", &[Spell, Finger, Far, Projectile, Death], &[(E::Yin, 1.0)], 12.0, &[(R::Qi, 22.0)], [0.3, 0.25, 2.8], "demonfinger", "TN483", A), &[Effect::Control(Ctl::Soulless, 1.0)]), DIVINE),
         magic("tigerflag", "Thiên Hổ Phiên", &[Spell, Banner, Far, Projectile, Line], &[(E::Metal, 1.0)], 17.0, &[(R::Qi, 26.0)], [0.34, 0.3, 3.0], "tigerflag", "TN", A),
-        magic("celestialslaughter", "Thiên Lục", &[Spell, Intent, Far, Projectile, Charged, Slaughter], &[(E::Thunder, 0.5), (E::Force, 0.5)], 26.0, &[(R::Qi, 36.0)], [0.5, 0.35, 4.5], "celestialslaughter", "TN", A),
+        magic("celestialslaughter", "Thiên Lục", &[Spell, Intent, Far, Projectile, Charged, Slaughter], &[(E::Thunder, 0.5), (E::Force, 0.5)], 22.0, &[(R::Qi, 36.0)], [0.5, 0.35, 4.5], "celestialslaughter", "TN", A),
         with(magic("spiritchange", "Hóa Linh", &[Spell, Spirit, Far, Projectile], &[(E::Soul, 1.0)], 6.0, &[(R::Qi, 20.0)], [0.28, 0.25, 3.0], "spiritchange", "TN", B), &[Effect::Control(Ctl::Soulless, 1.4)]),
         magic("thirdeye", "Thiên Nhãn", &[Spell, Far, Instant], &[(E::Light, 1.0)], 12.0, &[(R::Qi, 20.0)], [0.3, 0.25, 2.4], "thirdeye", "TN756", A),
         magic("seize", "Đoạt Cơ", &[Spell, Finger, Far, Projectile], &[(E::Yin, 1.0)], 6.0, &[(R::Qi, 18.0)], [0.25, 0.25, 3.2], "seize", "TN72", C),
@@ -582,11 +582,11 @@ mod pool {
         // Drinks life along its flight; every shot or shield it passes adds to it; a hit locks blinking 2 s.
         rank(magic("silentfinger", "Tịch Diệt Chỉ", &[Spell, Finger, Far, Projectile, Death], &[(E::Yin, 1.0)], 15.0, &[(R::Qi, 24.0)], [0.32, 0.25, 3.0], "demonfinger", "TN483", B), DIVINE),
         // Five arrows in a row, each cutting (Thương): Huyết Tán's opener.
-        with(attack("fivearrows", "Ngũ Tiễn Liên Châu", &[Attack, Far, Projectile, Chain, Blood], &[(E::Force, 1.0)], 4.0, &[(R::Qi, 20.0)], [0.3, 0.3, 3.0], "tigerflag", "CM13", S), &[Effect::Hits(5.0)]),
+        with(attack("fivearrows", "Ngũ Tiễn Liên Châu", &[Attack, Far, Projectile, Chain, Blood], &[(E::Force, 1.0)], 1.8, &[(R::Qi, 20.0)], [0.3, 0.3, 3.0], "tigerflag", "CM13", B), &[Effect::Hits(4.0)]),
         // Pierces every shield, each one shrinking the arrow; three a match.
-        rank(card(attack("libow", "Cung Lý Quảng", &[Attack, Treasure, Far, Projectile, Line, Vaal], &[(E::Metal, 1.0)], 40.0, &[(R::Qi, 30.0)], [0.5, 0.35, 2.0], "tigerflag", "TN1468", S), 3), RULE),
+        rank(card(attack("libow", "Cung Lý Quảng", &[Attack, Treasure, Far, Projectile, Line, Vaal], &[(E::Metal, 1.0)], 33.0, &[(R::Qi, 30.0)], [0.5, 0.35, 2.0], "tigerflag", "TN1468", S), 3), RULE),
         // Grows with the damage taken.
-        rank(attack("godfinger", "Cổ Thần Chỉ", &[Attack, Finger, Mid, Projectile, Ancient], &[(E::Force, 1.0)], 21.0, &[(R::Qi, 28.0)], [0.4, 0.3, 3.5], "finger", "TN716", A), RULE),
+        rank(attack("godfinger", "Cổ Thần Chỉ", &[Attack, Finger, Mid, Projectile, Ancient], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 28.0)], [0.4, 0.3, 3.5], "finger", "TN716", A), RULE),
         // Strong but builds instability; spends slaughter intent.
         rank(magic("slaughterbolt", "Sát Lục Lôi", &[Spell, Finger, Far, Instant, Slaughter], &[(E::Thunder, 1.0)], 24.0, &[(R::Qi, 24.0), (R::Intent, 20.0)], [0.4, 0.3, 3.0], "jithunder", "TN1900", S), ORIGIN),
         // Black dragons breathe yin wind: it puts out the fire of life (Tịch).
@@ -599,11 +599,11 @@ mod pool {
         magic("earthsplit", "Địa Liệt", &[Spell, Mid, Area], &[(E::Earth, 1.0)], 26.0, &[(R::Qi, 28.0)], [0.32, 0.3, 3.2], "earthsplit", "TN25", A),
         magic("gather", "Tụ Lôi Ấn", &[Spell, Seal, Mid, Delayed, Area], &[(E::Thunder, 1.0)], 34.0, &[(R::Qi, 36.0)], [0.4, 0.35, 4.2], "gather", "TN1334", S),
         // Raises a mountain, then bursts it into stone and fire.
-        rank(magic("mountain", "Sơn Băng", &[Spell, Tribulation, Far, Area, Delayed], &[(E::Earth, 0.6), (E::Fire, 0.4)], 34.0, &[(R::Qi, 44.0)], [0.6, 0.45, 5.5], "mountain", "TN857", A), DIVINE),
+        rank(magic("mountain", "Sơn Băng", &[Spell, Tribulation, Far, Area, Delayed], &[(E::Earth, 0.6), (E::Fire, 0.4)], 20.0, &[(R::Qi, 44.0)], [0.6, 0.45, 5.5], "mountain", "TN857", A), DIVINE),
         with(magic("ancientthunder", "Thái Cổ Lôi Vực", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 16.0, &[(R::Qi, 38.0)], [0.4, 0.35, 5.0], "ancientthunder", "TN649", S), &[Effect::Hits(2.0)]),
         with(magic("fingerdeath", "Tử Chỉ", &[Spell, Finger, Tribulation, Far, Area, Death], &[(E::Yin, 1.0)], 9.0, &[(R::Qi, 34.0)], [0.35, 0.3, 4.0], "fingerdeath", "TN", S), &[Effect::Hits(3.0)]),
-        magic("flameorigin", "Tam Giới Hỏa Nguyên", &[Spell, Mid, Area], &[(E::Fire, 1.0)], 19.0, &[(R::Qi, 34.0)], [0.4, 0.3, 3.8], "flameorigin", "TN1091", B),
-        with(magic("eightextremes", "Bát Cực Đạo", &[Spell, Tribulation, Far, Area, Chain], &[(E::Fire, 1.0)], 11.0, &[(R::Qi, 40.0)], [0.45, 0.35, 5.5], "eightextremes", "TN1958", S), &[Effect::Hits(4.0)]),
+        magic("flameorigin", "Tam Giới Hỏa Nguyên", &[Spell, Mid, Area], &[(E::Fire, 1.0)], 12.0, &[(R::Qi, 34.0)], [0.4, 0.3, 3.8], "flameorigin", "TN1091", B),
+        with(magic("eightextremes", "Bát Cực Đạo", &[Spell, Tribulation, Far, Area, Chain], &[(E::Fire, 1.0)], 5.8, &[(R::Qi, 40.0)], [0.45, 0.35, 5.5], "eightextremes", "TN1958", A), &[Effect::Hits(4.0)]),
         magic("yinmoon", "Âm Nguyệt", &[Spell, Seal, Mid, Delayed, Area], &[(E::Yin, 1.0)], 20.0, &[(R::Qi, 32.0)], [0.35, 0.3, 3.4], "yinmoon", "TN1563", B),
         ban(magic("restriction", "Diệt Cấm", &[Spell, Restriction, Mid, Trap, Ban], &[(E::Metal, 1.0)], 26.0, &[(R::Qi, 40.0)], [0.5, 0.35, 5.0], "restriction", "TN753", B)),
         ban(magic("plumblossom", "Thập Bát Mai Hoa Cấm", &[Spell, Restriction, Mid, Trap, Ban], &[(E::Wood, 1.0)], 24.0, &[(R::Qi, 34.0)], [0.35, 0.3, 3.6], "plumblossom", "TN559", A)),
@@ -611,7 +611,7 @@ mod pool {
         rank(magic("lifedeath", "Sinh Tử Ấn", &[Spell, Seal, Palm, Near, Delayed, LifeDeath, Life, Death], &[(E::Yin, 0.5), (E::Wood, 0.5)], 28.0, &[(R::Qi, 36.0)], [0.35, 0.3, 3.6], "lifedeath", "TN1616", B), RULE),
         with(magic("remnantnight", "Tàn Dạ Thiên Liệt", &[Spell, Tribulation, Far, Area], &[(E::Yin, 0.5), (E::Light, 0.5)], 30.0, &[(R::Qi, 46.0)], [0.5, 0.4, 6.0], "remnantnight", "TN987", S), &[Effect::Control(Ctl::Soulless, 1.0)]),
         rank(magic("heavenflip", "Phiên Thiên Ấn", &[Spell, Seal, Tribulation, Far, Area], &[(E::Earth, 1.0)], 32.0, &[(R::Qi, 50.0)], [0.6, 0.4, 7.5], "heavenflip", "TN1319", A), DIVINE),
-        magic("umbrella", "Phần Thế Tán", &[Spell, Treasure, Mid, Area], &[(E::Fire, 1.0)], 22.0, &[(R::Qi, 34.0)], [0.4, 0.3, 3.8], "umbrella", "TN1323", B),
+        magic("umbrella", "Phần Thế Tán", &[Spell, Treasure, Mid, Area], &[(E::Fire, 1.0)], 12.0, &[(R::Qi, 34.0)], [0.4, 0.3, 3.8], "umbrella", "TN1323", B),
         with(magic("starfall", "Lạc Tinh", &[Spell, Tribulation, Far, Area], &[(E::Light, 1.0)], 15.0, &[(R::Qi, 40.0)], [0.4, 0.35, 5.0], "starfall", "TN", A), &[Effect::Hits(2.0)]),
         // Locks blinking while it runs; its old freeze is gone (no hold: the novel's time restriction ages, it
         // does not hold the body).
@@ -621,20 +621,20 @@ mod pool {
         with(magic("starrotation", "Tinh Chuyển", &[Spell, Tribulation, Far, Area, Chain], &[(E::Light, 1.0)], 11.0, &[(R::Qi, 38.0)], [0.4, 0.35, 4.5], "starrotation", "TN475", S), &[Effect::Hits(3.0)]),
         with(magic("truefalse", "Chân Giả Ấn", &[Spell, Seal, Illusion, Mid, Delayed, Area, TrueFalse], &[(E::Soul, 0.5), (E::Light, 0.5)], 20.0, &[(R::Qi, 36.0)], [0.35, 0.3, 4.0], "truefalse", "TN1220", A), &[Effect::Control(Ctl::Soulless, 0.8)]),
         // Spends 20% of the caster's life (never the last point), each 1% adding BLOOD_POWER; once a match.
-        card(with(magic("spiritsummon", "Diệt Sinh Triệu Linh", &[Spell, Tribulation, Far, Area, Vaal, Death, Blood], &[(E::Yin, 0.5), (E::Fire, 0.5)], 14.0, &[(R::Qi, 36.0), (R::Life, 20.0)], [0.4, 0.3, 4.5], "spiritsummon", "TN", S), &[Effect::Hits(2.0)]), 1),
+        card(with(magic("spiritsummon", "Diệt Sinh Triệu Linh", &[Spell, Tribulation, Far, Area, Vaal, Death, Blood], &[(E::Yin, 0.5), (E::Fire, 0.5)], 8.0, &[(R::Qi, 36.0), (R::Life, 20.0)], [0.4, 0.3, 4.5], "spiritsummon", "TN", S), &[Effect::Hits(2.0)]), 1),
         // Three layers break one by one: movement, body skills, soul skills. Nothing undoes it.
-        ban(with(magic("threerestrict", "Tam Đại Cấm Chế", &[Spell, Restriction, Mid, Delayed, Area, Ban], &[(E::Force, 1.0)], 24.0, &[(R::Qi, 40.0)], [0.5, 0.35, 6.0], "restriction", "TN1271", A), &[Effect::Control(Ctl::Root, 0.8)])),
+        ban(with(magic("threerestrict", "Tam Đại Cấm Chế", &[Spell, Restriction, Mid, Delayed, Area, Ban], &[(E::Force, 0.5), (E::Metal, 0.5)], 22.0, &[(R::Qi, 40.0)], [0.5, 0.35, 6.0], "restriction", "TN1271", A), &[Effect::Control(Ctl::Root, 0.8)])),
         // Calls mountains from memory.
         rank(magic("movemountain", "Di Sơn", &[Spell, Tribulation, Far, Area], &[(E::Earth, 1.0)], 32.0, &[(R::Qi, 44.0)], [0.6, 0.45, 6.0], "mountain", "CM1007", A), RULE),
         // Tears out one of the foe's origins (a buff or a kind of damage for a while) and heals the caster with it.
         rank(magic("karmaseal", "Nhân Quả Ấn", &[Spell, Seal, Palm, Near, Channel, Karma], &[(E::Soul, 1.0)], 24.0, &[(R::Qi, 36.0)], [0.4, 0.35, 5.0], "lifedeath", "TN1614", B), RULE),
         // ---- 11.5 channels, totems, minions, fields ----
         with(magic("void", "Hư Không", &[Spell, Mid, Channel, Area], &[(E::Yin, 1.0)], 14.0, &[(R::Qi, 60.0)], [0.9, 0.45, 11.0], "void", "arena", B), &[Effect::Hits(2.8)]),
-        with(magic("arsenal", "Vạn Kiếm Trận", &[Spell, Sword, Formation, Mid, Totem, Area], &[(E::Metal, 1.0)], 12.0, &[(R::Qi, 48.0)], [0.6, 0.4, 9.0], "arsenal", "TN", S), &[Effect::Hits(5.5)]),
+        with(magic("arsenal", "Vạn Kiếm Trận", &[Spell, Sword, Formation, Mid, Totem, Area], &[(E::Metal, 1.0)], 8.0, &[(R::Qi, 48.0)], [0.6, 0.4, 9.0], "arsenal", "TN", S), &[Effect::Hits(5.5)]),
         // Rain round the caster, every drop a small shot; holds sense as an aura.
         rank(with(magic("summonrain", "Hoán Vũ", &[Spell, Mid, Area, Aura], &[(E::Water, 1.0)], 6.0, &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.4, 0.3, 5.0], "summonrain", "TN794", B), &[Effect::Hits(3.0)]), DIVINE),
         // As many soldiers as souls held; they rush in and blow up.
-        rank(with(magic("beans", "Tát Đậu Thành Binh", &[Spell, Spirit, Mid, Minion], &[(E::Force, 1.0)], 8.0, &[(R::Qi, 36.0), (R::Souls, 2.0)], [0.5, 0.3, 7.0], "beans", "TN856", A), &[Effect::Hits(5.8)]), DIVINE),
+        rank(with(magic("beans", "Tát Đậu Thành Binh", &[Spell, Spirit, Mid, Minion], &[(E::Force, 1.0)], 3.0, &[(R::Qi, 36.0), (R::Souls, 2.0)], [0.5, 0.3, 7.0], "beans", "TN856", B), &[Effect::Hits(5.8)]), DIVINE),
         ban(with(magic("lifedeathrestrict", "Sinh Tử Cấm", &[Spell, Restriction, Mid, Area, LifeDeath, Death, Ban], &[(E::Yin, 1.0)], 7.0, &[(R::Qi, 40.0)], [0.5, 0.3, 7.5], "lifedeathrestrict", "TN990", A), &[Effect::Hits(5.3)])),
         rank(with(magic("soulbanner", "Hồn Phiên", &[Spell, Banner, Mid, Totem, Area], &[(E::Soul, 1.0)], 8.0, &[(R::Qi, 44.0)], [0.55, 0.3, 8.0], "soulbanner", "TN174", B), &[Effect::Hits(4.75)]), DIVINE),
         with(magic("ghostsummon", "Triệu Quỷ", &[Spell, Spirit, Mid, Minion, Death], &[(E::Yin, 1.0)], 7.0, &[(R::Qi, 34.0)], [0.45, 0.3, 6.0], "ghostsummon", "TN", B), &[Effect::Hits(4.7)]),
@@ -642,11 +642,11 @@ mod pool {
         // A swarm of souls: they drain, bait, and peel a fifth off a big shot per layer.
         rank(with(magic("wanderingsouls", "Du Hồn", &[Spell, Spirit, Far, Minion], &[(E::Soul, 1.0)], 7.0, &[(R::Qi, 34.0), (R::Souls, 1.0)], [0.45, 0.3, 6.0], "ghostsummon", "TN295", A), &[Effect::Hits(4.7)]), DIVINE),
         // A black curtain that cages, nine restriction dragons fired from it.
-        ban(with(magic("restrictbanner", "Cấm Phiên", &[Spell, Banner, Restriction, Mid, Totem, Area, Ban], &[(E::Yin, 0.5), (E::Force, 0.5)], 9.0, &[(R::Qi, 44.0)], [0.55, 0.3, 8.0], "soulbanner", "TN226", A), &[Effect::Hits(4.75)])),
+        ban(with(magic("restrictbanner", "Cấm Phiên", &[Spell, Banner, Restriction, Mid, Totem, Area, Ban], &[(E::Yin, 0.5), (E::Force, 0.5)], 5.0, &[(R::Qi, 44.0)], [0.55, 0.3, 8.0], "soulbanner", "TN226", A), &[Effect::Hits(4.75)])),
         // The finishing finger: the channeller heals nothing while it runs; more for everything dead in the zone.
-        rank(with(magic("yellowfinger", "Hoàng Tuyền Chỉ", &[Spell, Finger, Far, Channel, Death], &[(E::Yin, 1.0)], 16.0, &[(R::Qi, 50.0)], [0.6, 0.45, 9.0], "void", "TN500", A), &[Effect::Hits(2.8)]), RULE),
+        rank(with(magic("yellowfinger", "Hoàng Tuyền Chỉ", &[Spell, Finger, Far, Channel, Death], &[(E::Yin, 1.0)], 14.5, &[(R::Qi, 50.0)], [0.6, 0.45, 9.0], "void", "TN500", A), &[Effect::Hits(2.8)]), RULE),
         // Moon souls that merge into the Remnant God.
-        rank(with(magic("moonwing", "Nguyệt Dực", &[Spell, Spirit, Mid, Minion], &[(E::Fire, 1.0)], 7.0, &[(R::Qi, 34.0)], [0.45, 0.3, 6.0], "ghostsummon", "CM25", B), &[Effect::Hits(4.7)]), DIVINE),
+        rank(with(magic("moonwing", "Nguyệt Dực", &[Spell, Spirit, Mid, Minion], &[(E::Fire, 1.0)], 5.2, &[(R::Qi, 34.0)], [0.45, 0.3, 6.0], "ghostsummon", "CM25", B), &[Effect::Hits(4.7)]), DIVINE),
         // ---- 11.6 curses, warcries, soul ----
         magic("heartbeat", "Tâm Động Lôi Âm", &[Spell, Sound, Near, Nova, Warcry], &[(E::Thunder, 0.5), (E::Soul, 0.5)], 12.0, &[(R::Qi, 20.0)], [0.24, 0.35, 2.0], "heartbeat", "TN1777", C),
         with(magic("kunjiwhip", "Côn Cực Tiên", &[Spell, Treasure, Near, Line, Karma], &[(E::Soul, 1.0)], 13.0, &[(R::Qi, 26.0)], [0.32, 0.4, 3.0], "kunjiwhip", "TN363", B), &[Effect::Control(Ctl::Soulless, 0.8)]),
@@ -689,15 +689,15 @@ mod pool {
         body("timeaura", "Tuế Nguyệt Ý Cảnh", &[Body, Intent, Mid, Aura, Time], &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.5, 0.3, 8.0], "flowingmoon", "TN252", A),
         // ---- 11.8 đỉnh cấp: the former ultimates, actives at the top tier and the top rank, priced as such: a
         // heavy blow, a 20 s cooldown, 60 qi, and one to a loadout (`loadout::FAITH_MAX`) ----
-        rank(with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 52.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(with(magic("tribulation", "Thiên Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Thunder, 1.0)], 13.5, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "arena", S), &[Effect::Hits(3.0)]), FAITH),
         // Night over the arena; the sunrise strikes light no one dodges.
-        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area], &[(E::Fire, 0.5), (E::Light, 0.5)], 24.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(with(magic("remnantdusk", "Tàn Dạ", &[Spell, Domain, Whole, Area], &[(E::Fire, 0.5), (E::Light, 0.5)], 10.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "TN987", S), &[Effect::Hits(3.0)]), FAITH),
         // A ring drawn, tribulations 1 to 8 called, each a different kind.
-        rank(with(magic("sukiep", "Tô Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Metal, 0.125), (E::Wood, 0.125), (E::Water, 0.125), (E::Fire, 0.125), (E::Earth, 0.125), (E::Thunder, 0.125), (E::Light, 0.125), (E::Yin, 0.125)], 14.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "CM1303", S), &[Effect::Hits(8.0)]), FAITH),
-        rank(magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 25.0, &[(R::Qi, 60.0)], [0.8, 0.5, 20.0], "daofusion", "TN", S), FAITH),
+        rank(with(magic("sukiep", "Tô Kiếp", &[Spell, Tribulation, Far, Area], &[(E::Metal, 0.125), (E::Wood, 0.125), (E::Water, 0.125), (E::Fire, 0.125), (E::Earth, 0.125), (E::Thunder, 0.125), (E::Light, 0.125), (E::Yin, 0.125)], 10.0, &[(R::Qi, 60.0)], [0.7, 0.8, 20.0], "tribulation", "CM1303", S), &[Effect::Hits(3.0)]), FAITH),
+        rank(magic("daofusion", "Đạo Pháp Dung Hợp", &[Spell, Near, Nova, Charged], &[(E::Force, 0.34), (E::Thunder, 0.33), (E::Fire, 0.33)], 17.0, &[(R::Qi, 60.0)], [0.8, 0.5, 20.0], "daofusion", "TN", S), FAITH),
         // ---- research techniques the design's section 11 leaves out ----
         // Tens of restriction qi made one spear; it grows as it gathers the restriction qi on the ground.
-        attack("banspear", "Cấm Khí Trường Thương", &[Attack, Sword, Mid, Line, Strike, Ban], &[(E::Force, 1.0)], 24.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN309", B),
+        attack("banspear", "Cấm Khí Trường Thương", &[Attack, Sword, Mid, Line, Strike, Ban], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN309", B),
         // "I say it is thunder": every effect on the foe becomes Lôi damage (a herald on its ailments).
         rank(magic("thunderchart", "Lôi Đồ", &[Spell, Seal, Whole, Area, Herald], &[(E::Thunder, 1.0)], 20.0, &[(R::Qi, 36.0)], [0.4, 0.35, 6.0], "gather", "TN1269", A), ORIGIN),
         // Smashes every body star: a blast (or a full heal, a later rule).
@@ -707,40 +707,40 @@ mod pool {
         // Both sealed: the fight locks into bodies (divine skills −50%, body blows up, no one leaves).
         rank(body("warseal", "Cổ Tộc Chiến Ấn", &[Body, Seal, Whole, Field, Ancient], &[(R::Qi, 40.0)], [0.45, 0.25, 12.0], "hex", "TN1672", A), RULE),
         // Four presses: pull, whirl, the foe's healing turned to damage, stone if all four land; stopping loses all.
-        rank(with(magic("fourforms", "Đạo Cổ Tứ Thức", &[Spell, Seal, Mid, Chain, Delayed, Ancient], &[(E::Force, 0.5), (E::Yin, 0.5)], 9.0, &[(R::Qi, 40.0)], [0.4, 0.35, 6.0], "gather", "TN1778", S), &[Effect::Hits(4.0), Effect::Control(Ctl::Hold, 0.5)]), RULE),
+        rank(with(magic("fourforms", "Đạo Cổ Tứ Thức", &[Spell, Seal, Mid, Chain, Delayed, Ancient], &[(E::Force, 0.5), (E::Yin, 0.5)], 6.0, &[(R::Qi, 40.0)], [0.4, 0.35, 6.0], "gather", "TN1778", S), &[Effect::Hits(4.0), Effect::Control(Ctl::Hold, 0.5)]), RULE),
         // Hồn Phiên, "Dung!": N souls merged into one master soul.
         rank(with(magic("soulmerge", "Hồn Phiên · Dung", &[Spell, Banner, Spirit, Mid, Minion], &[(E::Soul, 1.0)], 8.0, &[(R::Qi, 44.0), (R::Souls, 3.0)], [0.55, 0.3, 8.0], "soulbanner", "TN390", B), &[Effect::Hits(4.75)]), DIVINE),
         // Hồn Phiên, "Vỡ!": the swarm blows itself up on command.
         rank(magic("soulburst", "Hồn Phiên · Vỡ", &[Spell, Banner, Mid, Mine, Area], &[(E::Soul, 1.0)], 30.0, &[(R::Qi, 30.0), (R::Souls, 2.0)], [0.35, 0.3, 6.0], "soulvortex", "TN390", A), DIVINE),
         // Huge damage, but only on the bleeding; a caster who bleeds catches it too.
-        attack("bloodpowder", "Huyết Tán", &[Attack, Talisman, Near, Area, Blood], &[(E::Force, 1.0)], 30.0, &[(R::Qi, 27.0)], [0.32, 0.5, 4.0], "palm", "CM10", A),
+        attack("bloodpowder", "Huyết Tán", &[Attack, Talisman, Near, Area, Blood], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 27.0)], [0.32, 0.5, 4.0], "palm", "CM10", A),
         // Three cuts toward the Tam Sát quarter, each paying lifespan: the environment's buffs, space, time.
-        rank(with(attack("threeslay", "Trảm Tam Sát", &[Attack, Sword, Mid, Line, Chain, Bond, Fate], &[(E::Force, 1.0)], 8.0, &[(R::Qi, 30.0), (R::Lifespan, 15.0)], [0.45, 0.5, 6.0], "heavenlychop", "CM81", B), &[Effect::Hits(3.0)]), RULE),
+        rank(with(attack("threeslay", "Trảm Tam Sát", &[Attack, Sword, Mid, Line, Chain, Bond, Fate], &[(E::Force, 0.5), (E::Metal, 0.5)], 6.5, &[(R::Qi, 30.0), (R::Lifespan, 15.0)], [0.45, 0.5, 6.0], "heavenlychop", "CM81", B), &[Effect::Hits(3.0)]), RULE),
         // Khai Dương, Táng Âm, Ly Phong: fire and water in one chain, so the second blow fuses into wind.
-        rank(with(attack("liphong", "Ly Phong Tam Thức", &[Attack, Fist, Mid, Chain, Strike], &[(E::Fire, 0.5), (E::Water, 0.5)], 9.0, &[(R::Qi, 34.0)], [0.4, 0.5, 5.0], "palm", "CM358", A), &[Effect::Hits(3.0)]), RULE),
+        rank(with(attack("liphong", "Ly Phong Tam Thức", &[Attack, Fist, Mid, Chain, Strike], &[(E::Fire, 0.5), (E::Water, 0.5)], 5.0, &[(R::Qi, 34.0)], [0.4, 0.5, 5.0], "palm", "CM358", B), &[Effect::Hits(3.0)]), RULE),
         // Drags the foe back 0.5 s and undoes its cast.
         rank(with(magic("timereverse", "Đảo Ngược Thời Gian", &[Spell, Palm, Mid, Instant, Time], &[(E::Force, 1.0)], 8.0, &[(R::Qi, 30.0), (R::Lifespan, 10.0)], [0.3, 0.25, 6.0], "thirdeye", "CM498", B), &[Effect::Control(Ctl::Jolt, 0.3)]), RULE),
-        // Eight sentences, one a second; costs all life but 1, only when the target has no shield.
-        rank(with(magic("cursewords", "Thuật Nguyền Rủa", &[Spell, Sound, Far, Chain, Curse, Hex, Blood], &[(E::Yin, 0.5), (E::Soul, 0.5)], 5.0, &[(R::Qi, 30.0), (R::Life, 100.0)], [0.4, 0.3, 8.0], "fingerdeath", "CM429", A), &[Effect::Hits(8.0)]), ORIGIN),
+        // Eight sentences, one a second; costs half of full life, only when the target has no shield.
+        rank(with(magic("cursewords", "Thuật Nguyền Rủa", &[Spell, Sound, Far, Chain, Curse, Hex, Blood], &[(E::Yin, 0.5), (E::Soul, 0.5)], 2.0, &[(R::Qi, 30.0), (R::Life, 50.0)], [0.4, 0.3, 8.0], "fingerdeath", "CM429", B), &[Effect::Hits(8.0)]), ORIGIN),
         // Winter (slows: its ice is gone), autumn (drains), summer (fire for life), spring (heals).
         rank(body("fourseasons", "Mệnh Cách Bốn Mùa", &[Body, Intent, Mid, Aura, Fate], &[(R::Qi, 30.0), (R::Sense, 20.0)], [0.5, 0.3, 8.0], "flowingmoon", "CM692", A), RULE),
         // Eyes shut 0.5 s: no spell or shot lands; eyes open: the foe's illusions, minions and zones in reach are gone.
         rank(body("realfake", "Chân Giả", &[Body, Illusion, Near, Channel, Guard, TrueFalse], &[(R::Qi, 30.0)], [0.06, 0.5, 8.0], "mirror", "TN1617", B), RULE),
         // One-use cards: each can be shown without casting (Lộ bài).
         card(magic("heaventhread", "Sợi Tơ Thiên Kiếp", &[Spell, Tribulation, Far, Area, Vaal], &[(E::Thunder, 1.0)], 40.0, &[(R::Qi, 20.0)], [0.5, 0.4, 2.0], "ancientthunder", "TN226", S), 1),
-        card(magic("bannertribulation", "Cấm Phiên Dẫn Kiếp", &[Spell, Banner, Tribulation, Far, Area, Vaal, Ban], &[(E::Thunder, 1.0)], 45.0, &[(R::Qi, 30.0)], [0.6, 0.45, 2.0], "ancientthunder", "TN248", S), 1),
-        card(attack("manhair", "Sợi Tóc Man Thần", &[Attack, Finger, Mid, Projectile, Line, Vaal], &[(E::Force, 1.0)], 36.0, &[(R::Qi, 20.0)], [0.4, 0.35, 2.0], "tigerflag", "CM499", S), 2),
-        card(attack("skyqueen", "Kiếm Khí Lăng Thiên Hậu", &[Attack, Sword, Far, Projectile, Line, Vaal], &[(E::Metal, 1.0)], 45.0, &[(R::Qi, 30.0)], [0.5, 0.35, 2.0], "tigerflag", "TN512", S), 1),
+        card(magic("bannertribulation", "Cấm Phiên Dẫn Kiếp", &[Spell, Banner, Tribulation, Far, Area, Vaal, Ban], &[(E::Thunder, 1.0)], 39.0, &[(R::Qi, 30.0)], [0.6, 0.45, 2.0], "ancientthunder", "TN248", S), 1),
+        card(attack("manhair", "Sợi Tóc Man Thần", &[Attack, Finger, Mid, Projectile, Line, Vaal], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 20.0)], [0.4, 0.35, 2.0], "tigerflag", "CM499", S), 2),
+        card(attack("skyqueen", "Kiếm Khí Lăng Thiên Hậu", &[Attack, Sword, Far, Projectile, Line, Vaal], &[(E::Metal, 1.0)], 33.0, &[(R::Qi, 30.0)], [0.5, 0.35, 2.0], "tigerflag", "TN512", S), 1),
         // Blessings: buffs for a time that hold no sense.
         body("soularmour", "Hồn Khải", &[Body, Spirit, Near, Blessing], &[(R::Qi, 35.0)], [0.6, 0.4, 12.0], "heal", "TN1870", A),
         body("deathlessbreath", "Hơi Thở Bất Diệt", &[Body, Near, Blessing, Life], &[(R::Qi, 30.0), (R::Lifespan, 20.0)], [0.6, 0.4, 14.0], "indestructible", "CM1213", A),
         // ---- the curses of research 6.1 (curse.rs `Kind`) the rows above leave out ----
         // Nine beats of yin, heavier for every guard the target raises; only another curse or nine beats lift it.
-        rank(with(magic("ninedeaths", "Cửu Tử", &[Spell, Seal, Far, Single, Chain, Curse, Hex], &[(E::Yin, 1.0)], 4.0, &[(R::Qi, 30.0)], [0.4, 0.3, 7.0], "fingerdeath", "CM732", A), &[Effect::Hits(9.0)]), DIVINE),
+        rank(with(magic("ninedeaths", "Cửu Tử", &[Spell, Seal, Far, Single, Chain, Curse, Hex], &[(E::Yin, 1.0)], 1.0, &[(R::Qi, 30.0)], [0.4, 0.3, 7.0], "fingerdeath", "CM732", B), &[Effect::Hits(9.0)]), DIVINE),
         // A tether: the target cannot go further than so far from the curser; the thread can be cut.
         rank(magic("deathseal", "Tử Ấn Tổ Quyết", &[Spell, Seal, Far, Single, Curse, Hex], &[], 0.0, &[(R::Qi, 30.0)], [0.4, 0.3, 8.0], "seize", "TN2029", B), DIVINE),
         // Five beats on the zither, each breaking an organ; the fifth is a heavy blow.
-        rank(with(magic("fiveorgans", "Ngũ Tạng", &[Spell, Sound, Far, Chain, Curse, Hex], &[(E::Yin, 1.0)], 6.0, &[(R::Qi, 34.0)], [0.45, 0.3, 7.0], "starrotation", "TN1658", A), &[Effect::Hits(6.0)]), DIVINE),
+        rank(with(magic("fiveorgans", "Ngũ Tạng", &[Spell, Sound, Far, Chain, Curse, Hex], &[(E::Yin, 1.0)], 3.5, &[(R::Qi, 34.0)], [0.45, 0.3, 7.0], "starrotation", "TN1658", B), &[Effect::Hits(6.0)]), DIVINE),
         // A three-second countdown to heavy soul damage; broken, it turns on the diviner.
         rank(magic("threebreaths", "Bói Ba Nhịp Thở", &[Spell, Seal, Far, Delayed, Curse, Hex], &[(E::Soul, 1.0)], 30.0, &[(R::Qi, 34.0)], [0.4, 0.3, 7.0], "servitude", "TN2048", A), DIVINE),
         // A spoken bond: using a skill of the named kind while it lasts cracks the heart (Tâm Nứt).
@@ -751,7 +751,7 @@ mod pool {
         rank(magic("agingcurse", "Tuế Nguyệt Nguyền", &[Spell, Seal, Far, Single, Curse, Hex, Time], &[], 0.0, &[(R::Qi, 30.0)], [0.4, 0.3, 7.0], "yinmoon", "TN260", B), DIVINE),
         // ---- the domains of research 6.4 (domain.rs `DomainKind`) with no gem above; one each a side ----
         // Windless: no one regrows qi or casts a qi skill; shots and wind are gone.
-        rank(body("stillwind", "Ly Phong Lĩnh Vực", &[Body, Domain, Whole, Field], &[(R::Qi, 50.0)], [0.6, 0.4, 14.0], "daoyellow", "CM358", A), DIVINE),
+        rank(body("stillwind", "Ly Phong Lĩnh Vực", &[Body, Domain, Whole, Field], &[(R::Qi, 50.0)], [0.6, 0.4, 14.0], "daoyellow", "CM358", B), DIVINE),
         // Whoever moves inside is bound: no escape, no flight; standing still is free.
         rank(body("fixedrule", "Định Quy Tắc", &[Body, Domain, Whole, Field, Space], &[(R::Qi, 50.0)], [0.6, 0.4, 14.0], "daoyellow", "TN1753", A), DIVINE),
         // Foes inside use 40% of their power; raised only at the floor's centre.

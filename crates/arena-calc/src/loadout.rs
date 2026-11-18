@@ -319,7 +319,44 @@ pub fn random_in(pool: &[Gem], roll: &mut impl FnMut() -> f64) -> Option<Loadout
         let i = pick(ROOTS.len() + 1, roll());
         i.checked_sub(1).map(|i| ROOTS[i])
     };
-    draw(pool, keystones, root, roll).or_else(|| draw(pool, Vec::new(), root, roll))
+    let mut l = draw(pool, keystones, root, roll).or_else(|| draw(pool, Vec::new(), root, roll))?;
+    // a Cực Cảnh takes a kind the loadout deals (its actives with their supports, and the basics): one on a kind it
+    // never deals is four dead points
+    let dealt = dealt_kinds(&l, pool);
+    let kinds: Vec<Element> = Element::ALL
+        .into_iter()
+        .filter(|e| dealt[e.index()])
+        .collect();
+    for k in &mut l.keystones {
+        if let Keystone::Extreme(e) = *k
+            && !dealt[e.index()]
+            && !kinds.is_empty()
+        {
+            *k = Keystone::Extreme(kinds[pick(kinds.len(), roll())]);
+        }
+    }
+    Some(l)
+}
+
+/// The kinds of damage loadout `l` deals, as a row by [`Element::index`]: its actives with their fitting supports,
+/// and the basics every loadout holds.
+pub fn dealt_kinds(l: &Loadout, pool: &[Gem]) -> [bool; N] {
+    let mut has = [false; N];
+    let ids = l
+        .actives
+        .iter()
+        .map(|s| (s.skill.as_str(), s.supports.as_slice()))
+        .chain(BASICS.iter().map(|b| (*b, &[][..])));
+    for (id, supports) in ids {
+        let Some(g) = pool.iter().chain(GEMS).find(|g| g.id == id) else {
+            continue;
+        };
+        let on: Vec<&Support> = supports.iter().filter_map(|x| support(x)).collect();
+        for (a, b) in has.iter_mut().zip(kinds(&Skill::of(g, 1, 0.0), &on)) {
+            *a |= b;
+        }
+    }
+    has
 }
 
 fn draw(

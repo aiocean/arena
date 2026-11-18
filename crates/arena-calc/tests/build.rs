@@ -1257,6 +1257,26 @@ fn the_shared_pool_draws_legal_loadouts_once_it_is_filled() {
     }
 }
 
+/// A drawn Cực Cảnh is on a kind the loadout deals (its actives with their supports, or the basics' force).
+#[test]
+fn a_drawn_extreme_takes_a_kind_the_loadout_deals() {
+    let mut extremes = 0;
+    for seed in 0..2000 {
+        let Some(l) = random(&mut dice(seed)) else {
+            continue;
+        };
+        let dealt = arena_calc::loadout::dealt_kinds(&l, GEMS);
+        for k in &l.keystones {
+            if let Keystone::Extreme(e) = *k {
+                extremes += 1;
+                assert!(dealt[e.index()], "seed {seed}: {e:?} in {l:?}");
+                assert_eq!(check(&l), Ok(()), "seed {seed}");
+            }
+        }
+    }
+    assert!(extremes > 20, "{extremes}");
+}
+
 #[test]
 fn tags_used_by_supports_are_real() {
     for s in SUPPORTS {

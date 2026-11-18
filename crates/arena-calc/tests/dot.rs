@@ -245,7 +245,7 @@ fn eight_bleeds_all_bleed_and_a_ninth_replaces_the_weakest() {
 }
 
 #[test]
-fn a_bleed_runs_twice_as_fast_on_the_move_and_meets_the_shield_first() {
+fn a_bleed_runs_the_same_on_the_move_and_meets_the_shield_first() {
     // 100 force: 35 a second for 5 s, armour ignored, the shield first
     let o = land(&made(&FORCE_BOLT, &[]).hit, &mut bare());
     let d = o.dots[0];
@@ -260,7 +260,7 @@ fn a_bleed_runs_twice_as_fast_on_the_move_and_meets_the_shield_first() {
     close(bleed.map_or(0.0, |b| b.to_shield), 35.0);
     close(bleed.map_or(1.0, |b| b.to_life), 0.0);
     let run = moving.tick_with(1.0, true, &EMPTY);
-    close(run.of(Ailment::Bleed).map_or(0.0, |b| b.to_shield), 70.0);
+    close(run.of(Ailment::Bleed).map_or(0.0, |b| b.to_shield), 35.0);
     assert_eq!(run.of(Ailment::Bleed).map(|b| b.kind), Some(Element::Force));
 }
 

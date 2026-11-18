@@ -99,7 +99,7 @@ pub const SOUL_LAMPS: u8 = 3;
 pub const SOUL_LAMP_REVIVE: f64 = 0.3;
 pub const SOUL_LAMP_SNUFF: f64 = 0.5;
 /// Hai Mươi Năm Khổ Luyện: rank-1 skills' more.
-pub const TWENTY_YEARS_MORE: f64 = 1.0;
+pub const TWENTY_YEARS_MORE: f64 = 0.2;
 /// Người Xem Cây: time blows' more while moving, and the lifespan factor of time skills on it while still.
 pub const TREE_TIME_TAKEN: f64 = 0.15;
 pub const TREE_LIFESPAN: f64 = 2.0;

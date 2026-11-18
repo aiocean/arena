@@ -497,8 +497,9 @@ fn light_and_yin_cancel_stack_for_stack() {
 }
 
 #[test]
-fn bleed_burns_faster_moving_and_burn_passes_armour() {
-    // five bleeds of 20 a second, all dealing: 100 in a second still, 200 moving; no shield, no armour counted
+fn every_bleed_deals_moving_or_not_and_burn_passes_armour() {
+    // five bleeds of 20 a second, all dealing: 100 in a second still, `BLEED_MOVING` times that moving; no shield, no
+    // armour counted
     let mut t = bare();
     t.armour = 5000.0;
     for _ in 0..5 {
@@ -507,7 +508,8 @@ fn bleed_burns_faster_moving_and_burn_passes_armour() {
     let still = t.clone().tick(1.0, false);
     let moving = t.tick(1.0, true);
     close(still, 100.0);
-    close(moving, 2.0 * still);
+    close(moving, arena_calc::dot::BLEED_MOVING * still);
+    close(moving, 100.0);
 
     // a burn of 50 a second goes past the full shield and the armour, straight to life
     let mut t = Cultivator::new();

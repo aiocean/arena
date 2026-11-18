@@ -628,7 +628,7 @@ impl Cultivator {
 
     /// Time passes for a fighter wearing `sheet`: damage over time, regen, timers. Every rate is read from its
     /// table as the tick begins ([`bearer_table`](Cultivator::bearer_table)):
-    /// - burns (only the strongest) and bleeds (all, twice while `moving`) through [`mitigation`]: a burn straight to
+    /// - burns (only the strongest) and bleeds (all, times `BLEED_MOVING` while `moving`) through [`mitigation`]: a burn straight to
     ///   life, a bleed the shield first;
     /// - Tâm ma, a share of full life a second;
     /// - shield regen `ShieldRegen` (base `BASE.shield_regen`) once the wait is over; life regen `LifeRegen` (base 0,

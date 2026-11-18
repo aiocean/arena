@@ -469,7 +469,7 @@
       "recover": 0.45,
       "cooldown": 3.4,
       "distance": 288,
-      "damage": 15
+      "damage": 13
     },
     "seal": {
       "kind": "zone",
@@ -788,7 +788,7 @@
       "windup": 0.6,
       "recover": 0.4,
       "cooldown": 9,
-      "damage": 12,
+      "damage": 8,
       "life": 3,
       "height": 160,
       "pull": 0,
@@ -822,7 +822,7 @@
       "windup": 0.6,
       "recover": 0.45,
       "cooldown": 5.5,
-      "damage": 34,
+      "damage": 20,
       "sigil": 0.4,
       "impact": 0.05,
       "radius": 104,
@@ -856,7 +856,7 @@
       "windup": 0.85,
       "recover": 0.5,
       "cooldown": 6.5,
-      "range": 184,
+      "range": 264,
       "damage": 34
     },
     "indestructible": {
@@ -885,7 +885,7 @@
       "recover": 0.4,
       "cooldown": 3,
       "range": 208,
-      "damage": 18
+      "damage": 10
     },
     "summonrain": {
       "kind": "void",
@@ -919,7 +919,7 @@
       "windup": 0.5,
       "recover": 0.3,
       "cooldown": 7,
-      "damage": 8,
+      "damage": 3,
       "life": 3.2,
       "height": 0,
       "pull": 48,
@@ -1103,7 +1103,7 @@
       "windup": 0.4,
       "recover": 0.3,
       "cooldown": 3.8,
-      "damage": 22,
+      "damage": 12,
       "sigil": 0.3,
       "impact": 0.45,
       "radius": 88,
@@ -1313,7 +1313,7 @@
       "windup": 0.4,
       "recover": 0.3,
       "cooldown": 3.8,
-      "damage": 19,
+      "damage": 12,
       "sigil": 0.35,
       "impact": 0.4,
       "radius": 80,
@@ -1345,7 +1345,7 @@
       "windup": 0.5,
       "recover": 0.35,
       "cooldown": 4.5,
-      "damage": 26,
+      "damage": 22,
       "speed": 1440
     },
     "ghostsummon": {
@@ -1450,7 +1450,7 @@
       "windup": 0.45,
       "recover": 0.35,
       "cooldown": 5.5,
-      "damage": 11,
+      "damage": 5.8,
       "sigil": 0.2,
       "impact": 0.08,
       "radius": 44,
@@ -1511,7 +1511,7 @@
       "windup": 0.4,
       "recover": 0.3,
       "cooldown": 4.5,
-      "damage": 14,
+      "damage": 8,
       "impact": 0.3,
       "radius": 48,
       "notice": 0,

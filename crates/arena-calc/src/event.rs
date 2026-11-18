@@ -583,7 +583,7 @@ pub const CAST_ON_CRIT: Trigger = Trigger {
 };
 
 /// Thụ Thương Phản Pháp's damage taken to add up before it fires (PoE's Cast when Damage Taken).
-pub const HURT_CAST_THRESHOLD: f64 = 300.0;
+pub const HURT_CAST_THRESHOLD: f64 = 1500.0;
 /// Thụ Thương Phản Pháp's internal cooldown.
 pub const HURT_CAST_COOLDOWN: f64 = 0.25;
 /// Thụ Thương Phản Pháp's level.

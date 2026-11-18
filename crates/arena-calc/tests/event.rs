@@ -279,10 +279,12 @@ fn cast_when_hurt_adds_damage_up_to_its_threshold_then_starts_over() {
             .against(1)
             .with_damage(d, [0.0; N])
     };
-    q.push(hurt(200.0));
+    // Thụ Thương Phản Pháp fires once 1500 taken have added up
+    assert_eq!(arena_calc::event::HURT_CAST_THRESHOLD, 1500.0);
+    q.push(hurt(1200.0));
     assert!(q.run(&mut f, &s, &mut Dice::new(&[])).casts.is_empty());
-    close(q.summed(0, "castwhenhurt"), 200.0);
-    q.push(hurt(150.0));
+    close(q.summed(0, "castwhenhurt"), 1200.0);
+    q.push(hurt(350.0));
     let out = q.run(&mut f, &s, &mut Dice::new(&[]));
     assert_eq!(out.casts.len(), 1);
     assert_eq!(out.casts[0].skill, "quake");
