@@ -4,20 +4,19 @@
 <dict>
   <key>Label</key><string>io.aiocean.arena-watchdog</string>
 
-  <!-- the arena's watchdog (projects/arena crates/arena-telemetry examples/watchdog.rs, ops/observe/README.md,
-       "Alerts"): every five minutes it checks the live server and the telemetry store, writes a row a check to the
-       stream arena_alerts, a line to arena-alerts.log, and a notification when a check starts failing -->
+  <!-- the arena's watchdog (projects/arena crates/arena-telemetry examples/watchdog.rs, ops/telemetry/README.md,
+       "The watchdog"): every five minutes it checks the live server's telemetry files, writes a watchdog.check line a
+       check to telemetry/arena-watchdog/, a line to arena-alerts.log, and a notification when a check starts failing -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/firegroup/services/arena/observe/watchdog</string>
+    <string>/Users/firegroup/services/arena/watchdog/watchdog</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
     <key>HOME</key><string>/Users/firegroup</string>
     <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin</string>
-    <!-- the store; the credentials are read from the file, never put here -->
-    <key>ARENA_OTLP_ENDPOINT</key><string>http://127.0.0.1:5080/api/default</string>
-    <key>ARENA_OTLP_AUTH_FILE</key><string>/Users/firegroup/projects/game-factory/ops/arena/observe.env</string>
+    <!-- the telemetry files it reads (the live server's) and writes (its own) -->
+    <key>ARENA_TELEMETRY_DIR</key><string>/Users/firegroup/services/arena/telemetry</string>
   </dict>
   <key>StartInterval</key><integer>300</integer>
   <key>RunAtLoad</key><true/>

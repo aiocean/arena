@@ -25,8 +25,8 @@ resolve it there.
 | is a live match on the wire: the postcard frames a server publishes and a page folds, how they lie on MoQ | `crates/arena-link` (pure; `docs/specs/2026-11-17-live-matches-design.md`) |
 | fights matches and publishes them live to the MoQ relay, or checks a published match by replaying it | `crates/arena-server` (`arena-server`, `arena-watch`); run on the kiosk by `io.aiocean.arena-live` (game-factory `backend/arena`). Who sits in a live corner is `match_run::Bot` and the seat factory `Seats` (the house AI on ONNX against brain, first, aggressive, turtle in turn; its seat from the seed): a new kind of bot (an uploaded module) is a new `Bot` there |
 | checks the live site after a deploy: the page, the game, the relay's live match, the HUD, the fight moving, the page's build against the server's | `crates/arena-smoke` (a headless Chrome; the page shows it `window.__arena.live` and `rules`, set in `crates/arena-game/src/live.rs`, and `window.__arena.build`, stamped into `index.html` by `site/build.sh`) |
-| sets up a process's logs, traces and metrics, exports them over OTLP, or turns a duel step into telemetry events (the duel observer: it only reads) | `crates/arena-telemetry` (`init`, `duel::Observer`; a process calls `init` once in `main`, game code only uses `tracing` on the `arena::*` targets) |
-| runs or documents the telemetry store (OpenObserve), its streams, its retention and its queries | `ops/observe` (`compose.yaml`, `README.md`) |
+| sets up a process's logs, spans and metrics, writes them as JSON lines to the telemetry files, reads them back (the query tool, the watchdog), or turns a duel step into telemetry events (the duel observer: it only reads) | `crates/arena-telemetry` (`init`, `read`, `duel::Observer`, examples `query` and `watchdog`; a process calls `init` once in `main`, game code only uses `tracing` on the `arena::*` targets) |
+| documents the telemetry files (`ARENA_TELEMETRY_DIR`, `~/services/arena/telemetry` on the kiosk), their lines, their retention, the ready queries and the watchdog | `ops/telemetry` (`README.md`, the watchdog's plist) |
 | records a corner's decisions or replays them (the server's side and the page's) | `crates/arena-duel` (`seat::Recorder`, `seat::Replay`) |
 | watches a live match in the game: the subscription, the replay seats, stepping only as far as the frames reach | `crates/arena-game` (`live.rs`, `rules.rs`) |
 | trains, exports or loads a model (ONNX) in Python | `train/` |
@@ -161,17 +161,15 @@ and checks the page and the game's wasm load with no console errors, page errors
 assets, `live.json` names a relay, the page reaches it over WebTransport and match frames come (a page on other rules than the
 server's fails here as stale), the HUD is painted and the match moves, and the page's build (`window.__arena.build`, the
 commit `site/build.sh` stamped, "+dirty" for a tree with changes, also in the footer and in `live.json`) against the
-server's (the `build` on its newest `match.start` in the telemetry store, so with `ARENA_OTLP_ENDPOINT` set): it fails
+server's (the `build` on its newest `match.start` in the server's telemetry files, `~/services/arena/telemetry` or `ARENA_TELEMETRY_DIR`): it fails
 only when their rules builds differ, and other commits on one rules build (a docs-only site deploy) are a `WARN` line. PASS/FAIL a check, `screenshot.png` and `summary.json` in `--out` (default `target/arena-smoke`),
 exit 0 only when all pass; `--review` adds the run to the review page (last 30 runs). The game gets a fixed 30 s to
 start (never stretched for load); if it does not start, and only then, the whole run is tried once more, and it fails
 only when both attempts fail (the report and the review say it was retried and why). Each run records the time to the
-game starting and to the first live frame and the machine's load averages, and with `--telemetry-otlp` sends them to
-the telemetry store as `smoke.run` (stream `arena_smoke`, dashboard "Arena: smoke"; `ops/observe/README.md`):
+game starting and to the first live frame and the machine's load averages, and with `--telemetry` writes them to
+the telemetry files as `smoke.run` (`<dir>/arena-smoke/<day>.jsonl`; the queries in `ops/telemetry/README.md`):
 
 ```
-ARENA_OTLP_ENDPOINT=http://127.0.0.1:5080/api/default \
-ARENA_OTLP_AUTH_FILE=/Users/firegroup/projects/game-factory/ops/arena/observe.env \
-  cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry-otlp
+cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry
 # https://arena.aiocean.io/review/smoke/
 ```

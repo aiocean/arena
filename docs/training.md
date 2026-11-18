@@ -195,7 +195,7 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --seed
 The ladder plays seeds 1-150, each both ways (in seat 0, then in seat 1) for 3 rounds, rounds cut at 120 s. The
 bot (the house AI unless `--onnx` or `--bot` names another) plays the balanced style against the brain, the first mind and the scripts; only the mirror draws styles. A cut
 ends that fight and shows in the `cut` column; win rates count finished rounds. `--rounds` and `--limit` change the
-rounds a fight and the seconds a round; `--telemetry-otlp` sends each row to the telemetry store (`ops/observe`). It
+rounds a fight and the seconds a round; `--telemetry-dir DIR` writes each row to the telemetry files (`ops/telemetry`). It
 prints:
 
 | Match | Bar |

@@ -80,7 +80,7 @@ above.
 | `crates/arena-game` | The game, made with Bevy: the fight on screen (sprites, spell effects, light, feel, HUD) and a bot in each corner, as a native app (`cargo run -p arena-game`) and on the page (wasm), where it also watches the server's live matches (`live.rs`). |
 | `crates/arena-link` | A live match on the wire: the frames the server publishes and a page folds, as they lie on the MoQ relay, and `RULES_VERSION`, which the page and the server must share. |
 | `crates/arena-server` | Fights the live matches, the house AI (its ONNX model, natively) against the built-in minds in turn, and publishes them to the MoQ relay (`arena-server`; `--version` prints its commit), and replays a published match to check it (`arena-watch`). |
-| `crates/arena-telemetry` | Logs, traces and metrics over OTLP, and the duel observer that turns a fight's steps into telemetry events. The store is OpenObserve (`ops/observe`). |
+| `crates/arena-telemetry` | Logs, spans and metrics as JSON lines in local files (`ARENA_TELEMETRY_DIR`), the query tool and the watchdog that read them, and the duel observer that turns a fight's steps into telemetry events (`ops/telemetry`). |
 | `crates/arena-smoke` | The smoke test of the live site, run after each deploy: a headless Chrome checks the page, the game, the live match and the HUD, and the page's build (`window.__arena.build`, stamped by `site/build.sh`, shown in the home page's footer) against the server's. |
 | `crates/arena-duel/weights/policy.onnx` | The house AI as ONNX, the one the site plays (as the module `bots/onnx` builds from it). |
 | `crates/arena-duel-py` | The rules as a Python module (`import arena_duel`): many duels stepped in parallel for a trainer, bouts and the entry bar. |
@@ -88,7 +88,7 @@ above.
 | `bots/onnx` | The template that builds any ONNX policy into a bot module (its own workspace, wasm32 only). |
 | `train/` | The PPO trainer that made the house AI: the network (any size), the opponents it trains against, export to ONNX. |
 | `art/` | How the fighters are drawn (`art/README.md`, the art direction), each character's PixelLab export and tools, and the spell effects drawn by an image model (`art/vfx/<name>/`: prompts, pictures, frames, `motion.json`). |
-| `ops/observe` | The telemetry store (OpenObserve): how it runs, its streams, retention and queries. |
+| `ops/telemetry` | The telemetry files: where they lie, a line's shape, retention, the ready queries, the watchdog. |
 | `docs/` | The docs above, and the design history (`docs/specs`, `docs/plans`). |
 | `site/` | The arena's site: the duel full-screen with a slot in each corner for a player's bot module, and the docs as pages. `site/build.sh` builds it into `site/dist`. |
 
