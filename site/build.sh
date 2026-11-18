@@ -3,7 +3,8 @@
 # crates/arena-game built for the browser, at dist/game/<hash>, its pictures at dist/game/assets-<hash>) and the house
 # bot module (dist/bots/policy.wasm, built from the house AI's ONNX model with the bots/onnx template, as a player builds
 # theirs). Everything under dist/game is named by its content and kept by browsers and the CDN for a year
-# (dist/game/_headers); the pages, arena.js (which names the game's folder) and live.json are checked on every visit.
+# (dist/game/_headers); the pages and live.json are checked on every visit. arena.js lives in the game's folder too: the
+# CDN keeps a .js for hours whatever the server says, and an arena.js kept past a deploy named a folder gone (a 404).
 # Usage: site/build.sh            (from anywhere)
 #        site/build.sh --serve    (build, then serve dist on http://127.0.0.1:8771/)
 set -euo pipefail
@@ -41,8 +42,11 @@ staged="$out/game/staged"
 wasm-bindgen --target web --no-typescript --out-dir "$staged" "$target/wasm32-unknown-unknown/web/arena_game.wasm"
 wasm-opt -Oz --strip-debug --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
   "$staged/arena_game_bg.wasm" -o "$staged/arena_game_bg.wasm"
-# the game's wasm and its JS in a folder named by their content (the JS finds the wasm beside itself)
-game="$(cat "$staged/arena_game_bg.wasm" "$staged/arena_game.js" | hash)"
+# arena.js beside the game it starts, so the page's one unhashed name is index.html, which no cache keeps
+sed "s#\"../game/arena_game.js\"#\"./arena_game.js\"#" "$here/assets/arena.js" > "$staged/arena.js"
+grep -q '"./arena_game.js"' "$staged/arena.js" || { echo "site/build.sh: arena.js does not import the game" >&2; exit 1; }
+# the game's wasm, its JS and arena.js in a folder named by their content (the JS finds the wasm beside itself)
+game="$(cat "$staged/arena_game_bg.wasm" "$staged/arena_game.js" "$staged/arena.js" | hash)"
 mv "$staged" "$out/game/$game"
 cp -R "$pictures" "$out/game/$assets"
 printf '/*\n  Cache-Control: public, max-age=31536000, immutable\n' > "$out/game/_headers"
@@ -58,19 +62,17 @@ for page in "$here"/*.html; do
     -e "s/@ARENA_COMMIT@/$commit/g" -e "s/@ARENA_DIRTY@/$dirty/g" -e "s/@ARENA_STAMP@/$stamp/g" \
     "$page" > "$out/$(basename "$page")"
 done
-sed -i.bak "s#\"game/arena_game#\"game/$game/arena_game#g" "$out/index.html" && rm "$out/index.html.bak"
+sed -i.bak -e "s#\"game/arena_game#\"game/$game/arena_game#g" -e "s#\"assets/arena.js\"#\"game/$game/arena.js\"#" \
+  "$out/index.html" && rm "$out/index.html.bak"
 # where the page watches the server's live matches (crates/arena-server): the relay's URL with a subscribe-only token,
 # from the environment, never from the repo. Without it the page fights on its own, as before.
 if [[ -n "${ARENA_LIVE_URL:-}" ]]; then
   printf '{"url":"%s","build":{"commit":"%s","dirty":%s}}\n' "$ARENA_LIVE_URL" "$commit" "$dirty" > "$out/live.json"
 fi
-cp "$here"/assets/arena.js "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
+cp "$here"/assets/arena.css "$here"/assets/menu.js "$here"/assets/site.css "$out/assets/"
 # the site's icon at its root: browsers ask for /favicon.ico on every page that names none
 cp "$here"/assets/favicon.ico "$here"/assets/favicon.svg "$out/"
-sed -i.bak "s#\"../game/arena_game.js\"#\"../game/$game/arena_game.js\"#" "$out/assets/arena.js" && rm "$out/assets/arena.js.bak"
-for f in "$out/assets/arena.js" "$out/index.html"; do
-  grep -q "game/$game/arena_game.js" "$f" || { echo "site/build.sh: $f does not name the game's folder" >&2; exit 1; }
-done
+grep -q "\"game/$game/arena.js\"" "$out/index.html" || { echo "site/build.sh: index.html does not name the game's folder" >&2; exit 1; }
 # the big files compressed beside themselves: the server (game-factory backend/web, games-server) sends a file's .br to
 # a browser that takes brotli, else its .gz. Brotli at its best is a third smaller than gzip on the game's wasm (4.5 MB
 # against 6.7 MB). Without a `brotli` on the machine the site ships gzip only.
