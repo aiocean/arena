@@ -171,6 +171,46 @@ impl Fight {
             (_, Delivery::Area { .. }) => play::radius(AREA_RADIUS, &built.table),
             _ => play::radius(DEVICE_RADIUS, &built.table),
         };
+        let mut hit = built.hit.clone();
+        scale_hit(&mut hit, sp.damage);
+        let blow = (hit, built.control, Powers::of_built(built));
+        self.put(me, slot, sp, x, blow, (inner, reach, radius));
+    }
+
+    /// Lôi Bạo Trễ: blow `p`, the end of a projectile of a skill under the support, is stopped at `x` by a ward or a
+    /// unit and stays there as its caster's mine (`device::STOPPED_MINE`), striking with the stopped blow times
+    /// `device::STOPPED_SHARE` in a mine's blast (`DEVICE_RADIUS`), set off as any mine (`detonate`).
+    pub(crate) fn lay_stopped(&mut self, p: &Payload, x: f64) {
+        let sp = device::STOPPED_MINE;
+        let mut hit = p.hit.clone();
+        scale_hit(&mut hit, sp.damage);
+        let reach = self.f[p.by].slots[p.slot].range;
+        let powers = Powers::NONE;
+        let shape = (Delivery::Projectile, reach, DEVICE_RADIUS);
+        self.put(
+            p.by,
+            p.slot,
+            sp,
+            x.clamp(WALL, FIELD - WALL),
+            (hit, p.control, powers),
+            shape,
+        );
+    }
+
+    /// Seat `me`'s `slot` makes what `sp` says at `x`, each striking with `blow` (its hit, its control factor, its
+    /// projectile powers) as `shape` says (its inner delivery, reach and radius): into its group (made on the
+    /// first), the oldest past the cap removed.
+    fn put(
+        &mut self,
+        me: usize,
+        slot: usize,
+        sp: device::Spawn,
+        x: f64,
+        blow: (Hit, f64, Powers),
+        shape: (Delivery, f64, f64),
+    ) {
+        let (hit, control, powers) = blow;
+        let (inner, reach, radius) = shape;
         let gi = match self
             .groups
             .iter()
@@ -188,8 +228,6 @@ impl Fight {
         };
         self.groups[gi].placed.spawn = sp;
         let made = self.groups[gi].placed.place(Point::new(x, 0.0)).made;
-        let mut hit = built.hit.clone();
-        scale_hit(&mut hit, sp.damage);
         for id in made {
             let uid = self.next_uid;
             self.next_uid += 1;
@@ -202,17 +240,18 @@ impl Fight {
                 x,
                 c: body(sp.life),
                 hit: hit.clone(),
-                control: built.control,
+                control,
                 inner,
                 reach,
                 radius,
-                powers: Powers::of_built(built),
+                powers,
                 next_strike: self.time + MINION_EVERY / 2.0,
             });
         }
         self.sync_units();
         let g = self.f[me].slots[slot].gem;
-        self.note(|_| format!("{} makes {:?} ({}) at {:.1}", SEAT[me], sp.kind, g.id, x));
+        let kind = sp.kind;
+        self.note(|_| format!("{} makes {:?} ({}) at {:.1}", SEAT[me], kind, g.id, x));
     }
 
     /// A blow of unit `u`, due now, from where it stands: `target` when it must land there.
@@ -246,6 +285,7 @@ impl Fight {
                 knockback: 0.0,
                 depth: 0,
                 from_unit: Some(unit.uid),
+                mines: false,
             },
         });
     }
@@ -373,6 +413,7 @@ impl Fight {
             star: self.rng.next_f64(),
         };
         let by = p.by;
+        let at = self.units[i].x;
         let out = {
             let striker = if p.from_unit.is_some() {
                 None
@@ -416,6 +457,10 @@ impl Fight {
             )
         });
         self.after_unit_hurt(i, Some(by));
+        // a projectile spent on the unit stays there as a mine
+        if p.mines {
+            self.lay_stopped(&p, at);
+        }
     }
 
     /// Unit `i` took damage: its device's life follows; at none it is destroyed.

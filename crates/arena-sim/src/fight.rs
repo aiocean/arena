@@ -90,6 +90,9 @@ pub(crate) struct Payload {
     /// Struck by a unit (a totem's cast, a trap, a mine, a minion's blow): no striker's cultivator, no gains, no
     /// no striker events.
     pub(crate) from_unit: Option<u32>,
+    /// Lôi Bạo Trễ: a fighter's projectile of a skill under the support; on a landing blow, the one its shot ended
+    /// on, which stays as a mine where a ward or a unit stops it (`Fight::lay_stopped`).
+    pub(crate) mines: bool,
 }
 
 /// What a blow lands on: a fighter, or a unit by its `Unit::uid`.
@@ -925,6 +928,11 @@ impl Fight {
                     knockback,
                     depth,
                     from_unit: None,
+                    mines: delivery == Delivery::Projectile
+                        && self.f[me].slots[slot]
+                            .supports
+                            .iter()
+                            .any(|s| s.behaviours.contains(&Behaviour::MineOnBlock)),
                 },
             });
         }
@@ -965,10 +973,13 @@ impl Fight {
                     let ens = self.enemies(s.payload.by, true);
                     let targets: Vec<Target> = ens.iter().map(|e| e.1).collect();
                     let st = s.flight.step(DT, &targets);
-                    for k in &st.strikes {
+                    let last = st.strikes.len();
+                    for (i, k) in st.strikes.iter().enumerate() {
                         if let Some(&(t, _)) = ens.iter().find(|e| e.1.id == k.target) {
                             let mut p = s.payload.clone();
                             p.hit = k.blow(&p.hit);
+                            // only the blow the shot is spent on can leave it as a mine
+                            p.mines = p.mines && s.flight.done && i + 1 == last;
                             landing.push((p, t));
                         }
                     }
@@ -1112,6 +1123,9 @@ impl Fight {
             self.queue
                 .push(Event::new(EventKind::Blocked, on).against(by));
             self.note(|_| format!("{}'s ward stops {}", SEAT[on], gem.id));
+            if p.mines {
+                self.lay_stopped(&p, self.f[on].x);
+            }
             return;
         }
         let mut hit = p.hit;

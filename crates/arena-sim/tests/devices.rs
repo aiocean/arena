@@ -236,3 +236,75 @@ fn a_chain_jumps_from_the_foe_to_its_minion() {
     );
     assert!(f.f[0].report.skills[slot].unit_damage > 0.0);
 }
+
+/// Lôi Bạo Trễ as the duel has it: a projectile a ward stops stays as its caster's mine, which goes off on the foe
+/// standing in it; with no ward the bolt lands as before and leaves nothing.
+#[test]
+fn a_warded_delayed_thunder_bolt_stays_as_a_mine_that_goes_off() {
+    let run = |supports: &'static [&'static str], ward: u8| {
+        let mut f = Fight::new(5, &holding(&[("fireball", supports)]), &random(6), false);
+        still(&mut f, 3.0, 6.0);
+        f.f[1].ward = ward;
+        f.f[1].ward_left = 10.0;
+        cast(&mut f, 0, "fireball");
+        let slot = slot_of(&f, 0, "fireball");
+        let mut laid = 0;
+        for _ in 0..(2.0 / DT) as usize {
+            f.step();
+            laid = laid.max(f.units_of(0, Kind::Mine).count());
+        }
+        let line = &f.f[0].report.skills[slot];
+        (
+            laid,
+            line.device_blows,
+            line.damage,
+            f.units_of(0, Kind::Mine).count(),
+        )
+    };
+    let (laid, blows, damage, left) = run(&["delayedthunder"], 1);
+    assert_eq!(laid, 1, "the warded bolt stays as a mine");
+    assert_eq!(left, 0, "and goes off");
+    assert!(blows >= 1 && damage > 0.0);
+    let (laid, blows, damage, _) = run(&[], 1);
+    assert_eq!(
+        (laid, blows),
+        (0, 0),
+        "a plain bolt into a ward leaves nothing"
+    );
+    assert_eq!(damage, 0.0);
+    let (laid, _, damage, _) = run(&["delayedthunder"], 0);
+    assert_eq!(laid, 0, "an unstopped bolt leaves nothing");
+    assert!(damage > 0.0);
+}
+
+/// A projectile spent on a minion stays as a mine where the minion stood.
+#[test]
+fn a_delayed_thunder_bolt_spent_on_a_minion_stays_as_a_mine() {
+    let mut f = Fight::new(
+        5,
+        &holding(&[("fireball", &["delayedthunder"])]),
+        &holding(&[("ghostsummon", &[])]),
+        false,
+    );
+    still(&mut f, 3.0, 9.0);
+    cast(&mut f, 1, "ghostsummon");
+    while f.units_of(1, Kind::Minion).count() == 0 {
+        f.step();
+    }
+    cast(&mut f, 0, "fireball");
+    let mut at = None;
+    for _ in 0..(1.0 / DT) as usize {
+        let minion = f.units_of(1, Kind::Minion).next().map(|u| u.x);
+        f.step();
+        if at.is_none()
+            && let Some(m) = f.units_of(0, Kind::Mine).next()
+        {
+            at = Some((m.x, minion));
+        }
+    }
+    let (mine, minion) = at.unwrap_or_else(|| unreachable!("the bolt stays as a mine"));
+    assert!(
+        minion.is_some_and(|x| (x - mine).abs() < 0.5),
+        "{mine} {minion:?}"
+    );
+}
