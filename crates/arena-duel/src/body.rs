@@ -87,9 +87,12 @@ pub struct BodySpec {
     pub bounce: f64,
     /// Falling faster than this when it lands, a fighter's landing is felt.
     pub hard_landing: f64,
-    /// How far a blow that keeps the target on its feet pushes it, as a speed; a throwing one pushes
+    /// How far a blow that keeps the target on its feet pushes it, as a speed: `knockback`, and `knockback_per` more
+    /// for each point of the blow's power, up to `knockback_max` (`Body::push`); a throwing one pushes
     /// `launch_knockback` of it.
     pub knockback: f64,
+    pub knockback_per: f64,
+    pub knockback_max: f64,
     pub launch_knockback: f64,
     /// Bounced off the arena's edge, a body keeps this share of its speed.
     pub wall_keep: f64,
@@ -143,6 +146,8 @@ impl Default for BodySpec {
             bounce: 80.0,
             hard_landing: 140.0,
             knockback: 130.0,
+            knockback_per: 6.0,
+            knockback_max: 220.0,
             launch_knockback: 1.7,
             wall_keep: 0.5,
             soft_landing: 40.0,
@@ -518,8 +523,16 @@ impl Body {
             self.launch(blow.power, blow.dir, heavy);
         } else {
             self.stun = self.spec.hitstun_base + blow.power * self.spec.hitstun_per;
-            self.vx += blow.dir * self.spec.knockback;
+            self.vx += blow.dir * self.push(blow.power);
         }
+    }
+
+    /// The speed a blow of `power` pushes the body away at: a bigger blow pushes further, to a most.
+    pub fn push(&self, power: f64) -> f64 {
+        min(
+            self.spec.knockback + power * self.spec.knockback_per,
+            self.spec.knockback_max,
+        )
     }
 
     /// Throw it off its feet: up into the air from a heavy blow, a little pop from a light one that caught it in
@@ -531,7 +544,7 @@ impl Body {
         };
         let k = libm::pow(self.spec.juggle_decay, f64::from(juggle));
         self.vx += dir
-            * self.spec.knockback
+            * self.push(power)
             * (if heavy {
                 self.spec.launch_knockback
             } else {
@@ -850,23 +863,15 @@ impl Body {
     }
 }
 
-/// Two bodies cannot stand in one place: overlapping at the same height each is pushed half the overlap apart,
-/// and neither keeps walking into the other. One far enough above the other (all but the last 6 pixels of the lower
-/// one's height) passes over it, and one on the floor is stepped over. Each keeps its own half width and room, and
-/// its own distance from the arena's edges. The game calls it only while both fighters have life left.
-pub fn separate(a: &mut Body, b: &mut Body, arena: &Arena) {
-    let lower = if a.air <= b.air { &a.spec } else { &b.spec };
-    if a.floored() || b.floored() || (a.air - b.air).abs() >= lower.body - 6.0 {
+/// Two bodies cannot stand in one place: `overlap` farther apart along x than they stand (`b` on side `dir` of `a`,
+/// as `collide::bodies_overlap` works it out on their hurtboxes), each is pushed half of it, and neither keeps
+/// walking into the other; against a wall the other takes the rest. One on the floor is stepped over. Each keeps
+/// its own distance from the arena's edges. The rules call it only while both fighters have life left.
+pub fn separate(a: &mut Body, b: &mut Body, arena: &Arena, overlap: f64, dir: f64) {
+    if a.floored() || b.floored() || overlap <= 0.0 {
         return;
     }
-    let personal = a.spec.half_width + a.spec.room + b.spec.half_width + b.spec.room;
-    let dx = b.x - a.x;
-    let overlap = personal - dx.abs();
-    if overlap <= 0.0 {
-        return;
-    }
-    // exactly on top of each other: part them along the way they face
-    let dir = if dx != 0.0 { js_sign(dx) } else { a.face };
+    let personal = dir * (b.x - a.x) + overlap;
     let (a_lo, a_hi) = (
         arena.left + a.spec.half_width,
         arena.right - a.spec.half_width,
@@ -878,7 +883,7 @@ pub fn separate(a: &mut Body, b: &mut Body, arena: &Arena) {
     a.x = clamp(a.x - (dir * overlap) / 2.0, a_lo, a_hi);
     b.x = clamp(b.x + (dir * overlap) / 2.0, b_lo, b_hi);
     // against a wall one side cannot give: the other takes the rest
-    let left = personal - (b.x - a.x).abs();
+    let left = personal - dir * (b.x - a.x);
     if left > 0.0 {
         if a.x == a_lo || a.x == a_hi {
             b.x = clamp(b.x + dir * left, b_lo, b_hi);

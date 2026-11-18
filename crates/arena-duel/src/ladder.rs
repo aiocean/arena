@@ -44,6 +44,9 @@ pub struct Record {
     pub attacks: u32,
     /// The mean distance between the fighters, game pixels, over every tick of a round.
     pub mean_distance: f64,
+    /// The distance between the fighters' centres over every tick of a round, counted by whole game pixels (`gaps[d]`
+    /// ticks at `d` pixels apart): how near they fight (`median_gap`, `within`).
+    pub gaps: Vec<u64>,
     /// What each seat (0 left, 1 right) did, whoever sat in it.
     pub seats: [SeatLog; 2],
     /// Rounds won by each look (Vương Lâm, Thất Thải), whoever fought in it: the looks are drawn apart from the seats
@@ -158,6 +161,30 @@ impl Record {
     /// The share of its decisions that cast a spell that hurts.
     pub fn attack_share(&self) -> f64 {
         share(self.attacks, self.decisions)
+    }
+
+    /// The median distance between the fighters' centres, game pixels, over every tick of a round.
+    pub fn median_gap(&self) -> f64 {
+        let total: u64 = self.gaps.iter().sum();
+        let mut seen = 0;
+        for (d, n) in self.gaps.iter().enumerate() {
+            seen += n;
+            if 2 * seen >= total && total > 0 {
+                return d as f64;
+            }
+        }
+        0.0
+    }
+
+    /// The share of the ticks of a round the fighters' centres were less than `px` game pixels apart.
+    pub fn within(&self, px: usize) -> f64 {
+        let total: u64 = self.gaps.iter().sum();
+        let near: u64 = self.gaps.iter().take(px).sum();
+        if total == 0 {
+            0.0
+        } else {
+            near as f64 / total as f64
+        }
     }
 
     pub fn mean_length(&self) -> f64 {
@@ -444,7 +471,13 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                     }
                     continue;
                 }
-                distance += (s.fighters[0].body.x - s.fighters[1].body.x).abs();
+                let gap = (s.fighters[0].body.x - s.fighters[1].body.x).abs();
+                distance += gap;
+                let d = gap as usize;
+                if r.gaps.len() <= d {
+                    r.gaps.resize(d + 1, 0);
+                }
+                r.gaps[d] += 1;
                 ticks += 1;
                 if s.time - started > m.limit {
                     r.timeouts += 1;

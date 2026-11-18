@@ -714,8 +714,46 @@ fn blink(state: &mut State, me: usize, sp: &'static Spell, target: Option<f64>) 
         )
     };
     state.fighters[me].body.x = to;
+    if !sp.swap {
+        land_clear(state, me, mx);
+    }
+    let to = state.fighters[me].body.x;
     cast_once(state, me, fx, to, g - mair, PlayOpts::default());
     state.queue.push(Event::new(EventKind::Blinked, me));
+}
+
+/// Fighter `me`, blinked from `from`, never lands inside its foe's body: it is pushed clear on the side of the foe
+/// it landed on (the side it came from when it landed on the foe's centre), or with a wall there, lands clear on the
+/// other side.
+fn land_clear(state: &mut State, me: usize, from: f64) {
+    let foe = 1 - me;
+    let (lo, hi) = {
+        let spec = &state.fighters[me].body.spec;
+        (state.left + spec.half_width, state.right - spec.half_width)
+    };
+    let fx = state.fighters[foe].body.x;
+    let want = state.fighters[me].body.x;
+    let landed = if want == fx {
+        or_one(js_sign(from - fx))
+    } else {
+        js_sign(want - fx)
+    };
+    for (side, start) in [(landed, want), (-landed, fx)] {
+        state.fighters[me].body.x = start;
+        let need = crate::collide::overlap_x(
+            &crate::frames::hurtboxes(state, foe),
+            &crate::frames::hurtboxes(state, me),
+            side,
+            crate::collide::body_gap(state),
+        );
+        let at = start + side * need;
+        if (lo..=hi).contains(&at) {
+            state.fighters[me].body.x = at;
+            return;
+        }
+    }
+    // no room either side: where it aimed, and the bodies are kept apart as ever
+    state.fighters[me].body.x = want;
 }
 
 /// Put a new shot of seat `p.by` in flight; returns its id.

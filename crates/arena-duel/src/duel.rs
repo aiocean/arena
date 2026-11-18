@@ -368,18 +368,19 @@ fn turn(state: &mut State, seats: &mut Seats, me: usize) {
     run_queue(state);
 }
 
-/// Two living bodies never overlap.
+/// Two living bodies never overlap: their hurtboxes are kept `collide::body_gap` apart.
 fn keep_apart(mut state: ResMut<State>) {
     let state = state.as_mut();
     let alive = state.fighters[0].alive() && state.fighters[1].alive();
-    let [a, b] = &mut state.fighters;
     if alive {
+        let (dir, overlap) = crate::collide::bodies_overlap(state);
         let arena = crate::body::Arena {
             left: state.left,
             right: state.right,
             top: state.top,
         };
-        crate::body::separate(&mut a.body, &mut b.body, &arena);
+        let [a, b] = &mut state.fighters;
+        crate::body::separate(&mut a.body, &mut b.body, &arena, overlap, dir);
     }
 }
 

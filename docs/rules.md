@@ -124,6 +124,15 @@ they are tuned by the simulator's win rates.
 breaks a cast it gathers; a root stops walking and blinking; a lost soul (thất hồn) silences, so only attacks
 answer. Grit shortens each hard control after the last (design 5.2).
 
+**Knockback** (owner, 2026-11-18, RULES 22): a blow that deals damage pushes its target away from where it came
+from: a bolt or an orb along its flight, a blast, a zone, a field or a unit's burst away from its centre. The push is a
+speed that slides out on the floor (it dies away 6 times a second, so it carries about a sixth of it): 520 pixels a
+second, 24 more for each point of the blow's power (what it dealt over `data::POWER`), at most 880
+(`BodySpec::knockback`, `knockback_per`, `knockback_max`; `Body::push`). A light blow (power 5) slides its target
+about 107 pixels, a blow of power 15 or more about 147. A blow heavy enough to throw (power 12 and up) pushes 1.7
+times as hard and throws the fighter up as before, each juggle less; a fighter thrown into a wall bounces off it with
+half its speed. Nothing pushes a fighter already lying on the floor, or inside its invincibility.
+
 Supports' **triggers** (cast on crit, when hurt, when the shield breaks...) cast at once at the foe, through the
 damage system's event queue.
 
@@ -163,8 +172,18 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
   wind-up ends, tested against the foe's hurtboxes (`unit::strike_hits`). A foe behind the caster is not struck.
 - **A bolt leaves the casting hand** as drawn on the cast clip's active frame (`frames::cast_hand`); a clip with no
   hand out ahead, or a unit, casts from its shoulders, 152 up and 32 ahead.
-- The body's own box (48 wide, 228 tall, 160 ducking: `data::HD_BODY`, `HD_DUCK`) stays for walking, walls and two
-  bodies kept apart, and stands in for a frame with no data.
+- The body's own box (48 wide, 228 tall, 160 ducking: `data::HD_BODY`, `HD_DUCK`) stays for walking and walls, and
+  stands in for a frame with no data.
+- **Two bodies never overlap** (owner, 2026-11-18, RULES 22). Each tick after both turns the fighters' hurtboxes, as
+  the frames they show, are tested against each other on parry, each grown by half a gap of 12 pixels
+  (`collide::body_gap`, the body's `room`): where any two overlap the fighters are pushed apart along x, each half
+  the way, until the boxes stand that gap clear, and neither keeps walking into the other (`collide::bodies_overlap`,
+  `body::separate`). Against a wall the other gives the whole way. One fighter far enough above the other that no
+  boxes meet passes over it, and a fighter lying on the floor is stepped over. A standing pair of fighters is about
+  85 pixels apart, centre to centre, at the closest (72 before RULES 22, when their boxes overlapped).
+- **A blink never lands inside the foe:** where it lands the boxes are tested as above, and it is pushed clear on the
+  side of the foe it aimed at (the side it came from when it aimed at the foe's centre); with a wall there, it lands
+  clear on the other side (`act::land_clear`). Trading places (a swap) is not moved.
 - Zones, fields, a blast's burst, a mine going off and a curse's reach strike the foe where its hurtboxes reach into
   their area, and a unit where its body does (a box its radius either side and twice it high, on the ground). A
   minion strikes as the qi burst does (`unit::MINION_BLOW`, its motion, whether or not a loadout holds it), a unit only inside the burst's box, as it strikes the

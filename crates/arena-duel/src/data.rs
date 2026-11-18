@@ -201,6 +201,8 @@ pub fn body_spec() -> BodySpec {
         bounce: d.bounce * UNIT,
         hard_landing: d.hard_landing * UNIT,
         knockback: d.knockback * UNIT,
+        knockback_per: d.knockback_per * UNIT,
+        knockback_max: d.knockback_max * UNIT,
         soft_landing: d.soft_landing * UNIT,
         ..d
     }

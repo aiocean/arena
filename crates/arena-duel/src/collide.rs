@@ -24,6 +24,56 @@ pub fn body(state: &State, f: usize) -> Vec<Shape> {
         .collect()
 }
 
+/// How much farther apart along x two sets of boxes must stand for none of `a`'s to overlap one of `b`'s with `gap`
+/// between them, `b` going on side `dir` of `a` (1 right, -1 left): 0 when they are clear. Each box is grown by half
+/// the gap and tested on parry; the boxes that overlap say how far.
+pub fn overlap_x(a: &[[f64; 4]], b: &[[f64; 4]], dir: f64, gap: f64) -> f64 {
+    let h = gap / 2.0;
+    let grown = |r: &[f64; 4]| Shape::rect([r[0] - h, r[1], r[2] + h, r[3]]);
+    let mut most: f64 = 0.0;
+    for p in a {
+        for q in b {
+            if overlap(&grown(p), &grown(q)) {
+                let need = if dir > 0.0 {
+                    p[2] + gap - q[0]
+                } else {
+                    q[2] + gap - p[0]
+                };
+                most = most.max(need);
+            }
+        }
+    }
+    most
+}
+
+/// How far apart two fighters keep: their hurtboxes this far clear of each other (`BodySpec::room`), so that the
+/// drawn figures, wider than the boxes inside them, barely touch.
+pub fn body_gap(state: &State) -> f64 {
+    let [a, b] = &state.fighters;
+    (a.body.spec.room + b.body.spec.room) / 2.0
+}
+
+/// The side fighter 1 stands on from fighter 0 (1 right, -1 left; when one is on top of the other, the way 0
+/// faces), and how much farther apart along x their bodies must stand not to overlap (`overlap_x`, `body_gap`).
+pub fn bodies_overlap(state: &State) -> (f64, f64) {
+    let [a, b] = &state.fighters;
+    let dx = b.body.x - a.body.x;
+    let dir = if dx > 0.0 {
+        1.0
+    } else if dx < 0.0 {
+        -1.0
+    } else {
+        a.body.face
+    };
+    let need = overlap_x(
+        &crate::frames::hurtboxes(state, 0),
+        &crate::frames::hurtboxes(state, 1),
+        dir,
+        body_gap(state),
+    );
+    (dir, need)
+}
+
 /// Does `s` overlap fighter `f`'s body?
 pub fn touches(state: &State, f: usize, s: &Shape) -> bool {
     body(state, f).iter().any(|h| overlap(h, s))

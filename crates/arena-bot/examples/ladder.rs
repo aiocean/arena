@@ -91,8 +91,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("ladder: {seeds} seeds x both ways x {rounds} rounds, rounds cut at {limit} s\n");
     println!(
-        "{:<34} {:>7} {:>9} {:>7} {:>7} {:>5} {:>6} {:>7} {:>6}",
-        "match", "win", "seat 0", "seat 1", "len s", "cut", "top", "attack", "dist"
+        "{:<34} {:>7} {:>9} {:>7} {:>7} {:>5} {:>6} {:>7} {:>6} {:>6} {:>6} {:>6}",
+        "match",
+        "win",
+        "seat 0",
+        "seat 1",
+        "len s",
+        "cut",
+        "top",
+        "attack",
+        "dist",
+        "median",
+        "<80",
+        "<40"
     );
     // each row: its name, its seats, and whether it is a mirror whose seats the telemetry compares
     let rows: Vec<(&str, Maker<'_>, Maker<'_>, bool)> = vec![
@@ -196,7 +207,7 @@ fn export_row(run: &str, name: &str, m: &Match, r: &Record) {
         win = r.win_rate(), seat0 = r.as_seat(0), seat1 = r.as_seat(1), won_0 = r.won[0], won_1 = r.won[1],
         lost_0 = r.lost[0], lost_1 = r.lost[1], round_seconds = r.mean_length(), timeouts = r.timeouts,
         top = top, top_share = r.most_used(), attack_share = r.attack_share(), distance = r.mean_distance,
-        "ladder.row");
+        median_gap = r.median_gap(), within_80 = r.within(80), within_40 = r.within(40), "ladder.row");
     for (seat, log) in r.seats.iter().enumerate() {
         let dealt = log.dealt();
         for (skill, k) in &log.skills {
@@ -221,7 +232,7 @@ fn print_row(name: &str, r: &Record) {
         .max_by_key(|(_, n)| **n)
         .map_or("-", |(k, _)| k.as_str());
     println!(
-        "{:<34} {:>7} {:>9} {:>7} {:>7.1} {:>5} {:>6} {:>7} {:>6.0}   top: {top}",
+        "{:<34} {:>7} {:>9} {:>7} {:>7.1} {:>5} {:>6} {:>7} {:>6.0} {:>6.0} {:>6} {:>6}   top: {top}",
         name,
         pct(r.win_rate()),
         pct(r.as_seat(0)),
@@ -231,6 +242,9 @@ fn print_row(name: &str, r: &Record) {
         pct(r.most_used()),
         pct(r.attack_share()),
         r.mean_distance,
+        r.median_gap(),
+        pct(r.within(80)),
+        pct(r.within(40)),
     );
 }
 

@@ -26,6 +26,7 @@ fn every_seed_is_fought_both_ways_and_counted() {
     assert!(r.decisions > 0 && r.choices.values().sum::<u32>() == r.decisions);
     assert!((0.0..=1.0).contains(&r.win_rate()) && (0.0..=1.0).contains(&r.most_used()));
     assert!(r.mean_distance > 0.0);
+    assert!(r.median_gap() > 0.0 && (0.0..=1.0).contains(&r.within(80)));
 }
 
 #[test]
