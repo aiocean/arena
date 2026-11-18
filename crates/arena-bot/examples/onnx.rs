@@ -13,6 +13,11 @@
 //!   `/tmp/arena-onnx-bot/repo`, a link to this clone, held under a lock while it builds.
 //! - source paths in panic locations: the clone's, the registry's and the toolchain's are remapped to fixed prefixes,
 //!   with the build's flags set here alone (`CARGO_ENCODED_RUSTFLAGS`), not from the environment or a config file.
+//!
+//! It is the one way to build the house module, and the profile it is run with does not matter: `cargo run` or
+//! `cargo run --release` give the same bytes, as the template is always built `--release` with its own profile, its
+//! own target dir and the flags above (the outer cargo's `CARGO_PROFILE_*`, rustflags and target dir are dropped).
+//! `site/build.sh` and a re-pin both go through it.
 
 use std::fs::File;
 use std::path::{Path, PathBuf};

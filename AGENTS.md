@@ -69,7 +69,8 @@ resolve it there.
   toolchain (the `onnx` example builds `bots/onnx` through the fixed link `/tmp/arena-onnx-bot/repo` with its own
   rustflags, paths remapped). `goldens/house_module.sha256` pins its bytes, `house_fight.rs` checks the built module
   against it, and arena-smoke's `module` check the deployed one. A new model, a change to `bots/onnx`, `arena-mind`,
-  tract or the toolchain re-pins it; a deploy that ships another module fails the smoke.
+  tract or the toolchain re-pins it; a deploy that ships another module fails the smoke. The `onnx` example is the one
+  way to build it, and either profile gives the same bytes (`cargo run` or `--release`: the template keeps its own).
 - Long training runs go on a desktop as launchd jobs, never on a laptop (`train/README.md`, "Training on a
   desktop").
 - Pixel is how the arena is shown, not how it is drawn (owner, 2026-11-17). Art is generated smooth, a clean
