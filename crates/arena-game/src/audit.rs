@@ -230,11 +230,11 @@ pub struct Report {
     pub art: usize,
     pub hit: usize,
     pub both: usize,
-    /// Median of the art's width and height over the shape's (none for a point).
+    /// Median of the art's width and height over the shape's (none for a point or a bolt's disc).
     pub scale: Option<(f64, f64)>,
     /// Median distance between the centres, over the shape's half size (a point's over 24 px).
     pub offset: Option<f64>,
-    /// For a point (a bolt): the share of ticks it lay inside the art.
+    /// For a point or a bolt's disc: the share of ticks its centre lay inside the art.
     pub inside: Option<f64>,
     /// The share of the art's ticks with no shape, and of the shape's ticks with no art.
     pub art_alone: f64,
@@ -734,7 +734,10 @@ fn report(
             .filter_map(|s| Some((s.art?, s.hit?.1)))
             .collect()
     };
-    let point = |s: &Shape| matches!(s, Shape::Circle { r, .. } if *r <= 0.0);
+    // a bolt (a disc, or a point when its motion has no drawn body) is long along its flight in its art, a head and a
+    // trail, where the rules test only its head: its thickness is the art's own (`bolt_bodies`), so it is measured by
+    // where it is, its centre inside the art, not by the art's box over the disc's
+    let point = |s: &Shape| matches!(s, Shape::Circle { .. });
     let areas: Vec<&(Box2, Shape)> = both.iter().filter(|(_, s)| !point(s)).collect();
     let points: Vec<&(Box2, Shape)> = both.iter().filter(|(_, s)| point(s)).collect();
     let scale = (!areas.is_empty()).then(|| {
@@ -765,8 +768,8 @@ fn report(
         let n = points
             .iter()
             .filter(|(a, s)| {
-                let b = shape_box(*s);
-                b[0] >= a[0] - 8.0 && b[0] <= a[2] + 8.0 && b[1] >= a[1] - 8.0 && b[1] <= a[3] + 8.0
+                let (x, y) = centre(shape_box(*s));
+                x >= a[0] - 8.0 && x <= a[2] + 8.0 && y >= a[1] - 8.0 && y <= a[3] + 8.0
             })
             .count();
         n as f64 / points.len() as f64

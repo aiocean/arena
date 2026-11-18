@@ -9,7 +9,7 @@
 //! rules' `air`).
 
 use crate::collide;
-use crate::data::Kind;
+use crate::data::{Kind, T};
 use crate::fighter::{Phase, State};
 use crate::shot::{ShotKind, orb_at};
 
@@ -124,10 +124,11 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         let sp = s.spell;
         let r = sp.radius.unwrap_or(0.0);
         let drawn = match &s.kind {
-            // shot::run_bolt: shot::overlaps at the bolt's place, give or take its radius (collide::probe)
-            ShotKind::Bolt { .. } => s
+            // shot::run_bolt: Flight::step sweeps the disc of its drawn body's radius (`Flight::radius`, in T; 0 a
+            // point) along its path; this is the disc at the bolt's place
+            ShotKind::Bolt { flight } => s
                 .bolt_at(state)
-                .map(|(x, y, _)| (Mark::Shot, collide::probe(x, y, r))),
+                .map(|(x, y, _)| (Mark::Shot, Shape::circle(x, y, flight.radius * T))),
             // shot::run, Orb: shot::overlaps(bx, -by, radius)
             ShotKind::Orb { .. } => {
                 let (bx, by) = orb_at(s);
