@@ -34,11 +34,11 @@ export function docPage(name, markdown) {
       if (tag === "h2") toc.push([id, text]);
       return `<${tag} id="${id}">${text}</${tag}>`;
     })
-    .replace(/href="(?:\.\/)?([a-z-]+)\.md(#[^"]*)?"/g, (m, doc, hash = "") => (DOCS.some(([n]) => n === doc) ? `href="${doc}.html${hash}"` : m))
+    .replace(/href="(?:\.\/)?([a-z-]+)\.md(#[^"]*)?"/g, (m, doc, hash = "") => (DOCS.some(([n]) => n === doc) ? `href="${doc}${hash}"` : m))
     .replace(/<table>/g, '<div class="table-wrap"><table>')
     .replace(/<\/table>/g, "</table></div>");
-  const menu = DOCS.map(([n, label]) => `<li><a href="${n}.html"${n === name ? ' aria-current="page"' : ""}>${label}</a></li>`).join("");
-  const pager = (d, dir) => (d ? `<a href="${d[0]}.html"${dir === "Next" ? ' style="text-align:right;margin-left:auto"' : ""}><small>${dir}</small>${d[1]}</a>` : "");
+  const menu = DOCS.map(([n, label]) => `<li><a href="${n}"${n === name ? ' aria-current="page"' : ""}>${label}</a></li>`).join("");
+  const pager = (d, dir) => (d ? `<a href="${d[0]}"${dir === "Next" ? ' style="text-align:right;margin-left:auto"' : ""}><small>${dir}</small>${d[1]}</a>` : "");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -57,9 +57,9 @@ export function docPage(name, markdown) {
     <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
       <a href="../#insert">Your bot</a>
-      <a href="rules.html"${name === "rules" ? ' aria-current="page"' : ""}>Rules</a>
-      <a href="training.html"${name === "training" ? ' aria-current="page"' : ""}>Train a bot</a>
-      <a href="tournament.html"${name === "tournament" ? ' aria-current="page"' : ""}>Tournament</a>
+      <a href="rules"${name === "rules" ? ' aria-current="page"' : ""}>Rules</a>
+      <a href="training"${name === "training" ? ' aria-current="page"' : ""}>Train a bot</a>
+      <a href="tournament"${name === "tournament" ? ' aria-current="page"' : ""}>Tournament</a>
       <a href="../wiki/">Wiki</a>
       <a href="https://github.com/aiocean/arena">GitHub</a>
     </nav>
@@ -91,6 +91,6 @@ if (import.meta.main) {
   mkdirSync(out, { recursive: true });
   for (const [name] of DOCS) writeFileSync(join(out, `${name}.html`), docPage(name, readFileSync(join(src, `${name}.md`), "utf8")));
   // /docs/ opens the first doc
-  writeFileSync(join(out, "index.html"), `<!doctype html><meta charset="utf-8"><title>Arena docs</title><meta http-equiv="refresh" content="0; url=${DOCS[0][0]}.html"><a href="${DOCS[0][0]}.html">Rules</a>\n`);
+  writeFileSync(join(out, "index.html"), `<!doctype html><meta charset="utf-8"><title>Arena docs</title><meta http-equiv="refresh" content="0; url=${DOCS[0][0]}"><a href="${DOCS[0][0]}">Rules</a>\n`);
   console.log(`docs: ${DOCS.length} pages`);
 }
