@@ -368,7 +368,7 @@ fn tier_name(g: &Gem) -> String {
 }
 
 fn skill_url(id: &str) -> String {
-    format!("/wiki/skill/{id}.html")
+    format!("/wiki/skill/{id}")
 }
 
 fn skill_link(g: &Gem) -> String {
@@ -381,7 +381,7 @@ fn tag_chips(tags: Tags) -> String {
         .filter(|t| tags.has(**t))
         .map(|t| {
             format!(
-                "<a class=\"tag\" href=\"/wiki/index.html#tag={}\">{}</a>",
+                "<a class=\"tag\" href=\"/wiki/#tag={}\">{}</a>",
                 esc(&format!("{t:?}")),
                 esc(t.name())
             )
@@ -390,17 +390,11 @@ fn tag_chips(tags: Tags) -> String {
 }
 
 fn element_link(e: Element) -> String {
-    format!(
-        "<a href=\"/wiki/ailments.html#el-{e:?}\">{}</a>",
-        esc(e.name())
-    )
+    format!("<a href=\"/wiki/ailments#el-{e:?}\">{}</a>", esc(e.name()))
 }
 
 fn ailment_link(a: Ailment) -> String {
-    format!(
-        "<a href=\"/wiki/ailments.html#ail-{a:?}\">{}</a>",
-        esc(a.name())
-    )
+    format!("<a href=\"/wiki/ailments#ail-{a:?}\">{}</a>", esc(a.name()))
 }
 
 /// The ailments a skill's blows can lay, one per kind of damage it deals.
@@ -424,21 +418,38 @@ fn way_of(g: &Gem) -> Way {
 fn way_html(g: &Gem) -> String {
     match way_of(g) {
         Way::Aura => match gem::aura_of(g) {
-            Some(a) => format!("an aura: <a href=\"/wiki/buffs.html#aura-{a:?}\">{}</a>", esc(a.data().name)),
+            Some(a) => format!(
+                "an aura: <a href=\"/wiki/buffs#aura-{a:?}\">{}</a>",
+                esc(a.data().name)
+            ),
             None => "an aura".to_owned(),
         },
         Way::Domain { damaging } => {
             let d = gem::domain_of(g).map_or(String::new(), |d| {
-                format!(" <a href=\"/wiki/buffs.html#domain-{d:?}\">{}</a>", esc(d.data().name))
+                format!(
+                    " <a href=\"/wiki/buffs#domain-{d:?}\">{}</a>",
+                    esc(d.data().name)
+                )
             });
-            format!("a domain{d}{}", if damaging { ", which also strikes" } else { "" })
+            format!(
+                "a domain{d}{}",
+                if damaging { ", which also strikes" } else { "" }
+            )
         }
         Way::Curse => match gem::curse_of(g) {
-            Some(c) => format!("a curse: <a href=\"/wiki/curses.html#curse-{c:?}\">{}</a>", esc(c.name())),
+            Some(c) => format!(
+                "a curse: <a href=\"/wiki/curses#curse-{c:?}\">{}</a>",
+                esc(c.name())
+            ),
             None => "a curse".to_owned(),
         },
-        Way::Buff => "a timed buff on the caster (<a href=\"/wiki/buffs.html#stances\">stances and blessings</a>)".to_owned(),
-        Way::Device(k) => format!("it puts a <a href=\"/wiki/units.html#unit-{k:?}\">{k:?}</a> on the field"),
+        Way::Buff => {
+            "a timed buff on the caster (<a href=\"/wiki/buffs#stances\">stances and blessings</a>)"
+                .to_owned()
+        }
+        Way::Device(k) => {
+            format!("it puts a <a href=\"/wiki/units#unit-{k:?}\">{k:?}</a> on the field")
+        }
         _ => "as its motion strikes".to_owned(),
     }
 }
@@ -517,11 +528,7 @@ fn cap_forms(g: &Gem) -> String {
         .iter()
         .map(|(id, name, d)| {
             vec![
-                format!(
-                    "<a href=\"/wiki/supports.html#{}\">{}</a>",
-                    esc(id),
-                    esc(name)
-                ),
+                format!("<a href=\"/wiki/supports#{}\">{}</a>", esc(id), esc(name)),
                 num(d.total().round()),
                 format!(
                     "{}%{}",
@@ -683,7 +690,7 @@ fn skills(wiki: &mut Wiki, book: &Book) {
             let clip = clip_of(sp);
             let _ = write!(
                 body,
-                "<h2>The clip it plays: <code>{clip}</code></h2><p>Every fighter carries the whole pool; this is how each look plays it (<a href=\"/wiki/looks.html#clip-{clip}\">all clips</a>).</p>{LEGEND}"
+                "<h2>The clip it plays: <code>{clip}</code></h2><p>Every fighter carries the whole pool; this is how each look plays it (<a href=\"/wiki/looks#clip-{clip}\">all clips</a>).</p>{LEGEND}"
             );
             for (li, (look, _)) in book.sheets.iter().enumerate() {
                 let Some(pics) = book.clips.get(&(li, clip.to_owned())) else {
@@ -691,7 +698,7 @@ fn skills(wiki: &mut Wiki, book: &Book) {
                 };
                 let _ = write!(
                     body,
-                    "<h3><a href=\"/wiki/looks.html#look-{}\">{}</a></h3><p>{}</p>",
+                    "<h3><a href=\"/wiki/looks#look-{}\">{}</a></h3><p>{}</p>",
                     look.name(),
                     esc(look.display()),
                     timeline(pics, sp)
@@ -739,7 +746,7 @@ fn skills(wiki: &mut Wiki, book: &Book) {
             .filter(|s| s.fits(g.all_tags()))
             .map(|s| {
                 format!(
-                    "<a class=\"tag\" href=\"/wiki/supports.html#{}\">{}</a>",
+                    "<a class=\"tag\" href=\"/wiki/supports#{}\">{}</a>",
                     esc(s.id),
                     esc(s.name)
                 )
@@ -1261,9 +1268,9 @@ fn rules(wiki: &mut Wiki) {
 <li><b>A blow plays out before the next.</b> While what a skill that binds its caster sent is still out (<i>Binds the caster</i> on its page), the caster casts no other such skill; curses, auras, blessings, movement, guard, recovery and stances never bind.</li>
 <li><b>Recovery by progress.</b> A skill's clip plays its wind-up over the skill's wind-up and its follow-through stretched over the skill's recovery.</li>
 <li><b>One cast, at most 40% of a life.</b> One bare cast of a skill, at hit and over time, deals at most that share of a base fighter's life and shield; each skill's page gives its own share (<code>arena_calc::cap</code>).</li>
-<li><b>Boxes from the pictures.</b> Hurtboxes and hitboxes follow the frame a fighter shows, measured from the sprite sheets (see <a href="/wiki/looks.html">Fighters</a>).</li>
+<li><b>Boxes from the pictures.</b> Hurtboxes and hitboxes follow the frame a fighter shows, measured from the sprite sheets (see <a href="/wiki/looks">Fighters</a>).</li>
 </ul>
-<p>The full rules: <a href="/docs/rules.html">docs: Rules</a>. Training a bot: <a href="/docs/training.html">docs: Train a bot</a>. The season: <a href="/docs/tournament.html">docs: Tournament</a>.</p>"#,
+<p>The full rules: <a href="/docs/rules">docs: Rules</a>. Training a bot: <a href="/docs/training">docs: Train a bot</a>. The season: <a href="/docs/tournament">docs: Tournament</a>.</p>"#,
         facts(&rows)
     );
     wiki.page("rules.html", page("Rules overview", "rules.html", &body));
@@ -1281,7 +1288,7 @@ fn bot(wiki: &mut Wiki) {
         ("Acts", ACTIONS.to_string()),
     ];
     let body = format!(
-        "<h1>The bot's view</h1><p>What a bot sees each decision and what it can do; the layout of the numbers is in <a href=\"/docs/bot.html\">docs: Your bot</a>.</p>{}<h2>Its acts</h2>{}",
+        "<h1>The bot's view</h1><p>What a bot sees each decision and what it can do; the layout of the numbers is in <a href=\"/docs/bot\">docs: Your bot</a>.</p>{}<h2>Its acts</h2>{}",
         facts(&rows),
         table(&["Index", "Act"], &acts)
     );

@@ -41,7 +41,11 @@ pub fn page(title: &str, current: &str, body: &str) -> String {
         } else {
             ""
         };
-        let _ = write!(menu, "<a href=\"/wiki/{file}\"{mark}>{}</a>", esc(label));
+        // the server answers a page without its .html (and redirects one with it)
+        let href = file
+            .strip_suffix(".html")
+            .map_or(*file, |f| if f == "index" { "" } else { f });
+        let _ = write!(menu, "<a href=\"/wiki/{href}\"{mark}>{}</a>", esc(label));
     }
     format!(
         r#"<!doctype html>
@@ -59,9 +63,9 @@ pub fn page(title: &str, current: &str, body: &str) -> String {
     <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>arena</a>
     <nav aria-label="Site">
       <a href="/#insert">Your bot</a>
-      <a href="/docs/rules.html">Rules</a>
-      <a href="/docs/training.html">Train a bot</a>
-      <a href="/docs/tournament.html">Tournament</a>
+      <a href="/docs/rules">Rules</a>
+      <a href="/docs/training">Train a bot</a>
+      <a href="/docs/tournament">Tournament</a>
       <a href="/wiki/" aria-current="page">Wiki</a>
       <a href="https://github.com/aiocean/arena">GitHub</a>
     </nav>
