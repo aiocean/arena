@@ -980,8 +980,8 @@ fn hypotheses(tr: &Tracker, decs: &[Dec]) {
         if let Some(sp) = spell(skill) {
             let clip = frames::clip_for(sp);
             for look in [
-                arena_duel::data::Look::Thunder,
-                arena_duel::data::Look::Frost,
+                arena_duel::data::Look::VuongLam,
+                arena_duel::data::Look::ThatThai,
             ] {
                 if let Some((open, len)) = frames::window_of(look, clip, sp.windup, sp.recover) {
                     println!(
