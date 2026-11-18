@@ -67,9 +67,6 @@ pub enum Bot {
 }
 
 impl Bot {
-    /// The minds the house AI meets, in turn.
-    pub const MINDS: [Bot; 4] = [Bot::Brain, Bot::First, Bot::Aggressive, Bot::Turtle];
-
     /// Its name: the corner's name on the wire and its telemetry's `bot`.
     pub fn name(self) -> &'static str {
         match self {
@@ -90,7 +87,7 @@ impl Bot {
     }
 }
 
-/// Who fights a live match: the house AI, in which seat, and the mind it meets. With the seed it fixes the match.
+/// Who fights a live match: the house AI, in which seat, and the bot it meets. With the seed it fixes the match.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Pairing {
     /// The house AI's seat, 0 or 1.
@@ -99,13 +96,13 @@ pub struct Pairing {
 }
 
 impl Pairing {
-    /// The `n`th match's pairing (counted from 1) on `seed`: the minds in turn, the house AI's seat drawn from the seed
-    /// (`house_seat`), the looks from the seed too (`Duel::new_drawn`), so neither seat nor look keeps one bot.
-    pub fn of(n: u64, seed: u32) -> Pairing {
-        let i = (n.saturating_sub(1) % Bot::MINDS.len() as u64) as usize;
+    /// The `n`th match's pairing (counted from 1) on `seed`: the house AI against itself (owner, 2026-11-18: the page
+    /// shows house against house only), its seat drawn from the seed (`house_seat`) and the looks from the seed too
+    /// (`Duel::new_drawn`), so neither look keeps one seat. `n` stays for a rotation to come.
+    pub fn of(_n: u64, seed: u32) -> Pairing {
         Pairing {
             house_seat: house_seat(seed),
-            opponent: Bot::MINDS[i],
+            opponent: Bot::House,
         }
     }
 
@@ -460,6 +457,7 @@ mod tests {
             (7_654_322, 1, Bot::Brain),
             (1_234, 1, Bot::Turtle),
             (99, 0, Bot::Aggressive),
+            (5, 1, Bot::House),
         ] {
             let pairing = Pairing {
                 house_seat,
@@ -498,18 +496,13 @@ mod tests {
         Ok(())
     }
 
-    /// The minds take turns, the house AI's seat comes from the seed, and both seats come up.
+    /// Every live match is the house AI against itself, its seat from the seed, and both seats come up.
     #[test]
-    fn pairings_rotate_the_minds_and_draw_the_seat() {
-        let opponents: Vec<Bot> = (1..=8).map(|n| Pairing::of(n, 5).opponent).collect();
-        assert_eq!(&opponents[..4], &Bot::MINDS);
-        assert_eq!(&opponents[4..], &Bot::MINDS);
+    fn pairings_are_house_against_house_and_draw_the_seat() {
+        for n in 1..=8 {
+            assert_eq!(Pairing::of(n, 5).bots(), [Bot::House, Bot::House]);
+        }
         let seats: Vec<usize> = (0..64_u32).map(house_seat).collect();
         assert!(seats.contains(&0) && seats.contains(&1));
-        for seed in 0..64 {
-            let p = Pairing::of(1, seed);
-            assert_eq!(p.bots()[p.house_seat], Bot::House);
-            assert_eq!(p.bots()[1 - p.house_seat], Bot::Brain);
-        }
     }
 }
