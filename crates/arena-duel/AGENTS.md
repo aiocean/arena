@@ -23,6 +23,8 @@ decide nothing else by them, and a bot is told its look, never its seat.
   the fighters (`Cultivator::tick_with`), spare lives.
 - `shot`: skills in flight; a bolt is `arena_calc::projectile::Flight` (pierce, fork, chain among every live target).
 - `unit`: traps, mines, totems and minions, entities of the rules' world (`Unit`) in id order.
+- `collide`: the fight's shapes (a fighter's body on its frame's hurtboxes, a shot's probe, a field, a unit's body)
+  and every test of one against another, on `arena_calc::collide` (parry); `debug::shapes` draws the same shapes.
 - `frames`: where a fighter can be hit and where its blow or bolt comes from, frame by frame (hurtboxes, hitboxes,
   hands, each clip's active frame); `frames_data` is its table, generated from the sprite sheets by
   `cargo run -p arena-game --example frame_boxes` (never edited by hand); `pick`: which frame a pose shows (`CLIPS`).
@@ -64,7 +66,7 @@ Each tick the two fighters take their turns with who goes first alternating (`du
 
 ## Dependencies
 
-- Required: `libm`, `arena-calc` (the damage system), `arena-mind` (the minds), `bevy_ecs` (no default features).
+- Required: `libm`, `arena-calc` (the damage system, and through it `parry2d-f64` for the hit tests), `arena-mind` (the minds), `bevy_ecs` (no default features).
 - Optional, behind `serde`: `serde` (and `arena-calc/serde`).
 - Never the renderer or the game (`bevy`, `arena-game`): the trainer builds this crate and stays light.
 

@@ -21,6 +21,8 @@ The fight (`arena-duel`, which the game `arena-game` and the server run) builds 
 ## Traps
 
 - Deterministic: no dice inside, `libm` for transcendental maths (`clippy.toml`), the same bits on native and wasm.
+- Every hit test (shapes overlapping, a sweep entering one) goes through `collide`, on parry2d-f64 with
+  `enhanced-determinism` (its only dependency beyond `libm`); touching is not overlapping.
 - The twelve steps of `hit::resolve` run in a fixed order; never swap two.
 - Conversion runs only forward in `Element::ALL`'s order. A rule that would need it backward (Âm Hàn) rewrites the
   base split at step 1 instead.

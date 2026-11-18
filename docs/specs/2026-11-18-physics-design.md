@@ -180,3 +180,48 @@ its effects, debris and anything that only looks, never the rules.
   a test. Its worth to the arena is the sweeps and the round or turned shapes (a bolt with a radius, a capsule, a
   slanted blade, should the art ask for them). So phase 2 may well keep the boxes' goldens still and move only the
   bolts; whether that is migration enough is the owner's call.
+
+## Phase 2, as built (RULES_VERSION 16)
+
+The owner took the decision (2026-11-18): parry for every hit test of the rules, touching not overlapping, the
+bodies' movement left as it is.
+
+- `arena_calc::collide` holds the primitives: `Shape` (an upright box, a circle), `overlap` (parry's contact deeper
+  than 0), `enters` (a ray's first entry, a point bolt's sweep) and `sweeps` (a circle's, `cast_shapes`: a thick bolt
+  sweeps a capsule). It lives in `arena-calc` because the damage system's own geometry goes through it too: a
+  projectile's entry (`projectile::Flight::step`, with the flight's `radius`), a trap springing (`device`), an area
+  holding a target (`play::Shape::holds`), a blink caught in a rift (`dao`).
+- `arena_duel::collide` holds the fight's shapes: a fighter's body (its frame's hurtboxes), a probe (a point with a
+  square margin, as `shot::overlaps` always tested), a field (`area`), a unit's body, two bolts or a bolt and an orb
+  meeting. Through it go `unit::strike_hits`, `in_front`, `enemies_near`, `enemies_between`, a mine's detonation,
+  `shot::overlaps`, the bolts' meetings and a curse's reach.
+- `debug::shapes` draws the same shapes (`debug::Shape` is `collide::Shape`): a bolt and an orb are drawn as the
+  square they are tested with, fields and units by `collide::area` and `collide::unit_body`.
+- What changed beyond the last bits: a field, a blast, a lunge's path, a mine (thrown, or a stopped Lôi Bạo Trễ shot) and a curse reach the foe where its
+  hurtboxes are (they tested its feet's x and height before) and a unit where its drawn body is (its x alone before);
+  a blade reaches a unit only inside its strike box. Every inclusive test (`<=`) is strict now.
+- Left as arithmetic, because they are ranges and motion, not shapes meeting: walking, gravity, walls and two bodies
+  kept apart (`body`), pulls toward a vortex or a collapse, a minion walking up to its reach, auras, souls on a
+  minion's death, a tether's length, a chain's next target, and the minds' own measures.
+
+The ladder, 150 seeds both ways, house AI u1600, before (RULES 15, the brain that presses, 70b2c1a) and after (parry,
+bolts radius 0):
+
+| match | before | after |
+|---|---|---|
+| house vs brain | 83.9% | 82.9% |
+| house vs first mind | 94.4% | 93.4% |
+| house vs aggressive | 88.7% | 88.7% |
+| house vs turtle | 99.7% | 99.4% |
+| mirror, styles drawn (seat 0) | 50.0% | 49.4% |
+| mirror, as Vương Lâm | 71.8% | 71.2% |
+| brain vs first mind | 48.7% | 50.4% |
+| brain mirror (seat 0) | 49.1% | 49.8% |
+| brain mirror, as Vương Lâm | 58.4% | 53.3% |
+
+Every bolt and orb skill together, both mirrors: 536 casts striking 930 times before (1.74 a cast, a pierce or a
+fork strikes more than once), 521 casts striking 939 times after (1.80). Native = wasm passes; the house module's
+three pinned fights end as they did, its bytes unchanged.
+
+The bolts still fly as points (radius 0). Their drawn bodies' radii (`bolts_data`, from the spell hitbox audit) go
+in as the next rule change once that table is on main.
