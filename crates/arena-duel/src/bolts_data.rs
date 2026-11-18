@@ -17,6 +17,7 @@ pub static BOLT_BODIES: &[(&str, f64)] = &[
     ("jithunder", 28.0),
     ("libow", 6.0),
     ("manhair", 20.0),
+    ("qibolt", 14.0),
     ("seize", 22.0),
     ("silentfinger", 10.0),
     ("skyqueen", 18.0),

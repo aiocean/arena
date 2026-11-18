@@ -31,7 +31,7 @@ pub const WARD: Ward = Ward {
 };
 
 /// The kinds of blow a guard can turn aside (a zone or a field falls past it).
-pub const GUARDED: [Kind; 5] = [Kind::Melee, Kind::Blast, Kind::Dash, Kind::Bolt, Kind::Orb];
+pub const GUARDED: [Kind; 3] = [Kind::Blast, Kind::Bolt, Kind::Orb];
 
 /// How many of its loadout's actives a fighter's bar draws from (`arena_calc::loadout::ACTIVES`).
 pub const POOL_SIZE: usize = arena_calc::loadout::ACTIVES;
@@ -241,20 +241,14 @@ pub const FRAMES: Frames = Frames {
         stagger: 0.2,
     },
     blocked_recover: 0.15,
-    // dive, dash and the close blasts
+    // the close blasts
     unsafe_on_block: &[
-        "dive",
-        "step",
         "palm",
         "burst",
         "lotus",
         "ancientgod",
-        "slashluo",
-        "onestep",
         "nineturn",
-        "sevencolor",
         "heavenlychop",
-        "fireescape",
         "warprint",
         "daofusion",
     ],
@@ -265,8 +259,6 @@ pub const FRAMES: Frames = Frames {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum Kind {
-    Melee,
-    Dash,
     Blast,
     Bolt,
     Orb,
@@ -281,8 +273,6 @@ pub enum Kind {
 impl Kind {
     pub fn name(self) -> &'static str {
         match self {
-            Kind::Melee => "melee",
-            Kind::Dash => "dash",
             Kind::Blast => "blast",
             Kind::Bolt => "bolt",
             Kind::Orb => "orb",
@@ -319,8 +309,6 @@ pub struct Spell {
     pub hit_fx: Option<&'static str>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub end_fx: Option<&'static str>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    pub slam_fx: Option<&'static str>,
     pub cost: f64,
     pub windup: f64,
     pub recover: f64,
@@ -368,8 +356,6 @@ pub struct Spell {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub spray: Option<f64>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
-    pub dive: bool,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub grounded: bool,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub reflect: bool,
@@ -384,11 +370,10 @@ pub struct Spell {
 
 const BASE: Spell = Spell {
     name: "",
-    kind: Kind::Melee,
+    kind: Kind::Blast,
     fx: None,
     hit_fx: None,
     end_fx: None,
-    slam_fx: None,
     cost: 0.0,
     windup: 0.0,
     recover: 0.0,
@@ -414,7 +399,6 @@ const BASE: Spell = Spell {
     amount: None,
     time: None,
     spray: None,
-    dive: false,
     grounded: false,
     reflect: false,
     feet: false,
@@ -424,29 +408,31 @@ const BASE: Spell = Spell {
 
 /// Every spell, in the duel's order.
 /// Every motion a skill may borrow, in the duel's order.
-static SPELLS: [Spell; 93] = [
+static SPELLS: [Spell; 88] = [
+    // The basics: a bolt of plain qi off the palm, cheap and quick, every fighter's first word from afar
     Spell {
-        name: "slash",
-        kind: Kind::Melee,
+        name: "qibolt",
+        kind: Kind::Bolt,
+        fx: Some("scifi/bullet-tracer"),
         cost: 0.0,
         windup: 0.2,
-        recover: 0.32,
-        cooldown: 0.7,
-        range: Some(96.0),
+        recover: 0.24,
+        cooldown: 0.8,
+        speed: Some(1100.0),
         damage: Some(5.0),
         ..BASE
     },
-    // Thunder: a flash of lightning that carries the body through the foe and out the other side
+    // and a burst of it from the palm at close range, for a foe that comes in
     Spell {
-        name: "step",
-        kind: Kind::Dash,
-        fx: Some("lightning/lightning-dash"),
-        cost: 24.0,
-        windup: 0.26,
-        recover: 0.45,
-        cooldown: 3.4,
-        distance: Some(288.0),
-        damage: Some(13.0),
+        name: "qiburst",
+        kind: Kind::Blast,
+        fx: Some("lightning/arc-discharge"),
+        cost: 12.0,
+        windup: 0.24,
+        recover: 0.42,
+        cooldown: 1.6,
+        range: Some(104.0),
+        damage: Some(11.0),
         ..BASE
     },
     // Thunder: a gold seal opens on the ground under the foe, and a thunderclap bursts from it
@@ -476,21 +462,6 @@ static SPELLS: [Spell; 93] = [
         cooldown: 2.2,
         range: Some(160.0),
         damage: Some(18.0),
-        ..BASE
-    },
-    // from above: drop onto the foe sword first, and crack the ground if it lands there
-    Spell {
-        name: "dive",
-        kind: Kind::Melee,
-        dive: true,
-        cost: 12.0,
-        windup: 0.22,
-        recover: 0.5,
-        cooldown: 1.6,
-        range: Some(104.0),
-        damage: Some(11.0),
-        speed: Some(1040.0),
-        slam_fx: Some("explosions/dirt-explosion"),
         ..BASE
     },
     Spell {
@@ -822,19 +793,6 @@ static SPELLS: [Spell; 93] = [
         damage: Some(28.0),
         ..BASE
     },
-    // Thunder: Slash Luo Art (Zhanluo): A sword form that cuts through space: dashes through the foe along a long line.
-    Spell {
-        name: "slashluo",
-        kind: Kind::Dash,
-        fx: Some("arcane/sword-slash"),
-        cost: 30.0,
-        windup: 0.3,
-        recover: 0.5,
-        cooldown: 3.8,
-        distance: Some(360.0),
-        damage: Some(22.0),
-        ..BASE
-    },
     // Thunder: Magic Arsenal: A ring of flying swords turns over the foe and cuts whoever stands under it, then strikes.
     Spell {
         name: "arsenal",
@@ -864,19 +822,6 @@ static SPELLS: [Spell; 93] = [
         recover: 0.12,
         cooldown: 3.0,
         distance: Some(368.0),
-        ..BASE
-    },
-    // Thunder: One Step Tread the Heaven: One stride that carries the caster through the foe, a long way, cutting it on the way.
-    Spell {
-        name: "onestep",
-        kind: Kind::Dash,
-        fx: Some("arcane/blink-dash"),
-        cost: 30.0,
-        windup: 0.2,
-        recover: 0.4,
-        cooldown: 4.0,
-        distance: Some(480.0),
-        damage: Some(14.0),
         ..BASE
     },
     // Thunder: Mountain Collapse / Mountain Crumbles: A peak falls on the foe: a huge blow after a long mark. Only hits on the ground.
@@ -1222,19 +1167,6 @@ static SPELLS: [Spell; 93] = [
         speed: Some(1360.0),
         ..BASE
     },
-    // Frost: Seven-Colored Dao Spear: A spear of seven-coloured light that carries the caster through the foe.
-    Spell {
-        name: "sevencolor",
-        kind: Kind::Dash,
-        fx: Some("arcane/sword-strike"),
-        cost: 30.0,
-        windup: 0.28,
-        recover: 0.45,
-        cooldown: 3.6,
-        distance: Some(336.0),
-        damage: Some(17.0),
-        ..BASE
-    },
     // Frost: World-Burning Ancient Umbrella: An ancient umbrella sweeps fire over the foe: burns.
     Spell {
         name: "umbrella",
@@ -1481,19 +1413,6 @@ static SPELLS: [Spell; 93] = [
         cooldown: 4.5,
         range: Some(224.0),
         damage: Some(26.0),
-        ..BASE
-    },
-    // Thunder: Nine Mysterious Spell, Fire Escape: Turns to flame and dashes through the foe, setting it burning.
-    Spell {
-        name: "fireescape",
-        kind: Kind::Dash,
-        fx: Some("fire/fire-dash"),
-        cost: 28.0,
-        windup: 0.22,
-        recover: 0.4,
-        cooldown: 3.6,
-        distance: Some(320.0),
-        damage: Some(10.0),
         ..BASE
     },
     // Thunder: Rise Three Realm Flame Origin: The origin of flame rises under the foe and burns it.
@@ -1818,11 +1737,6 @@ fn skills() -> &'static [Spell] {
 /// The effect skill `id` plays of its own when it borrows another skill's motion (`Gem::spell`).
 pub fn gem_fx(id: &str) -> Option<&'static str> {
     Some(match id {
-        "hundredfist" => "impacts/punch-hit",
-        "tenfist" => "melee/uppercut",
-        "manshen" => "melee/axe-smear",
-        "devourbody" => "shadow/shadow-step",
-        "manspear" => "melee/spear-thrust",
         "autumn" => "melee/scythe-reap",
         "godquake" => "melee/shield-bash",
         "banspear" => "melee/quickdraw-slash",

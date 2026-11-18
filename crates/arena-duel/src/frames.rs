@@ -147,22 +147,13 @@ pub fn hurtboxes(state: &State, f: usize) -> Vec<[f64; 4]> {
     }
 }
 
-/// The clip fighter `f`'s cast plays (a blade blow's `slash` or `overhead`, a spell's `cast` or `dash`), if it casts.
+/// The clip fighter `f`'s cast plays, if it casts: every skill is a spell and plays the `cast`.
 fn act_clip(state: &State, f: usize) -> Option<&'static str> {
-    let a = state.fighters.get(f)?.act?;
-    crate::data::spell(a.spell).map(clip_for)
+    state.fighters.get(f)?.act.map(|_| CAST)
 }
 
-/// The clip a cast of `s` plays: a blow from the palm off the air is the `overhead` cut, a lunge the `dash`, any
-/// other blade the `slash`, any other spell the `cast`.
-pub fn clip_for(s: &crate::data::Spell) -> &'static str {
-    match (crate::pose::gather_of(s.kind), s.dive) {
-        (crate::pose::Gather::Palm, true) => "overhead",
-        (crate::pose::Gather::Lunge, _) => "dash",
-        _ if s.kind == crate::data::Kind::Melee => "slash",
-        _ => "cast",
-    }
-}
+/// The clip every cast plays (the arena is spells only: no blade's `slash` or `overhead`, no lunge's `dash`).
+pub const CAST: &str = "cast";
 
 /// When clip `clip` of look `look`'s active window opens and how long it stays open, in seconds, for a cast of
 /// `windup` and `recover`: it opens as the wind-up ends on the active frame, and stays open while the recovery's

@@ -19,7 +19,7 @@ const DT: f64 = 1.0 / 60.0;
 /// every effect in the registry.
 fn still(seed: u32) -> State {
     let kit = [
-        "lotus", "palm", "step", "void", "bell", "heal", "jet", "burst",
+        "lotus", "palm", "spark", "void", "bell", "heal", "jet", "burst",
     ];
     let mut s = State::new(
         seed,
@@ -87,11 +87,11 @@ fn hit(out: &[Out], name: &str) -> Option<(f64, How)> {
     })
 }
 
-/// A slash on seat 1 standing idle: what it dealt, how, and the stagger it leaves.
-fn plain_slash(seed: u32) -> (f64, How, f64) {
+/// The burst on seat 1 standing idle: what it dealt, how, and the stagger it leaves.
+fn plain_burst(seed: u32) -> (f64, How, f64) {
     let mut s = still(seed);
-    let out = strike(&mut s, 0, "slash");
-    let (damage, how) = hit(&out, "slash").unwrap_or((0.0, How::Plain));
+    let out = strike(&mut s, 0, "qiburst");
+    let (damage, how) = hit(&out, "qiburst").unwrap_or((0.0, How::Plain));
     (damage, how, s.fighters[1].body.stun)
 }
 
@@ -100,6 +100,11 @@ fn stagger(damage: f64) -> f64 {
     let spec = body_spec();
     let _: BodySpec = spec;
     spec.hitstun_base + damage / POWER * spec.hitstun_per
+}
+
+/// Whether seat 1 was thrown by the blow rather than staggered where it stands.
+fn thrown(s: &State) -> bool {
+    s.fighters[1].body.air > 0.0 || s.fighters[1].body.vy > 0.0
 }
 
 fn close(a: f64, b: f64) -> bool {
@@ -113,15 +118,15 @@ fn a_fighter_that_guards_then_casts_is_not_guarding_while_it_gathers() {
     s.fighters[1].bar = vec![common::common("lotus")];
     begin(&mut s, 1, "lotus", None);
     assert_eq!(s.fighters[1].guard, 0.0);
-    // a slash is always turned aside by a guard: here it lands
-    let out = strike(&mut s, 0, "slash");
-    assert!(hit(&out, "slash").is_some(), "{out:?}");
+    // a burst is always turned aside by a guard: here it lands
+    let out = strike(&mut s, 0, "qiburst");
+    assert!(hit(&out, "qiburst").is_some(), "{out:?}");
     assert!(!out.iter().any(|o| matches!(o, Out::Clash { .. })));
 }
 
 #[test]
 fn a_blow_on_a_fighter_standing_idle_is_plain() {
-    let (damage, how, stun) = plain_slash(3);
+    let (damage, how, stun) = plain_burst(3);
     assert_eq!(how, How::Plain);
     assert!(damage > 0.0);
     assert!(close(stun, stagger(damage)), "{stun} {}", stagger(damage));
@@ -131,15 +136,21 @@ fn a_blow_on_a_fighter_standing_idle_is_plain() {
 fn a_blow_on_a_fighter_gathering_a_cast_is_a_counter_harder_and_staggering_longer() {
     let mut s = still(3);
     s.fighters[1].act = Some(act("lotus", Phase::Windup, 0.1));
-    let out = strike(&mut s, 0, "slash");
-    let (damage, how) = hit(&out, "slash").unwrap_or((0.0, How::Plain));
+    let out = strike(&mut s, 0, "qiburst");
+    let (damage, how) = hit(&out, "qiburst").unwrap_or((0.0, How::Plain));
     assert_eq!(how, How::Counter);
-    let (plain, _, _) = plain_slash(3);
+    let (plain, _, _) = plain_burst(3);
     assert!(close(damage, plain * FRAME_MORE), "{damage} {plain}");
-    assert!(close(
-        s.fighters[1].body.stun,
-        stagger(damage) + FRAMES.counter.stagger
-    ));
+    // the harder blow staggers longer, or throws (a thrown fighter is not staggered: it flies)
+    assert!(
+        thrown(&s)
+            || close(
+                s.fighters[1].body.stun,
+                stagger(damage) + FRAMES.counter.stagger
+            ),
+        "{}",
+        s.fighters[1].body.stun
+    );
     // and the cast it was gathering is lost
     assert!(s.fighters[1].act.is_none());
 }
@@ -148,15 +159,20 @@ fn a_blow_on_a_fighter_gathering_a_cast_is_a_counter_harder_and_staggering_longe
 fn a_blow_on_a_fighter_recovering_is_a_punish_harder_and_staggering_longer() {
     let mut s = still(3);
     s.fighters[1].act = Some(act("lotus", Phase::Recover, 0.1));
-    let out = strike(&mut s, 0, "slash");
-    let (damage, how) = hit(&out, "slash").unwrap_or((0.0, How::Plain));
+    let out = strike(&mut s, 0, "qiburst");
+    let (damage, how) = hit(&out, "qiburst").unwrap_or((0.0, How::Plain));
     assert_eq!(how, How::Punish);
-    let (plain, _, _) = plain_slash(3);
+    let (plain, _, _) = plain_burst(3);
     assert!(close(damage, plain * FRAME_MORE), "{damage} {plain}");
-    assert!(close(
-        s.fighters[1].body.stun,
-        stagger(damage) + FRAMES.punish.stagger
-    ));
+    assert!(
+        thrown(&s)
+            || close(
+                s.fighters[1].body.stun,
+                stagger(damage) + FRAMES.punish.stagger
+            ),
+        "{}",
+        s.fighters[1].body.stun
+    );
     assert!(s.told.iter().any(|(f, t)| *f == 1
         && *t
             == Told::Outcome(Outcome::Punished {
@@ -175,8 +191,8 @@ fn a_counter_draws_exactly_the_dice_a_plain_hit_draws() {
         for s in [&mut plain, &mut counter, &mut punish] {
             s.fighters[1].c.crit = 0.2;
             s.fighters[0].c.crit = 0.2;
-            let out = strike(s, 0, "slash");
-            assert!(hit(&out, "slash").is_some(), "seed {seed}");
+            let out = strike(s, 0, "qiburst");
+            assert!(hit(&out, "qiburst").is_some(), "seed {seed}");
         }
         assert_eq!(plain.rng, counter.rng, "seed {seed}");
         assert_eq!(plain.rng, punish.rng, "seed {seed}");
@@ -188,7 +204,7 @@ fn a_fields_strike_is_never_a_counter_or_a_punish() {
     use arena_duel::strike::{Payload, hurt};
     for phase in [Phase::Windup, Phase::Recover] {
         let mut s = still(5);
-        s.fighters[0].act = Some(act("dive", phase, 0.1));
+        s.fighters[0].act = Some(act("qiburst", phase, 0.1));
         s.out.clear();
         let p = Payload {
             by: 1,
@@ -211,7 +227,7 @@ fn a_golden_bells_answer_counters_the_striker_still_in_its_windup() {
     let mut s = still(2);
     s.fighters[1].barrier = 2.0;
     s.fighters[1].barrier_spell = Some("bell");
-    let out = strike(&mut s, 0, "slash");
+    let out = strike(&mut s, 0, "qiburst");
     let (damage, how) = hit(&out, "bell").unwrap_or((0.0, How::Plain));
     assert_eq!(how, How::Counter);
     assert!(damage > 0.0);
@@ -221,18 +237,17 @@ fn a_golden_bells_answer_counters_the_striker_still_in_its_windup() {
 fn a_top_tier_skill_gathering_is_countered_like_any_other() {
     let mut s = still(4);
     s.fighters[1].act = Some(act("tribulation", Phase::Windup, 0.05));
-    let out = strike(&mut s, 0, "slash");
-    assert_eq!(hit(&out, "slash").map(|h| h.1), Some(How::Counter));
+    let out = strike(&mut s, 0, "qiburst");
+    assert_eq!(hit(&out, "qiburst").map(|h| h.1), Some(How::Counter));
     assert!(s.fighters[1].act.is_none());
 }
 
 #[test]
-fn close_heavies_dive_dash_heal_and_the_top_tier_recover_slowly_and_pokes_stay_safe() {
+fn close_heavies_heal_and_the_top_tier_recover_slowly_and_pokes_stay_safe() {
     let recover = |name: &str| spell(name).map_or(0.0, |sp| sp.recover);
     for (name, want) in [
-        ("slash", 0.32),
-        ("dive", 0.5),
-        ("step", 0.45),
+        ("qiburst", 0.42),
+        ("qibolt", 0.24),
         ("palm", 0.5),
         ("burst", 0.5),
         ("lotus", 0.45),
@@ -268,7 +283,7 @@ fn recovery_ticks(s: &mut State) -> usize {
 
 #[test]
 fn an_unsafe_blow_turned_aside_leaves_its_striker_open_longer() {
-    for name in ["palm", "step", "dive"] {
+    for name in ["palm", "burst"] {
         let s = blocked(name);
         assert!(s.is_some(), "no seed blocks {name}");
         let Some(mut s) = s else { return };
@@ -288,10 +303,10 @@ fn an_unsafe_blow_turned_aside_leaves_its_striker_open_longer() {
 
 #[test]
 fn a_safe_blow_turned_aside_recovers_as_ever() {
-    let s = blocked("slash");
+    let s = blocked("qiburst");
     assert!(s.is_some(), "no seed blocks slash");
     let Some(mut s) = s else { return };
-    let want = spell("slash").map_or(0.0, |sp| sp.recover);
+    let want = spell("qiburst").map_or(0.0, |sp| sp.recover);
     let ticks = recovery_ticks(&mut s) as f64;
     assert!(
         (ticks * DT - want).abs() <= DT,

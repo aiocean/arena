@@ -44,10 +44,10 @@ apart from the seats: `ladder::looks_of`); `style` and
 - One step runs the duel to the learner's next decision. `done` marks the round's end; `won` is 1, -1, or 0 for a cut
   round; `length` is the round's seconds.
 - A done env ignores its action until it is reset.
-- `casts()` sums the learners' casts since it was last called, over every env, by kind in `data::Kind` order (melee,
-  dash, blast, bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, far_whiffs, damage)` each, and beside that list the damage the learners'
-  actives (their loadouts' skills, not slash, dive or blink) dealt with their blows. A cast
-  is out of reach when its blade's, blast's or dash's reach does not get to the foe's hurtboxes as it begins; a whiff
+- `casts()` sums the learners' casts since it was last called, over every env, by kind in `data::Kind` order (blast,
+  bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, far_whiffs, damage)` each, and beside that list the damage the learners'
+  actives (their loadouts' skills, not the basics qibolt, qiburst or blink) dealt with their blows. A cast
+  is out of reach when its blast's reach does not get to the foe's hurtboxes as it begins; a whiff
   is a damaging skill cast as its motion that lands nothing (no hit, not guarded, not turned aside) once it and its
   shots are over; a far whiff is one that began out of reach; `damage` is in % of a life.
 - The trainer's fight seeds start at 1,000,000 + 10,000,000 x `--seed` (11,000,000 by default). The ladder plays
@@ -103,7 +103,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
 each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...; the share of each act, `acts`; and the
-learner's casts: `casts`, `whiff`, `out_of_reach`, `far_whiff`, `active_dmg`, `dmg_cast`, `melee_out_of_reach`, `melee_whiff`) and
+learner's casts: `casts`, `whiff`, `out_of_reach`, `far_whiff`, `active_dmg`, `dmg_cast`, `blast_out_of_reach`, `blast_whiff`) and
 `runs/<run>/last.pt` every 25.
 
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
@@ -136,7 +136,8 @@ The known skews: the mirror's look share (Vương Lâm 72%), and the aggressive 
 fights now that the house AI's pre-emptive slashes are no longer free.
 
 Next:
-1. Redraw Thất Thải's slash.
+1. Retrain on the spells-only rules (RULES 19): no blade, no dive; 96% of u1600's damage was dive, slash and bleed,
+   so it is weak there until it learns the bolts and bursts.
 2. Fine-tune from `runs/abi3/u1600.pt`, kept in the trainer's clone (`projects/arena-train`; `runs/` stays out of
    git).
 3. Ship only a checkpoint that beats this one on the ladder, on the rules it ships with.
@@ -225,8 +226,8 @@ look gap (Vương Lâm's share against Thất Thải's) is judged against the bu
 seeds give each look about 450 rounds, a point or two either way. The house AI's own mirror look share is tracked,
 not gating, while Thất Thải's slash is drawn backwards (`art/README.md`): a stronger policy leans on that defect harder
 in self-play (Vương Lâm won 67% of the house mirror at the 2026-11-18 ship, against 53% in the brain's mirror, which
-shows the rules' own fairness). Redrawing the slash should close it; until then a policy gains nothing in fairness
-by playing worse.
+shows the rules' own fairness). Since RULES 19 no one slashes (the arena is spells only), so the defect plays no part
+any more; the look share is to be measured again on the new rules.
 `--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
 

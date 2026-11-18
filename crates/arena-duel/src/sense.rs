@@ -9,7 +9,7 @@ use crate::act::recover_of;
 use crate::bar::{cooldown_left, ready};
 use crate::data::{BAR, FRAMES, Kind, Spell, T, UNIT, spell};
 use crate::fighter::{Fighter, Phase, Slot, State};
-use crate::frames::{clip_for, strike_hitbox, window_of};
+use crate::frames::{CAST, strike_hitbox, window_of};
 use crate::kit::Place;
 use crate::shot::{ShotKind, orb_at};
 use crate::unit::{FLOOR_Y, UNIT_Y};
@@ -53,7 +53,7 @@ pub fn skill_of(name: &str) -> Skill {
     let Some(s) = spell(name) else {
         return Skill {
             name: name.to_string(),
-            kind: SkillKind::Melee,
+            kind: SkillKind::Blast,
             cost: 0.0,
             windup: 0.0,
             recover: 0.0,
@@ -97,12 +97,7 @@ pub fn skill_of(name: &str) -> Skill {
 
 /// What skill `s` does, as arena-mind knows skills.
 fn kind_of(s: &Spell) -> SkillKind {
-    if s.dive {
-        return SkillKind::Dive;
-    }
     match s.kind {
-        Kind::Melee => SkillKind::Melee,
-        Kind::Dash => SkillKind::Dash,
         Kind::Blast => SkillKind::Blast,
         Kind::Bolt => SkillKind::Bolt,
         Kind::Orb => SkillKind::Seeker,
@@ -115,12 +110,11 @@ fn kind_of(s: &Spell) -> SkillKind {
     }
 }
 
-/// How far skill `s` reaches, in the arena's pixels: a dash's or blink's distance, a blade's or blast's range, an
-/// area's or field's reach.
+/// How far skill `s` reaches, in the arena's pixels: a blink's distance, a blast's range, an area's or field's reach.
 fn reach_of(s: &Spell) -> f64 {
     match s.kind {
-        Kind::Dash | Kind::Blink => s.distance.unwrap_or(f64::NAN),
-        Kind::Melee | Kind::Blast => s.range.unwrap_or(f64::NAN),
+        Kind::Blink => s.distance.unwrap_or(f64::NAN),
+        Kind::Blast => s.range.unwrap_or(f64::NAN),
         _ => s.reach.unwrap_or(0.0),
     }
 }
@@ -389,9 +383,7 @@ fn act_frames_of(state: &State, f: usize) -> Option<ActFrames> {
     let fi = &state.fighters[f];
     let a = fi.act?;
     let recover = recover_of(&a);
-    let (_, window) = spell(a.spell)
-        .and_then(|s| window_of(fi.look, clip_for(s), a.windup, recover))
-        .unwrap_or((0.0, 0.0));
+    let (_, window) = window_of(fi.look, CAST, a.windup, recover).unwrap_or((0.0, 0.0));
     let windup = a.phase == Phase::Windup;
     let left = (a.windup - a.t).max(0.0);
     Some(ActFrames {
@@ -408,8 +400,7 @@ fn act_frames_of(state: &State, f: usize) -> Option<ActFrames> {
 fn slotx_of(f: &Fighter, k: usize) -> Option<SlotX> {
     let ks = f.kit.skills.get(k)?;
     let (v, u) = (&ks.seen, &ks.uses);
-    let (window_start, window) =
-        window_of(f.look, clip_for(ks.motion), v.windup, v.recover).unwrap_or((0.0, 0.0));
+    let (window_start, window) = window_of(f.look, CAST, v.windup, v.recover).unwrap_or((0.0, 0.0));
     Some(SlotX {
         cooldown_left: cooldown_left(u),
         cooldown: u.cooldown,

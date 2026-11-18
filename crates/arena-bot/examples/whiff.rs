@@ -252,8 +252,7 @@ fn reach_of(way: Way, k: Kind, sp: &arena_duel::data::Spell) -> Option<f64> {
         return None;
     }
     match k {
-        Kind::Melee | Kind::Blast => sp.range,
-        Kind::Dash => sp.distance,
+        Kind::Blast => sp.range,
         _ => None,
     }
 }
@@ -510,13 +509,7 @@ fn track(
             let striking = match way {
                 Way::Motion => matches!(
                     kind,
-                    Kind::Melee
-                        | Kind::Dash
-                        | Kind::Blast
-                        | Kind::Bolt
-                        | Kind::Orb
-                        | Kind::Zone
-                        | Kind::Void
+                    Kind::Blast | Kind::Bolt | Kind::Orb | Kind::Zone | Kind::Void
                 ),
                 Way::Domain { damaging } => damaging,
                 _ => false,
@@ -987,9 +980,9 @@ fn hypotheses(tr: &Tracker, decs: &[Dec]) {
             pct(far0, hits.len())
         );
     }
-    for skill in ["slash", "dive"] {
+    for skill in ["qibolt", "qiburst"] {
         if let Some(sp) = spell(skill) {
-            let clip = frames::clip_for(sp);
+            let clip = frames::CAST;
             for look in [
                 arena_duel::data::Look::VuongLam,
                 arena_duel::data::Look::ThatThai,

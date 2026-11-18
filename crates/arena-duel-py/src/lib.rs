@@ -384,8 +384,8 @@ impl VecEnv {
         Ok((obs.into_any(), mask.into_any()))
     }
 
-    /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: melee, dash,
-    /// blast, bolt, orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, far_whiffs,
+    /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: blast, bolt,
+    /// orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, far_whiffs,
     /// damage)`; and the damage the learners' actives (their loadouts' skills, not the basics) dealt with their blows.
     fn casts(&self) -> PyResult<(Vec<CastRow>, f64)> {
         let mut total = Casts::default();

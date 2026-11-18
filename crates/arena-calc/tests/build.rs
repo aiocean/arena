@@ -156,13 +156,19 @@ const POOL: &[Gem] = &[
         Tier::C,
     ),
     gem(
-        "slash",
+        "qiburst",
         &[Tag::Attack, Tag::Strike, Tag::Melee],
         FORCE,
         1.0,
         Tier::C,
     ),
-    gem("dive", &[Tag::Attack, Tag::Dash], FORCE, 1.0, Tier::C),
+    gem(
+        "qibolt",
+        &[Tag::Attack, Tag::Projectile],
+        FORCE,
+        1.0,
+        Tier::C,
+    ),
     gem("blink", &[Tag::Body, Tag::Movement], &[], 0.0, Tier::C),
     gem(
         "tribulation",
@@ -541,7 +547,7 @@ fn counts_are_enforced() {
     )));
 
     let mut l = legal();
-    l.actives[1] = slot("slash", &[]);
+    l.actives[1] = slot("qibolt", &[]);
     assert!(has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
     // a top-tier skill is an active like any other
     l.actives[1] = slot("tribulation", &[]);
@@ -1098,12 +1104,15 @@ fn keystones_shape_the_blows_they_strike() {
             .hit
             .more
     };
-    assert_eq!(one("palm", Keystone::Fury), vec![ks::FURY_MORE * 5.0]);
-    assert_eq!(one("slash", Keystone::DaoBody), vec![ks::VORTEX_MORE * 3.0]);
+    assert_eq!(one("qiburst", Keystone::Fury), vec![ks::FURY_MORE * 5.0]);
+    assert_eq!(
+        one("qiburst", Keystone::DaoBody),
+        vec![ks::VORTEX_MORE * 3.0]
+    );
     assert!(one("palm", Keystone::DaoBody).is_empty());
     close(
         build(
-            pool("slash"),
+            pool("qiburst"),
             1,
             &[],
             &c,
@@ -1422,7 +1431,7 @@ fn added_damage_supports_add_a_quarter_of_the_base_of_their_kind() {
         ("addedsoul", Element::Soul),
     ];
     for (id, e) in kinds {
-        for gem in ["fireball", "slash"] {
+        for gem in ["fireball", "palm"] {
             let b = plain(gem, &[id]);
             close(
                 b.hit.added[e.index()] * b.hit.effectiveness,
@@ -1458,14 +1467,14 @@ fn focus_and_destruction_supports() {
         1.0 + sp::WIDE_AREA,
     );
     // Thuần Lực: force more, and force made fire deals nothing
-    let b = plain("slash", &["brutality", "fireforge"]);
+    let b = plain("palm", &["brutality", "fireforge"]);
     close(b.hit.more_by[Element::Force.index()], sp::BRUTALITY_MORE);
     close(b.hit.more_by[Element::Fire.index()], -1.0);
     let o = land(&b.hit);
     close(o.before[Element::Fire.index()], 0.0);
     close(
         o.before[Element::Force.index()],
-        0.5 * BASE.might * pool_gem("slash").base * (1.0 + sp::BRUTALITY_MORE),
+        0.5 * BASE.might * pool_gem("palm").base * (1.0 + sp::BRUTALITY_MORE),
     );
 }
 
@@ -1509,21 +1518,21 @@ fn projectile_supports() {
 
 #[test]
 fn melee_supports() {
-    let b = plain("slash", &["meleephysical"]);
+    let b = plain("palm", &["meleephysical"]);
     close(b.hit.more_by[Element::Force.index()], sp::MELEE_FORCE_MORE);
     close(
         b.windup,
-        pool_gem("slash").windup / (1.0 + sp::MELEE_FORCE_SPEED),
+        pool_gem("palm").windup / (1.0 + sp::MELEE_FORCE_SPEED),
     );
     let near = Situation {
         distance: 1.0,
         ..Situation::default()
     };
     assert!(has_more(
-        &on("slash", &["closecombat"], &near),
+        &on("palm", &["closecombat"], &near),
         sp::CLOSE_MORE
     ));
-    assert!(plain("slash", &["closecombat"]).hit.more.is_empty());
+    assert!(plain("palm", &["closecombat"]).hit.more.is_empty());
     // Tàn Nhẫn: every third use
     let nth = |n: u32| Situation {
         use_count: n,
@@ -1543,16 +1552,16 @@ fn melee_supports() {
     assert!(on("palm", &["fistofwar"], &nth(3)).hit.more.is_empty());
     // Lưu Lực, Trảm Tận
     assert!(
-        plain("slash", &["impale"])
+        plain("palm", &["impale"])
             .behaviours
             .contains(&Behaviour::StoredForce {
                 share: sp::STORED_FORCE,
                 delay: sp::STORED_DELAY,
             })
     );
-    close(plain("slash", &["culling"]).hit.execute, sp::CULLING);
+    close(plain("palm", &["culling"]).hit.execute, sp::CULLING);
     // Phế Cước: the blow maims its target
-    let b = plain("slash", &["maim"]);
+    let b = plain("palm", &["maim"]);
     assert_eq!(b.hit.debuffs.len(), 1);
     let mut t = bare();
     resolve(&b.hit, None, &mut t, NO_CRIT);
@@ -1564,10 +1573,10 @@ fn melee_supports() {
     );
     // Tốc Kích, Tam Liên Ảnh
     close(
-        plain("slash", &["fasterattacks"]).windup,
-        pool_gem("slash").windup / (1.0 + sp::FASTER_ATTACKS),
+        plain("palm", &["fasterattacks"]).windup,
+        pool_gem("palm").windup / (1.0 + sp::FASTER_ATTACKS),
     );
-    let b = plain("slash", &["triplestrike"]);
+    let b = plain("palm", &["triplestrike"]);
     assert_eq!(b.strikes, 3);
     assert!(has_more(&b, sp::TRIPLE_MORE));
 }
@@ -1639,7 +1648,7 @@ fn damage_over_time_and_ailment_supports() {
     burning.ailments.add(Ailment::Burn, 1.0, 1.0);
     let at = |t: &Cultivator| {
         on(
-            "slash",
+            "palm",
             &["immolate"],
             &Situation {
                 target: Some(t),
@@ -1650,16 +1659,16 @@ fn damage_over_time_and_ailment_supports() {
     let b = at(&burning);
     close(
         b.hit.added[Element::Fire.index()] * b.hit.effectiveness,
-        sp::IMMOLATE_ADDED * base_of("slash"),
+        sp::IMMOLATE_ADDED * base_of("palm"),
     );
     close(at(&bare()).hit.added[Element::Fire.index()], 0.0);
-    let b = plain("slash", &["swiftaffliction"]);
+    let b = plain("palm", &["swiftaffliction"]);
     close(b.hit.dot[Ailment::Bleed.index()].more, 1.0 + sp::SWIFT_DOT);
     close(
         b.hit.ailment_duration[Ailment::Bleed.index()],
         1.0 + sp::SWIFT_DURATION,
     );
-    let b = plain("slash", &["deadlyailments"]);
+    let b = plain("palm", &["deadlyailments"]);
     assert_eq!(b.hit.more, vec![sp::DEADLY_HIT]);
     close(b.hit.dot[Ailment::Bleed.index()].more, 1.0 + sp::DEADLY_DOT);
     // Tàn Khốc: a hit worth a tenth of the target's life burns the whole more
@@ -1686,11 +1695,11 @@ fn damage_over_time_and_ailment_supports() {
         ..Situation::default()
     };
     close(
-        on("slash", &["bloodlust"], &sit).hit.more[0],
+        on("palm", &["bloodlust"], &sit).hit.more[0],
         3.0 * sp::BLOODLUST_PER,
     );
     close(
-        plain("slash", &["witheringtouch"]).hit.inflict[Ailment::Wither.index()],
+        plain("palm", &["witheringtouch"]).hit.inflict[Ailment::Wither.index()],
         sp::WITHER_ON_HIT,
     );
     // Hư Không: yin more, the phases less
@@ -1756,7 +1765,7 @@ fn crit_and_star_supports() {
     use arena_calc::cultivator::Star;
     use arena_calc::stat::Happened;
     close(
-        plain("slash", &["critdamage"]).hit.crit_multi,
+        plain("palm", &["critdamage"]).hit.crit_multi,
         BASE.crit_multi + sp::CRIT_DAMAGE,
     );
     let b = plain("fireball", &["powercharge"]);
@@ -1784,7 +1793,7 @@ fn crit_and_star_supports() {
     let foe = bare();
     let at = |t: &Cultivator| {
         on(
-            "slash",
+            "palm",
             &["frenzycharge"],
             &Situation {
                 target: Some(t),
@@ -1816,12 +1825,12 @@ fn crit_and_star_supports() {
 #[test]
 fn recovery_curse_and_intent_supports() {
     close(
-        plain("slash", &["lifeonhit"]).hit.on_hit.life,
+        plain("palm", &["lifeonhit"]).hit.on_hit.life,
         sp::LIFE_ON_HIT,
     );
-    close(plain("slash", &["qileech"]).hit.qi_leech, sp::QI_LEECH);
+    close(plain("palm", &["qileech"]).hit.qi_leech, sp::QI_LEECH);
     assert!(
-        plain("slash", &["lifeonkill"])
+        plain("palm", &["lifeonkill"])
             .behaviours
             .contains(&Behaviour::LifeOnKill {
                 share: sp::LIFE_ON_KILL
@@ -1863,7 +1872,7 @@ fn device_and_minion_supports() {
         close(b.table.get(count, 0.0), sp::DEVICES);
         assert!(b.behaviours.contains(&Behaviour::Device { kind: tag }));
         // a melee blow is never a device
-        assert!(!sup(id).fits(pool_gem("slash").all_tags()));
+        assert!(!sup(id).fits(pool_gem("palm").all_tags()));
     }
     assert!(has_more(&plain("fireball", &["totem"]), sp::TOTEM_MORE));
     // the tag it takes on reaches the mods that need it

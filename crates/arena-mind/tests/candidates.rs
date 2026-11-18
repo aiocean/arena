@@ -105,7 +105,7 @@ fn only_ready_skills_are_cast() {
 #[test]
 fn a_blade_in_reach_is_offered() {
     let cands = Case::new(me(40.0), foe(60.0)).candidates();
-    assert!(casts(&cands).contains(&"slash".to_string()));
+    assert!(casts(&cands).contains(&"qiburst".to_string()));
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn a_punished_skill_scores_lower() {
     let mut case = Case::new(me(40.0), foe(60.0));
     let slash = |c: &[Candidate]| {
         c.iter()
-            .find(|c| matches!(&c.choice, Choice::Cast { skill, .. } if skill == "slash"))
+            .find(|c| matches!(&c.choice, Choice::Cast { skill, .. } if skill == "qiburst"))
             .map(|c| c.base)
             .unwrap_or(0.0)
     };
@@ -240,7 +240,7 @@ fn what_lands_is_learnt() {
     let mut case = Case::new(me(40.0), foe(60.0));
     let slash = |c: &[Candidate]| {
         c.iter()
-            .find(|c| matches!(&c.choice, Choice::Cast { skill, .. } if skill == "slash"))
+            .find(|c| matches!(&c.choice, Choice::Cast { skill, .. } if skill == "qiburst"))
             .map(|c| c.base)
             .unwrap_or(0.0)
     };
@@ -343,10 +343,10 @@ fn pick_prefers_what_the_posture_weighs() {
 fn the_press_range_is_the_farthest_ready_close_blow() {
     let skills = kit();
     let n = skills.len();
-    // the palm (40, from 36) outreaches the blade (24)
+    // the palm (40, from 36) outreaches the qi burst (24, from 20)
     assert_eq!(press_range(&skills, &vec![true; n]), Some(36.0));
     let only = |name: &str| -> Vec<bool> { skills.iter().map(|s| s.name == name).collect() };
-    assert_eq!(press_range(&skills, &only("slash")), Some(24.0));
+    assert_eq!(press_range(&skills, &only("qiburst")), Some(20.0));
     // a bolt is no blow to press with
     assert_eq!(press_range(&skills, &only("bolt")), None);
 }
@@ -362,7 +362,7 @@ fn pressing_with_only_a_blade_ready_walks_into_its_reach() {
     let mut m = me(40.0);
     m.qi = 20.0;
     let mut case = Case::new(m, foe(85.0));
-    case.ready = case.skills.iter().map(|s| s.name == "slash").collect();
+    case.ready = case.skills.iter().map(|s| s.name == "qiburst").collect();
     assert!(!comes_in(&case.candidates()));
     case.press = true;
     assert!(comes_in(&case.candidates()));

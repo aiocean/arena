@@ -90,7 +90,7 @@ fn a_windup_seen_late_runs_on_into_recovery() {
     view.push(&sense(1.0, me(40.0), f.clone()));
     // the blow lands at 1.05; at 1.2, seen 0.2 s late, it is 0.15 s into its recovery
     f.doing = Doing::Act {
-        kind: SkillKind::Melee,
+        kind: SkillKind::Blast,
         phase: ActPhase::Recover,
         t: 0.15,
         windup: 0.2,
@@ -112,7 +112,7 @@ fn a_move_seen_late_that_has_ended_is_seen_idle() {
     let mut view = Delayed::new();
     let mut f = foe(60.0);
     f.doing = Doing::Act {
-        kind: SkillKind::Melee,
+        kind: SkillKind::Blast,
         phase: ActPhase::Recover,
         t: 0.3,
         windup: 0.2,

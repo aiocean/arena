@@ -39,12 +39,14 @@ fn no_bare_cast_deals_more_than_the_cap() {
 /// The cap reads what a cast lays, not only its blow: a bleeding blow counts its bleed, a curse its strikes.
 #[test]
 fn the_cap_counts_damage_over_time() {
-    let (Some(slash), Some(nine), Some(bolt)) =
-        (gem::gem("slash"), gem::gem("ninedeaths"), gem::gem("bolt"))
-    else {
-        unreachable!("slash, ninedeaths and bolt are in the pool");
+    let (Some(arrows), Some(nine), Some(bolt)) = (
+        gem::gem("fivearrows"),
+        gem::gem("ninedeaths"),
+        gem::gem("bolt"),
+    ) else {
+        unreachable!("fivearrows, ninedeaths and bolt are in the pool");
     };
-    let d = cast_of(slash, &[]);
+    let d = cast_of(arrows, &[]);
     assert!(d.hit > 0.0 && d.over_time > 0.0, "{d:?}");
     assert!(cast_of(nine, &[]).over_time > 0.0);
     // a support that adds damage shows in the measure (the supported forms are measured, not held)

@@ -78,7 +78,7 @@ resolve it there.
   vector-style illustration, by image models through OpenRouter (game-factory `tools/openrouter-image`, Gemini for
   clips), never asked for as pixel art, and kept smooth in the game; the pixel layer at render makes the pixels.
   PixelLab is no longer used. A new fighter is made to `art/README.md`: a master in the fighting stance approved
-  through the layer before any clip is paid for, then the 20 clips of `pick::CLIPS` facing east, 8 key poses a
+  through the layer before any clip is paid for, then the 17 clips of `pick::CLIPS` facing east, 8 key poses a
   picture with the master as the reference (about $0.07 a picture). The PixelLab sheets on the page stay until each
   is redrawn.
 - An effect is a sprite sheet unless it reads the fighter it plays on (its body, its outline: `SPRITE_AWARE`) or

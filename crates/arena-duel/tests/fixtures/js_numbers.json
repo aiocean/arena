@@ -452,24 +452,25 @@
     ]
   ],
   "motions": {
-    "slash": {
-      "kind": "melee",
+    "qibolt": {
+      "kind": "bolt",
+      "fx": "scifi/bullet-tracer",
       "cost": 0,
       "windup": 0.2,
-      "recover": 0.32,
-      "cooldown": 0.7,
-      "range": 96,
-      "damage": 5
+      "recover": 0.24,
+      "cooldown": 0.8,
+      "damage": 5,
+      "speed": 1100
     },
-    "step": {
-      "kind": "dash",
-      "fx": "lightning/lightning-dash",
-      "cost": 24,
-      "windup": 0.26,
-      "recover": 0.45,
-      "cooldown": 3.4,
-      "distance": 288,
-      "damage": 13
+    "qiburst": {
+      "kind": "blast",
+      "fx": "lightning/arc-discharge",
+      "cost": 12,
+      "windup": 0.24,
+      "recover": 0.42,
+      "cooldown": 1.6,
+      "range": 104,
+      "damage": 11
     },
     "seal": {
       "kind": "zone",
@@ -493,18 +494,6 @@
       "cooldown": 2.2,
       "range": 160,
       "damage": 18
-    },
-    "dive": {
-      "kind": "melee",
-      "dive": true,
-      "cost": 12,
-      "windup": 0.22,
-      "recover": 0.5,
-      "cooldown": 1.6,
-      "range": 104,
-      "damage": 11,
-      "speed": 1040,
-      "slamFx": "explosions/dirt-explosion"
     },
     "bolt": {
       "kind": "bolt",
@@ -770,16 +759,6 @@
       "range": 160,
       "damage": 28
     },
-    "slashluo": {
-      "kind": "dash",
-      "fx": "arcane/sword-slash",
-      "cost": 30,
-      "windup": 0.3,
-      "recover": 0.5,
-      "cooldown": 3.8,
-      "distance": 360,
-      "damage": 22
-    },
     "arsenal": {
       "kind": "void",
       "fx": "arcane/sword-formation",
@@ -804,16 +783,6 @@
       "recover": 0.12,
       "cooldown": 3,
       "distance": 368
-    },
-    "onestep": {
-      "kind": "dash",
-      "fx": "arcane/blink-dash",
-      "cost": 30,
-      "windup": 0.2,
-      "recover": 0.4,
-      "cooldown": 4,
-      "distance": 480,
-      "damage": 14
     },
     "mountain": {
       "kind": "zone",
@@ -1086,16 +1055,6 @@
       "damage": 12,
       "speed": 1360
     },
-    "sevencolor": {
-      "kind": "dash",
-      "fx": "arcane/sword-strike",
-      "cost": 30,
-      "windup": 0.28,
-      "recover": 0.45,
-      "cooldown": 3.6,
-      "distance": 336,
-      "damage": 17
-    },
     "umbrella": {
       "kind": "zone",
       "fx": "fire/flame-ring",
@@ -1295,16 +1254,6 @@
       "cooldown": 4.5,
       "range": 224,
       "damage": 26
-    },
-    "fireescape": {
-      "kind": "dash",
-      "fx": "fire/fire-dash",
-      "cost": 28,
-      "windup": 0.22,
-      "recover": 0.4,
-      "cooldown": 3.6,
-      "distance": 320,
-      "damage": 10
     },
     "flameorigin": {
       "kind": "zone",
@@ -1996,18 +1945,12 @@
       },
       "blockedRecover": 0.15,
       "unsafeOnBlock": [
-        "dive",
-        "step",
         "palm",
         "burst",
         "lotus",
         "ancientgod",
-        "slashluo",
-        "onestep",
         "nineturn",
-        "sevencolor",
         "heavenlychop",
-        "fireescape",
         "warprint",
         "daofusion"
       ]

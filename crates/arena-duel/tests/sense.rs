@@ -54,7 +54,7 @@ fn a_skill_says_what_it_inflicts_by_its_kinds_of_damage_and_its_controls() {
     // Định Thân holds (the freeze slot), Hóa Ma Chỉ takes the soul (the silence slot)
     assert_eq!(skill_of("bodyfix").inflicts.freeze, 0.4);
     assert_eq!(skill_of("demonfinger").inflicts.silence, 1.0);
-    assert_eq!(skill_of("slash").inflicts, arena_mind::Inflicts::default());
+    assert_eq!(skill_of("blink").inflicts, arena_mind::Inflicts::default());
 }
 
 #[test]
@@ -126,7 +126,7 @@ fn one_cast(skill: &'static str) -> Duel {
 
 #[test]
 fn a_cast_shows_its_frames_to_both_and_its_cooldown_after() {
-    let mut d = one_cast("slash");
+    let mut d = one_cast("qibolt");
     let mut seen = (false, false, false);
     let mut cooled = false;
     for _ in 0..90 {
@@ -145,15 +145,16 @@ fn a_cast_shows_its_frames_to_both_and_its_cooldown_after() {
         seen.1 |= a.in_window;
         seen.2 |= a.hitbox.is_some();
         let x = mine.slotx[0].unwrap_or_default();
-        assert!(x.cooldown > 0.0, "the slash is slot 0: {x:?}");
+        assert!(x.cooldown > 0.0, "the qi bolt is slot 0: {x:?}");
         cooled |= x.stored < x.max_uses && x.cooldown_left > 0.0;
     }
+    // a cast has no blade's hitbox: the clip draws no blow (every skill is a spell)
     assert_eq!(
         seen,
-        (true, true, true),
-        "wound up, in its window, with a blade"
+        (true, true, false),
+        "wound up, in its window, with no blade"
     );
-    assert!(cooled, "the slash cooled down after it was cast");
+    assert!(cooled, "the qi bolt cooled down after it was cast");
     let s = sense_of(d.state(), 0);
     let foe = s.foe_slots[0].map(|f| f.built.windup);
     assert_eq!(foe, sense_of(d.state(), 1).slotx[0].map(|x| x.windup));

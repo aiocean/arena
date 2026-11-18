@@ -3,8 +3,8 @@
 use crate::act::{advance, begin, break_act, drop_barrier, knock_out, set_meditating, settle};
 use crate::bar::draw;
 use crate::body::{Drive, Motion};
-use crate::data::{BAR, DECOR, FLY, Look, QI_REGEN, ROUND_PAUSE, STALE, spell};
-use crate::fighter::{Fighter, Phase, Slot, State, Told};
+use crate::data::{BAR, DECOR, FLY, Look, QI_REGEN, ROUND_PAUSE, STALE};
+use crate::fighter::{Fighter, Slot, State, Told};
 use crate::js::{js_max, js_min};
 use crate::seat::{Brain, MakeSeat, Seat};
 use crate::shot::{shot, stop_shot};
@@ -518,21 +518,9 @@ fn body(state: &mut State, me: usize, dt: f64) {
     if f.fly && (f.qi() <= 1.0 || f.body.reeling()) {
         f.fly = false;
     }
-    // a dive drops straight at the foe's height
-    let diving = f
-        .act
-        .is_some_and(|a| a.phase == Phase::Windup && spell(a.spell).is_some_and(|s| s.dive));
-    let foe_air = state.fighters[foe].body.air;
     let foe_x = state.fighters[foe].body.x;
     let f = &state.fighters[me];
-    let motion = if diving {
-        Motion::Dive {
-            speed: spell(f.act.map_or("dive", |a| a.spell))
-                .and_then(|s| s.speed)
-                .unwrap_or(0.0),
-            floor: foe_air,
-        }
-    } else if f.fly {
+    let motion = if f.fly {
         Motion::Fly { hover: f.hover }
     } else {
         Motion::Gravity

@@ -20,7 +20,6 @@ pub struct Appearance {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Act {
     pub how: Gather,
-    pub dive: bool,
     pub windup: Option<Windup>,
     pub recover: Option<Windup>,
 }
@@ -53,7 +52,6 @@ pub fn appearance(
         };
         Some(Act {
             how: crate::pose::gather_of(s.kind),
-            dive: s.dive,
             windup: (phase == Phase::Windup).then_some(progress),
             recover: (phase == Phase::Recover).then_some(progress),
         })
@@ -72,10 +70,7 @@ pub const CLIPS: &[&str] = &[
     "walk",
     "jump",
     "duck",
-    "slash",
-    "overhead",
     "cast",
-    "dash",
     "guard",
     "meditate",
     "hit",
@@ -146,16 +141,7 @@ fn part_of(a: &Appearance, split: impl Fn(&'static str) -> f64) -> Part {
         Some(p) => part(clip, from, 1.0, Play::At(p)),
         None => part(clip, from, 1.0, Play::Once),
     };
-    let blade = if a.act.is_some_and(|k| k.dive) {
-        "overhead"
-    } else {
-        "slash"
-    };
-    let spell = if a.act.is_some_and(|k| k.how == Gather::Lunge) {
-        "dash"
-    } else {
-        "cast"
-    };
+    let spell = "cast";
     match a.pose {
         Pose::Idle => whole("stance-idle", Play::Loop),
         Pose::Walk => whole("walk", Play::Loop),
@@ -164,8 +150,6 @@ fn part_of(a: &Appearance, split: impl Fn(&'static str) -> f64) -> Part {
         Pose::Land => part("jump", 0.625, 1.0, Play::Once),
         Pose::Crouch => part("jump", 0.125, 0.125, Play::Once),
         Pose::Duck => part("duck", 0.0, 0.5, Play::Once),
-        Pose::Draw => windup(blade, split(blade)),
-        Pose::Slash => follow(blade, split(blade)),
         Pose::Channel => windup(spell, split(spell)),
         Pose::Cast => follow(spell, split(spell)),
         Pose::Guard => whole("guard", Play::Once),
@@ -265,12 +249,11 @@ mod tests {
     }
 
     #[test]
-    fn a_blade_blow_is_one_animation_split_between_windup_and_follow_through() {
+    fn a_cast_is_one_animation_split_between_windup_and_follow_through() {
         let windup = |p| {
-            let mut a = stand(Pose::Draw, 0.0);
+            let mut a = stand(Pose::Channel, 0.0);
             a.act = Some(Act {
                 how: Gather::Palm,
-                dive: false,
                 windup: Some(Windup { progress: p }),
                 recover: None,
             });
@@ -279,28 +262,28 @@ mod tests {
         assert_eq!(
             windup(0.0),
             Shot {
-                clip: "slash",
+                clip: "cast",
                 frame: 0
             }
         );
         assert_eq!(
             windup(1.0),
             Shot {
-                clip: "slash",
+                clip: "cast",
                 frame: 4
             }
         );
         assert_eq!(
-            pick_half(&stand(Pose::Slash, 0.0), 10.0, NINE),
+            pick_half(&stand(Pose::Cast, 0.0), 10.0, NINE),
             Shot {
-                clip: "slash",
+                clip: "cast",
                 frame: 4
             }
         );
         assert_eq!(
-            pick_half(&stand(Pose::Slash, 9.0), 10.0, NINE),
+            pick_half(&stand(Pose::Cast, 9.0), 10.0, NINE),
             Shot {
-                clip: "slash",
+                clip: "cast",
                 frame: 8
             }
         );
@@ -312,7 +295,6 @@ mod tests {
             let mut a = stand(Pose::Cast, 0.0);
             a.act = Some(Act {
                 how: Gather::Palm,
-                dive: false,
                 windup: None,
                 recover: Some(Windup { progress: p }),
             });
@@ -325,26 +307,6 @@ mod tests {
         );
         // a recovery an act of the rules says nothing of (no act) plays at the sheet's rate, as before
         assert_eq!(pick_half(&stand(Pose::Cast, 0.2), 10.0, NINE).frame, 6);
-    }
-
-    #[test]
-    fn a_blow_from_the_air_is_the_overhead_cut_and_a_lunge_the_dash() {
-        let mut a = stand(Pose::Slash, 0.0);
-        a.act = Some(Act {
-            how: Gather::Palm,
-            dive: true,
-            windup: None,
-            recover: None,
-        });
-        assert_eq!(pick_half(&a, 10.0, NINE).clip, "overhead");
-        let mut b = stand(Pose::Cast, 0.0);
-        b.act = Some(Act {
-            how: Gather::Lunge,
-            dive: false,
-            windup: None,
-            recover: None,
-        });
-        assert_eq!(pick_half(&b, 10.0, NINE).clip, "dash");
     }
 
     #[test]
@@ -365,8 +327,8 @@ mod tests {
     fn every_pose_picks_an_animation_the_sheet_must_hold() {
         use Pose::*;
         for pose in [
-            Idle, Walk, Jump, Fly, Land, Crouch, Duck, Draw, Slash, Channel, Cast, Guard, Meditate,
-            Hurt, Shocked, Launched, Tumble, Fall, Down, Roll, Sit, Kneel, Win,
+            Idle, Walk, Jump, Fly, Land, Crouch, Duck, Channel, Cast, Guard, Meditate, Hurt,
+            Shocked, Launched, Tumble, Fall, Down, Roll, Sit, Kneel, Win,
         ] {
             let shot = pick_half(&stand(pose, 0.3), 10.0, NINE);
             assert!(CLIPS.contains(&shot.clip), "{pose:?} picks {}", shot.clip);

@@ -223,21 +223,14 @@ pub fn reach_factor(tags: Tags) -> f64 {
     }
 }
 
-/// The skills that recover longer when their blow is guarded (the duel's `FRAMES.unsafe_on_block`): the dive, the
-/// dashes and the close blasts.
+/// The skills that recover longer when their blow is guarded (the duel's `FRAMES.unsafe_on_block`): the close blasts.
 pub const UNSAFE_ON_BLOCK: &[&str] = &[
-    "dive",
-    "step",
     "palm",
     "burst",
     "lotus",
     "ancientgod",
-    "slashluo",
-    "onestep",
     "nineturn",
-    "sevencolor",
     "heavenlychop",
-    "fireescape",
     "warprint",
     "daofusion",
 ];
@@ -524,37 +517,22 @@ mod pool {
     /// One row a skill, kept on one line each so the pool reads as a table.
     #[rustfmt::skip]
     pub const ALL: &[Gem] = &[
-        // ---- 11.1 basics: always held, no points ----
-        attack("slash", "Chém", &[Attack, Sword, Near, Melee, Strike], &[(E::Force, 1.0)], 5.0, &[], [0.2, 0.32, 0.7], "slash", "arena", C),
-        attack("dive", "Lao Kiếm", &[Attack, Sword, Near, Melee, Dash], &[(E::Force, 1.0)], 11.0, &[(R::Qi, 12.0)], [0.22, 0.5, 1.6], "dive", "arena", C),
+        // ---- 11.1 basics: always held, no points; spells only, no blade ----
+        magic("qibolt", "Khí Đạn", &[Spell, Palm, Far, Projectile], &[(E::Force, 1.0)], 5.0, &[], [0.2, 0.24, 0.8], "qibolt", "arena", C),
+        attack("qiburst", "Khí Bạo", &[Attack, Palm, Near, Nova], &[(E::Force, 1.0)], 11.0, &[(R::Qi, 12.0)], [0.24, 0.42, 1.6], "qiburst", "arena", C),
         body("blink", "Độn", &[Body, Escape, Mid, Movement, Space], &[(R::Qi, 20.0)], [0.06, 0.12, 1.8], "blink", "arena", C),
-        // ---- 11.2 close attacks: strike, slam, dash ----
-        attack("step", "Bộ", &[Attack, Escape, Mid, Dash], &[(E::Force, 1.0)], 13.0, &[(R::Qi, 24.0)], [0.26, 0.45, 3.4], "step", "arena", B),
+        // ---- 11.2 close attacks: strike, slam ----
         attack("palm", "Chưởng", &[Attack, Palm, Near, Melee, Slam], &[(E::Force, 1.0)], 20.0, &[(R::Qi, 27.0)], [0.32, 0.5, 2.8], "palm", "arena", B),
         attack("burst", "Bạo", &[Attack, Palm, Near, Nova], &[(E::Thunder, 1.0)], 24.0, &[(R::Qi, 30.0)], [0.36, 0.5, 3.0], "burst", "arena", B),
         attack("lotus", "Liên Hoa", &[Attack, Palm, Near, Melee], &[(E::Light, 1.0)], 18.0, &[(R::Qi, 24.0)], [0.3, 0.45, 2.2], "lotus", "arena", B),
         attack("ancientgod", "Cổ Thần Huyết", &[Attack, Fist, Transform, Near, Melee, Slam, Ancient], &[(E::Force, 1.0)], 28.0, &[(R::Qi, 36.0)], [0.5, 0.55, 5.0], "ancientgod", "TN190", B),
-        attack("slashluo", "Trảm La", &[Attack, Sword, Mid, Dash, Line], &[(E::Metal, 1.0)], 22.0, &[(R::Qi, 30.0)], [0.3, 0.5, 3.8], "slashluo", "TN684", B),
-        attack("onestep", "Nhất Bộ Đăng Thiên", &[Attack, Escape, Mid, Dash], &[(E::Force, 1.0)], 14.0, &[(R::Qi, 30.0)], [0.2, 0.4, 4.0], "onestep", "TN", B),
         attack("nineturn", "Cửu Chuyển Luyện Tiên", &[Attack, Palm, Mid, Slam, Charged, Immortal], &[(E::Force, 1.0)], 34.0, &[(R::Qi, 40.0)], [0.85, 0.5, 6.5], "nineturn", "TN493", B),
         attack("vermilion", "Chu Tước Biến", &[Attack, Transform, Palm, Near, Melee], &[(E::Fire, 1.0)], 10.0, &[(R::Qi, 30.0)], [0.35, 0.4, 3.0], "vermilion", "TN1085", B),
         attack("heavenlychop", "Thiên Trảm", &[Attack, Sword, Near, Melee, Strike], &[(E::Metal, 1.0)], 26.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "TN", B),
-        attack("fireescape", "Hỏa Độn", &[Attack, Escape, Mid, Dash], &[(E::Fire, 1.0)], 10.0, &[(R::Qi, 28.0)], [0.22, 0.4, 3.6], "fireescape", "TN1127", C),
         attack("warprint", "Chiến Hồn Ấn", &[Attack, Seal, Near, Melee, Slam], &[(E::Force, 0.5), (E::Metal, 0.5)], 22.0, &[(R::Qi, 32.0)], [0.4, 0.5, 4.0], "warprint", "TN", B),
-        attack("sevencolor", "Thất Thải Đạo Thương", &[Attack, Sword, Mid, Dash, Line], &[(E::Light, 1.0)], 17.0, &[(R::Qi, 30.0)], [0.28, 0.45, 3.6], "sevencolor", "TN1669", B),
         attack("devour", "Phệ Linh", &[Attack, Fist, Near, Melee, Death], &[(E::Yin, 1.0)], 16.0, &[(R::Qi, 26.0)], [0.35, 0.4, 3.2], "devour", "TN885", B),
-        // Each punch pays life, not qi; under 10% life it pays death qi (Sinh tử).
-        rank(with(attack("hundredfist", "Trăm Quyền Sinh Cơ", &[Attack, Fist, Near, Melee, Strike, Chain, Ancient, Life, Blood], &[(E::Force, 1.0)], 9.0, &[(R::Life, 3.0)], [0.3, 0.45, 3.0], "slash", "TN1277", A), &[Effect::Hits(3.0)]), DIVINE),
-        // Ten blows that stack; the Belief intent: it cannot be broken off.
-        rank(with(attack("tenfist", "Thập Băng Quyền Ý", &[Attack, Fist, Intent, Near, Melee, Strike, Chain, Ancient], &[(E::Force, 1.0)], 4.0, &[(R::Qi, 34.0)], [0.4, 0.6, 6.5], "slash", "TN542", B), &[Effect::Hits(10.0)]), DIVINE),
-        // Grows huge; punches on the same target build up to seven.
-        rank(with(attack("manshen", "Man Thần Biến", &[Attack, Fist, Transform, Near, Melee, Strike, Chain], &[(E::Force, 1.0)], 5.0, &[(R::Qi, 40.0)], [0.4, 0.6, 7.0], "slash", "CM1203", B), &[Effect::Hits(7.0)]), RULE),
-        // Rushes in and drinks deep of the foe's life.
-        rank(attack("devourbody", "Thôn Linh Phệ Thể", &[Attack, Fist, Near, Dash, Single, Death], &[(E::Yin, 1.0)], 20.0, &[(R::Qi, 30.0)], [0.25, 0.45, 4.0], "onestep", "TN885", B), DIVINE),
         // A cone that cuts by the foe's remaining lifespan and gives half back.
         rank(attack("autumn", "Thu Ý", &[Attack, Sword, Near, Melee, Cone, Area, Fate], &[(E::Metal, 0.5), (E::Yin, 0.5)], 22.0, &[(R::Qi, 34.0)], [0.45, 0.5, 4.5], "heavenlychop", "CM746", B), RULE),
-        // One cut that strikes the unseen too and breaks shots and zones in its way.
-        rank(attack("manspear", "Man Thương", &[Attack, Sword, Mid, Dash, Line], &[(E::Force, 0.5), (E::Metal, 0.5)], 19.0, &[(R::Qi, 30.0)], [0.3, 0.5, 3.8], "slashluo", "CM238", A), DIVINE),
         // Drags the foe into a row before the palm and breaks shield after shield.
         rank(attack("godquake", "Thần Chấn", &[Attack, Palm, Mid, Slam, Cone, Ancient], &[(E::Earth, 1.0)], 22.0, &[(R::Qi, 30.0)], [0.35, 0.5, 3.2], "palm", "TN1468", A), DIVINE),
         // ---- 11.3 projectiles and instants ----

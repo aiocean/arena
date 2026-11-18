@@ -479,8 +479,8 @@ mod tests {
         );
         // another skill; then nothing; then a cast whose windup passed between two frames
         assert_eq!(
-            w.see(Some(&act("slash", Phase::Windup, 0.05))),
-            Some("slash")
+            w.see(Some(&act("qiburst", Phase::Windup, 0.05))),
+            Some("qiburst")
         );
         assert_eq!(w.see(None), None);
         assert_eq!(w.see(None), None);
@@ -501,17 +501,17 @@ mod tests {
                 tint: tint(Some(Element::Fire)),
             })
         );
-        // Trăm Quyền Sinh Cơ moves as the basic slash (Chém), and still shouts its own name
+        // Thu Ý moves as Thiên Trảm (heavenlychop), and still shouts its own name
         assert_eq!(
-            arena_calc::gem::gem("hundredfist").map(|g| g.spell),
-            Some("slash")
+            arena_calc::gem::gem("autumn").map(|g| g.spell),
+            Some("heavenlychop")
         );
-        assert_eq!(name("hundredfist").as_deref(), Some("Trăm Quyền Sinh Cơ!"));
+        assert_eq!(name("autumn").as_deref(), Some("Thu Ý!"));
         // a top-tier skill borrowing the tribulation's motion
         assert_eq!(name("remnantdusk").as_deref(), Some("Tàn Dạ!"));
         // the basics shout too
-        assert_eq!(name("slash").as_deref(), Some("Chém!"));
-        assert_eq!(name("dive").as_deref(), Some("Lao Kiếm!"));
+        assert_eq!(name("qibolt").as_deref(), Some("Khí Đạn!"));
+        assert_eq!(name("qiburst").as_deref(), Some("Khí Bạo!"));
         assert_eq!(name("blink").as_deref(), Some("Độn!"));
         assert_eq!(shout("blink").map(|s| s.tint), Some(tint(None)));
         assert_eq!(shout("nothing"), None);

@@ -96,8 +96,8 @@ fn a_guarded_blows_chip_goes_through_the_damage_system_and_armour_cuts_it() {
         s.fighters[1].body.face = js_sign(s.fighters[0].body.x - s.fighters[1].body.x);
         s.fighters[1].guard = 5.0;
         let life = s.fighters[1].c.life;
-        // the blade's guard chance is high: find a seed's roll that holds
-        strike(&mut s, 0, "slash");
+        // the burst's guard chance is high: find a seed's roll that holds
+        strike(&mut s, 0, "qiburst");
         life - s.fighters[1].c.life
     };
     let soft = chip(0.0);
@@ -112,11 +112,11 @@ fn each_charge_erases_one_whole_blow() {
     s.fighters[1].charges = 2.0;
     s.fighters[1].shield_t = 6.0;
     let life = s.fighters[1].c.life;
-    strike(&mut s, 0, "slash");
-    strike(&mut s, 0, "slash");
+    strike(&mut s, 0, "qiburst");
+    strike(&mut s, 0, "qiburst");
     assert_eq!(s.fighters[1].c.life, life);
     assert_eq!(s.fighters[1].charges, 0.0);
-    strike(&mut s, 0, "slash");
+    strike(&mut s, 0, "qiburst");
     assert!(s.fighters[1].c.life < life);
 }
 
@@ -326,47 +326,6 @@ fn a_bolt_with_pierce_flies_through_a_minion_to_the_foe() {
     assert!(hits(&s.out, "bolt"), "and the bolt flies on to the foe");
 }
 
-/// A missed blade's retry is the swing's: a stunned fighter's act is broken, and its retry never lands, even with the
-/// foe walked into reach. The retries are found in real fights (brains, a missed blade in its window).
-#[test]
-fn a_broken_swing_takes_its_blades_retry_with_it() {
-    let mut tried = 0;
-    for seed in 1..=20 {
-        let mut duel = common::fight(seed);
-        let mut found = None;
-        for _ in 0..60 * 60 {
-            duel.step(arena_duel::duel::TICK);
-            if let Some(d) = duel.state().pending.iter().find(|d| d.retry) {
-                found = Some(d.clone());
-                break;
-            }
-        }
-        let Some(retry) = found else { continue };
-        tried += 1;
-        let s = duel.state_mut();
-        let (me, foe) = (retry.payload.by, 1 - retry.payload.by);
-        // the foe walks into reach and the slasher is struck out of its act
-        s.fighters[foe].body.x = s.fighters[me].body.x + 60.0 * s.fighters[me].body.face;
-        arena_duel::act::break_act(s, me);
-        assert!(
-            s.pending.iter().all(|d| !d.retry),
-            "seed {seed}: a broken act left its blade's retry"
-        );
-        // and a retry already taken out to land checks the window again: the act is gone, so it does not strike
-        let hp = s.fighters[foe].hp();
-        s.out.clear();
-        arena_duel::act::due(s, retry);
-        assert_eq!(
-            s.fighters[foe].hp(),
-            hp,
-            "seed {seed}: a stunned fighter's blade landed"
-        );
-    }
-    assert!(tried > 0, "no fight missed a blade into a retry");
-}
-
-/// A bolt finds a fighter lying or falling only where its box is: the circles a wide, low hurtbox becomes stay inside
-/// its height (they reached 116 px over a 23 px box), and still cover it end to end; a standing one's are as before.
 #[test]
 fn a_lying_fighter_is_struck_only_where_it_lies() {
     let lying = [-108.0, 0.0, 124.0, 23.0];

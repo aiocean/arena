@@ -65,8 +65,8 @@ fn a_melee_only_loadout_closes_in_to_hit() {
         |g| {
             let t = g.tags();
             t.has(Tag::Near)
-                && t.any(&[Tag::Melee, Tag::Strike, Tag::Slam])
-                && !t.any(&[Tag::Dash, Tag::Area, Tag::Projectile])
+                && t.any(&[Tag::Melee, Tag::Strike, Tag::Slam, Tag::Nova])
+                && !t.any(&[Tag::Area, Tag::Projectile])
         },
         8,
     );

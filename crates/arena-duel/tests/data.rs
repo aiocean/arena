@@ -70,12 +70,7 @@ fn spell_json(s: &data::Spell) -> Value {
         o.insert(k.to_string(), v);
     };
     put("kind", json!(kind_name(s.kind)));
-    for (k, v) in [
-        ("fx", s.fx),
-        ("hitFx", s.hit_fx),
-        ("endFx", s.end_fx),
-        ("slamFx", s.slam_fx),
-    ] {
+    for (k, v) in [("fx", s.fx), ("hitFx", s.hit_fx), ("endFx", s.end_fx)] {
         if let Some(v) = v {
             put(k, json!(v));
         }
@@ -116,7 +111,6 @@ fn spell_json(s: &data::Spell) -> Value {
         }
     }
     for (k, v) in [
-        ("dive", s.dive),
         ("grounded", s.grounded),
         ("reflect", s.reflect),
         ("feet", s.feet),

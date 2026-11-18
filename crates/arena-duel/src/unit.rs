@@ -16,7 +16,7 @@
 //!   as a thrown mine does. A bolt a mirror sends back, two shots meeting, and a unit's shot leave none.
 //! - **Totem**: stands in front of its owner and casts the skill on the totem's cadence (`Spawn::first_cast`,
 //!   `cast_interval`), each cast one blow from where it stands, moving as the skill's motion does.
-//! - **Minion**: walks at the foe at a fighter's walking speed until the blade (`MINION_BLADE`) reaches it, and
+//! - **Minion**: walks at the foe at a fighter's walking speed until its burst (`MINION_BLOW`) reaches it, and
 //!   strikes the nearest enemy body in front within that reach every `MINION_EVERY` seconds; each blow the summoning skill's built blow times
 //!   `Spawn::damage`. It dies when its life runs out: its owner's `MinionDied` goes into the event queue, and each
 //!   fighter within `RES.souls_reach` gains a soul.
@@ -49,10 +49,10 @@ pub const FLOOR_Y: f64 = 0.1;
 pub const FLOOR_RADIUS: f64 = 0.2;
 /// A mine's blast, and a trap's when its skill is not an area, in T.
 pub const DEVICE_RADIUS: f64 = 1.0;
-/// The seconds between a minion's blows. It strikes as the blade (`slash`'s motion) does, at the blade's reach.
+/// The seconds between a minion's blows. It strikes as the close burst (`qiburst`'s motion) does, at its reach.
 pub const MINION_EVERY: f64 = 1.0;
-/// The motion a minion's blows move as.
-pub const MINION_BLADE: &str = "slash";
+/// The motion a minion's blows move as: the basic burst of qi (no blade: the arena is spells only).
+pub const MINION_BLOW: &str = "qiburst";
 /// The effect a unit appears and goes in, when the registry has it.
 pub const UNIT_FX: &str = "spawn/poof";
 /// The effect a mine goes off in, when the registry has it.
@@ -673,10 +673,10 @@ pub fn act(state: &mut State, dt: f64) {
         }
     }
     let walk = body_spec().walk;
-    let Some(blade) = motion(MINION_BLADE) else {
+    let Some(blow) = motion(MINION_BLOW) else {
         return;
     };
-    let reach = blade.range.unwrap_or(0.0);
+    let reach = blow.range.unwrap_or(0.0);
     let ids: Vec<u32> = state
         .units
         .iter()
@@ -720,7 +720,7 @@ pub fn act(state: &mut State, dt: f64) {
                 face: dir,
                 unit: Some(id),
             };
-            crate::act::strike(state, blade, p, o, None, false);
+            crate::act::strike(state, blow, p, o, None);
         }
     }
 }
@@ -738,7 +738,7 @@ fn totem_cast(state: &mut State, i: usize) {
         face: or_one(js_sign(tx - x)),
         unit: Some(id),
     };
-    crate::act::strike(state, m, p, o, Some(tx), false);
+    crate::act::strike(state, m, p, o, Some(tx));
 }
 
 /// A trap at `i` springs on `on`: an area skill strikes around it, anything else strikes `on`.

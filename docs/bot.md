@@ -34,7 +34,10 @@ are now what the skill builds to with its supports and keystones.
 | 1441..1537 | 8 x 12 | **Units** on the field, both sides', nearest first, zero when absent: present, mine, kind (trap, mine, totem, minion), distance ahead / 100, height over my feet / 50, life share, time left / 10 (40 s for one that lasts), armed, seconds to its next blow (0 for a trap or a mine). |
 | 1537..1741 | 6 x 34 | **Foe's slots**, its basics then its bar, zero when empty: present, ready, cooldown left, stored uses / 4, kind (12), windup, recover, the active window's start and length, damage / 50, qi / 50, reach / 100, then each ailment a blow lays over its full (11). |
 
-The 12 skill kinds, in order: melee, dive, dash, blast, bolt, seeker, area, field, heal, ward, barrier, blink.
+The 12 skill kinds, in order: three reserved, then blast, bolt, seeker, area, field, heal, ward, barrier, blink. The
+three reserved slots held melee, dive and dash until the arena went spells only (RULES 19): no skill is one of them
+now, so they are always 0, and the inputs keep their shape (ABI 3, 1741 inputs, unchanged). A cast's hitbox (in "My
+cast" and "Foe's cast") was a blade's: a spell draws none, so it reads 0 too.
 
 The damage system's lists, in their orders in `crates/arena-calc`: the 11 ailments (`ailment::Ailment::ALL`: bleed,
 daze, sunder, bind, soak, burn, heavy, jolt, glare, wither, dread), the 119 supports (`support::SUPPORTS`), the 12
@@ -97,7 +100,7 @@ Where an aim lands:
 - jump and fly high whenever not flying (a jump in mid-air does nothing), land only when flying;
 - a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay,
   and, for a skill that deals damage, none of its last blows still playing out (`docs/rules.md`, "Skills");
-  a silenced fighter casts only its blade (slash and dive), a sealed one cannot blink;
+  a silenced fighter casts only its attacks (the qi burst among the basics: no spell), a sealed one cannot blink;
 - aiming ahead or short only for areas and blinks.
 
 An illegal act is played as a wait. An act that was legal when chosen but is no longer legal on the next tick (when

@@ -60,7 +60,7 @@ const DOWN: f64 = 0.75;
 
 fn category(kind: SkillKind) -> Category {
     match kind {
-        SkillKind::Melee | SkillKind::Dive | SkillKind::Dash | SkillKind::Blast => Category::Close,
+        SkillKind::Blast => Category::Close,
         SkillKind::Bolt | SkillKind::Seeker => Category::Ranged,
         SkillKind::Area | SkillKind::Field => Category::Area,
         SkillKind::Heal | SkillKind::Ward => Category::Buff,
@@ -112,7 +112,7 @@ impl Out<'_, '_> {
 }
 
 impl Ctx<'_> {
-    /// The ready skill of `kind` (the cheapest, for a blade that is not a dive).
+    /// The ready skill of `kind` (the cheapest).
     fn ready_of(&self, kind: SkillKind) -> Option<usize> {
         self.skills
             .iter()
@@ -134,10 +134,11 @@ impl Ctx<'_> {
         }
     }
 
-    fn blade(&self) -> f64 {
+    /// The shortest reach of my close blasts (24 with none).
+    fn close(&self) -> f64 {
         self.skills
             .iter()
-            .filter(|s| s.kind == SkillKind::Melee)
+            .filter(|s| s.kind == SkillKind::Blast)
             .map(|s| s.reach)
             .fold(24.0, f64::min)
     }
@@ -398,7 +399,7 @@ fn blows(out: &mut Out) -> f64 {
     let ctx = out.ctx;
     let (me, foe, body) = (ctx.me, ctx.foe, ctx.body);
     let Doing::Act {
-        kind: SkillKind::Melee | SkillKind::Blast | SkillKind::Dive,
+        kind: SkillKind::Blast,
         phase: ActPhase::Windup,
         t,
         windup,
@@ -428,7 +429,7 @@ fn blows(out: &mut Out) -> f64 {
             None,
         );
     }
-    if let Some(b) = ctx.ready_of(SkillKind::Melee)
+    if let Some(b) = ctx.ready_of(SkillKind::Blast)
         && ctx.skills[b].windup < left
         && d < ctx.skills[b].reach + body.half_width
     {
@@ -474,12 +475,6 @@ fn attacks(out: &mut Out) {
             }
         };
         match s.kind {
-            SkillKind::Dive if me.air - foe.air > 14.0 && d < 44.0 => {
-                out.cast(i, None, ctx.value(i, hit(0.9, 0.25, 0.6), s.windup), None)
-            }
-            SkillKind::Melee if d < s.reach + 8.0 && (foe.air - me.air).abs() < body.chest => {
-                out.cast(i, None, ctx.value(i, hit(0.95, 0.15, 0.55), s.windup), None);
-            }
             SkillKind::Bolt if d > 24.0 && s.speed > 0.0 => {
                 // a bolt flies level from my chest: it must cross the foe's body
                 let chest = me.air + body.chest;
@@ -550,12 +545,6 @@ fn attacks(out: &mut Out) {
                     None,
                 );
             }
-            // a rush through the foe: within a stride, on my level
-            SkillKind::Dash
-                if d > 12.0 && d < s.reach - 10.0 && (foe.air - me.air).abs() < body.chest =>
-            {
-                out.cast(i, None, ctx.value(i, hit(0.9, 0.2, 0.6), s.windup), None);
-            }
             SkillKind::Ward if !me.shield && me.hp < 90.0 => {
                 let safe = if d > 50.0 && !matches!(foe.doing, Doing::Act { .. }) {
                     1.0
@@ -585,13 +574,13 @@ fn positions(out: &mut Out) {
     let ctx = out.ctx;
     let (me, foe, body, r, arena) = (ctx.me, ctx.foe, ctx.body, ctx.reading, ctx.arena);
     let (d, dx) = (r.d, r.dx);
-    let blade = ctx.blade();
+    let close = ctx.close();
     let off = d - r.want;
     let toward = sign(dx);
     let level = (foe.air - me.air).abs() < body.chest;
     out.push(Choice::Wait, Category::Wait, 0.4, None);
     // after an exchange, or with the foe behind a barrier, back off to spacing and let it come (footsies)
-    let spacing = (blade + body.half_width + 6.0).max(r.want * 0.8);
+    let spacing = (close + body.half_width + 6.0).max(r.want * 0.8);
     if (ctx.calm > 0.0 || foe.barrier)
         && d < spacing
         && level
@@ -600,10 +589,10 @@ fn positions(out: &mut Out) {
     {
         out.walk(-toward, Category::Retreat, 2.4);
     }
-    // inside the foe's sword reach with no blade of my own ready: get out of it
-    if d < blade + 4.0
+    // inside the foe's burst with no burst of my own ready: get out of it
+    if d < close + 4.0
         && me.air - foe.air < body.chest
-        && ctx.ready_of(SkillKind::Melee).is_none()
+        && ctx.ready_of(SkillKind::Blast).is_none()
         && ctx.room(-toward) > 14.0
     {
         out.walk(-toward, Category::Retreat, 2.2);
@@ -665,7 +654,7 @@ fn positions(out: &mut Out) {
         out.push(Choice::Fly { height: want }, category, 1.2, None);
     }
     // light on its feet: on the ground and out of reach, it bounds about rather than walking flat
-    if me.air == 0.0 && !me.flying && d > blade + 10.0 && ctx.roll < 0.5 {
+    if me.air == 0.0 && !me.flying && d > close + 10.0 && ctx.roll < 0.5 {
         out.push(Choice::Jump, Category::Approach, 1.3, None);
     }
     let quiet = ctx.threats.is_empty() && !matches!(foe.doing, Doing::Act { .. });

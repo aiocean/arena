@@ -101,10 +101,10 @@ const fn total(blocks: &[(&str, usize)]) -> usize {
     n
 }
 
-const KINDS: [SkillKind; 12] = [
-    SkillKind::Melee,
-    SkillKind::Dive,
-    SkillKind::Dash,
+/// The slots a skill's kind takes, one-hot: three reserved (where the blade, the dive and the dash were before the arena
+/// went spells only; never set, so a bot's inputs keep their shape), then [`KINDS`].
+const RESERVED_KINDS: usize = 3;
+const KINDS: [SkillKind; 9] = [
     SkillKind::Blast,
     SkillKind::Bolt,
     SkillKind::Seeker,
@@ -138,6 +138,7 @@ impl Out {
         self.put(if b { 1.0 } else { 0.0 });
     }
     fn kind(&mut self, k: Option<SkillKind>) {
+        self.skip(RESERVED_KINDS);
         for c in KINDS {
             self.flag(k == Some(c));
         }

@@ -218,18 +218,15 @@ pub enum Motion {
     Gravity,
     /// Flying toward height `hover`.
     Fly { hover: f64 },
-    /// Diving straight down at `speed`, no lower than `floor` (the foe's height).
-    Dive { speed: f64, floor: f64 },
 }
 
-/// [`Motion`] as JS passes it: `"gravity"`, `{fly: hover}` or `{dive: speed, floor}`.
+/// [`Motion`] as JS passes it: `"gravity"` or `{fly: hover}`.
 #[cfg(feature = "serde")]
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum MotionWire {
     Named(MotionName),
     Fly(FlyWire),
-    Dive(DiveWire),
 }
 
 #[cfg(feature = "serde")]
@@ -247,20 +244,11 @@ struct FlyWire {
 }
 
 #[cfg(feature = "serde")]
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct DiveWire {
-    dive: f64,
-    floor: f64,
-}
-
-#[cfg(feature = "serde")]
 impl From<MotionWire> for Motion {
     fn from(w: MotionWire) -> Self {
         match w {
             MotionWire::Named(MotionName::Gravity) => Motion::Gravity,
             MotionWire::Fly(FlyWire { fly }) => Motion::Fly { hover: fly },
-            MotionWire::Dive(DiveWire { dive, floor }) => Motion::Dive { speed: dive, floor },
         }
     }
 }
@@ -290,14 +278,10 @@ pub struct Drive {
 /// walking. The body's own state (thrown, down, stunned, ducking, landing, in the air) comes first where it should.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Doing {
-    /// Winding up a blade blow (`melee`) or a spell.
-    Windup {
-        melee: bool,
-    },
+    /// Winding up a spell.
+    Windup,
     /// Following through.
-    Recover {
-        melee: bool,
-    },
+    Recover,
     Guard,
     Meditate,
     Fly,
@@ -470,10 +454,6 @@ impl Body {
         }
         self.x = clamp(x, lo, hi);
         match drive.motion {
-            Motion::Dive { speed, floor } => {
-                self.air = max(floor, self.air - speed * dt);
-                self.vy = -speed;
-            }
             Motion::Fly { hover } => {
                 self.vy = clamp(
                     (hover - self.air) * self.spec.fly_rate,
@@ -754,10 +734,8 @@ impl Body {
             return Pose::Crouch;
         }
         match doing {
-            Doing::Windup { melee: true } => Pose::Draw,
-            Doing::Windup { melee: false } => Pose::Channel,
-            Doing::Recover { melee: true } => Pose::Slash,
-            Doing::Recover { melee: false } => Pose::Cast,
+            Doing::Windup => Pose::Channel,
+            Doing::Recover => Pose::Cast,
             Doing::Guard => Pose::Guard,
             Doing::Meditate => Pose::Meditate,
             Doing::Fly | Doing::Walk | Doing::Idle => {

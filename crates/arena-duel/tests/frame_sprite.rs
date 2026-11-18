@@ -2,8 +2,8 @@
 //!
 //! A skill's wind-up plays the first part of its clip, up to the clip's active frame, stretched over its `windup`
 //! (`pick`); its recovery plays the rest stretched over its `recover`, so the body is drawn open for exactly as long
-//! as the rules keep it punishable. So the clip a skill plays (`slash`, or
-//! `overhead` for a blow from the air, `dash` for a lunge, `cast` for the rest), the clip's frame count and active
+//! as the rules keep it punishable. So the clip a skill plays (`cast`: every skill is a spell), the clip's frame
+//! count and active
 //! frame (`frames_data`, measured from the sheets) and the skill's `windup` and `recover` (`data`) must agree:
 //!
 //! - every wind-up has a frame of its own before the active one (held as a hard rule);
@@ -14,7 +14,7 @@
 //! `windup` or `recover` changed without its clip, or a clip redrawn without the skills that play it, fails here,
 //! naming the lines. When the change is meant, look at the new verdicts, then delete the file and run again.
 
-use arena_duel::data::{Kind, Look, spells};
+use arena_duel::data::{Look, spells};
 use arena_duel::frames::{active, len};
 use std::fmt::Write as _;
 
@@ -26,23 +26,13 @@ const FILE: &str = concat!(
 /// The fewest frames a second a wind-up may show and still read as motion.
 const SMOOTH: f64 = 10.0;
 
-/// The clip a skill of `kind` plays (`pick::part_of`).
-fn clip_of(kind: Kind, dive: bool) -> &'static str {
-    match kind {
-        Kind::Melee if dive => "overhead",
-        Kind::Melee => "slash",
-        Kind::Dash => "dash",
-        _ => "cast",
-    }
-}
-
 /// One skill in one look: (the table's line, whether its wind-up has a frame of its own).
 fn rows() -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for look in [Look::VuongLam, Look::ThatThai] {
         let name = look.name();
         for s in spells() {
-            let clip = clip_of(s.kind, s.dive);
+            let clip = arena_duel::frames::CAST;
             let n = len(look, clip);
             let last = n.saturating_sub(1);
             let act = active(look, clip).unwrap_or(last / 2).min(last);

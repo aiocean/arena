@@ -39,7 +39,7 @@ const HABITS: usize = 40;
 const SHARE: f64 = 0.4;
 
 /// The kinds of cast `Casts` counts, in `data::Kind` order.
-pub const CAST_KINDS: usize = 11;
+pub const CAST_KINDS: usize = 9;
 
 /// The learner's casts of one kind: begun, begun out of reach, landed nothing, landed nothing having begun out of
 /// reach, and the damage they dealt (shares of the foe's full life, 0 to 100 a life).
@@ -435,13 +435,7 @@ impl Env {
             let strikes = motion
                 && matches!(
                     k,
-                    Kind::Melee
-                        | Kind::Dash
-                        | Kind::Blast
-                        | Kind::Bolt
-                        | Kind::Orb
-                        | Kind::Zone
-                        | Kind::Void
+                    Kind::Blast | Kind::Bolt | Kind::Orb | Kind::Zone | Kind::Void
                 );
             // from the caster's x to the nearest edge of the foe's hurtboxes
             let x = state.fighters[me].body.x;
@@ -450,8 +444,7 @@ impl Env {
                 .map(|h| (h[0] - x).max(x - h[2]).max(0.0))
                 .fold(f64::INFINITY, f64::min);
             let reach = match k {
-                Kind::Melee | Kind::Blast if motion => mo.range,
-                Kind::Dash if motion => mo.distance,
+                Kind::Blast if motion => mo.range,
                 _ => None,
             };
             let far = reach.is_some_and(|r| gap > r);

@@ -8,7 +8,7 @@ use common::*;
 fn opening_counts_recovery() {
     let mut f = foe(60.0);
     f.doing = Doing::Act {
-        kind: SkillKind::Melee,
+        kind: SkillKind::Blast,
         phase: ActPhase::Recover,
         t: 0.1,
         windup: 0.2,
@@ -136,7 +136,7 @@ const ALL: [Input; 18] = [
 fn inputs_stay_in_unit_range() {
     let mut rng = Rng::new(3);
     let kinds = [
-        SkillKind::Melee,
+        SkillKind::Seeker,
         SkillKind::Bolt,
         SkillKind::Area,
         SkillKind::Field,

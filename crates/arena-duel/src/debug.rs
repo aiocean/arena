@@ -95,11 +95,8 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         if let Some((x, y)) = crate::frames::cast_hand(state, me) {
             out.push(point(Mark::Launch, x, y));
         }
-        // the strike is tested on the tick the windup ends, when the act turns to its recovery, and a blade that
-        // missed again on each tick while its clip is in the active window (a retry due, `act::due`)
-        let retrying = state.pending.iter().any(|p| p.retry && p.payload.by == me)
-            && crate::frames::in_window(state, me);
-        if !retrying && (act.phase != Phase::Recover || act.t > STRIKE_SHOWN) {
+        // the strike is tested on the tick the windup ends, when the act turns to its recovery
+        if act.phase != Phase::Recover || act.t > STRIKE_SHOWN {
             continue;
         }
         let Some(k) = f.kit.index(act.spell) else {
@@ -107,13 +104,11 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         };
         let sp = f.kit.skills[k].motion;
         let foe = &state.fighters[1 - me].body.spec;
-        let (reach, level, blade) = match sp.kind {
-            // act::strike, Melee: unit::in_front -> unit::strike_hits, the blade's hitbox
-            Kind::Melee => (sp.range.unwrap_or(0.0), b.spec.chest + 16.0, true),
-            // act::strike, Blast: unit::strike_hits, its own box
-            Kind::Blast => (sp.range.unwrap_or(0.0), foe.body, false),
-            _ => continue,
-        };
+        // act::strike, Blast: unit::strike_hits, its own box
+        if sp.kind != Kind::Blast {
+            continue;
+        }
+        let (reach, level, blade) = (sp.range.unwrap_or(0.0), foe.body, false);
         let face = if b.face < 0.0 { -1.0 } else { 1.0 };
         let [x0, y0, x1, y1] =
             crate::unit::strike_box(state, me, b.x, b.air, face, reach, level, blade);

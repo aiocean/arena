@@ -61,7 +61,7 @@ enum Moment {
     Duck,
     Meditate,
     Air,
-    Slash,
+    Burst,
     Bolt,
 }
 
@@ -71,7 +71,7 @@ impl Moment {
         Moment::Duck,
         Moment::Meditate,
         Moment::Air,
-        Moment::Slash,
+        Moment::Burst,
         Moment::Bolt,
     ];
     fn name(self) -> &'static str {
@@ -80,7 +80,7 @@ impl Moment {
             Moment::Duck => "duck",
             Moment::Meditate => "meditate",
             Moment::Air => "air",
-            Moment::Slash => "slash",
+            Moment::Burst => "burst",
             Moment::Bolt => "bolt",
         }
     }
@@ -97,11 +97,10 @@ fn at(state: &State, f: usize, m: Moment) -> bool {
         Moment::Duck => b.pose == Pose::Duck && b.pose_t >= 0.3,
         Moment::Meditate => b.pose == Pose::Meditate && b.pose_t >= 0.6,
         Moment::Air => b.air > 90.0 && fi.act.is_none(),
-        Moment::Slash => fi.act.is_some_and(|a| {
+        Moment::Burst => fi.act.is_some_and(|a| {
             a.phase == Phase::Recover
                 && a.t == 0.0
-                && arena_duel::data::spell(a.spell)
-                    .is_some_and(|s| s.kind == Kind::Melee && !s.dive)
+                && arena_duel::data::spell(a.spell).is_some_and(|s| s.kind == Kind::Blast)
         }),
         Moment::Bolt => state
             .shots
@@ -300,7 +299,7 @@ fn shoot(
         }
     }
     let mut note = String::new();
-    if m == Moment::Slash
+    if m == Moment::Burst
         && let Some(act) = fi.act
         && let Some(k) = fi.kit.index(act.spell)
     {
@@ -313,8 +312,8 @@ fn shoot(
             b.air,
             face,
             sp.range.unwrap_or(0.0),
-            b.spec.chest + 16.0,
-            true,
+            state.fighters[1 - f].body.spec.body,
+            false,
         );
         rect(&mut img, &v, hb, [255, 40, 40, 80], [255, 40, 40, 255], 3);
         let (x, y) = v.px(hb[0], hb[1]);

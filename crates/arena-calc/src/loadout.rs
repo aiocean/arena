@@ -22,8 +22,8 @@ pub const KEYSTONES_MAX: usize = 2;
 pub const KEYSTONE_POINTS: u32 = 4;
 /// The loadout's points at most.
 pub const BUDGET: u32 = 50;
-/// The three basics every fighter has, which no loadout lists (chém, lao, độn).
-pub const BASICS: [&str; 3] = ["slash", "dive", "blink"];
+/// The three basics every fighter has, which no loadout lists (khí đạn, khí bạo, độn): spells, no blade.
+pub const BASICS: [&str; 3] = ["qibolt", "qiburst", "blink"];
 /// The roots a fighter may take: the five phases, light and yin.
 pub const ROOTS: [Element; 7] = [
     Element::Metal,

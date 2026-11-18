@@ -50,7 +50,8 @@ tags! {
     // Tầm.
     Reach:
         Near = "near", Mid = "mid", Far = "far", Whole = "whole";
-    // Cách đưa đòn, as PoE's gem tags (design, 3.2).
+    // Cách đưa đòn, as PoE's gem tags (design, 3.2). No skill is a dash since the arena went spells only (RULES 19):
+    // `Dash` keeps its place so a bot's tag rows keep their shape.
     Delivery:
         Single = "single", Line = "line", Cone = "cone", Area = "area", Projectile = "projectile",
         Instant = "instant", Channel = "channel", Charged = "charged", Delayed = "delayed", Chain = "chain",
@@ -143,9 +144,9 @@ impl Tags {
         !self.has(Tag::Instant) && (self.has(Tag::Attack) || self.has(Tag::Projectile))
     }
 
-    /// A blow a guard can stop: melee, projectiles, dashes (never areas, instants or fields).
+    /// A blow a guard can stop: melee and projectiles (never areas, instants or fields).
     pub fn guardable(self) -> bool {
-        self.any(&[Tag::Melee, Tag::Projectile, Tag::Dash])
+        self.any(&[Tag::Melee, Tag::Projectile])
             && !self.any(&[Tag::Area, Tag::Instant, Tag::Domain])
     }
 }

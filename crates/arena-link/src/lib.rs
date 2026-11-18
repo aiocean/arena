@@ -40,11 +40,13 @@ use serde::{Deserialize, Serialize};
 /// moving bearer, every bare cast under 40% of a life and its shield; 14: every skill plays its own drawn effect from
 /// pvfx; 15: Lôi Bạo Trễ, a stopped shot stays as its caster's mine; 16: every hit test on parry
 /// (`arena_calc::collide`): touching is not overlapping, a bolt a capsule swept in f64, fields and blasts striking the
-/// hurtboxes and units' bodies; 17: a bolt as thick as its drawn body; 18: the keyframe carries the server's [`Tally`]). A page whose rules differ steps a
+/// hurtboxes and units' bodies; 17: a bolt as thick as its drawn body; 18: the keyframe carries the server's [`Tally`];
+/// 19: spells only, no melee: the blade, the dive and every striking dash gone, the basics a qi bolt and a close qi
+/// burst). A page whose rules differ steps a
 /// different fight from the same decisions, so it says so and stops (`Applied::OtherRules`). Bump this with any change
 /// to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are
 /// re-pinned.
-pub const RULES_VERSION: u32 = 18;
+pub const RULES_VERSION: u32 = 19;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

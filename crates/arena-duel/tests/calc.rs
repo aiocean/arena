@@ -137,8 +137,8 @@ fn controls_land_on_the_body() {
     s.fighters[1].bar = vec![common::common("bolt")];
     assert!(!arena_duel::bar::ready(&s.fighters[1], "bolt"), "no spell");
     assert!(
-        arena_duel::bar::ready(&s.fighters[1], "slash"),
-        "the blade answers"
+        arena_duel::bar::ready(&s.fighters[1], "qiburst"),
+        "the burst, an attack, answers"
     );
 }
 

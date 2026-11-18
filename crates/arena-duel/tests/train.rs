@@ -141,15 +141,16 @@ fn without_shaping_only_the_outcome_and_small_penalties_pay() {
 #[test]
 fn shaping_pays_for_damage() {
     // the same fight paid with and without shaping: the damage either way is paid only when shaping is on
-    let paid = |shaping| {
+    let paid = |seed, shaping| {
         let mut rng = Rng::new(4);
-        let mut env = Env::new(cfg(8, 0, Opponent::Turtle));
+        let mut env = Env::new(cfg(seed, 0, Opponent::Turtle));
         play(&mut env, shaping, |e| random_legal(e, &mut rng))
             .iter()
             .map(|s| s.reward)
             .sum::<f32>()
     };
-    assert_ne!(paid(1.0), paid(0.0));
+    // a random hand deals damage in some fights: in those, and only with shaping, it is paid
+    assert!((8..=20).any(|seed| paid(seed, 1.0) != paid(seed, 0.0)));
 }
 
 #[test]
@@ -239,13 +240,14 @@ fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
 
 #[test]
 fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
-    // the hand above, against brain, who closes in, so some blows are thrown in reach and some from afar: the far
+    // the hand above, against the aggressive script, who closes in, so some blows are thrown in reach and some from afar: the far
     // cost takes exactly its price for each far whiff and nothing for a blow thrown in reach
     let hand = |e: &Env| {
         let (_, legal) = e.observe();
         [
+            // the second basic, the close burst: thrown in reach or from afar
             Act::Cast {
-                slot: 0,
+                slot: 1,
                 aim: arena_mind::policy::Aim::Foe,
             }
             .index(),
@@ -256,7 +258,7 @@ fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
         .unwrap_or(0)
     };
     let run = |far: f32| {
-        let mut env = Env::new(cfg(12, 0, Opponent::Brain));
+        let mut env = Env::new(cfg(12, 0, Opponent::Aggressive));
         let mut paid = 0.0_f32;
         for _ in 0..5000 {
             let s = env.step_costs(hand(&env), 0.0, 0.0, far);

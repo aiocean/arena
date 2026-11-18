@@ -16,11 +16,11 @@ loadout's skills, not slash, dive or blink) took with their blows: a dense bonus
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end;
 with `--keep-every N` also runs/<run>/u<update>.pt every N, a multiple of 25, for the ladder). A
 line holds, over its 10 updates, the share of each act (`acts`, in `Act` order) and the learner's casts: how many
-damaging ones (`casts`), the share of them that landed nothing (`whiff`), the share of the blades', blasts' and
-dashes' that began with the foe out of their reach (`out_of_reach`), the share of the damaging ones that landed
+damaging ones (`casts`), the share of them that landed nothing (`whiff`), the share of the blasts' that began with
+the foe out of their reach (`out_of_reach`), the share of the damaging ones that landed
 nothing having begun out of reach (`far_whiff`), the share of the damage dealt by the actives' blows (`active_dmg`),
 the damage a cast (`dmg_cast`, % of a life), and
-for blades alone `melee_out_of_reach` and `melee_whiff`.
+for the close blasts alone `blast_out_of_reach` and `blast_whiff`.
 """
 
 import argparse
@@ -47,9 +47,9 @@ def schedule(update, updates, lr, ent, shaping_until):
 
 
 # the cast kinds `VecEnv.casts` counts, in its order; which deal damage, and which have a reach
-KINDS = ["melee", "dash", "blast", "bolt", "orb", "zone", "void", "heal", "ward", "barrier", "blink"]
-STRIKING = {"melee", "dash", "blast", "bolt", "orb", "zone", "void"}
-REACHED = {"melee", "dash", "blast"}
+KINDS = ["blast", "bolt", "orb", "zone", "void", "heal", "ward", "barrier", "blink"]
+STRIKING = {"blast", "bolt", "orb", "zone", "void"}
+REACHED = {"blast"}
 
 
 def cast_stats(casts):
@@ -61,7 +61,7 @@ def cast_stats(casts):
     hit = [by[k] for k in STRIKING]
     reach = [by[k] for k in REACHED]
     n = sum(c[0] for c in hit)
-    melee = by["melee"]
+    blast = by["blast"]
     return {
         "casts": n,
         "whiff": share(sum(c[2] for c in hit), n),
@@ -69,8 +69,8 @@ def cast_stats(casts):
         "far_whiff": share(sum(c[3] for c in hit), n),
         "dmg_cast": share(sum(c[4] for c in hit), n),
         "active_dmg": share(active, sum(c[4] for c in hit)),
-        "melee_out_of_reach": share(melee[1], melee[0]),
-        "melee_whiff": share(melee[2], melee[0]),
+        "blast_out_of_reach": share(blast[1], blast[0]),
+        "blast_whiff": share(blast[2], blast[0]),
     }
 
 

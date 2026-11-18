@@ -303,7 +303,7 @@ fn union(a: Option<Box2>, b: Box2) -> Box2 {
 
 /// Whether a spell plays `fx`.
 fn plays(sp: &arena_duel::data::Spell, fx: &str) -> bool {
-    [sp.fx, sp.hit_fx, sp.end_fx, sp.slam_fx].contains(&Some(fx))
+    [sp.fx, sp.hit_fx, sp.end_fx].contains(&Some(fx))
 }
 
 impl Sheets {

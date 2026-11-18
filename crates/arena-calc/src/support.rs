@@ -668,11 +668,10 @@ const fn added(id: &'static str, name: &'static str, added: &'static [(Element, 
     }
 }
 
-/// What a trap, a mine or a totem cannot carry: what must be in the hand (melee, dashes, channels), what is
-/// already a device or a minion, and what does not strike.
+/// What a trap, a mine or a totem cannot carry: what must be in the hand (melee, channels), what is already a device
+/// or a minion, and what does not strike.
 const DEVICE_NONE: &[Tag] = &[
     Tag::Melee,
-    Tag::Dash,
     Tag::Channel,
     Tag::Trap,
     Tag::Mine,
@@ -1476,7 +1475,7 @@ pub const SUPPORTS: &[Support] = &[
         id: "closecombat",
         name: "Áp Sát",
         all_of: &[Tag::Attack],
-        any_of: &[Tag::Melee, Tag::Strike, Tag::Slam, Tag::Dash],
+        any_of: &[Tag::Melee, Tag::Strike, Tag::Slam],
         cost: 1.2,
         points: 2,
         stats: &[Mod::more(Stat::Damage, CLOSE_MORE, by("closecombat"))

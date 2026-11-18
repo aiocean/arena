@@ -72,10 +72,7 @@ impl Inputs for Reading {
 }
 
 pub fn is_close(kind: SkillKind) -> bool {
-    matches!(
-        kind,
-        SkillKind::Melee | SkillKind::Dive | SkillKind::Dash | SkillKind::Blast
-    )
+    kind == SkillKind::Blast
 }
 
 pub fn is_ranged(kind: SkillKind) -> bool {
@@ -88,10 +85,7 @@ pub fn is_area(kind: SkillKind) -> bool {
 
 /// A skill the foe winds up that strikes where it stands: no opening, only a trade.
 pub(crate) fn striking(kind: SkillKind) -> bool {
-    matches!(
-        kind,
-        SkillKind::Melee | SkillKind::Dive | SkillKind::Blast | SkillKind::Dash
-    )
+    kind == SkillKind::Blast
 }
 
 /// The hardest blow `foe` could land on `me` within `time` seconds (my recovery after a miss), from the skills of its
@@ -112,9 +106,7 @@ pub fn punisher(
             continue;
         }
         let lands = match s.kind {
-            SkillKind::Melee if d < s.reach + body.half_width && level < body.chest => s.windup,
             SkillKind::Blast if d < s.reach + body.half_width && level < body.body => s.windup,
-            SkillKind::Dash if d < s.reach && level < body.chest => s.windup,
             SkillKind::Bolt if level < body.body && s.speed > 0.0 => s.windup + d / s.speed,
             _ => f64::INFINITY,
         };
@@ -178,7 +170,7 @@ fn urgency(me: &Me, foe: &Foe, threats: &[Threat], body: &BodySize) -> f64 {
         worst = worst.max(u);
     }
     if let Doing::Act {
-        kind: SkillKind::Melee | SkillKind::Blast | SkillKind::Dive,
+        kind: SkillKind::Blast,
         phase: ActPhase::Windup,
         reach,
         damage,
@@ -191,8 +183,8 @@ fn urgency(me: &Me, foe: &Foe, threats: &[Threat], body: &BodySize) -> f64 {
     worst
 }
 
-/// The distance to press from: the farthest a ready close skill strikes from (a blade or a blast at its reach, a
-/// rush from inside its stride), or `None` with none ready. A fighter pressing comes in to it instead of keeping the
+/// The distance to press from: the farthest a ready close skill strikes from (a blast at its reach), or `None` with
+/// none ready. A fighter pressing comes in to it instead of keeping the
 /// range it likes, or it waits outside its own reach for an opening that never comes.
 pub fn press_range(skills: &[Skill], ready: &[bool]) -> Option<f64> {
     skills
@@ -200,9 +192,7 @@ pub fn press_range(skills: &[Skill], ready: &[bool]) -> Option<f64> {
         .zip(ready)
         .filter(|(s, r)| **r && s.damage > 0.0)
         .filter_map(|(s, _)| match s.kind {
-            SkillKind::Melee => Some(s.reach),
             SkillKind::Blast => Some(s.reach - 4.0),
-            SkillKind::Dash if s.reach > 40.0 => Some(s.reach - 20.0),
             _ => None,
         })
         .filter(|r| *r > 0.0)
@@ -289,23 +279,13 @@ impl Reading {
         let has_ready =
             |test: &dyn Fn(&Skill) -> bool| skills.iter().zip(ready).any(|(s, r)| *r && test(s));
         // the distance it keeps comes from what it can use: its range with spells that fly or fall, arm's length
-        // with a blast or dash, a blade's length with nothing else; with too little qi, its `dry` distance
-        let blade = skills
-            .iter()
-            .filter(|s| s.kind == SkillKind::Melee)
-            .map(|s| s.reach)
-            .fold(24.0, f64::min);
+        // with a blast; with too little qi, its `dry` distance
         let want = if me.qi_level() < 25.0 {
             profile.dry
         } else if held(is_ranged) || held(is_area) {
             profile.range
-        } else if skills
-            .iter()
-            .any(|s| matches!(s.kind, SkillKind::Blast | SkillKind::Dash))
-        {
-            34.0
         } else {
-            blade - 4.0
+            34.0
         };
         let quickest = skills
             .iter()

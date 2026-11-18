@@ -352,7 +352,7 @@ fn run_speed_from_bind_stacks_and_maim_and_zero_when_rooted() {
     // Phế Cước's maim, laid by a blow that lands: 30% reduced more
     let striker = Cultivator::new();
     let b = build(
-        pool("slash"),
+        pool("palm"),
         1,
         &[sup("maim")],
         &striker,

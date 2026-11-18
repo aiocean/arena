@@ -41,7 +41,7 @@ pub fn kit() -> Vec<Skill> {
     prison.radius = 26.0;
     prison.lands = 1.02;
     vec![
-        skill("slash", SkillKind::Melee, 0.0, 0.2, 0.32, 5.0, 24.0),
+        skill("qiburst", SkillKind::Blast, 0.0, 0.2, 0.32, 5.0, 24.0),
         bolt,
         skill("blink", SkillKind::Blink, 20.0, 0.06, 0.12, 0.0, 56.0),
         icicle,
@@ -120,7 +120,15 @@ pub fn foe(x: f64) -> Foe {
 
 /** The foe's kit in these tests: a blade. */
 pub fn foe_kit() -> Vec<Skill> {
-    vec![skill("slash", SkillKind::Melee, 0.0, 0.2, 0.32, 5.0, 24.0)]
+    vec![skill(
+        "qiburst",
+        SkillKind::Blast,
+        0.0,
+        0.2,
+        0.32,
+        5.0,
+        24.0,
+    )]
 }
 
 pub fn arena() -> Arena {
@@ -154,7 +162,7 @@ pub fn sense(time: f64, me: Me, foe: Foe) -> Sense {
 
 pub fn blade_windup(t: f64) -> Doing {
     Doing::Act {
-        kind: SkillKind::Melee,
+        kind: SkillKind::Blast,
         phase: ActPhase::Windup,
         t,
         windup: 0.2,

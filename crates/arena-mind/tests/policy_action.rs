@@ -35,7 +35,7 @@ fn wait_is_always_legal_and_casts_need_a_ready_filled_slot() {
             aim: Aim::Foe
         }
         .index()],
-        "slash"
+        "qiburst"
     );
     assert!(
         !l[Act::Cast {

@@ -45,7 +45,7 @@ def test_casts_are_counted_by_kind_and_whiffs_cost_what_is_asked():
     env = pd.VecEnv(8, 4)
     free = random_episodes(8, 3, env=env)[2]
     casts, active = env.casts()
-    assert len(casts) == 11 and env.casts() == ([(0, 0, 0, 0, 0.0)] * 11, 0.0), "casts() takes what it reports"
+    assert len(casts) == 9 and env.casts() == ([(0, 0, 0, 0, 0.0)] * 9, 0.0), "casts() takes what it reports"
     n, far, whiffs, far_whiffs, damage = (sum(c[i] for c in casts) for i in range(5))
     assert n > 0 and 0 < whiffs <= n and far <= n and 0 < far_whiffs <= min(far, whiffs) and damage > 0, casts
     costly = random_episodes(8, 3, whiff=0.01)[2]
@@ -61,12 +61,12 @@ def test_the_log_reads_the_casts():
     from ppo import KINDS, cast_stats
 
     casts = [(0, 0, 0, 0, 0.0)] * len(KINDS)
-    casts[0] = (10, 6, 5, 4, 20.0)  # blades: 10 cast, 6 out of reach, 5 landed nothing, 4 of them from out of reach
-    casts[3] = (10, 0, 5, 0, 40.0)  # bolts
+    casts[0] = (10, 6, 5, 4, 20.0)  # blasts: 10 cast, 6 out of reach, 5 landed nothing, 4 of them from out of reach
+    casts[1] = (10, 0, 5, 0, 40.0)  # bolts
     s = cast_stats((casts, 15.0))
     assert s["casts"] == 20 and s["whiff"] == 0.5 and s["out_of_reach"] == 0.6 and s["dmg_cast"] == 3.0
     assert s["far_whiff"] == 0.2 and s["active_dmg"] == 0.25
-    assert s["melee_out_of_reach"] == 0.6 and s["melee_whiff"] == 0.5
+    assert s["blast_out_of_reach"] == 0.6 and s["blast_whiff"] == 0.5
 
 
 def test_a_policy_opponent_from_an_onnx_model():

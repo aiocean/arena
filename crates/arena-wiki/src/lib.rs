@@ -23,7 +23,7 @@ use arena_calc::grade::Rank;
 use arena_calc::keystone::Keystone;
 use arena_calc::support::SUPPORTS;
 use arena_calc::tag::{Tag, Tags};
-use arena_duel::data::{self, Kind, Look, Spell};
+use arena_duel::data::{self, Look, Spell};
 use arena_duel::kit::Way;
 use html::{esc, facts, num, page, table};
 use image::RgbaImage;
@@ -140,15 +140,9 @@ fn read_sheet(assets: &Path, look: Look) -> Result<Sheet, String> {
     Ok(Sheet { clips, pages })
 }
 
-/// The clip a skill of `spell` plays: a blade's `slash` (`overhead` from the air), a lunge's `dash`, the rest `cast`
-/// (`frames::act_clip`, `pick`).
-pub fn clip_of(spell: &Spell) -> &'static str {
-    match spell.kind {
-        Kind::Melee if spell.dive => "overhead",
-        Kind::Melee => "slash",
-        Kind::Dash => "dash",
-        _ => "cast",
-    }
+/// The clip a skill of `spell` plays: every skill is a spell and plays the `cast` (`frames::CAST`, `pick`).
+pub fn clip_of(_spell: &Spell) -> &'static str {
+    arena_duel::frames::CAST
 }
 
 /// A clip's pictures in one look: the whole clip with its boxes and phases, and its active frames close up.
@@ -874,7 +868,7 @@ fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
                     );
                 }
             }
-            let fxs: Vec<&str> = [sp.fx, sp.hit_fx, sp.end_fx, sp.slam_fx]
+            let fxs: Vec<&str> = [sp.fx, sp.hit_fx, sp.end_fx]
                 .into_iter()
                 .flatten()
                 .collect();
@@ -1441,7 +1435,6 @@ const POSES: &[(&str, &str)] = &[
     ("jump", "in the air"),
     ("knockdown", "lying"),
     ("cast", "casting"),
-    ("slash", "slashing"),
 ];
 
 fn looks_page(wiki: &mut Wiki, book: &Book) {

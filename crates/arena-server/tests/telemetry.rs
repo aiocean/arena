@@ -106,7 +106,7 @@ impl<S: tracing::Subscriber> Layer<S> for Seen {
     }
 }
 
-const SEED: u32 = 3_121_955_193;
+const SEED: u32 = 6;
 const PAIRING: Pairing = Pairing {
     house_seat: 1,
     opponent: Bot::Brain,

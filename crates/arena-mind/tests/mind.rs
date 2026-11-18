@@ -113,7 +113,7 @@ fn scenario_punishes_a_whiff() {
     let thoughts = run(&mut m, 0.0, 1.5, |t| {
         let mut f = foe(62.0);
         f.doing = Doing::Act {
-            kind: SkillKind::Melee,
+            kind: SkillKind::Blast,
             phase: ActPhase::Recover,
             t,
             windup: 0.2,
@@ -129,7 +129,7 @@ fn scenario_punishes_a_whiff() {
         "{first:?}"
     );
     assert!(
-        first.iter().any(|th| matches!(&th.choice, Choice::Cast { skill, .. } if ["slash", "lotus", "prison"].contains(&skill.as_str()))),
+        first.iter().any(|th| matches!(&th.choice, Choice::Cast { skill, .. } if ["qiburst", "lotus", "prison"].contains(&skill.as_str()))),
         "{first:?}"
     );
 }
@@ -207,7 +207,7 @@ fn an_attack_is_followed_by_a_breath() {
     while t < 8.0 {
         if let Some(th) = m.think(&sense(t, me(40.0), foe(60.0)), DT)
             && let Choice::Cast { skill, .. } = &th.choice
-            && ["slash", "bolt", "icicle", "lotus", "prison"].contains(&skill.as_str())
+            && ["qiburst", "bolt", "icicle", "lotus", "prison"].contains(&skill.as_str())
         {
             attacks.push((t, skill.clone()));
         }
@@ -223,7 +223,7 @@ fn an_attack_is_followed_by_a_breath() {
 fn tells_are_learnt() {
     let mut m = mind(9);
     m.tell(&Outcome::Landed {
-        skill: "slash".into(),
+        skill: "qiburst".into(),
     });
     m.tell(&Outcome::Punished {
         skill: "bolt".into(),

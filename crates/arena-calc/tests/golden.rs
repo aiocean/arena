@@ -9,6 +9,7 @@
 //! Ngưng Tuyền Hồn `Bs = 258.3152008…`, Diệt Chỉ `Bm = 387.4728013…`. Each case states its expectation as a multiple
 //! of the base and checks the number too. Attacks swing bare hands (might 400) or a weapon, so their numbers are round.
 
+use arena_calc::ailment::ForceAilment;
 use arena_calc::ailment::{AIL, Ailment, Control};
 use arena_calc::build::{Built, Situation, build};
 use arena_calc::cultivator::{Active, BASE, Cultivator, Star};
@@ -18,7 +19,7 @@ use arena_calc::element::{Element, FUSE, Fusion, N, ROOT};
 use arena_calc::event::{
     self, Blow, CAST_ON_CRIT, Cast, Dice, ON_HIT_VS_CURSED, Queue, Seat, events_of,
 };
-use arena_calc::gem::{GEMS, Gem, gem};
+use arena_calc::gem::{GEMS, Gem, Tier, effectiveness_of, gem};
 use arena_calc::grade::Rank;
 use arena_calc::hit::{Defence, Outcome, Rolls, defence_table, resolve_with, spell_base};
 use arena_calc::item::{ArmourBase, Item, ItemBase, ItemSlot, WeaponBase};
@@ -50,7 +51,33 @@ fn close(a: f64, b: f64) {
     );
 }
 
+/// The design's worked examples strike with the sword blow the basics were before the arena went spells only
+/// (Chém: force, a sword at arm's length, base 5): a fixture here, no longer a skill of the pool.
+static SLASH: Gem = Gem {
+    id: "slash",
+    name: "Chém",
+    tags: &[Tag::Attack, Tag::Sword, Tag::Near, Tag::Melee, Tag::Strike],
+    split: &[(Element::Force, 1.0)],
+    rank: Rank::Art,
+    restriction: false,
+    base: effectiveness_of(5.0),
+    costs: &[],
+    cooldown: 0.7,
+    windup: 0.2,
+    recover: 0.32,
+    uses: None,
+    bluff: false,
+    force: ForceAilment::Bleed,
+    tier: Tier::C,
+    spell: "slash",
+    source: "arena",
+    effects: &[],
+};
+
 fn pool(id: &str) -> &'static Gem {
+    if id == "slash" {
+        return &SLASH;
+    }
     gem(id).unwrap_or(&GEMS[0])
 }
 

@@ -177,23 +177,6 @@ fn a_cast_spends_a_stored_use_and_a_bar_skills_cast_empties_its_slot() {
     assert!(checked > 10, "{checked}");
 }
 
-#[test]
-fn a_dive_that_lands_cracks_the_ground_with_every_effect_in_the_engine() {
-    let mut played = false;
-    for seed in 1..=8 {
-        played |= run(&mut fight(seed), 90.0).iter().any(|o| {
-            matches!(
-                o,
-                Out::Play {
-                    fx: "explosions/dirt-explosion",
-                    ..
-                }
-            )
-        });
-    }
-    assert!(played);
-}
-
 /// What decides a fight after `seconds` of seed 5 stepped at `hz`.
 fn fought(hz: f64, seconds: f64) -> ([u32; 2], u32, Vec<(f64, f64)>) {
     let mut duel = plan2(5);
@@ -273,7 +256,7 @@ fn missing_effects_leave_their_skills_uncast() {
             }
         }
     }
-    // the blade and the dive need no effect: an empty registry still fights with them
+    // every skill is a spell with its effect: an empty registry leaves even the basics uncast, and plays nothing
     let mut bare = Duel::with_brains(config(1, Vec::new()));
     assert!(
         run(&mut bare, 20.0)
@@ -281,8 +264,8 @@ fn missing_effects_leave_their_skills_uncast() {
             .all(|o| !matches!(o, Out::Play { .. }))
     );
     for f in &bare.state().fighters {
-        for id in ["slash", "dive"] {
-            assert!(f.kit.get(id).is_some_and(|k| k.usable), "{id}");
+        for id in ["qibolt", "qiburst"] {
+            assert!(f.kit.get(id).is_some_and(|k| !k.usable), "{id}");
         }
     }
 }
@@ -297,7 +280,7 @@ fn explicit_loadouts_are_checked_and_fought() {
     assert_eq!(duel.state().fighters[0].loadout, ok[0]);
     assert!(duel.state().fighters[1].kit.get("daofusion").is_some());
     let mut bad = ok.clone();
-    bad[1].actives[1].skill = "slash".to_string();
+    bad[1].actives[1].skill = "qiburst".to_string();
     assert!(
         Duel::with_loadouts(
             config(1, all_effects()),

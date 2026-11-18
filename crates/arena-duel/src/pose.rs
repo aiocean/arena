@@ -15,10 +15,6 @@ pub enum Pose {
     Crouch,
     /// Ducking under something flying at head height.
     Duck,
-    /// Winding up a blade blow.
-    Draw,
-    /// The blade blow's follow-through.
-    Slash,
     /// Gathering a spell.
     Channel,
     /// A spell's follow-through.
@@ -53,8 +49,6 @@ pub enum Gather {
     Summon,
     /// One palm drawn back (bolts, blasts).
     Palm,
-    /// Leaning forward to dash.
-    Lunge,
     /// Hands joined (heals, wards).
     Prayer,
     /// Arms crossed (barriers, blinks).
@@ -66,9 +60,8 @@ pub fn gather_of(kind: crate::data::Kind) -> Gather {
     use crate::data::Kind;
     match kind {
         Kind::Zone | Kind::Void | Kind::Orb => Gather::Summon,
-        Kind::Dash => Gather::Lunge,
         Kind::Heal | Kind::Ward => Gather::Prayer,
         Kind::Barrier | Kind::Blink => Gather::Cross,
-        Kind::Bolt | Kind::Blast | Kind::Melee => Gather::Palm,
+        Kind::Bolt | Kind::Blast => Gather::Palm,
     }
 }

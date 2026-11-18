@@ -7,7 +7,7 @@ pasted in.
 vector-style illustration, by image models through OpenRouter (game-factory `tools/openrouter-image`, Gemini for
 clips), never asked for as pixel art, and kept smooth in the game; the pixel layer at render makes the pixels.
 PixelLab is no longer used. A new fighter is a master in the fighting stance, approved through the layer before any
-clip is paid for, then the 20 clips of `pick::CLIPS` facing east, 8 key poses a picture with the master as the
+clip is paid for, then the 17 clips of `pick::CLIPS` facing east, 8 key poses a picture with the master as the
 reference (about $0.07 a picture). The PixelLab sheets on the page stay until each is redrawn.
 
 Where it stands: the two fighters on the page are still the PixelLab sheets, shown pixel for pixel (the game samples
@@ -24,10 +24,13 @@ generators looked at and the pictures that decided the route: `art/research/READ
    east, smooth, on a plain ground that keys out, at the cast's height: about 6.5 heads tall, a slender wuxia figure.
    Put it through the pixel layer beside the other fighters at the game's density and have the owner approve it
    before any clip is generated.
-2. **The clips.** The 20 clips of `CLIPS` (`crates/arena-duel/src/pick.rs`), facing east:
+2. **The clips.** The 17 clips of `CLIPS` (`crates/arena-duel/src/pick.rs`), facing east:
 
-   `stance-idle walk dash jump duck guard slash overhead cast hit knockdown launched tumble getting-up roll frozen
-   shocked meditate win defeat`
+   `stance-idle walk jump duck guard cast hit knockdown launched tumble getting-up roll frozen shocked meditate win
+   defeat`
+
+   The arena is spells only (RULES 19): no `slash`, `overhead` or `dash` is played any more, so none is drawn. The
+   sheets on the page still hold them until each fighter is redrawn.
 
    One picture holds 8 key poses in a 4 x 2 grid, read left to right then top to bottom, with the master given as the
    reference image, so the design (hair, trims, the weapon's hand and side) stays the master's. A 16-frame clip is two
@@ -89,8 +92,8 @@ redrawn on the route above; this is how they were made, for reading them, not fo
    state. Otherwise the weapon pops between scabbard and hand at every change of clip.
 3. Animate **east only**, every clip the painter picks from (`crates/arena-duel/src/pick.rs`, `CLIPS`):
 
-   `stance-idle walk dash jump duck guard slash overhead cast hit knockdown launched tumble getting-up roll frozen
-   shocked meditate win defeat` (20)
+   `stance-idle walk jump duck guard cast hit knockdown launched tumble getting-up roll frozen shocked meditate win
+   defeat` (17)
 
    **The smooth standard (owner, 2026-11-17), for every character:**
 
@@ -165,7 +168,8 @@ plays in place of its baked recipe.
 
 ## Known faults to redraw
 
-- **Thất Thải Đạo Nhân's (the Seven-Colored Daoist's) `slash`** is drawn backwards: from frame 6 the arm sweeps out behind him while
+- **Thất Thải Đạo Nhân's (the Seven-Colored Daoist's) `slash`** (no longer played since the arena went spells only,
+  RULES 19: kept here for the redraw) is drawn backwards: from frame 6 the arm sweeps out behind him while
   his face and body turn to the foe (`assets/fighters/seven-colored-daoist.json`, `slash`), so the blow's hand
   reaches away from what it hits. Mirroring the clip as a stand-in was tried (2026-11-18) and does not read: mirrored,
   the arm reaches the foe but the face and chest turn away from it, and the six stance frames before the swing would
@@ -187,9 +191,9 @@ plays in place of its baked recipe.
   the next on the page.
 - [ ] No effect glow left in the frames.
 - [ ] Each look's sheet: the accent recoloured, nothing else changed.
-- [ ] `frame_boxes` run again and its table reviewed (`hitbox_review`): the boxes sit on the body and the blade.
+- [ ] `frame_boxes` run again and its table reviewed (`hitbox_review`): the boxes sit on the body and the hand.
 - [ ] A hit frame on the dark stage: the white flash reads.
-- [ ] The poses read at the size the page shows them: slash, overhead and cast have three different silhouettes.
+- [ ] The poses read at the size the page shows them: cast, guard and meditate have three different silhouettes.
 - [ ] The sprite fits the body the rules give it (`body_spec` in `data.rs`: height `body`, half width `half_width`).
   A sword drawn longer than the blow's reach makes hits look like they miss, and shorter makes them look like they
   land from afar.

@@ -1,16 +1,11 @@
 //! What a fighter is, handed to the mind once: its skills as data, its body's sizes and its temperament.
 
-/// What a skill does, which is all the mind knows of it. The game maps its own skills onto these.
+/// What a skill does, which is all the mind knows of it. The game maps its own skills onto these. Every skill is a
+/// spell: no blade, no dive, no dash (the arena went spells only, RULES 19).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum SkillKind {
-    /// A blade at arm's length.
-    Melee,
-    /// A blade from above, onto the foe below.
-    Dive,
-    /// A rush through the foe and out the other side.
-    Dash,
     /// A burst from the palm at short range.
     Blast,
     /// A shot that flies level.

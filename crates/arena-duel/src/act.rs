@@ -17,7 +17,7 @@ use crate::strike::{
     Origin, PULSE, Payload, Pending, Target, buff, build, can_pay, hurt, lay_curse, pay, payload,
     scale_hit,
 };
-use crate::unit::{UNIT_RADIUS, enemies_near, hurt_unit, in_front, place};
+use crate::unit::{UNIT_RADIUS, enemies_near, hurt_unit, place};
 use arena_calc::build::Built;
 use arena_calc::domain;
 use arena_calc::event::{Event, EventKind};
@@ -127,18 +127,15 @@ pub fn burst(state: &mut State, fx: Option<&'static str>, x: f64, y: f64) {
 /// Settle fighter `f`'s pose from what the rules have it doing; the body decides when it is off its feet or reeling.
 pub fn pose(state: &mut State, f: usize) {
     let me = &mut state.fighters[f];
-    let melee = me
-        .act
-        .is_some_and(|a| spell(a.spell).is_some_and(|s| s.kind == Kind::Melee));
     let doing = match me.act {
         Some(Act {
             phase: Phase::Windup,
             ..
-        }) => Doing::Windup { melee },
+        }) => Doing::Windup,
         Some(Act {
             phase: Phase::Recover,
             ..
-        }) => Doing::Recover { melee },
+        }) => Doing::Recover,
         None if me.guard > 0.0 => Doing::Guard,
         None if me.medit => Doing::Meditate,
         None if me.fly => Doing::Fly,
@@ -233,9 +230,7 @@ pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f6
     set_meditating(state, me, false);
     // longer casts stand in a rune circle while they gather
     let kind = state.fighters[me].kit.skills[k].motion.kind;
-    if !matches!(kind, Kind::Melee | Kind::Blink | Kind::Dash | Kind::Barrier)
-        && state.has(CAST_CIRCLE)
-    {
+    if !matches!(kind, Kind::Blink | Kind::Barrier) && state.has(CAST_CIRCLE) {
         let f = &state.fighters[me];
         let opts = PlayOpts {
             palette: Some(&look(f.look).circle),
@@ -448,7 +443,7 @@ fn strikes(state: &mut State, me: usize, k: usize, built: &Built, p: Payload, ta
             scale_hit(&mut p.hit, frac.max(0.0));
         }
         if i == 0 {
-            strike(state, sp, p, origin, target, true);
+            strike(state, sp, p, origin, target);
         } else {
             let at = state.time + i as f64 * PULSE;
             state.pending.push(Pending {
@@ -458,22 +453,13 @@ fn strikes(state: &mut State, me: usize, k: usize, built: &Built, p: Payload, ta
                 origin,
                 aim: target,
                 target: None,
-                retry: false,
             });
         }
     }
 }
 
-/// One blow of motion `sp` from `o`: as a blade, a blast, a dash, a bolt, an orb, a zone or a field. `first`: the
-/// cast's first blow, which moves the caster (a dash, a dive).
-pub fn strike(
-    state: &mut State,
-    sp: &'static Spell,
-    p: Payload,
-    o: Origin,
-    target: Option<f64>,
-    first: bool,
-) {
+/// One blow of motion `sp` from `o`: as a blast, a bolt, an orb, a zone or a field.
+pub fn strike(state: &mut State, sp: &'static Spell, p: Payload, o: Origin, target: Option<f64>) {
     let me = p.by;
     let foe = 1 - me;
     let g = state.ground;
@@ -482,88 +468,6 @@ pub fn strike(
     let mspec = state.fighters[me].body.spec;
     let fspec = state.fighters[foe].body.spec;
     match sp.kind {
-        Kind::Melee => {
-            if caster && first {
-                state.fighters[me].body.vx += face * 200.0;
-                if let Some(fx) = sp.fx
-                    && state.has(fx)
-                {
-                    let opts = PlayOpts {
-                        seed: Some(me as u32 + 31),
-                        ..PlayOpts::default()
-                    };
-                    play(state, fx, mx + face * 36.0, g - mspec.chest - mair, opts);
-                }
-                if sp.dive {
-                    state.fighters[me].fly = false;
-                    // a dive that ends on the ground cracks it
-                    if let Some(slam) = sp.slam_fx
-                        && mair < 8.0
-                        && state.has(slam)
-                    {
-                        cast_once(state, me, slam, mx + face * 24.0, g, PlayOpts::default());
-                        state.emit(Out::Land {
-                            x: mx,
-                            strength: 1.0,
-                        });
-                    }
-                }
-            }
-            let range = sp.range.unwrap_or(0.0);
-            match in_front(state, me, mx, mair, face, range, mspec.chest + 16.0) {
-                Some(Target::Unit(u)) => {
-                    hurt_unit(state, u, &p);
-                }
-                Some(Target::Fighter(_)) => {
-                    let fx = state.fighters[foe].body.x;
-                    let fair = state.fighters[foe].body.air;
-                    let slash_windup = spell("slash").map_or(0.0, |s| s.windup);
-                    let crossing = caster
-                        && state.fighters[foe].act.is_some_and(|a| {
-                            a.spell == "slash"
-                                && a.phase == Phase::Windup
-                                && a.t > slash_windup * 0.6
-                        });
-                    let _ = fair;
-                    if blocks(state, foe, mx, &p) {
-                        if caster {
-                            guarded(state, me);
-                        }
-                        clash(state, (mx + fx) / 2.0, g - mspec.chest - mair, &[me, foe]);
-                    } else if crossing {
-                        // both blades swing at once: they meet
-                        state.note(Note::Stopped {
-                            by: me,
-                            spell: p.skill,
-                            how: Stop::Clash,
-                            chip: 0.0,
-                        });
-                        state.note(Note::Broken {
-                            who: foe,
-                            spell: "slash",
-                        });
-                        clash(state, (mx + fx) / 2.0, g - mspec.chest - mair, &[me, foe]);
-                        state.fighters[foe].act = None;
-                    } else {
-                        hurt(state, foe, &p, face);
-                    }
-                }
-                // a fighter's blade that missed tries again next tick while its clip's active window lasts (its blade
-                // still out ahead as the frames go by), one hit a swing (`frames::in_window`)
-                None if caster && crate::frames::in_window(state, me) => {
-                    state.pending.push(Pending {
-                        at: state.time + crate::duel::TICK,
-                        payload: p,
-                        motion: sp,
-                        origin: o,
-                        aim: target,
-                        target: None,
-                        retry: true,
-                    });
-                }
-                None => {}
-            }
-        }
         Kind::Bolt => {
             launch_bolt(state, sp, p, o);
         }
@@ -700,61 +604,6 @@ pub fn strike(
             if caster {
                 let height = sp.height.unwrap_or(0.0);
                 streak(state, me, x, if height != 0.0 { height } else { 16.0 });
-            }
-        }
-        Kind::Dash if caster && first => {
-            // gone in a flash and back a stride past the foe, cutting through it on the way
-            let from = mx;
-            let reach =
-                calc_motion::dash_reach_of(&state.fighters[me].c, sp.distance.unwrap_or(0.0) / T)
-                    * T;
-            let to = clamp(
-                mx + face * reach,
-                state.left + mspec.half_width,
-                state.right - mspec.half_width,
-            );
-            let fx = sp.fx.unwrap_or("");
-            cast_once(state, me, fx, from, g - mair, PlayOpts::default());
-            state.fighters[me].body.x = to;
-            cast_once(state, me, fx, to, g - mair, PlayOpts::default());
-            let y = mair + mspec.chest;
-            state.emit(Out::Streak {
-                by: me,
-                x0: from,
-                y0: y,
-                x1: to,
-                y1: y,
-            });
-            let lo = js_min(from, to);
-            let hi = js_max(from, to);
-            for t in crate::unit::enemies_between(state, me, lo, hi, mair, fspec.body) {
-                match t {
-                    Target::Unit(u) => {
-                        hurt_unit(state, u, &p);
-                    }
-                    Target::Fighter(_) => {
-                        let (fx, fair) = (state.fighters[foe].body.x, state.fighters[foe].body.air);
-                        if blocks(state, foe, from, &p) {
-                            guarded(state, me);
-                            clash(state, fx, g - fspec.chest - fair, &[foe]);
-                        } else {
-                            hurt(state, foe, &p, face);
-                        }
-                    }
-                }
-            }
-        }
-        // a dash's later blows, or a unit's: what stands close in front
-        Kind::Dash => {
-            let reach = mspec.half_width * 3.0;
-            match in_front(state, me, mx, mair, face, reach, fspec.body) {
-                Some(Target::Unit(u)) => {
-                    hurt_unit(state, u, &p);
-                }
-                Some(Target::Fighter(_)) if !blocks(state, foe, mx, &p) => {
-                    hurt(state, foe, &p, face);
-                }
-                _ => {}
             }
         }
         Kind::Heal | Kind::Ward | Kind::Barrier | Kind::Blink => {}
@@ -984,7 +833,7 @@ pub fn turns_aside(state: &mut State, f: usize, dir: f64, p: &Payload) -> bool {
     }
     let other = &state.fighters[by];
     let close = (other.body.x - x).abs() < 240.0 && (other.body.air - air).abs() < spec.body;
-    let struck_close = s.is_some_and(|s| matches!(s.kind, Kind::Melee | Kind::Blast | Kind::Dash));
+    let struck_close = s.is_some_and(|s| s.kind == Kind::Blast);
     if let Some(counter) = counter
         && close
         && struck_close
@@ -1108,10 +957,6 @@ pub fn break_act(state: &mut State, f: usize) {
         state.emit(Out::Stop { key });
     }
     state.fighters[f].act = None;
-    // its blade's retries go with the swing
-    state
-        .pending
-        .retain(|d| !(d.retry && d.payload.by == f && d.origin.unit.is_none()));
 }
 
 /// Between rounds: the loser falls and lies where it lands; the winner comes down and stands over it.
@@ -1165,14 +1010,10 @@ pub fn due(state: &mut State, d: Pending) {
                     if !state.fighters[d.payload.by].alive() {
                         return;
                     }
-                    // a missed blade's retry, its window shut (or its act broken) since: the swing is over
-                    if d.retry && !crate::frames::in_window(state, d.payload.by) {
-                        return;
-                    }
                     Origin::of(state, d.payload.by)
                 }
             };
-            strike(state, d.motion, d.payload, o, d.aim, false);
+            strike(state, d.motion, d.payload, o, d.aim);
         }
     }
 }

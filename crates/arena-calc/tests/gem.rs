@@ -163,11 +163,13 @@ fn nothing_of_ice_anywhere() {
 
 #[test]
 fn every_delivery_and_role_tag_has_a_skill() {
+    // a dash is the one delivery no skill has: the arena is spells only, and the tag keeps its place for the bots
     for t in Tag::ALL.iter().filter(|t| {
-        matches!(
-            t.group(),
-            Group::Delivery | Group::Role | Group::Nature | Group::Reach
-        )
+        **t != Tag::Dash
+            && matches!(
+                t.group(),
+                Group::Delivery | Group::Role | Group::Nature | Group::Reach
+            )
     }) {
         assert!(
             GEMS.iter().any(|g| g.tags().has(*t)),
@@ -199,9 +201,10 @@ fn the_pool_has_its_top_tier_and_every_kind_of_damage() {
 
 #[test]
 fn the_design_pool_is_all_here() {
-    // Section 11, every row (basics, 11.2-11.8), and the research techniques it leaves out.
-    let design = "slash dive blink step palm burst ancientgod slashluo onestep nineturn vermilion heavenlychop \
-        fireescape warprint sevencolor devour hundredfist tenfist manshen devourbody autumn manspear godquake bolt orb \
+    // Section 11, every row (basics, 11.2-11.8) but the blades and dashes spells-only took out, and the research
+    // techniques it leaves out.
+    let design = "qibolt qiburst blink palm burst ancientgod nineturn vermilion heavenlychop \
+        warprint devour autumn godquake bolt orb \
         spark fireball finger jithunder demonfinger tigerflag celestialslaughter spiritchange thirdeye seize voidnail \
         springsoul jet extremesense bodyfix silentfinger fivearrows libow godfinger slaughterbolt summonwind seal \
         collapse quake gravity earthsplit gather mountain ancientthunder fingerdeath flameorigin eightextremes yinmoon \
