@@ -6,7 +6,7 @@ use crate::choice::Choice;
 use crate::sense::{Foe, Sense};
 use crate::skill::{Skill, SkillKind};
 
-/// The castable slots a game lays out (the duel: three basics, three bar slots).
+/// The castable slots a game lays out (the duel: three for basics, the blink and two empty; three bar slots).
 pub const SLOTS: usize = 6;
 const PLAIN: usize = 9;
 const AIMS: usize = 3;

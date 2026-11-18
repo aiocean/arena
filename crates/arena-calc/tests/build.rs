@@ -547,7 +547,7 @@ fn counts_are_enforced() {
     )));
 
     let mut l = legal();
-    l.actives[1] = slot("qibolt", &[]);
+    l.actives[1] = slot("blink", &[]);
     assert!(has(&l, |e| matches!(e, LoadoutError::NotActive { .. })));
     // a top-tier skill is an active like any other
     l.actives[1] = slot("tribulation", &[]);
@@ -1105,14 +1105,13 @@ fn keystones_shape_the_blows_they_strike() {
             .more
     };
     assert_eq!(one("qiburst", Keystone::Fury), vec![ks::FURY_MORE * 5.0]);
-    assert_eq!(
-        one("qiburst", Keystone::DaoBody),
-        vec![ks::VORTEX_MORE * 3.0]
-    );
+    // Đạo Dung Thân charges the basics only: the blink, now the one basic; the qi burst is an active
+    assert!(one("qiburst", Keystone::DaoBody).is_empty());
+    assert_eq!(one("blink", Keystone::DaoBody), vec![ks::VORTEX_MORE * 3.0]);
     assert!(one("palm", Keystone::DaoBody).is_empty());
     close(
         build(
-            pool("qiburst"),
+            pool("blink"),
             1,
             &[],
             &c,

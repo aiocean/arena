@@ -9,7 +9,7 @@ use arena_duel::sense::sense_of;
 use common::{all_effects, config};
 
 #[test]
-fn slots_are_the_basics_and_the_bar() {
+fn slots_are_the_blink_two_empty_and_the_bar() {
     let mut duel = Duel::new(config(3, all_effects()), [Brain::make(), Brain::make()]);
     for _ in 0..120 {
         duel.step(1.0 / 60.0);
@@ -19,9 +19,9 @@ fn slots_are_the_basics_and_the_bar() {
         let s = sense_of(duel.state(), me);
         assert_eq!(s.slots.len(), 6);
         let name = |i: usize| s.slots[i].map(|k| f.spells[k]);
-        for (i, b) in arena_calc::loadout::BASICS.iter().enumerate() {
-            assert_eq!(name(i), Some(*b));
-        }
+        // the blink, the one basic, then two slots no basic fills
+        assert_eq!(arena_calc::loadout::BASICS, ["blink"]);
+        assert_eq!((name(0), name(1), name(2)), (Some("blink"), None, None));
         for (i, slot) in f.bar.iter().enumerate() {
             assert_eq!(name(3 + i), slot.spell(), "bar slot {i}");
         }
@@ -115,13 +115,30 @@ fn the_minds_counts_are_the_damage_systems() {
     assert_eq!(arena_mind::ROOTS, loadout::ROOTS.len());
 }
 
-/// Seat 0 casts `skill` once, seat 1 stands, both with plain loadouts.
+/// Seat 0 holds `skill` in its first bar slot and casts it once, as soon as it is ready; seat 1 stands. Both with
+/// plain loadouts (no skill that deals damage is a basic: `skill` is one of seat 0's actives).
 fn one_cast(skill: &'static str) -> Duel {
-    common::duel_of(
+    let once: arena_duel::seat::MakeSeat = Box::new(move |_, _| {
+        let mut cast = false;
+        Box::new(arena_duel::seat::Script(Box::new(move |s, me| {
+            if cast || !arena_duel::bar::ready(&s.fighters[me], skill) {
+                return None;
+            }
+            cast = true;
+            Some(arena_mind::Choice::Cast {
+                skill: skill.to_string(),
+                target: None,
+            })
+        })))
+    });
+    let mut d = common::duel_of(
         5,
-        [common::caster(skill), common::idle()],
-        [common::loadout(&[]), common::loadout(&[])],
-    )
+        [once, common::idle()],
+        [common::loadout(&[skill]), common::loadout(&[])],
+    );
+    d.step(1.0 / 60.0);
+    d.state_mut().fighters[0].bar[0] = common::common(skill);
+    d
 }
 
 #[test]
@@ -144,9 +161,11 @@ fn a_cast_shows_its_frames_to_both_and_its_cooldown_after() {
         }
         seen.1 |= a.in_window;
         seen.2 |= a.hitbox.is_some();
-        let x = mine.slotx[0].unwrap_or_default();
-        assert!(x.cooldown > 0.0, "the qi bolt is slot 0: {x:?}");
-        cooled |= x.stored < x.max_uses && x.cooldown_left > 0.0;
+        // the cast emptied its bar slot: its stored uses are the kit's
+        cooled |= d.state().fighters[0]
+            .kit
+            .get("qibolt")
+            .is_some_and(|k| !k.uses.ready());
     }
     // a cast has no blade's hitbox: the clip draws no blow (every skill is a spell)
     assert_eq!(
@@ -156,8 +175,9 @@ fn a_cast_shows_its_frames_to_both_and_its_cooldown_after() {
     );
     assert!(cooled, "the qi bolt cooled down after it was cast");
     let s = sense_of(d.state(), 0);
-    let foe = s.foe_slots[0].map(|f| f.built.windup);
-    assert_eq!(foe, sense_of(d.state(), 1).slotx[0].map(|x| x.windup));
+    let foe = s.foe_slots[4].map(|f| f.built.windup);
+    assert!(foe.is_some(), "a skill still held on the bar");
+    assert_eq!(foe, sense_of(d.state(), 1).slotx[4].map(|x| x.windup));
 }
 
 #[test]

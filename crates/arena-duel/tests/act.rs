@@ -12,7 +12,7 @@ use arena_duel::shot::shot;
 
 /// The skills both fighters of `still` carry.
 const KIT: [&str; 8] = [
-    "palm", "bolt", "ward", "collapse", "fireball", "spark", "heal", "quake",
+    "palm", "bolt", "ward", "collapse", "fireball", "spark", "heal", "qiburst",
 ];
 
 /// A duel of two fighters carrying `KIT`, where nobody dodges or crits and the shields are down, with every effect in

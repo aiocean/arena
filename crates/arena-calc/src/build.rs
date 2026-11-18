@@ -52,7 +52,7 @@ pub struct Skill {
     pub recover: f64,
     pub force: ForceAilment,
     pub effects: &'static [Effect],
-    /// One of the three basics (`loadout::BASICS`).
+    /// A basic (`loadout::BASICS`: the blink).
     pub basic: bool,
     /// The second skill, when fused.
     pub fused: Option<&'static str>,

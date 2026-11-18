@@ -539,8 +539,8 @@ fn units_of(state: &State, me: usize) -> Vec<UnitSeen> {
         .collect()
 }
 
-/// Fighter `f`'s castable slots for a policy: its three basics, then its bar's slots, each the index of
-/// the skill in `f.spells` (`None` for an empty bar slot or a skill it cannot cast this fight).
+/// Fighter `f`'s castable slots for a policy: three for its basics (the blink, two empty), then its bar's slots,
+/// each the index of the skill in `f.spells` (`None` for an empty bar slot or a skill it cannot cast this fight).
 pub fn slots_of(f: &Fighter) -> Vec<Option<usize>> {
     let at = |name: &str| f.spells.iter().position(|n| *n == name);
     let basics = f

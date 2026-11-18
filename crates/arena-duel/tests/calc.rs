@@ -124,7 +124,7 @@ fn controls_land_on_the_body() {
         held |= s.fighters[1].body.shocked > 0.0;
     }
     assert!(held, "held");
-    let mut s = still(3, loadout(&["demonfinger"]), loadout(&["bolt"]));
+    let mut s = still(3, loadout(&["demonfinger"]), loadout(&["bolt", "qiburst"]));
     s.fighters[1].body.x = 700.0;
     strike(&mut s, 0, "demonfinger");
     for _ in 0..120 {
@@ -134,7 +134,7 @@ fn controls_land_on_the_body() {
         }
     }
     assert!(s.fighters[1].silenced(), "its soul is lost");
-    s.fighters[1].bar = vec![common::common("bolt")];
+    s.fighters[1].bar = vec![common::common("bolt"), common::common("qiburst")];
     assert!(!arena_duel::bar::ready(&s.fighters[1], "bolt"), "no spell");
     assert!(
         arena_duel::bar::ready(&s.fighters[1], "qiburst"),

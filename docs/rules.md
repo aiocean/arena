@@ -37,10 +37,13 @@ element, within a budget of 50 points. `loadout::check` is the one judge of a le
   yet (design 13, 16).
 - **Spells only** (owner, 2026-11-18, RULES 19): no blade, no dive, no lunge. Every blow is a spell, a burst or a
   summoned thing's; the fighters' slash, overhead and dash clips are no longer played, every cast plays the cast clip.
-- The three basics are always at hand: **Khí Đạn** (`qibolt`, a bolt of plain qi off the palm: free, 0.2 s wind-up,
-  0.8 s cooldown, the lightest blow there is), **Khí Bạo** (`qiburst`, a burst of qi from the palm at close range,
-  104 px: 12 qi, 0.24 s wind-up, 1.6 s cooldown) and blink. Both are force and palm-borne, so they daze; a bleed now
-  comes only from a finger or sword spell that lays one.
+- **The one basic is blink** (Độn, owner, 2026-11-18, RULES 20): always at hand, no points. **Nothing that deals
+  damage is given**: every blow a fighter strikes is one its loadout chose. **Khí Đạn** (`qibolt`, a bolt of plain qi
+  off the palm: free, 0.2 s wind-up, 0.8 s cooldown, the lightest blow there is) and **Khí Bạo** (`qiburst`, a burst
+  of qi from the palm at close range, 104 px: 12 qi, 0.24 s wind-up, 1.6 s cooldown) are actives of the pool like any
+  other (tier C), which a loadout may hold and the draw may take. Both are force and palm-borne, so they daze; a bleed
+  comes only from a finger or sword spell that lays one. Đạo Dung Thân still charges its vortices into the basics,
+  which leaves it the blink alone.
 - The old schools' traits are keystones any loadout may take: Bất Khuất (unyielding: once a round a killing blow
   leaves 1 life) and Sát Ý (fury: +4% damage for each blow landed, 5 stacks a round).
 - **There is no ultimate** (owner, 2026-11-18): no ultimate slot, no rage. The former ultimates (Thiên Kiếp
@@ -79,7 +82,7 @@ T, is a fighter's height, 240 of the arena's pixels.
 A fighter's three bar slots show one of its loadout's actives each (only those cast by hand: a skill a trigger
 casts never shows). A cast empties its slot, which refills from the other actives after 1.5 to 2.5 s; a skill ready
 and uncast for 6 s leaves for another (`STALE`). The bar's old tiers, traits, lucky casts and evolving pairs are off
-(design 2). So a bot has six castable slots: the three basics and the three bar slots.
+(design 2). So a bot has six castable slots: three for basics (the blink, then two always empty) and the three bar slots.
 
 A skill's cooldown is its **stored uses** (`arena_calc::charge`): one, or more with a support that stores them; a
 cast spends one and they come back one at a time.
@@ -163,7 +166,7 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
   bodies kept apart, and stands in for a frame with no data.
 - Zones, fields, a blast's burst, a mine going off and a curse's reach strike the foe where its hurtboxes reach into
   their area, and a unit where its body does (a box its radius either side and twice it high, on the ground). A
-  minion strikes with the basic burst (`unit::MINION_BLOW`), a unit only inside the burst's box, as it strikes the
+  minion strikes as the qi burst does (`unit::MINION_BLOW`, its motion, whether or not a loadout holds it), a unit only inside the burst's box, as it strikes the
   foe.
 - An effect the rules play once and keep no hold of (a buff's or a curse's show, a heal, a blink, a plain blast) is
   stopped as it starts when it loops, so it shows a moment and fades (`act::cast_once`).
@@ -208,7 +211,7 @@ The design is `docs/specs/2026-11-16-duel-frames-design.md`; the numbers are `da
   (longer when an unsafe blow was guarded). A fighter looks open, and is hit where it is drawn, until it can act again,
   never back in its stance while still punishable.
 - **Unsafe on block:** palm, burst, lotus and the heavy blasts recover 0.15 s longer when their blow is guarded (the
-  basic burst is safe).
+  qi burst is safe).
 - A field's strike (void) gives neither a counter nor a punish.
 
 ## Styles

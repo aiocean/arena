@@ -517,7 +517,7 @@ mod pool {
     /// One row a skill, kept on one line each so the pool reads as a table.
     #[rustfmt::skip]
     pub const ALL: &[Gem] = &[
-        // ---- 11.1 basics: always held, no points; spells only, no blade ----
+        // ---- 11.1 the qi spells, actives like any other; the blink, the one basic: always held, no points ----
         magic("qibolt", "Khí Đạn", &[Spell, Palm, Far, Projectile], &[(E::Force, 1.0)], 5.0, &[], [0.2, 0.24, 0.8], "qibolt", "arena", C),
         attack("qiburst", "Khí Bạo", &[Attack, Palm, Near, Nova], &[(E::Force, 1.0)], 11.0, &[(R::Qi, 12.0)], [0.24, 0.42, 1.6], "qiburst", "arena", C),
         body("blink", "Độn", &[Body, Escape, Mid, Movement, Space], &[(R::Qi, 20.0)], [0.06, 0.12, 1.8], "blink", "arena", C),

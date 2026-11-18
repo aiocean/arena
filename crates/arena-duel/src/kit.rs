@@ -1,4 +1,4 @@
-//! A fighter's loadout (`arena_calc::loadout::Loadout`) made into the skills it casts: the three basics, the eight
+//! A fighter's loadout (`arena_calc::loadout::Loadout`) made into the skills it casts: the basic (the blink), the eight
 //! actives with their supports, and any linked skill a trigger casts that the loadout does not carry.
 //! Each skill keeps its stored uses (`arena_calc::charge::Uses`), how often it was cast this round, a one-use card's
 //! uses left, and how it does what it does in the duel (`Way`). Its sheet holds the loadout's keystones; no gear, no
@@ -21,7 +21,7 @@ use arena_calc::tag::{Tag, Tags};
 /// Where a skill sits in a fighter's kit.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
-    /// One of the three basics (`loadout::BASICS`), always at hand.
+    /// The basic (`loadout::BASICS`: the blink), always at hand.
     Basic,
     /// One of the loadout's actives, by its index in `Loadout::actives`: the bar draws from these.
     Active(usize),

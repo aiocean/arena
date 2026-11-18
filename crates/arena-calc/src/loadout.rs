@@ -22,8 +22,9 @@ pub const KEYSTONES_MAX: usize = 2;
 pub const KEYSTONE_POINTS: u32 = 4;
 /// The loadout's points at most.
 pub const BUDGET: u32 = 50;
-/// The three basics every fighter has, which no loadout lists (khí đạn, khí bạo, độn): spells, no blade.
-pub const BASICS: [&str; 3] = ["qibolt", "qiburst", "blink"];
+/// The one basic every fighter has, which no loadout lists: độn, the blink. Nothing that deals damage is given:
+/// every blow a fighter strikes is one its loadout chose (owner, 2026-11-18).
+pub const BASICS: [&str; 1] = ["blink"];
 /// The roots a fighter may take: the five phases, light and yin.
 pub const ROOTS: [Element; 7] = [
     Element::Metal,

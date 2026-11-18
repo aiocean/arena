@@ -39,7 +39,7 @@ enum What {
     Cast(&'static str, Option<f64>),
 }
 
-/// The basics every fighter holds (`loadout::BASICS`): the qi bolt from afar and the burst up close.
+/// The qi bolt from afar and the burst up close, when the loadout holds them (actives, no longer basics).
 const AFAR: &str = "qibolt";
 const CLOSE: &str = "qiburst";
 
@@ -222,7 +222,7 @@ impl FirstMind {
         };
         let sp = |n: &str| spell(n);
         let mut out = Vec::new();
-        // the close burst, every fighter's basic: the foe within its reach, on my level
+        // the close burst: the foe within its reach, on my level
         let burst = sp(CLOSE).copied();
         let (burst_windup, burst_range) =
             burst.map_or((0.0, 0.0), |s| (s.windup, s.range.unwrap_or(0.0)));

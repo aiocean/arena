@@ -46,7 +46,7 @@ apart from the seats: `ladder::looks_of`); `style` and
 - A done env ignores its action until it is reset.
 - `casts()` sums the learners' casts since it was last called, over every env, by kind in `data::Kind` order (blast,
   bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, far_whiffs, damage)` each, and beside that list the damage the learners'
-  actives (their loadouts' skills, not the basics qibolt, qiburst or blink) dealt with their blows. A cast
+  actives (their loadouts' skills, not the basic blink) dealt with their blows. A cast
   is out of reach when its blast's reach does not get to the foe's hurtboxes as it begins; a whiff
   is a damaging skill cast as its motion that lands nothing (no hit, not guarded, not turned aside) once it and its
   shots are over; a far whiff is one that began out of reach; `damage` is in % of a life.

@@ -19,7 +19,7 @@ const DT: f64 = 1.0 / 60.0;
 /// every effect in the registry.
 fn still(seed: u32) -> State {
     let kit = [
-        "lotus", "palm", "spark", "void", "bell", "heal", "jet", "burst",
+        "lotus", "palm", "qiburst", "void", "bell", "heal", "jet", "burst",
     ];
     let mut s = State::new(
         seed,

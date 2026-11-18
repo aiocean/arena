@@ -190,24 +190,24 @@ fn an_act_that_fills_its_recent_decisions_pays_for_the_habit() {
 
 #[test]
 fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
-    // a hand that casts its first slot whenever it may, from wherever it stands, against a turtle: the same fight
-    // paid with and without the whiff cost differs by that cost for every whiff counted
+    // a hand that casts the first of its bar's slots it may, from wherever it stands, against a turtle (seed 16, whose
+    // draws whiff): the same fight paid with and without the whiff cost differs by that cost for every whiff counted
     let hand = |e: &Env| {
         let (_, legal) = e.observe();
-        [
-            Act::Cast {
-                slot: 0,
-                aim: arena_mind::policy::Aim::Foe,
-            }
-            .index(),
-            Act::Toward.index(),
-        ]
-        .into_iter()
-        .find(|&a| legal[a])
-        .unwrap_or(0)
+        (3..6)
+            .map(|slot| {
+                Act::Cast {
+                    slot,
+                    aim: arena_mind::policy::Aim::Foe,
+                }
+                .index()
+            })
+            .chain([Act::Toward.index()])
+            .find(|&a| legal[a])
+            .unwrap_or(0)
     };
     let run = |whiff: f32| {
-        let mut env = Env::new(cfg(11, 0, Opponent::Turtle));
+        let mut env = Env::new(cfg(16, 0, Opponent::Turtle));
         let mut paid = 0.0_f32;
         for _ in 0..5000 {
             let s = env.step_with(hand(&env), 0.0, whiff);
@@ -240,25 +240,25 @@ fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
 
 #[test]
 fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
-    // the hand above, against the aggressive script, who closes in, so some blows are thrown in reach and some from afar: the far
+    // the hand above, against the aggressive script, who closes in (seed 2), so some blows are thrown in reach and some from afar: the far
     // cost takes exactly its price for each far whiff and nothing for a blow thrown in reach
     let hand = |e: &Env| {
         let (_, legal) = e.observe();
-        [
-            // the second basic, the close burst: thrown in reach or from afar
-            Act::Cast {
-                slot: 1,
-                aim: arena_mind::policy::Aim::Foe,
-            }
-            .index(),
-            Act::Wait.index(),
-        ]
-        .into_iter()
-        .find(|&a| legal[a])
-        .unwrap_or(0)
+        // the first of the bar's skills it may cast: thrown in reach or from afar
+        (3..6)
+            .map(|slot| {
+                Act::Cast {
+                    slot,
+                    aim: arena_mind::policy::Aim::Foe,
+                }
+                .index()
+            })
+            .chain([Act::Wait.index()])
+            .find(|&a| legal[a])
+            .unwrap_or(0)
     };
     let run = |far: f32| {
-        let mut env = Env::new(cfg(12, 0, Opponent::Aggressive));
+        let mut env = Env::new(cfg(2, 0, Opponent::Aggressive));
         let mut paid = 0.0_f32;
         for _ in 0..5000 {
             let s = env.step_costs(hand(&env), 0.0, 0.0, far);

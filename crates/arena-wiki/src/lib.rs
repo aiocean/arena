@@ -1263,7 +1263,7 @@ fn keystones(wiki: &mut Wiki) {
         .collect::<Vec<_>>()
         .join(", ");
     let body = format!(
-        "<h1>Keystones and roots</h1><h2>Keystones (đạo tâm)</h2>{}<h2>Roots</h2><p>A fighter's root is one of: {roots}.</p><h2>The loadout</h2><p>Every fighter always holds the basics ({basics}) and spends a budget of {} points on the rest.</p>",
+        "<h1>Keystones and roots</h1><h2>Keystones (đạo tâm)</h2>{}<h2>Roots</h2><p>A fighter's root is one of: {roots}.</p><h2>The loadout</h2><p>Every fighter always holds the one basic ({basics}); nothing that deals damage is given. It spends a budget of {} points on the rest.</p>",
         table(&["Keystone", "Gain", "Cost", "Source"], &rows),
         arena_calc::loadout::BUDGET
     );

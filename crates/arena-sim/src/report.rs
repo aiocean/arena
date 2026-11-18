@@ -5,7 +5,7 @@
 /// Where a skill sits in a fighter's kit.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
-    /// One of the three basics (`loadout::BASICS`).
+    /// A basic (`loadout::BASICS`: the blink).
     Basic,
     /// One of the loadout's actives, by its index in `Loadout::actives`.
     Active(usize),
@@ -61,7 +61,7 @@ impl SkillLine {
     }
 }
 
-/// One side's numbers over a match: a line per skill in the fighter's slot order (the three basics, the actives
+/// One side's numbers over a match: a line per skill in the fighter's slot order (the basic, the actives
 /// in loadout order).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SideReport {

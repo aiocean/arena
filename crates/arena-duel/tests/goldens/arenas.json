@@ -5,9 +5,9 @@
       {
         "actives": [
           {
-            "skill": "eightextremes",
+            "skill": "flameorigin",
             "supports": [
-              "controlleddestruction"
+              "elementalfocus"
             ],
             "fuse": null
           },
@@ -47,7 +47,7 @@
             "fuse": null
           },
           {
-            "skill": "flameorigin",
+            "skill": "eightextremes",
             "supports": [],
             "fuse": null
           }
@@ -59,22 +59,23 @@
         "root": null,
         "bar": [
           "deathseal",
-          "eightextremes",
+          "flameorigin",
           "dreamback"
         ]
       },
       {
         "actives": [
           {
-            "skill": "godform",
+            "skill": "meritspirit",
             "supports": [
-              "critdamage",
-              "waterintent"
+              "bloodthirst",
+              "drain",
+              "metalwind"
             ],
             "fuse": null
           },
           {
-            "skill": "manhair",
+            "skill": "bannertribulation",
             "supports": [],
             "fuse": null
           },
@@ -84,7 +85,7 @@
             "fuse": null
           },
           {
-            "skill": "heavenlychop",
+            "skill": "nineturn",
             "supports": [],
             "fuse": null
           },
@@ -94,17 +95,17 @@
             "fuse": null
           },
           {
-            "skill": "sukiep",
+            "skill": "remnantdusk",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "plumblossom",
+            "skill": "restriction",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "umbrella",
+            "skill": "heavenflip",
             "supports": [],
             "fuse": null
           }
@@ -115,9 +116,9 @@
         ],
         "root": null,
         "bar": [
-          "umbrella",
-          "plumblossom",
-          "manhair"
+          "heavenflip",
+          "restriction",
+          "bannertribulation"
         ]
       }
     ]
@@ -128,27 +129,27 @@
       {
         "actives": [
           {
-            "skill": "seize",
+            "skill": "thirdeye",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "exposemark",
+            "skill": "ancestorcurse",
             "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "autumn",
+            "supports": [
+              "drain",
+              "maim"
+            ],
             "fuse": null
           },
           {
             "skill": "bolt",
             "supports": [
-              "fireforge",
-              "efficacy"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "spark",
-            "supports": [
-              "thunderlead",
+              "waterintent",
               "demonize",
               "controlleddestruction"
             ],
@@ -160,19 +161,17 @@
             "fuse": null
           },
           {
-            "skill": "godfinger",
-            "supports": [
-              "powercharge"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "wanderingsouls",
+            "skill": "libow",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "ancientthunder",
+            "skill": "daoyellow",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "mountain",
             "supports": [],
             "fuse": null
           }
@@ -182,40 +181,46 @@
         ],
         "root": null,
         "bar": [
-          "godfinger",
-          "bolt",
-          "exposemark"
+          "libow",
+          "autumn",
+          "ancestorcurse"
         ]
       },
       {
         "actives": [
           {
-            "skill": "starsoul",
+            "skill": "godform",
             "supports": [
-              "metalwind",
-              "lingering"
+              "malignant",
+              "surehit",
+              "spacelock"
             ],
             "fuse": null
           },
           {
-            "skill": "libow",
+            "skill": "yellowspring",
             "supports": [
-              "chain"
+              "arcanesurge"
             ],
             "fuse": null
           },
           {
-            "skill": "warprint",
+            "skill": "silentfinger",
             "supports": [
-              "noretreat"
+              "heavy"
             ],
             "fuse": null
           },
           {
-            "skill": "soulrefine",
+            "skill": "vermilion",
             "supports": [
-              "soulburst"
+              "inferno"
             ],
+            "fuse": null
+          },
+          {
+            "skill": "flowingmoon",
+            "supports": [],
             "fuse": null
           },
           {
@@ -224,34 +229,26 @@
             "fuse": null
           },
           {
-            "skill": "hex",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "beans",
+            "skill": "starsoul",
             "supports": [
               "breakresist",
-              "qileech",
-              "efficacy"
+              "critcast",
+              "spellecho"
             ],
             "fuse": null
           },
           {
-            "skill": "desire",
-            "supports": [
-              "surehit",
-              "enlighten"
-            ],
+            "skill": "arsenal",
+            "supports": [],
             "fuse": null
           }
         ],
         "keystones": [],
-        "root": "earth",
+        "root": "metal",
         "bar": [
-          "bannertribulation",
-          "desire",
-          "soulrefine"
+          "vermilion",
+          "arsenal",
+          "flowingmoon"
         ]
       }
     ]
@@ -262,17 +259,21 @@
       {
         "actives": [
           {
-            "skill": "daoyellow",
+            "skill": "ghostsummon",
+            "supports": [
+              "waterintent",
+              "controlleddestruction",
+              "powercharge"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "godform",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "fate",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "jithunder",
+            "skill": "fireball",
             "supports": [],
             "fuse": null
           },
@@ -282,7 +283,7 @@
             "fuse": null
           },
           {
-            "skill": "libow",
+            "skill": "silentfinger",
             "supports": [],
             "fuse": null
           },
@@ -309,56 +310,40 @@
         "root": "earth",
         "bar": [
           "timeaura",
-          "daoyellow",
+          "ghostsummon",
           "rebirth"
         ]
       },
       {
         "actives": [
           {
-            "skill": "flameorigin",
+            "skill": "burst",
             "supports": [
-              "critcast"
+              "leap",
+              "demonize"
             ],
-            "fuse": null
-          },
-          {
-            "skill": "summonwind",
-            "supports": [
-              "elementalfocus"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "yellowfinger",
-            "supports": [],
             "fuse": null
           },
           {
             "skill": "ancientgod",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "vermilion",
             "supports": [
-              "critdamage"
+              "powercharge"
             ],
             "fuse": null
           },
           {
-            "skill": "ancientprotect",
+            "skill": "mirror",
             "supports": [
-              "returnseal",
+              "chainweaken",
               "spacelock",
-              "soulfeed"
+              "drain"
             ],
             "fuse": null
           },
           {
-            "skill": "timereverse",
+            "skill": "liphong",
             "supports": [
-              "spacelock"
+              "soulfeed"
             ],
             "fuse": null
           },
@@ -369,14 +354,34 @@
               "addedearth"
             ],
             "fuse": null
+          },
+          {
+            "skill": "earthsplit",
+            "supports": [
+              "spacelock",
+              "addedthunder"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "ease",
+            "supports": [
+              "thunderlead"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "ghostsummon",
+            "supports": [],
+            "fuse": null
           }
         ],
         "keystones": [],
-        "root": "wood",
+        "root": "water",
         "bar": [
-          "summonwind",
-          "timereverse",
-          "vermilion"
+          "burst",
+          "ease",
+          "liphong"
         ]
       }
     ]
@@ -387,9 +392,9 @@
       {
         "actives": [
           {
-            "skill": "starfall",
+            "skill": "heavenflip",
             "supports": [
-              "addedfire"
+              "bloodthirst"
             ],
             "fuse": null
           },
@@ -403,15 +408,15 @@
             "fuse": null
           },
           {
-            "skill": "ninedeaths",
+            "skill": "deathlessbreath",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "earthsplit",
+            "skill": "quake",
             "supports": [
               "addedearth",
-              "bloodspit"
+              "surehit"
             ],
             "fuse": null
           },
@@ -423,15 +428,13 @@
           {
             "skill": "banspear",
             "supports": [
-              "deadlyailments"
+              "fasterattacks"
             ],
             "fuse": null
           },
           {
-            "skill": "quake",
-            "supports": [
-              "lifetap"
-            ],
+            "skill": "collapse",
+            "supports": [],
             "fuse": null
           },
           {
@@ -446,40 +449,48 @@
         "root": "metal",
         "bar": [
           "cursewords",
-          "ninedeaths",
+          "deathlessbreath",
           "charm"
         ]
       },
       {
         "actives": [
           {
-            "skill": "gravity",
+            "skill": "extremesense",
             "supports": [
-              "concentrated",
-              "heavy",
-              "addedwater"
+              "lifeonkill",
+              "addedwood",
+              "surehit"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "quake",
+            "supports": [
+              "fastercasting"
             ],
             "fuse": null
           },
           {
             "skill": "fate",
             "supports": [
+              "focus",
               "waterintent"
             ],
             "fuse": null
           },
           {
-            "skill": "arsenal",
+            "skill": "void",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "defiance",
+            "skill": "starbreak",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "starfall",
+            "skill": "umbrella",
             "supports": [],
             "fuse": null
           },
@@ -489,25 +500,20 @@
             "fuse": null
           },
           {
-            "skill": "heal",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "fiveorgans",
+            "skill": "meritspirit",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "soullamps",
-          "treewatcher"
+          "daobody",
+          "threelives"
         ],
-        "root": "metal",
+        "root": "fire",
         "bar": [
-          "gravity",
-          "arsenal",
-          "teleport"
+          "extremesense",
+          "fate",
+          "umbrella"
         ]
       }
     ]
@@ -518,9 +524,9 @@
       {
         "actives": [
           {
-            "skill": "skyqueen",
+            "skill": "manhair",
             "supports": [
-              "witheringtouch"
+              "bloodlust"
             ],
             "fuse": null
           },
@@ -539,7 +545,7 @@
             "fuse": null
           },
           {
-            "skill": "starsoul",
+            "skill": "yellowspring",
             "supports": [],
             "fuse": null
           },
@@ -551,22 +557,22 @@
             "fuse": null
           },
           {
-            "skill": "flowingmoon",
+            "skill": "indestructible",
             "supports": [
               "bloodspit"
             ],
             "fuse": null
           },
           {
-            "skill": "void",
+            "skill": "karmaseal",
             "supports": [
-              "controlleddestruction",
-              "arcanesurge"
+              "addedwood",
+              "controlleddestruction"
             ],
             "fuse": null
           },
           {
-            "skill": "burst",
+            "skill": "qiburst",
             "supports": [],
             "fuse": null
           }
@@ -574,48 +580,48 @@
         "keystones": [],
         "root": "wood",
         "bar": [
-          "flowingmoon",
-          "void",
+          "indestructible",
+          "karmaseal",
           "moods"
         ]
       },
       {
         "actives": [
           {
-            "skill": "finger",
+            "skill": "spark",
             "supports": [
-              "culling",
+              "spellecho",
               "heavy"
             ],
             "fuse": null
           },
           {
-            "skill": "fireball",
+            "skill": "orb",
             "supports": [
-              "culling",
-              "fasterprojectiles"
+              "farshot",
+              "chain"
             ],
             "fuse": null
           },
           {
-            "skill": "fixedrule",
+            "skill": "stillwind",
             "supports": [
               "surehit"
             ],
             "fuse": null
           },
           {
-            "skill": "starcompass",
+            "skill": "ancientcauldron",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "dreamback",
+            "skill": "karma",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "gather",
+            "skill": "earthsplit",
             "supports": [],
             "fuse": null
           },
@@ -625,7 +631,7 @@
             "fuse": null
           },
           {
-            "skill": "nineturn",
+            "skill": "lotus",
             "supports": [],
             "fuse": null
           }
@@ -636,9 +642,9 @@
         ],
         "root": "metal",
         "bar": [
-          "dreamback",
-          "finger",
-          "gather"
+          "karma",
+          "spark",
+          "earthsplit"
         ]
       }
     ]
@@ -649,10 +655,10 @@
       {
         "actives": [
           {
-            "skill": "timerestrict",
+            "skill": "starfall",
             "supports": [
-              "addedmetal",
-              "addedlight"
+              "controlleddestruction",
+              "fastercasting"
             ],
             "fuse": null
           },
@@ -665,24 +671,20 @@
             "fuse": null
           },
           {
-            "skill": "godfinger",
+            "skill": "libow",
             "supports": [
-              "spacelock"
+              "allure"
             ],
             "fuse": null
           },
           {
-            "skill": "exposemark",
-            "supports": [
-              "addedyin"
-            ],
+            "skill": "ancestorcurse",
+            "supports": [],
             "fuse": null
           },
           {
             "skill": "soularmour",
-            "supports": [
-              "drain"
-            ],
+            "supports": [],
             "fuse": null
           },
           {
@@ -696,7 +698,7 @@
             "fuse": null
           },
           {
-            "skill": "warprint",
+            "skill": "vermilion",
             "supports": [],
             "fuse": null
           }
@@ -707,69 +709,70 @@
         "root": "metal",
         "bar": [
           "soularmour",
-          "timerestrict",
+          "starfall",
           "bodyformation"
         ]
       },
       {
         "actives": [
           {
-            "skill": "warseal",
-            "supports": [
-              "drain"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "seal",
+            "skill": "threebreaths",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "burst",
+            "skill": "waraura",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "movemountain",
             "supports": [
-              "witheringtouch"
+              "demonize",
+              "addedyin"
             ],
             "fuse": null
           },
           {
-            "skill": "godquake",
+            "skill": "skyqueen",
             "supports": [
-              "bloodspit",
+              "ninechanges"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "thunderchart",
+            "supports": [
               "powercharge"
             ],
             "fuse": null
           },
           {
-            "skill": "gravity",
+            "skill": "slaughterbolt",
+            "supports": [
+              "fuse",
+              "thunderlead",
+              "bloodthirst"
+            ],
+            "fuse": "qiburst"
+          },
+          {
+            "skill": "qiburst",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "vermilion",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "soulburst",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "orb",
+            "skill": "devour",
             "supports": [],
             "fuse": null
           }
         ],
-        "keystones": [
-          "unyielding",
-          "mastery"
-        ],
-        "root": "light",
+        "keystones": [],
+        "root": "water",
         "bar": [
-          "seal",
-          "gravity",
-          "warseal"
+          "waraura",
+          "thunderchart",
+          "threebreaths"
         ]
       }
     ]
@@ -780,48 +783,51 @@
       {
         "actives": [
           {
-            "skill": "fiveorgans",
+            "skill": "deathseal",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "karma",
+            "skill": "ancientprotect",
             "supports": [
               "surehit",
               "leap",
-              "spacelock"
+              "copy"
             ],
             "fuse": null
           },
           {
-            "skill": "extremesense",
+            "skill": "springsoul",
             "supports": [
-              "fuse"
+              "bloodspit",
+              "qileech"
             ],
-            "fuse": "meritspirit"
+            "fuse": null
           },
           {
-            "skill": "lotus",
+            "skill": "palm",
+            "supports": [
+              "maim"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "soulsearch",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "dreamdao",
+            "skill": "slaughteraura",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "timeaura",
+            "skill": "dreamback",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "meritspirit",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "soulrefine",
+            "skill": "flowingmoon",
             "supports": [],
             "fuse": null
           }
@@ -832,71 +838,73 @@
         ],
         "root": "water",
         "bar": [
-          "fiveorgans",
-          "karma",
-          "soulrefine"
+          "deathseal",
+          "ancientprotect",
+          "flowingmoon"
         ]
       },
       {
         "actives": [
           {
-            "skill": "spark",
+            "skill": "earthsplit",
             "supports": [
-              "mine"
+              "lingering"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "bolt",
+            "supports": [
+              "outburst",
+              "powercharge",
+              "breakresist"
             ],
             "fuse": null
           },
           {
             "skill": "moonwing",
-            "supports": [
-              "critdamage"
-            ],
+            "supports": [],
             "fuse": null
           },
           {
             "skill": "fate",
-            "supports": [
-              "focus"
-            ],
+            "supports": [],
             "fuse": null
           },
           {
-            "skill": "celestialslaughter",
-            "supports": [],
+            "skill": "demonfinger",
+            "supports": [
+              "fork",
+              "phantasm"
+            ],
             "fuse": null
           },
           {
             "skill": "hex",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "fireball",
             "supports": [
-              "culling"
+              "critcast"
             ],
             "fuse": null
           },
           {
-            "skill": "jithunder",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "earthescape",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "starfall",
-            "supports": [],
+            "skill": "inchearth",
+            "supports": [
+              "bloodthirst"
+            ],
             "fuse": null
           }
         ],
-        "keystones": [
-          "coldqi",
-          "mastery"
-        ],
+        "keystones": [],
         "root": "wood",
         "bar": [
-          "jithunder",
-          "celestialslaughter",
-          "fate"
+          "demonfinger",
+          "fate",
+          "moonwing"
         ]
       }
     ]
@@ -907,51 +915,53 @@
       {
         "actives": [
           {
-            "skill": "daoyellow",
+            "skill": "ghostsummon",
             "supports": [
-              "channelcast",
-              "intensify"
+              "minionlife",
+              "voidmanipulation"
             ],
             "fuse": null
           },
           {
-            "skill": "starcompass",
+            "skill": "ancientcauldron",
             "supports": [
               "malignant",
               "soulfeed",
-              "woodgrowth"
+              "thunderlead"
             ],
             "fuse": null
           },
           {
-            "skill": "jet",
+            "skill": "springsoul",
             "supports": [
-              "qileech"
+              "phantasm"
             ],
             "fuse": null
           },
           {
             "skill": "banspear",
+            "supports": [
+              "woodgrowth"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "quake",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "gravity",
+            "skill": "ancientprotect",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "karma",
+            "skill": "strawknot",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "ancestorcurse",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "jithunder",
+            "skill": "fireball",
             "supports": [],
             "fuse": null
           }
@@ -962,18 +972,13 @@
         ],
         "root": null,
         "bar": [
-          "starcompass",
-          "karma",
-          "jet"
+          "ancientcauldron",
+          "ancientprotect",
+          "springsoul"
         ]
       },
       {
         "actives": [
-          {
-            "skill": "wanderingsouls",
-            "supports": [],
-            "fuse": null
-          },
           {
             "skill": "soullock",
             "supports": [
@@ -983,46 +988,55 @@
             "fuse": null
           },
           {
-            "skill": "demonfinger",
+            "skill": "finger",
             "supports": [
-              "trinity"
+              "trinity",
+              "chain",
+              "totem"
             ],
             "fuse": null
           },
           {
-            "skill": "lifedeath",
+            "skill": "restriction",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "beans",
+            "skill": "summonrain",
+            "supports": [
+              "addedearth"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "fireball",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "jithunder",
+            "skill": "soulvortex",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "starrotation",
+            "skill": "godfinger",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "slaughterbolt",
+            "skill": "qiburst",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "treewatcher"
+          "fury"
         ],
-        "root": "yin",
+        "root": "water",
         "bar": [
-          "jithunder",
-          "beans",
-          "demonfinger"
+          "soulvortex",
+          "fireball",
+          "restriction"
         ]
       }
     ]
@@ -1033,9 +1047,9 @@
       {
         "actives": [
           {
-            "skill": "fingerdeath",
+            "skill": "mountain",
             "supports": [
-              "qileech"
+              "trinity"
             ],
             "fuse": null
           },
@@ -1045,11 +1059,11 @@
             "fuse": null
           },
           {
-            "skill": "nineturn",
+            "skill": "lotus",
             "supports": [
-              "spacelock",
-              "fireforge",
-              "heavy"
+              "heavy",
+              "soulfeed",
+              "leap"
             ],
             "fuse": null
           },
@@ -1062,19 +1076,17 @@
             "fuse": null
           },
           {
-            "skill": "void",
+            "skill": "movemountain",
             "supports": [
               "bloodspit",
-              "thunderlead",
-              "fuse"
+              "malignant",
+              "heavy"
             ],
-            "fuse": "fingerdeath"
+            "fuse": null
           },
           {
-            "skill": "threeslay",
-            "supports": [
-              "lifeonhit"
-            ],
+            "skill": "bloodpowder",
+            "supports": [],
             "fuse": null
           },
           {
@@ -1083,7 +1095,7 @@
             "fuse": null
           },
           {
-            "skill": "starfall",
+            "skill": "umbrella",
             "supports": [],
             "fuse": null
           }
@@ -1093,70 +1105,71 @@
         "bar": [
           "belief",
           "infatuation",
-          "fingerdeath"
+          "mountain"
         ]
       },
       {
         "actives": [
           {
-            "skill": "arsenal",
+            "skill": "bindingword",
             "supports": [
-              "addedmetal"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "bell",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "realfake",
-            "supports": [
-              "chainweaken",
-              "critical"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "bolt",
-            "supports": [
-              "thunderlead"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "soulmerge",
-            "supports": [
+              "addedwood",
               "addedthunder"
             ],
             "fuse": null
           },
           {
-            "skill": "voidnail",
+            "skill": "ghostsummon",
+            "supports": [
+              "selfdestruct",
+              "addedlight"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "karmaseal",
+            "supports": [
+              "arcanesurge"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "ward",
+            "supports": [
+              "spacelock"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "fourseasons",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "indestructible",
+            "skill": "autumn",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "moonwing",
+            "skill": "fourforms",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "thirdeye",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "treewatcher",
-          "faith"
+          "threelives",
+          "fury"
         ],
-        "root": "water",
+        "root": "earth",
         "bar": [
-          "indestructible",
-          "voidnail",
-          "soulmerge"
+          "fourforms",
+          "autumn",
+          "fourseasons"
         ]
       }
     ]
@@ -1172,24 +1185,24 @@
               "mine",
               "fuse"
             ],
-            "fuse": "ancientgod"
+            "fuse": "burst"
           },
           {
-            "skill": "restriction",
+            "skill": "yinmoon",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "fivearrows",
+            "skill": "bodyfix",
             "supports": [
               "surehit"
             ],
             "fuse": null
           },
           {
-            "skill": "daoyellow",
+            "skill": "ghostsummon",
             "supports": [
-              "addedmetal",
+              "addedfire",
               "lifetap"
             ],
             "fuse": null
@@ -1197,24 +1210,27 @@
           {
             "skill": "fiveorgans",
             "supports": [
-              "metalwind"
+              "fireforge"
             ],
-            "fuse": null
-          },
-          {
-            "skill": "vermilion",
-            "supports": [
-              "soulfeed"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "slaughterbolt",
-            "supports": [],
             "fuse": null
           },
           {
             "skill": "ancientgod",
+            "supports": [
+              "spacelock"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "godfinger",
+            "supports": [
+              "spiritshift",
+              "bloodspit"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "burst",
             "supports": [],
             "fuse": null
           }
@@ -1225,70 +1241,69 @@
         "root": "light",
         "bar": [
           "fiveorgans",
-          "ancientgod",
-          "vermilion"
+          "burst",
+          "ancientgod"
         ]
       },
       {
         "actives": [
           {
-            "skill": "charm",
-            "supports": [
-              "thunderlead",
-              "generosity"
-            ],
-            "fuse": null
-          },
-          {
             "skill": "moods",
-            "supports": [
-              "fuse"
-            ],
-            "fuse": "bindingword"
-          },
-          {
-            "skill": "windrain",
-            "supports": [
-              "lingering",
-              "drain"
-            ],
+            "supports": [],
             "fuse": null
           },
           {
-            "skill": "soullock",
+            "skill": "stillwind",
             "supports": [
-              "widearea",
+              "woodgrowth",
               "lingering"
             ],
             "fuse": null
           },
           {
-            "skill": "ease",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "bindingword",
-            "supports": [],
-            "fuse": null
-          },
-          {
             "skill": "timerestrict",
+            "supports": [
+              "qileech"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "deathseal",
+            "supports": [
+              "hextouch"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "tribulation",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "skyqueen",
+            "skill": "hex",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "infatuation",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "fingerdeath",
             "supports": [],
             "fuse": null
           }
         ],
-        "keystones": [],
-        "root": "water",
+        "keystones": [
+          "fury",
+          "faith"
+        ],
+        "root": "yin",
         "bar": [
-          "timerestrict",
-          "soullock",
-          "windrain"
+          "infatuation",
+          "deathseal",
+          "timerestrict"
         ]
       }
     ]
@@ -1307,33 +1322,33 @@
             "fuse": null
           },
           {
-            "skill": "servitude",
+            "skill": "timerestrict",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "celestialslaughter",
+            "skill": "demonfinger",
             "supports": [
               "multishot"
             ],
             "fuse": null
           },
           {
-            "skill": "yinmoon",
+            "skill": "eightextremes",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "remnantnight",
+            "skill": "plumblossom",
             "supports": [
-              "addedsoul",
-              "surehit",
-              "hurtcast"
+              "addedyin",
+              "bloodspit",
+              "qileech"
             ],
             "fuse": null
           },
           {
-            "skill": "godform",
+            "skill": "bodyformation",
             "supports": [
               "woodgrowth",
               "thunderlead",
@@ -1342,12 +1357,15 @@
             "fuse": null
           },
           {
-            "skill": "sealgod",
-            "supports": [],
+            "skill": "bindingword",
+            "supports": [
+              "addedthunder",
+              "lifetap"
+            ],
             "fuse": null
           },
           {
-            "skill": "gravity",
+            "skill": "collapse",
             "supports": [],
             "fuse": null
           }
@@ -1355,73 +1373,74 @@
         "keystones": [],
         "root": null,
         "bar": [
-          "yinmoon",
-          "godform",
-          "sealgod"
+          "plumblossom",
+          "eightextremes",
+          "bodyformation"
         ]
       },
       {
         "actives": [
           {
-            "skill": "timereverse",
+            "skill": "jithunder",
             "supports": [
-              "addedsoul"
+              "channelcast",
+              "fasterprojectiles"
             ],
             "fuse": null
           },
           {
-            "skill": "tigerflag",
-            "supports": [
-              "controlleddestruction",
-              "demonize",
-              "waterintent"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "voidnail",
-            "supports": [
-              "addedwood"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "karmaseal",
-            "supports": [
-              "addedwood"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "ninedeaths",
+            "skill": "spiritchange",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "bolt",
+            "skill": "heal",
+            "supports": [
+              "leap"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "belief",
+            "supports": [
+              "soulfeed"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "bodyfix",
+            "supports": [
+              "lowlifecast",
+              "focus"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "lightshield",
+            "supports": [
+              "karmaqi"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "exposemark",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "timerestrict",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "yinmoon",
+            "skill": "karma",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "mastery",
-          "soullamps"
+          "thunderdragon"
         ],
-        "root": "water",
+        "root": "light",
         "bar": [
-          "ninedeaths",
-          "timerestrict",
-          "karmaseal"
+          "lightshield",
+          "karma",
+          "heal"
         ]
       }
     ]
@@ -1432,7 +1451,7 @@
       {
         "actives": [
           {
-            "skill": "soulrefine",
+            "skill": "flowingmoon",
             "supports": [],
             "fuse": null
           },
@@ -1442,24 +1461,24 @@
             "fuse": null
           },
           {
-            "skill": "slaughteraura",
+            "skill": "teleport",
             "supports": [
-              "critical"
+              "woodgrowth"
             ],
             "fuse": null
           },
           {
-            "skill": "remnantnight",
+            "skill": "plumblossom",
             "supports": [
-              "heavy"
+              "surehit"
             ],
             "fuse": null
           },
           {
-            "skill": "hex",
+            "skill": "starsoul",
             "supports": [
               "ninechanges",
-              "addedlight",
+              "addedmetal",
               "bloodspit"
             ],
             "fuse": null
@@ -1472,14 +1491,14 @@
             "fuse": null
           },
           {
-            "skill": "devour",
+            "skill": "heavenlychop",
             "supports": [
-              "addedyin"
+              "addedthunder"
             ],
             "fuse": null
           },
           {
-            "skill": "lightshield",
+            "skill": "mirror",
             "supports": [
               "chainweaken"
             ],
@@ -1489,35 +1508,35 @@
         "keystones": [],
         "root": "fire",
         "bar": [
-          "slaughteraura",
-          "soulrefine",
+          "teleport",
+          "flowingmoon",
           "soullock"
         ]
       },
       {
         "actives": [
           {
-            "skill": "deathseal",
+            "skill": "ninedeaths",
             "supports": [
-              "blasphemy",
-              "efficacy",
-              "woodgrowth"
+              "hextouch",
+              "inspiration",
+              "breakresist"
             ],
             "fuse": null
           },
           {
-            "skill": "beans",
+            "skill": "summonrain",
             "supports": [
-              "woodgrowth",
-              "trinity",
-              "metalwind"
+              "breakresist",
+              "lifeonhit",
+              "waterintent"
             ],
             "fuse": null
           },
           {
-            "skill": "flameorigin",
+            "skill": "fingerdeath",
             "supports": [
-              "lifeonkill"
+              "trap"
             ],
             "fuse": null
           },
@@ -1530,27 +1549,24 @@
             "fuse": null
           },
           {
-            "skill": "daofusion",
+            "skill": "sukiep",
             "supports": [
-              "addedfire",
-              "spacelock"
+              "bloodthirst"
             ],
             "fuse": null
           },
           {
-            "skill": "ninedeaths",
-            "supports": [
-              "qileech"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "autumn",
+            "skill": "deathseal",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "teleport",
+            "skill": "warprint",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "starcompass",
             "supports": [],
             "fuse": null
           }
@@ -1558,9 +1574,9 @@
         "keystones": [],
         "root": "earth",
         "bar": [
-          "teleport",
-          "beans",
-          "deathseal"
+          "starcompass",
+          "summonrain",
+          "ninedeaths"
         ]
       }
     ]
@@ -1571,39 +1587,39 @@
       {
         "actives": [
           {
-            "skill": "quake",
+            "skill": "seal",
             "supports": [
-              "malignant"
+              "waterintent"
             ],
             "fuse": null
           },
           {
-            "skill": "ghostsummon",
+            "skill": "soulbanner",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "lotus",
+            "skill": "palm",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "fingerdeath",
+            "skill": "ancientthunder",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "restrictbanner",
+            "skill": "wanderingsouls",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "remnantdusk",
+            "skill": "tribulation",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "mountain",
+            "skill": "gather",
             "supports": [],
             "fuse": null
           },
@@ -1619,9 +1635,9 @@
         ],
         "root": "fire",
         "bar": [
-          "restrictbanner",
-          "lotus",
-          "quake"
+          "wanderingsouls",
+          "palm",
+          "seal"
         ]
       },
       {
@@ -1632,24 +1648,23 @@
             "fuse": null
           },
           {
-            "skill": "burst",
+            "skill": "qiburst",
             "supports": [
-              "trinity",
-              "addedwater",
-              "soulfeed"
+              "frenzycharge",
+              "widearea",
+              "drain"
             ],
             "fuse": null
           },
           {
-            "skill": "soulvortex",
+            "skill": "servitude",
             "supports": [
-              "bloodthirst",
-              "addedwater"
+              "bloodthirst"
             ],
             "fuse": null
           },
           {
-            "skill": "summonrain",
+            "skill": "arsenal",
             "supports": [],
             "fuse": null
           },
@@ -1659,17 +1674,17 @@
             "fuse": null
           },
           {
-            "skill": "stillwind",
+            "skill": "agingcurse",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "mirror",
+            "skill": "bell",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "lifedeathrestrict",
+            "skill": "beans",
             "supports": [],
             "fuse": null
           }
@@ -1681,8 +1696,8 @@
         "root": "metal",
         "bar": [
           "heaventhread",
-          "burst",
-          "soulvortex"
+          "qiburst",
+          "servitude"
         ]
       }
     ]
@@ -1693,50 +1708,54 @@
       {
         "actives": [
           {
-            "skill": "fingerdeath",
+            "skill": "ancientthunder",
             "supports": [
               "breakresist",
-              "qileech"
+              "lifeonkill"
             ],
             "fuse": null
           },
           {
-            "skill": "timeaura",
+            "skill": "mirror",
             "supports": [
-              "generosity",
-              "soulfeed"
+              "powercharge",
+              "karmaqi"
             ],
             "fuse": null
           },
           {
-            "skill": "dispassion",
+            "skill": "stillwind",
             "supports": [
-              "generosity"
+              "powercharge",
+              "widearea"
             ],
             "fuse": null
           },
           {
-            "skill": "severance",
+            "skill": "memory",
+            "supports": [
+              "drain",
+              "lingering"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "ancientgod",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "orb",
+            "skill": "inchearth",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "soulrefine",
+            "skill": "indestructible",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "ancientprotect",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "slaughterbolt",
+            "skill": "jithunder",
             "supports": [],
             "fuse": null
           }
@@ -1746,75 +1765,79 @@
         ],
         "root": "wood",
         "bar": [
-          "severance",
-          "dispassion",
-          "soulrefine"
+          "memory",
+          "stillwind",
+          "inchearth"
         ]
       },
       {
         "actives": [
           {
-            "skill": "exposemark",
+            "skill": "thunderchart",
             "supports": [
-              "slowerprojectiles"
+              "ninechanges"
             ],
             "fuse": null
           },
           {
-            "skill": "heavenlychop",
+            "skill": "starcompass",
             "supports": [
-              "waterintent"
+              "powercharge",
+              "woodgrowth"
             ],
             "fuse": null
           },
           {
-            "skill": "fireball",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "starbreak",
-            "supports": [
-              "trap",
-              "maim"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "slaughteraura",
+            "skill": "meritspirit",
             "supports": [
               "focus"
             ],
             "fuse": null
           },
           {
-            "skill": "indestructible",
+            "skill": "inchearth",
             "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "ancientcauldron",
-            "supports": [
-              "bloodspit"
-            ],
             "fuse": null
           },
           {
             "skill": "fiveorgans",
             "supports": [
-              "soulfeed",
-              "addedlight",
+              "thunderlead"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "movemountain",
+            "supports": [
+              "spacelock",
+              "addedearth",
               "surehit"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "karma",
+            "supports": [
+              "returnseal",
+              "fireforge"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "eightextremes",
+            "supports": [
+              "addedearth",
+              "soulfeed"
             ],
             "fuse": null
           }
         ],
         "keystones": [],
-        "root": "metal",
+        "root": null,
         "bar": [
-          "fireball",
-          "heavenlychop",
-          "slaughteraura"
+          "meritspirit",
+          "starcompass",
+          "fiveorgans"
         ]
       }
     ]
@@ -1830,24 +1853,24 @@
             "fuse": null
           },
           {
-            "skill": "mountain",
+            "skill": "gather",
             "supports": [
-              "hollowfire",
-              "unleash"
+              "heavy",
+              "critdamage"
             ],
             "fuse": null
           },
           {
-            "skill": "demonfinger",
+            "skill": "finger",
             "supports": [
-              "piercing",
-              "chain",
+              "controlleddestruction",
+              "fork",
               "hurtcast"
             ],
             "fuse": null
           },
           {
-            "skill": "eightextremes",
+            "skill": "flameorigin",
             "supports": [
               "bloodspit",
               "intensify"
@@ -1855,26 +1878,26 @@
             "fuse": null
           },
           {
-            "skill": "bodyformation",
+            "skill": "soulrefine",
             "supports": [
-              "heavy"
+              "copy"
             ],
             "fuse": null
           },
           {
             "skill": "realfake",
             "supports": [
-              "malignant"
+              "woodgrowth"
             ],
             "fuse": null
           },
           {
-            "skill": "meritspirit",
+            "skill": "dreamback",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "strawknot",
+            "skill": "hex",
             "supports": [],
             "fuse": null
           }
@@ -1882,24 +1905,24 @@
         "keystones": [],
         "root": "light",
         "bar": [
-          "mountain",
-          "bodyformation",
+          "gather",
+          "soulrefine",
           "realfake"
         ]
       },
       {
         "actives": [
           {
-            "skill": "realfake",
+            "skill": "fourseasons",
             "supports": [
-              "waterintent",
+              "malignant",
               "demonize",
-              "leap"
+              "surehit"
             ],
             "fuse": null
           },
           {
-            "skill": "sukiep",
+            "skill": "remnantdusk",
             "supports": [],
             "fuse": null
           },
@@ -1911,12 +1934,12 @@
             "fuse": null
           },
           {
-            "skill": "demonfinger",
+            "skill": "finger",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "defiance",
+            "skill": "starbreak",
             "supports": [],
             "fuse": null
           },
@@ -1931,13 +1954,12 @@
             "skill": "truepressure",
             "supports": [
               "bloodthirst",
-              "outburst",
-              "lingering"
+              "outburst"
             ],
             "fuse": null
           },
           {
-            "skill": "jet",
+            "skill": "voidnail",
             "supports": [],
             "fuse": null
           }
@@ -1945,8 +1967,8 @@
         "keystones": [],
         "root": "yin",
         "bar": [
-          "demonfinger",
-          "sukiep",
+          "finger",
+          "remnantdusk",
           "desire"
         ]
       }
@@ -1958,49 +1980,50 @@
       {
         "actives": [
           {
-            "skill": "bell",
+            "skill": "ward",
             "supports": [
-              "leap",
+              "surehit",
               "fireforge"
             ],
             "fuse": null
           },
           {
-            "skill": "vermilion",
-            "supports": [
-              "lifeonhit"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "daoyellow",
-            "supports": [
-              "lifeonhit"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "deathlessbreath",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "tigerflag",
-            "supports": [],
-            "fuse": null
-          },
-          {
             "skill": "nineturn",
+            "supports": [
+              "lifeonkill"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "ghostsummon",
+            "supports": [
+              "trinity",
+              "ninechanges"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "soularmour",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "fivearrows",
+            "skill": "jithunder",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "timeaura",
+            "skill": "lotus",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "silentfinger",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "slaughteraura",
             "supports": [],
             "fuse": null
           }
@@ -2011,43 +2034,43 @@
         ],
         "root": "light",
         "bar": [
+          "lotus",
           "nineturn",
-          "vermilion",
-          "fivearrows"
+          "silentfinger"
         ]
       },
       {
         "actives": [
           {
-            "skill": "yinmoon",
+            "skill": "void",
             "supports": [
-              "fastercasting",
-              "critcast"
+              "lifeonhit",
+              "fuse"
+            ],
+            "fuse": "hex"
+          },
+          {
+            "skill": "quake",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "seal",
+            "supports": [
+              "overcharge",
+              "noretreat"
             ],
             "fuse": null
           },
           {
-            "skill": "arsenal",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "gravity",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "collapse",
-            "supports": [],
-            "fuse": null
-          },
-          {
             "skill": "thunderchart",
-            "supports": [],
+            "supports": [
+              "thunderlead"
+            ],
             "fuse": null
           },
           {
-            "skill": "godform",
+            "skill": "bodyformation",
             "supports": [],
             "fuse": null
           },
@@ -2057,20 +2080,25 @@
             "fuse": null
           },
           {
-            "skill": "mirror",
+            "skill": "bell",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "hex",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "unyielding",
-          "immortalpool"
+          "immortalpool",
+          "soullamps"
         ],
-        "root": "water",
+        "root": "wood",
         "bar": [
-          "collapse",
           "thunderchart",
-          "arsenal"
+          "seal",
+          "void"
         ]
       }
     ]
@@ -2081,34 +2109,37 @@
       {
         "actives": [
           {
-            "skill": "heavenlychop",
+            "skill": "nineturn",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "servitude",
+            "skill": "timerestrict",
             "supports": [
               "addedlight"
             ],
             "fuse": null
           },
           {
-            "skill": "fate",
+            "skill": "godform",
+            "supports": [
+              "leap",
+              "woodgrowth"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "finger",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "demonfinger",
+            "skill": "spark",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "fireball",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "remnantdusk",
+            "skill": "tribulation",
             "supports": [],
             "fuse": null
           },
@@ -2118,7 +2149,7 @@
             "fuse": null
           },
           {
-            "skill": "starrotation",
+            "skill": "soulvortex",
             "supports": [],
             "fuse": null
           }
@@ -2129,20 +2160,15 @@
         ],
         "root": "yin",
         "bar": [
-          "remnantdusk",
-          "servitude",
-          "fireball"
+          "tribulation",
+          "timerestrict",
+          "spark"
         ]
       },
       {
         "actives": [
           {
-            "skill": "timereverse",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "threebreaths",
+            "skill": "agingcurse",
             "supports": [
               "efficacy",
               "trap"
@@ -2150,49 +2176,55 @@
             "fuse": null
           },
           {
-            "skill": "starsoul",
+            "skill": "kunjiwhip",
             "supports": [
               "inspiration",
               "trinity",
-              "woodgrowth"
+              "malignant"
             ],
             "fuse": null
           },
           {
-            "skill": "quake",
+            "skill": "seal",
+            "supports": [
+              "waterintent"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "lightshield",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "heal",
+            "skill": "ancientgod",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "heavenlychop",
+            "skill": "restrictbanner",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "soulsearch",
+            "skill": "ancientthunder",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "eightextremes",
+            "skill": "palm",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "greyheart",
-          "soullamps"
+          "twentyyears"
         ],
-        "root": "fire",
+        "root": "light",
         "bar": [
-          "threebreaths",
-          "timereverse",
-          "soulsearch"
+          "kunjiwhip",
+          "agingcurse",
+          "ancientthunder"
         ]
       }
     ]
@@ -2203,29 +2235,27 @@
       {
         "actives": [
           {
-            "skill": "karmaseal",
+            "skill": "movemountain",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "timeaura",
+            "skill": "slaughteraura",
             "supports": [
-              "metalwind",
+              "fireforge",
               "thunderlead",
               "lingering"
             ],
             "fuse": null
           },
           {
-            "skill": "celestialslaughter",
+            "skill": "demonfinger",
             "supports": [],
             "fuse": null
           },
           {
             "skill": "bloodpowder",
-            "supports": [
-              "lifeonhit"
-            ],
+            "supports": [],
             "fuse": null
           },
           {
@@ -2234,7 +2264,7 @@
             "fuse": null
           },
           {
-            "skill": "dreamback",
+            "skill": "karma",
             "supports": [],
             "fuse": null
           },
@@ -2256,69 +2286,65 @@
         "root": "water",
         "bar": [
           "bloodpowder",
-          "dreamback",
+          "karma",
           "desire"
         ]
       },
       {
         "actives": [
           {
+            "skill": "gather",
+            "supports": [],
+            "fuse": null
+          },
+          {
             "skill": "summonrain",
             "supports": [
-              "controlleddestruction",
-              "culling"
+              "spellecho",
+              "fastercasting"
             ],
             "fuse": null
           },
           {
-            "skill": "soullock",
-            "supports": [
-              "soulfeed"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "fourseasons",
-            "supports": [
-              "surehit"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "mountain",
+            "skill": "severance",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "voidnail",
+            "skill": "windrain",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "celestialslaughter",
+            "skill": "dreamback",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "defiance",
+            "skill": "ward",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "silentfinger",
+            "skill": "ancientthunder",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "agingcurse",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "mastery",
-          "threelives"
+          "unyielding",
+          "thunderdragon"
         ],
-        "root": "wood",
+        "root": "water",
         "bar": [
-          "soullock",
-          "defiance",
-          "voidnail"
+          "summonrain",
+          "ancientthunder",
+          "dreamback"
         ]
       }
     ]
@@ -2329,19 +2355,19 @@
       {
         "actives": [
           {
-            "skill": "vermilion",
+            "skill": "ancientgod",
             "supports": [
-              "critical",
-              "triplestrike"
+              "venomheart",
+              "fasterattacks"
             ],
             "fuse": null
           },
           {
-            "skill": "heavenlychop",
+            "skill": "nineturn",
             "supports": [
-              "elementalfocus",
-              "heavy",
-              "thunderlead"
+              "fistofwar",
+              "surehit",
+              "metalwind"
             ],
             "fuse": null
           },
@@ -2351,17 +2377,20 @@
             "fuse": null
           },
           {
-            "skill": "burst",
+            "skill": "qiburst",
+            "supports": [
+              "deadlyailments",
+              "widearea"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "restrictbanner",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "yellowfinger",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "celestialslaughter",
+            "skill": "tigerflag",
             "supports": [],
             "fuse": null
           },
@@ -2371,7 +2400,7 @@
             "fuse": null
           },
           {
-            "skill": "autumn",
+            "skill": "warprint",
             "supports": [],
             "fuse": null
           }
@@ -2381,72 +2410,71 @@
         ],
         "root": "metal",
         "bar": [
-          "vermilion",
-          "burst",
-          "yellowfinger"
+          "ancientgod",
+          "qiburst",
+          "restrictbanner"
         ]
       },
       {
         "actives": [
           {
-            "skill": "infatuation",
+            "skill": "threebreaths",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "ease",
-            "supports": [],
-            "fuse": null
-          },
-          {
-            "skill": "springsoul",
+            "skill": "realfake",
             "supports": [
-              "heavy"
+              "surehit"
             ],
             "fuse": null
-          },
-          {
-            "skill": "sealgod",
-            "supports": [
-              "thunderlead"
-            ],
-            "fuse": null
-          },
-          {
-            "skill": "skyqueen",
-            "supports": [
-              "fuse"
-            ],
-            "fuse": "springsoul"
           },
           {
             "skill": "mountain",
+            "supports": [
+              "coldqi"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "fourseasons",
+            "supports": [
+              "focus"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "strawknot",
+            "supports": [
+              "hextouch"
+            ],
+            "fuse": null
+          },
+          {
+            "skill": "jet",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "manhair",
-            "supports": [
-              "lifeonhit"
-            ],
+            "skill": "thirdeye",
+            "supports": [],
             "fuse": null
           },
           {
-            "skill": "dreamdao",
-            "supports": [
-              "inspiration"
-            ],
+            "skill": "gather",
+            "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "twentyyears"
+          "fury",
+          "faith"
         ],
-        "root": "light",
+        "root": "metal",
         "bar": [
-          "manhair",
-          "dreamdao",
-          "ease"
+          "thirdeye",
+          "gather",
+          "realfake"
         ]
       }
     ]
@@ -2457,37 +2485,35 @@
       {
         "actives": [
           {
-            "skill": "springsoul",
+            "skill": "seize",
             "supports": [
-              "addedwater",
+              "addedyin",
               "hurtcast"
             ],
             "fuse": null
           },
           {
-            "skill": "bolt",
+            "skill": "autumn",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "wanderingsouls",
+            "skill": "daoyellow",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "heavenflip",
+            "skill": "remnantnight",
             "supports": [
-              "arcanesurge",
-              "spacelock",
+              "inspiration",
+              "drain",
               "hurtcast"
             ],
             "fuse": null
           },
           {
-            "skill": "truefalse",
-            "supports": [
-              "addedmetal"
-            ],
+            "skill": "starrotation",
+            "supports": [],
             "fuse": null
           },
           {
@@ -2501,7 +2527,7 @@
             "fuse": null
           },
           {
-            "skill": "gather",
+            "skill": "earthsplit",
             "supports": [],
             "fuse": null
           }
@@ -2512,34 +2538,22 @@
         "root": null,
         "bar": [
           "ease",
-          "wanderingsouls",
+          "daoyellow",
           "strawknot"
         ]
       },
       {
         "actives": [
           {
-            "skill": "memory",
-            "supports": [
-              "lingering",
-              "fuse",
-              "widearea"
-            ],
-            "fuse": "bindingword"
-          },
-          {
             "skill": "fixedrule",
             "supports": [
-              "surehit"
+              "fuse"
             ],
-            "fuse": null
+            "fuse": "remnantnight"
           },
           {
-            "skill": "fivearrows",
-            "supports": [
-              "maim",
-              "allure"
-            ],
+            "skill": "bodyfix",
+            "supports": [],
             "fuse": null
           },
           {
@@ -2548,11 +2562,8 @@
             "fuse": null
           },
           {
-            "skill": "godfinger",
-            "supports": [
-              "pressadvantage",
-              "qileech"
-            ],
+            "skill": "libow",
+            "supports": [],
             "fuse": null
           },
           {
@@ -2561,22 +2572,30 @@
             "fuse": null
           },
           {
-            "skill": "bindingword",
+            "skill": "sealgod",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "heavenflip",
+            "skill": "remnantnight",
+            "supports": [],
+            "fuse": null
+          },
+          {
+            "skill": "soulmerge",
             "supports": [],
             "fuse": null
           }
         ],
-        "keystones": [],
+        "keystones": [
+          "slaughterimmortal",
+          "unyielding"
+        ],
         "root": "yin",
         "bar": [
-          "fivearrows",
           "remnantdusk",
-          "fixedrule"
+          "libow",
+          "bodyfix"
         ]
       }
     ]
