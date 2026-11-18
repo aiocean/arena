@@ -94,6 +94,7 @@ def main():
     ap.add_argument("--whiff", type=float, default=0.0, help="reward cost of a damaging cast that lands nothing")
     ap.add_argument("--variety", type=float, default=0.0, help="reward x the share of a life the actives' blows took")
     ap.add_argument("--whiff-far", type=float, default=0.0, help="reward cost of a whiff begun with the foe out of reach")
+    ap.add_argument("--mix", type=float, nargs=5, help="opponent shares: latest self, past self, brain, first, scripted")
     ap.add_argument("--time-cost", type=float, default=0.0, help="reward cost of every decision (a long round costs more)")
     ap.add_argument("--keep-every", type=int, default=0, help="also keep runs/<run>/u<update>.pt this often (0: never)")
     ap.add_argument("--snapshot-every", type=int, default=20)
@@ -126,7 +127,7 @@ def main():
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
     start = 0
     env = pd.VecEnv(n, args.threads)
-    league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, seat0=args.seat0)
+    league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, seat0=args.seat0, mix=args.mix)
     # a resumed run takes its network from its checkpoint (long-run.sh passes the run's --init again on a resume)
     if args.init and not args.resume:
         path = pathlib.Path(args.init)

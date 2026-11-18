@@ -11,13 +11,15 @@ STYLES = 3
 
 
 class League:
-    def __init__(self, env, rng, limit=90.0, seed=1_000_000, seat0=0.5):
-        """`seat0`: the share of fights in which the learner sits in seat 0 (the left); seat 1 the rest."""
+    def __init__(self, env, rng, limit=90.0, seed=1_000_000, seat0=0.5, mix=None):
+        """`seat0`: the share of fights in which the learner sits in seat 0 (the left); seat 1 the rest. `mix`: the
+        opponent shares in `MIX`'s order (latest, past, brain, first, scripted), `MIX` itself when None."""
         self.env, self.rng, self.limit, self.seat0 = env, rng, limit, seat0
         self.snapshots = []  # model ids, oldest first
         self.next_seed = seed  # training fights never use the ladder's seeds (1-150)
         self.kinds = list(MIX)
-        self.p = np.array([MIX[k] for k in self.kinds])
+        self.p = np.array(mix if mix is not None else [MIX[k] for k in self.kinds], dtype=float)
+        self.p /= self.p.sum()
 
     def snapshot(self, policy):
         """Freeze the policy as it is now: the latest self from here on."""

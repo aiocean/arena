@@ -92,6 +92,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--variety` | 0 | reward weight of the damage the actives' blows deal (a bonus for using the whole kit) |
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
+| `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair |
 | `--time-cost` | 0 | reward cost of every decision, so a round that drags on costs more than one closed |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--keep-every` | 0 | also keep `runs/<run>/u<update>.pt` every so many updates (a multiple of 25), for the ladder |
