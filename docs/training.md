@@ -32,7 +32,7 @@ env = pd.VecEnv(n=512, threads=8)          # 512 duels, stepped on 8 worker thre
 env.set_model(0, pd.HOUSE)                 # an opponent to fight, as id 0: an ONNX model's bytes
 env.reset(i, seed, learner, style, foe_style, opponent, model, limit)
 obs, mask = env.observe()                  # float32[n, 1741], bool[n, 27]
-reward, done, won, length = env.step(actions, shaping, whiff, whiff_far)   # actions int64[n]; the costs default to 0
+reward, done, won, length = env.step(actions, shaping, whiff, whiff_far, variety)   # actions int64[n]; all but shaping default to 0
 env.casts()                                # the learners' casts since the last call, by kind (below)
 ```
 
@@ -45,7 +45,8 @@ apart from the seats: `ladder::looks_of`); `style` and
   round; `length` is the round's seconds.
 - A done env ignores its action until it is reset.
 - `casts()` sums the learners' casts since it was last called, over every env, by kind in `data::Kind` order (melee,
-  dash, blast, bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, far_whiffs, damage)` each. A cast
+  dash, blast, bolt, orb, zone, void, heal, ward, barrier, blink): `(casts, out_of_reach, whiffs, far_whiffs, damage)` each, and beside that list the damage the learners'
+  actives (their loadouts' skills, not slash, dive or blink) dealt with their blows. A cast
   is out of reach when its blade's, blast's or dash's reach does not get to the foe's hurtboxes as it begins; a whiff
   is a damaging skill cast as its motion that lands nothing (no hit, not guarded, not turned aside) once it and its
   shots are over; a far whiff is one that began out of reach; `damage` is in % of a life.
@@ -65,6 +66,7 @@ Today the reward is computed in Rust (`crates/arena-duel/src/train.rs`), per dec
 | An act already 40% of the last 40 decisions | -0.004 |
 | A damaging cast that lands nothing (a whiff, as `casts()` counts it) | `whiff` handed to `step` (0 by default) |
 | A whiff begun with the foe out of reach (a far whiff) | `whiff_far` handed to `step`, on top of `whiff` (0 by default) |
+| Damage the learner's actives deal with their blows (not slash, dive or blink) | `variety` x dealt / 100 (0 by default) |
 
 To pay your bot differently today, edit those constants or `Env::step` and rebuild the module. A reward written in
 Python, from facts `step` hands back, is the first item of `docs/roadmap.md`.
@@ -87,6 +89,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--ent` | 0.01 0.002 | entropy weight, from the first to the second over the run |
 | `--shaping-until` | 0.6 | share of the run over which the damage term falls to 0 (0: none at all) |
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
+| `--variety` | 0 | reward weight of the damage the actives' blows deal (a bonus for using the whole kit) |
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--keep-every` | 0 | also keep `runs/<run>/u<update>.pt` every so many updates (a multiple of 25), for the ladder |
@@ -100,7 +103,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
 each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...; the share of each act, `acts`; and the
-learner's casts: `casts`, `whiff`, `out_of_reach`, `far_whiff`, `dmg_cast`, `melee_out_of_reach`, `melee_whiff`) and
+learner's casts: `casts`, `whiff`, `out_of_reach`, `far_whiff`, `active_dmg`, `dmg_cast`, `melee_out_of_reach`, `melee_whiff`) and
 `runs/<run>/last.pt` every 25.
 
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted

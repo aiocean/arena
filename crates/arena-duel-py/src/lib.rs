@@ -7,7 +7,7 @@ use arena_bot::onnx::Onnx;
 use arena_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use arena_duel::seat::SharedDecider;
 use arena_duel::style::Style;
-use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent};
+use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent, Pay};
 use arena_mind::policy::{ACTIONS, OBS};
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
@@ -96,9 +96,7 @@ enum Wire {
     },
     Step {
         actions: Vec<i64>,
-        shaping: f32,
-        whiff: f32,
-        far: f32,
+        pay: Pay,
         reply: Sender<Vec<Out>>,
     },
     /// The learners' casts since the last ask, summed over the worker's envs.
@@ -156,9 +154,7 @@ impl Worker {
             }
             Wire::Step {
                 actions,
-                shaping,
-                whiff,
-                far,
+                pay,
                 reply,
             } => {
                 let outs = self
@@ -167,7 +163,7 @@ impl Worker {
                     .zip(actions)
                     .map(|(env, a)| match env {
                         Some(env) => {
-                            let s = env.step_costs(usize::try_from(a).unwrap_or(0), shaping, whiff, far);
+                            let s = env.step_paid(usize::try_from(a).unwrap_or(0), &pay);
                             let mut out = snapshot(env);
                             out.reward = s.reward;
                             out.done = s.done;
@@ -390,8 +386,8 @@ impl VecEnv {
 
     /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: melee, dash,
     /// blast, bolt, orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, far_whiffs,
-    /// damage)`.
-    fn casts(&self) -> PyResult<Vec<CastRow>> {
+    /// damage)`; and the damage the learners' actives (their loadouts' skills, not the basics) dealt with their blows.
+    fn casts(&self) -> PyResult<(Vec<CastRow>, f64)> {
         let mut total = Casts::default();
         for (tx, _, _) in &self.workers {
             let (reply, rx) = channel();
@@ -399,18 +395,19 @@ impl VecEnv {
                 .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
             total.add(&rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?);
         }
-        Ok((0..CAST_KINDS)
+        let rows = (0..CAST_KINDS)
             .map(|k| {
-                let c = total.0[k];
+                let c = total.kinds[k];
                 (c.casts, c.out_of_reach, c.whiffs, c.far_whiffs, c.damage)
             })
-            .collect())
+            .collect();
+        Ok((rows, total.active_damage))
     }
 
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     #[allow(clippy::type_complexity)]
-    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0))]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
@@ -418,6 +415,7 @@ impl VecEnv {
         shaping: f32,
         whiff: f32,
         whiff_far: f32,
+        variety: f32,
     ) -> PyResult<(
         Bound<'py, PyAny>,
         Bound<'py, PyAny>,
@@ -441,9 +439,12 @@ impl VecEnv {
                 let slice = actions.get(*start..start + len).unwrap_or(&[]).to_vec();
                 tx.send(Wire::Step {
                     actions: slice,
-                    shaping,
-                    whiff,
-                    far: whiff_far,
+                    pay: Pay {
+                        shaping,
+                        whiff,
+                        whiff_far,
+                        variety,
+                    },
                     reply,
                 })
                 .map_err(|e| e.to_string())?;

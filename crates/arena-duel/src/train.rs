@@ -7,7 +7,8 @@
 //! `STALL` a decision once `QUIET` seconds pass with no damage either way; minus `REPEAT` when one act (other than
 //! waiting) is chosen `RUN` times in a row; minus `HABIT` when the act chosen is already `SHARE` or more of the last
 //! `HABITS` decisions; minus the trainer's `whiff` cost for each damaging cast that lands nothing (no hit, not guarded,
-//! not turned aside), and its `far` cost for each of those that began with the foe out of its reach.
+//! not turned aside), and its `far` cost for each of those that began with the foe out of its reach; plus its `variety`
+//! x the share of a life the learner's actives (not the basics) took with their blows (`Pay`).
 //!
 //! It also counts the learner's casts by kind (`Casts`): how many, how many began out of reach (a blade, blast or dash
 //! whose reach does not get to the foe's hurtboxes), how many landed nothing, and the damage they dealt. Only a skill
@@ -51,13 +52,30 @@ pub struct CastLog {
     pub damage: f64,
 }
 
-/// The learner's casts by kind (`data::Kind` order).
+/// The learner's casts by kind (`data::Kind` order), and the damage its actives' blows dealt (a skill of its loadout,
+/// not one of `loadout::BASICS`; % of a life, as `CastLog::damage`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Casts(pub [CastLog; CAST_KINDS]);
+pub struct Casts {
+    pub kinds: [CastLog; CAST_KINDS],
+    pub active_damage: f64,
+}
+
+/// What a step pays besides the round's outcome and the fixed penalties: the damage term's weight (`shaping`), the
+/// cost of a whiff (`whiff`), more for a whiff begun out of reach (`whiff_far`, on top of `whiff`), and `variety` x
+/// the share of a life the learner's actives took with their blows (a skill of its loadout, not a basic: slash, dive,
+/// blink), so a policy that wins with only the basics is not paid for it.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Pay {
+    pub shaping: f32,
+    pub whiff: f32,
+    pub whiff_far: f32,
+    pub variety: f32,
+}
 
 impl Casts {
     pub fn add(&mut self, o: &Casts) {
-        for (a, b) in self.0.iter_mut().zip(o.0.iter()) {
+        self.active_damage += o.active_damage;
+        for (a, b) in self.kinds.iter_mut().zip(o.kinds.iter()) {
             a.casts += b.casts;
             a.out_of_reach += b.out_of_reach;
             a.whiffs += b.whiffs;
@@ -185,6 +203,8 @@ pub struct Env {
     casts: Casts,
     whiffed: u32,
     far_whiffed: u32,
+    /// The share of a life the learner's actives took since the last step paid for it.
+    active_dealt: f64,
 }
 
 impl Env {
@@ -240,6 +260,7 @@ impl Env {
             casts: Casts::default(),
             whiffed: 0,
             far_whiffed: 0,
+            active_dealt: 0.0,
         };
         env.advance();
         env
@@ -269,6 +290,25 @@ impl Env {
     /// As `step_with`, with `far` taken too for each of those whiffs that began with the foe out of its reach (a
     /// blade, blast or dash: `Casts`' `out_of_reach`), so a blow thrown in reach costs no more than `whiff`.
     pub fn step_costs(&mut self, action: usize, shaping: f32, whiff: f32, far: f32) -> Step {
+        self.step_paid(
+            action,
+            &Pay {
+                shaping,
+                whiff,
+                whiff_far: far,
+                variety: 0.0,
+            },
+        )
+    }
+
+    /// As `step`, paid as `pay` says.
+    pub fn step_paid(&mut self, action: usize, pay: &Pay) -> Step {
+        let Pay {
+            shaping,
+            whiff,
+            whiff_far: far,
+            variety,
+        } = *pay;
         let length = self.duel.state().time;
         if self.done {
             return Step {
@@ -309,6 +349,7 @@ impl Env {
         reward += shaping * ((dealt - taken) / 100.0) as f32;
         reward -= whiff * core::mem::take(&mut self.whiffed) as f32;
         reward -= far * core::mem::take(&mut self.far_whiffed) as f32;
+        reward += variety * (core::mem::take(&mut self.active_dealt) / 100.0) as f32;
         let length = self.duel.state().time;
         let cut = won.is_none() && length >= self.limit;
         if won.is_some() || cut {
@@ -414,7 +455,7 @@ impl Env {
                 _ => None,
             };
             let far = reach.is_some_and(|r| gap > r);
-            let log = &mut self.casts.0[kind.min(CAST_KINDS - 1)];
+            let log = &mut self.casts.kinds[kind.min(CAST_KINDS - 1)];
             log.casts += 1;
             if far {
                 log.out_of_reach += 1;
@@ -426,6 +467,17 @@ impl Env {
                 far,
                 landed: false,
             });
+        }
+        for e in out {
+            if let Out::Hit {
+                by, spell, share, ..
+            } = e
+                && *by == me
+                && !arena_calc::loadout::BASICS.contains(spell)
+            {
+                self.casts.active_damage += share;
+                self.active_dealt += share;
+            }
         }
         let mut credited = false;
         for o in self.open.iter_mut().chain(self.trailing.iter_mut()) {
@@ -441,7 +493,7 @@ impl Env {
             }
             // the tick's damage goes to one cast of the spell that hit
             if hit && !credited {
-                self.casts.0[o.kind].damage += dealt;
+                self.casts.kinds[o.kind].damage += dealt;
                 credited = true;
             }
         }
@@ -458,10 +510,10 @@ impl Env {
         self.trailing = keep;
         for o in done {
             if o.strikes && !o.landed {
-                self.casts.0[o.kind].whiffs += 1;
+                self.casts.kinds[o.kind].whiffs += 1;
                 self.whiffed += 1;
                 if o.far {
-                    self.casts.0[o.kind].far_whiffs += 1;
+                    self.casts.kinds[o.kind].far_whiffs += 1;
                     self.far_whiffed += 1;
                 }
             }

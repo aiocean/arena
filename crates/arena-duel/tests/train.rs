@@ -223,7 +223,7 @@ fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
         casts, again,
         "the cost changes what is paid, not what happens"
     );
-    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.0.iter().map(f).sum::<u32>();
+    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.kinds.iter().map(f).sum::<u32>();
     let (n, far, whiffs) = (
         total(|c| c.casts),
         total(|c| c.out_of_reach),
@@ -270,7 +270,7 @@ fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
     let (free, casts) = run(0.0);
     let (costly, again) = run(0.01);
     assert_eq!(casts, again);
-    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.0.iter().map(f).sum::<u32>();
+    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.kinds.iter().map(f).sum::<u32>();
     let (far, whiffs, far_whiffs) = (
         total(|c| c.out_of_reach),
         total(|c| c.whiffs),
@@ -285,4 +285,41 @@ fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
         (costly - want).abs() < 1e-3,
         "{costly} against {want} ({far_whiffs} far whiffs)"
     );
+}
+
+#[test]
+fn variety_pays_for_what_the_actives_deal_and_nothing_for_the_basics() {
+    // a random hand, which casts its actives as often as its basics: the same fight paid with and without the
+    // variety term differs by that term times what the actives dealt, and by nothing else
+    let run = |seed: u32, variety: f32| {
+        let mut rng = Rng::new(seed);
+        let mut env = Env::new(cfg(seed, 0, Opponent::Turtle));
+        let pay = arena_duel::train::Pay {
+            variety,
+            ..Default::default()
+        };
+        let mut paid = 0.0_f32;
+        for _ in 0..5000 {
+            let s = env.step_paid(random_legal(&env, &mut rng), &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        (paid, env.take_casts())
+    };
+    // over seeds, not one lucky one: every fight pays exactly what its actives dealt, and some deal something
+    let mut dealt = 0.0;
+    for seed in 14..24 {
+        let (plain, casts) = run(seed, 0.0);
+        let (varied, again) = run(seed, 1.0);
+        assert_eq!(casts, again, "seed {seed}");
+        let want = plain + (casts.active_damage / 100.0) as f32;
+        assert!(
+            (varied - want).abs() < 1e-3,
+            "seed {seed}: {varied} against {want}"
+        );
+        dealt += casts.active_damage;
+    }
+    assert!(dealt > 0.0, "no active dealt anything in ten fights");
 }
