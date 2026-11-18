@@ -142,9 +142,8 @@ fn alone(id: &str) -> Loadout {
     }
 }
 
-/// The trace of one cast of skill `id` by seat 0 at a foe who stands still; `None` when it cannot be cast alone or
-/// never hits.
-pub fn trace(id: &'static str) -> Option<Trace> {
+/// A duel where seat 0 casts `id` once at seat 1, who stands still; `None` when it cannot be cast alone.
+fn one_cast(id: &'static str) -> Option<Duel> {
     arena_duel::data::spell(id)?;
     let config = DuelConfig {
         seed: 1,
@@ -154,8 +153,78 @@ pub fn trace(id: &'static str) -> Option<Trace> {
         sky: 384.0,
         effects: arena_duel::effects::all(),
     };
-    let mut duel =
-        Duel::with_loadouts(config, [caster(id), idle()], [alone(id), alone("palm")]).ok()?;
+    Duel::with_loadouts(config, [caster(id), idle()], [alone(id), alone("palm")]).ok()
+}
+
+/// An effect as the rules first play it in one cast: its id, its point (arena pixels, `y` down), whether it is
+/// mirrored, seconds since the cast began, and both fighters' hurtboxes that tick (`[x0, y0, x1, y1]`, `y` down).
+#[derive(Clone, Debug)]
+pub struct Play {
+    pub fx: &'static str,
+    pub x: f64,
+    pub y: f64,
+    pub flip: bool,
+    pub t: f64,
+    pub bodies: [Vec<[f64; 4]>; 2],
+}
+
+/// The arena's ground in the one-cast duel (`y` down).
+pub const FLOOR: f64 = 600.0;
+
+/// Every effect one cast of skill `id` plays, the first time each is played, with the fighters' bodies then.
+pub fn plays(id: &'static str) -> Vec<Play> {
+    let Some(mut duel) = one_cast(id) else {
+        return Vec::new();
+    };
+    let mut out: Vec<Play> = Vec::new();
+    let (mut clock, mut began) = (0.0, None::<f64>);
+    while clock < LONGEST {
+        let step = duel.step(TICK);
+        clock += TICK;
+        let state = duel.state();
+        if began.is_none() {
+            began = state.fighters[0]
+                .act
+                .filter(|a| a.spell == id)
+                .map(|a| clock - a.t);
+        }
+        let bodies = || {
+            let all = shapes(state);
+            [0, 1].map(|me| {
+                all.iter()
+                    .filter(|d| d.owner == Some(me) && d.mark == Mark::Body)
+                    .filter_map(|d| match d.shape {
+                        Shape::Rect { x0, y0, x1, y1 } => Some([x0, FLOOR - y1, x1, FLOOR - y0]),
+                        Shape::Circle { .. } => None,
+                    })
+                    .collect()
+            })
+        };
+        for o in step {
+            if let Out::Play { fx, x, y, opts, .. } = o
+                && !out.iter().any(|p| p.fx == fx)
+            {
+                out.push(Play {
+                    fx,
+                    x,
+                    y,
+                    flip: opts.flip == Some(true),
+                    t: clock - began.unwrap_or(clock),
+                    bodies: bodies(),
+                });
+            }
+        }
+        if began.is_some_and(|b| clock - b > 4.0) {
+            break;
+        }
+    }
+    out
+}
+
+/// The trace of one cast of skill `id` by seat 0 at a foe who stands still; `None` when it cannot be cast alone or
+/// never hits.
+pub fn trace(id: &'static str) -> Option<Trace> {
+    let mut duel = one_cast(id)?;
     let mut playing: BTreeMap<u32, Playing> = BTreeMap::new();
     let mut bolts: BTreeMap<u32, (f64, f64)> = BTreeMap::new();
     let mut moments = Vec::new();
