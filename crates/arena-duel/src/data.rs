@@ -1864,7 +1864,6 @@ const TINT: Tint = Tint {
 /// How a fighter looks: the colours its effects are played in (a bolt's, a rune circle's, and tints by effect). The
 /// rules play a fighter's effects in its look's colours and decide nothing by it.
 pub struct LookData {
-    pub name: &'static str,
     pub bolt: [&'static str; 8],
     pub circle: [&'static str; 7],
     pub tint: &'static [(&'static str, Tint)],
@@ -1878,7 +1877,6 @@ const FROST_CIRCLE: [&str; 7] = [
 ];
 
 static THUNDER: LookData = LookData {
-    name: "Thunder",
     bolt: [
         "#2a1a08", "#6a4410", "#b07a1a", "#e8b030", "#ffd84a", "#ffe98a", "#fff6c4", "#ffffff",
     ],
@@ -1992,7 +1990,6 @@ static THUNDER: LookData = LookData {
 };
 
 static FROST: LookData = LookData {
-    name: "Frost",
     bolt: [
         "#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff",
     ],

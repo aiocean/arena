@@ -78,7 +78,7 @@ pub fn place(shape: Shape, ground: f32) -> Placed {
 fn colour(d: &Drawn, state: &State) -> Rgba {
     match d.mark {
         Mark::Body => match d.owner.and_then(|o| state.fighters.get(o)).map(|f| f.look) {
-            Some(Look::Frost) => CYAN,
+            Some(Look::ThatThai) => CYAN,
             _ => GOLD,
         },
         Mark::Untouchable => UNTOUCHABLE,

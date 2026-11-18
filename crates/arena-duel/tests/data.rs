@@ -219,7 +219,6 @@ fn each_look_is_ported() -> Result<(), String> {
     for (key, l) in [("thunder", Look::VuongLam), ("frost", Look::ThatThai)] {
         let d = data::look(l);
         let js = &f["looks"][key];
-        assert_eq!(json!(d.name), js["name"]);
         assert_eq!(json!(d.bolt), js["bolt"]);
         assert_eq!(json!(d.circle), js["circle"]);
         let tints = js["tint"]
