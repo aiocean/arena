@@ -12,6 +12,8 @@
 // here decides the fight (it only draws it), so the game uses them freely.
 #![allow(clippy::disallowed_methods)]
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod audit;
 pub mod bots;
 pub mod boxes;
 pub mod feel;
