@@ -117,31 +117,41 @@ over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n
 new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
 logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
 
-**The state of the house AI** (2026-11-18). The shipped AI is update 1600 of run `abi3`, a fine-tune on ABI 3 (1741
-inputs, 27 acts) of `abi2b`'s update 1510 widened (`widen.py --old-obs 305`): `--init runs/abi3/init.pt --lr 1e-4
---ent 0.003 0.002 --shaping-until 0 --whiff 0.01`, on RULES_VERSION 13 (14 fights the same). The whiff cost is
-there because u1510 slashed from far away: 11 whiffs a minute begun out of reach, 5.2 of them more than 60 px beyond
-it (`cargo run --release -p arena-bot --features host,onnx --example whiff`). A second run, `abi3w`, resumed from
-update 1200 with a far cost on top (`--whiff-far 0.02`); it gave up the aggressive script's matchup (80%) for no fewer
-far whiffs and was dropped.
+**The state of the house AI** (2026-11-18, RULES_VERSION 21: spells only, the blink the one basic). The shipped AI
+is update 800 of run `abi3z`. The blade-era AI (`abi3/u1600`) cast almost nothing on these rules: 9.0% against the
+brain on RULES_VERSION 20, every mirror fight cut. The way here, every run with `--whiff 0.03 --whiff-far 0.02
+--variety 0.5 --time-cost 0.0005`:
 
-Its ladder (150 seeds, RULES_VERSION 14), u1510's on the same rules in brackets:
-- vs the brain: 94.4% [90.3] (seats 94.0 / 94.7; Vương Lâm 96.8 / Thất Thải 91.9), against the old brain, which
-  stalled: 10 of its fights with the house AI were cut. Against the brain that presses (2026-11-18, RULES_VERSION 15):
-  83.9% (seats 83.1 / 84.7; Vương Lâm 92.7 / Thất Thải 75.1), no fight cut, rounds 17.4 s;
-- vs the first mind: 94.4% [91.2] (seats 93.3 / 95.5; unchanged on RULES_VERSION 15 with the new brain);
-- vs the aggressive and turtle scripts: 88.6% [93.3] and 99.7% [99.6];
-- its own mirror: seat 0 50.0%; Vương Lâm wins 71.8% of its rounds [64.7].
-- Whiffs: 5.6 a minute [13.6]; begun more than 60 px beyond reach 0.35 [5.18]; runs of 3 or more far whiffs in
-  150 seeds 62 [1963], the longest 7 [20].
+1. `abi3x`, from scratch (3000 updates, the default schedule; RULES_VERSION 20, then 21 from update 710). A warm
+   start from the RULES-19 AI (`abi3v`) was tried beside it and dropped: it kept the old AI's habit of casting from
+   one bar slot only and stalled near 50% against the brain. `abi3x` peaked near update 1000-1400 (55% against the
+   brain, 84% against the first mind) and drifted once its damage term reached 0. Stopped at 2000.
+2. `abi3y`: `--init runs/abi3x/u1400.pt --lr 1e-4 --ent 0.004 0.002 --shaping-until 0.5 --mix 0.25 0.15 0.4 0.1 0.1`:
+   the brain 40% of the league instead of 15%. Update 400: 74.0% against the brain. It drifted again once the damage
+   term reached 0.
+3. `abi3z`: `--init runs/abi3y/u400.pt --lr 1e-4 --ent 0.003 0.0015 --shaping-until 3.0`, the same mix. A
+   `--shaping-until` over 1 keeps a floor under the damage term (here from 1 to 0.67 over 800 updates), and the drift
+   did not come: every update laddered from 200 on (200, 300, 500, 600, 800) clears the win bar.
 
-The known skews: the mirror's look share (Vương Lâm 72%), and the aggressive script, which wins more of its close
-fights now that the house AI's pre-emptive slashes are no longer free.
+Every run without a floor drifted after its damage term reached 0. Keep the checkpoints (`--keep-every 100`) and
+ladder them; do not trust the last one.
+
+Its ladder (150 seeds, RULES_VERSION 21):
+- vs the brain: 82.1% (seats 82.5 / 81.7; Vương Lâm 84.3 / Thất Thải 79.9), 60 rounds cut of 900;
+- vs the first mind: 94.5% (seats 92.6 / 96.4), 93 cut;
+- vs the aggressive and turtle scripts: 88.7% and 99.3%, 30 cut each;
+- its own mirror: seat 0 50.9%, 53 cut; Vương Lâm wins 65.4% of its rounds (tracked, not gated).
+- Rounds: 35-49 s. Whiffs: 3.2 a minute, 0.51 begun out of reach (the `whiff` example).
+- Damage in its mirror: burns 14%, bleeds 7%, and no skill more than 3.6%: 33 skills and ailments deal at least 1%.
+
+The cut bar (fewer than 5% of rounds) is not met against the brain (6.7%) or the first mind (10.3%), and the rules
+themselves do not meet it: on RULES_VERSION 21 the brain against the first mind cuts 151 rounds of 900 (16.8%), the
+brain's own mirror 54 (6.0%). A bar skill is ready in only about 4% of decisions each (cooldowns, qi), so rounds are
+slow whoever fights them.
 
 Next:
-1. Retrain on the spells-only rules (RULES 19): no blade, no dive; 96% of u1600's damage was dive, slash and bleed,
-   so it is weak there until it learns the bolts and bursts.
-2. Fine-tune from `runs/abi3/u1600.pt`, kept in the trainer's clone (`projects/arena-train`; `runs/` stays out of
+1. Fewer cut rounds: a larger `--time-cost`, or a cut costing more than a loss.
+2. Fine-tune from `runs/abi3z/u800.pt`, kept in the trainer's clone (`projects/arena-train`; `runs/` stays out of
    git).
 3. Ship only a checkpoint that beats this one on the ladder, on the rules it ships with.
 

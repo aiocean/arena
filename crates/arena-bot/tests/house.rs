@@ -60,14 +60,14 @@ fn a_model_that_is_not_a_policy_is_refused() {
     assert!(Onnx::load(b"not onnx").is_err());
 }
 
-/// The shipped policy clears the bar a player's bot must. Off while the house AI (u1600, trained with a blade) awaits
-/// its retrain on RULES 19, spells only: turn it back on with the new model.
+/// The shipped policy clears the bar a player's bot must, over 30 seeds (90 rounds a seat): six seeds left a seat 14
+/// to 18 rounds, too few to judge 65% a seat on the spells-only rules, where every checkpoint near the bar lost seat
+/// 0 of seeds 1-6 to the brain while winning that seat 82% over the ladder's 150.
 #[test]
-#[ignore = "the house AI awaits its retrain on RULES 19 (spells only)"]
 fn the_house_ai_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>> {
     let onnx = Onnx::house().map_err(|e| e.0)?;
     let m = Match {
-        seeds: 1..7,
+        seeds: 1..31,
         rounds: 3,
         limit: 120.0,
         effects: arena_duel::effects::all(),
