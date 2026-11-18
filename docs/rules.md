@@ -42,8 +42,9 @@ element, within a budget of 50 points. `loadout::check` is the one judge of a le
   off the palm: free, 0.2 s wind-up, 0.8 s cooldown, the lightest blow there is) and **Khí Bạo** (`qiburst`, a burst
   of qi from the palm at close range, 104 px: 12 qi, 0.24 s wind-up, 1.6 s cooldown) are actives of the pool like any
   other (tier C), which a loadout may hold and the draw may take. Both are force and palm-borne, so they daze; a bleed
-  comes only from a finger or sword spell that lays one. Đạo Dung Thân still charges its vortices into the basics,
-  which leaves it the blink alone.
+  comes only from a finger or sword spell that lays one.
+- **Đạo Dung Thân is gone** (owner, 2026-11-18, RULES 20): it charged its vortices into the basics, and no basic deals
+  damage now.
 - The old schools' traits are keystones any loadout may take: Bất Khuất (unyielding: once a round a killing blow
   leaves 1 life) and Sát Ý (fury: +4% damage for each blow landed, 5 stacks a round).
 - **There is no ultimate** (owner, 2026-11-18): no ultimate slot, no rage. The former ultimates (Thiên Kiếp

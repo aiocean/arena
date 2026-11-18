@@ -53,9 +53,6 @@ pub enum Keystone {
     TreeWatcher,
     /// Nguyền Bẩm Sinh: never old, time skills on it curse their caster back; no time skills of its own.
     BornCursed,
-    /// Đạo Dung Thân: each skill used charges a vortex into the next basic; basics slower, each guard layer it meets
-    /// eats a vortex.
-    DaoBody,
     /// Phá Rồi Lập: clones broken quickly raise the realm for a while; a clone lost is lost for the round.
     BreakRebuild,
     /// Vu Chú: two curses on the foe; each curse fills a bar that curses its owner when full.
@@ -103,10 +100,6 @@ pub const TWENTY_YEARS_MORE: f64 = 0.2;
 /// Người Xem Cây: time blows' more while moving, and the lifespan factor of time skills on it while still.
 pub const TREE_TIME_TAKEN: f64 = 0.15;
 pub const TREE_LIFESPAN: f64 = 2.0;
-/// Đạo Dung Thân: more a vortex, vortices at most, and the basics' windup factor.
-pub const VORTEX_MORE: f64 = 0.1;
-pub const VORTEX_MAX: u8 = 9;
-pub const VORTEX_WINDUP: f64 = 1.2;
 /// Phá Rồi Lập: the window clones must break in, and the realm buff's length.
 pub const REBUILD_WINDOW: f64 = 5.0;
 pub const REBUILD_BUFF: f64 = 10.0;
@@ -188,7 +181,7 @@ static FURY: [Mod; 1] = [Mod::more(
 
 impl Keystone {
     /// Every keystone; Cực Cảnh stands for each kind (taken here as force).
-    pub const ALL: [Keystone; 20] = [
+    pub const ALL: [Keystone; 19] = [
         Keystone::Extreme(Element::Force),
         Keystone::ColdQi,
         Keystone::AncientGod,
@@ -203,7 +196,6 @@ impl Keystone {
         Keystone::GreyHeart,
         Keystone::TreeWatcher,
         Keystone::BornCursed,
-        Keystone::DaoBody,
         Keystone::BreakRebuild,
         Keystone::Witch,
         Keystone::Faith,
@@ -344,13 +336,6 @@ impl Keystone {
                 "no time skills",
                 "CM1051",
             ),
-            Keystone::DaoBody => (
-                "daobody",
-                "Đạo Dung Thân",
-                "each skill used charges a vortex into the next basic, 10% more each, 9 at most",
-                "basics 20% slower; each guard layer eats a vortex",
-                "TN1919",
-            ),
             Keystone::BreakRebuild => (
                 "breakrebuild",
                 "Phá Rồi Lập",
@@ -433,8 +418,7 @@ impl Keystone {
     }
 
     /// Its modifiers on one blow, from what the fight knows at the cast: Tam Mệnh's lives used, Ngọn Đèn Hồn's
-    /// snuffed lamp, Hai Mươi Năm's rank-1 skill (`grade`, after supports), Đạo Dung Thân's vortices and slower
-    /// basics, Niềm Tin Tất Thắng's streak, Sát Ý's stacks.
+    /// snuffed lamp, Hai Mươi Năm's rank-1 skill (`grade`, after supports), Niềm Tin Tất Thắng's streak, Sát Ý's stacks.
     pub fn strike_mods(self, skill: &Skill, grade: Grade, sit: &Situation) -> Vec<Mod> {
         let src = Source::Keystone(self.id());
         let more = |v: f64| Mod::more(Stat::Damage, v, src);
@@ -447,13 +431,6 @@ impl Keystone {
             Keystone::SoulLamps if sit.snuffed => vec![more(SOUL_LAMP_SNUFF)],
             Keystone::TwentyYears if grade == Grade::Ranked(Rank::Art) => {
                 vec![more(TWENTY_YEARS_MORE)]
-            }
-            Keystone::DaoBody if skill.basic => {
-                let mut out = vec![Mod::more(Stat::Windup, VORTEX_WINDUP - 1.0, src)];
-                if sit.vortices > 0 {
-                    out.push(more(VORTEX_MORE * f64::from(sit.vortices.min(VORTEX_MAX))));
-                }
-                out
             }
             Keystone::Faith if skill.tags.has(Tag::Fist) && sit.streak > 0 => {
                 vec![more(FAITH_MORE * f64::from(sit.streak.min(FAITH_MAX)))]

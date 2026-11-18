@@ -42,11 +42,12 @@ use serde::{Deserialize, Serialize};
 /// (`arena_calc::collide`): touching is not overlapping, a bolt a capsule swept in f64, fields and blasts striking the
 /// hurtboxes and units' bodies; 17: a bolt as thick as its drawn body; 18: the keyframe carries the server's [`Tally`];
 /// 19: spells only, no melee: the blade, the dive and every striking dash gone, the basics a qi bolt and a close qi
-/// burst; 20: no basic that deals damage, the blink the one basic, the qi bolt and burst actives of the pool). A page
-/// whose rules differ steps a different fight from the same decisions, so it says so and stops (`Applied::OtherRules`).
+/// burst; 20: no basic that deals damage, the blink the one basic, the qi bolt and burst actives of the pool; 21:
+/// Đạo Dung Thân gone, its keystone flag kept and always off). A page whose rules differ steps a different fight from
+/// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 20;
+pub const RULES_VERSION: u32 = 21;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

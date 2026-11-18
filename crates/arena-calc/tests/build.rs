@@ -1093,7 +1093,6 @@ fn keystones_shape_the_blows_they_strike() {
 
     let sit = Situation {
         fury: 9,
-        vortices: 3,
         lives_used: 1,
         streak: 4,
         snuffed: true,
@@ -1105,22 +1104,6 @@ fn keystones_shape_the_blows_they_strike() {
             .more
     };
     assert_eq!(one("qiburst", Keystone::Fury), vec![ks::FURY_MORE * 5.0]);
-    // Đạo Dung Thân charges the basics only: the blink, now the one basic; the qi burst is an active
-    assert!(one("qiburst", Keystone::DaoBody).is_empty());
-    assert_eq!(one("blink", Keystone::DaoBody), vec![ks::VORTEX_MORE * 3.0]);
-    assert!(one("palm", Keystone::DaoBody).is_empty());
-    close(
-        build(
-            pool("blink"),
-            1,
-            &[],
-            &c,
-            &Sheet::with_keystones(&[Keystone::DaoBody]),
-            &sit,
-        )
-        .windup,
-        0.5 * ks::VORTEX_WINDUP,
-    );
     assert_eq!(
         one("palm", Keystone::ThreeLives),
         vec![-ks::THREE_LIVES_LESS]
@@ -1220,7 +1203,7 @@ fn every_keystone_has_its_own_name_and_none_is_frozen() {
             "{k:?}"
         );
     }
-    assert_eq!(Keystone::ALL.len(), 20);
+    assert_eq!(Keystone::ALL.len(), 19);
 }
 
 // ---- random loadouts ----

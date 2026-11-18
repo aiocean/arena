@@ -111,7 +111,8 @@ fn the_minds_counts_are_the_damage_systems() {
     curses.dedup();
     assert_eq!(curses, (0..arena_mind::CURSES).collect::<Vec<_>>());
     assert_eq!(arena_mind::AURAS, aura::AURA_KINDS);
-    assert_eq!(arena_mind::KEYSTONES, keystone::Keystone::ALL.len());
+    // the 19 keystones and the retired flag Đạo Dung Thân held, always off
+    assert_eq!(arena_mind::KEYSTONES, keystone::Keystone::ALL.len() + 1);
     assert_eq!(arena_mind::ROOTS, loadout::ROOTS.len());
 }
 

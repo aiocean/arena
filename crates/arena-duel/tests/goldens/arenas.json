@@ -304,7 +304,7 @@
           }
         ],
         "keystones": [
-          "treewatcher",
+          "greyheart",
           "coldqi"
         ],
         "root": "earth",
@@ -456,32 +456,34 @@
       {
         "actives": [
           {
-            "skill": "extremesense",
+            "skill": "jet",
             "supports": [
-              "lifeonkill",
-              "addedwood",
+              "lifeonhit",
+              "elementalfocus",
               "surehit"
             ],
             "fuse": null
           },
           {
-            "skill": "quake",
+            "skill": "seal",
             "supports": [
               "fastercasting"
             ],
             "fuse": null
           },
           {
-            "skill": "fate",
+            "skill": "bodyformation",
             "supports": [
               "focus",
-              "waterintent"
+              "thunderlead"
             ],
             "fuse": null
           },
           {
-            "skill": "void",
-            "supports": [],
+            "skill": "karmaseal",
+            "supports": [
+              "bloodthirst"
+            ],
             "fuse": null
           },
           {
@@ -490,30 +492,30 @@
             "fuse": null
           },
           {
-            "skill": "umbrella",
+            "skill": "remnantnight",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "teleport",
+            "skill": "starcompass",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "meritspirit",
+            "skill": "karma",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "daobody",
+          "borncursed",
           "threelives"
         ],
         "root": "fire",
         "bar": [
-          "extremesense",
-          "fate",
-          "umbrella"
+          "jet",
+          "bodyformation",
+          "remnantnight"
         ]
       }
     ]
@@ -834,7 +836,7 @@
         ],
         "keystones": [
           "coldqi",
-          "soullamps"
+          "threelives"
         ],
         "root": "water",
         "bar": [
@@ -2355,64 +2357,64 @@
       {
         "actives": [
           {
-            "skill": "ancientgod",
+            "skill": "lotus",
             "supports": [
-              "venomheart",
-              "fasterattacks"
+              "malignant",
+              "bloodlust"
             ],
             "fuse": null
           },
           {
-            "skill": "nineturn",
+            "skill": "orb",
             "supports": [
-              "fistofwar",
+              "arcanesurge",
               "surehit",
-              "metalwind"
+              "breakresist"
             ],
             "fuse": null
           },
           {
-            "skill": "bannertribulation",
+            "skill": "waraura",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "qiburst",
+            "skill": "burst",
             "supports": [
-              "deadlyailments",
-              "widearea"
+              "critdamage",
+              "powercharge"
             ],
             "fuse": null
           },
           {
-            "skill": "restrictbanner",
+            "skill": "starcompass",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "tigerflag",
+            "skill": "ancientthunder",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "moods",
+            "skill": "infatuation",
             "supports": [],
             "fuse": null
           },
           {
-            "skill": "warprint",
+            "skill": "thirdeye",
             "supports": [],
             "fuse": null
           }
         ],
         "keystones": [
-          "mastery"
+          "thunderdragon"
         ],
-        "root": "metal",
+        "root": null,
         "bar": [
-          "ancientgod",
-          "qiburst",
-          "restrictbanner"
+          "lotus",
+          "burst",
+          "starcompass"
         ]
       },
       {

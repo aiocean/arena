@@ -429,6 +429,11 @@ fn slotx_of(f: &Fighter, k: usize) -> Option<SlotX> {
     })
 }
 
+/// The keystone flag Đạo Dung Thân held before it left the game (RULES 20): kept, always off, so the flags after it
+/// keep their places (ABI 3, `docs/bot.md`).
+pub const RETIRED_KEYSTONE: usize = 14;
+const _: () = assert!(RETIRED_KEYSTONE < arena_mind::KEYSTONES);
+
 /// What lies on fighter `f`: its ailments, controls, curses, auras, its skills' buffs, its shields, its loadout's
 /// keystones and its root.
 fn effects_of(f: &Fighter) -> Effects {
@@ -492,8 +497,9 @@ fn effects_of(f: &Fighter) -> Effects {
     };
     e.ward = f.charges;
     e.barrier = f.barrier;
-    for (on, k) in e.keystones.iter_mut().zip(Keystone::ALL) {
-        *on = f.has(k);
+    for (i, k) in Keystone::ALL.into_iter().enumerate() {
+        let at = if i < RETIRED_KEYSTONE { i } else { i + 1 };
+        e.keystones[at] = f.has(k);
     }
     e.element = c.root.and_then(|r| ROOTS.iter().position(|o| *o == r));
     e

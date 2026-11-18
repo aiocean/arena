@@ -129,9 +129,8 @@ pub struct Situation<'a> {
     pub travelled: f64,
     /// The target just used a guard skill (Nhử Đòn).
     pub target_guarded: bool,
-    /// Sát Ý stacks, Đạo Dung Thân vortices, Tam Mệnh lives used, the season's win streak (Niềm Tin Tất Thắng).
+    /// Sát Ý stacks, Tam Mệnh lives used, the season's win streak (Niềm Tin Tất Thắng).
     pub fury: u8,
-    pub vortices: u8,
     pub lives_used: u8,
     pub streak: u8,
     /// A soul lamp was snuffed for this blow (Ngọn Đèn Hồn).
@@ -155,7 +154,6 @@ impl Default for Situation<'_> {
             travelled: 0.0,
             target_guarded: false,
             fury: 0,
-            vortices: 0,
             lives_used: 0,
             streak: 0,
             snuffed: false,
