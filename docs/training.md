@@ -111,24 +111,29 @@ over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n
 new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
 logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
 
-**The state of the house AI** (2026-11-18). The shipped AI (`7bac778`) is update 1510 of run `abi2b`. That run is a
-fine-tune (`--init runs/abi2/last.pt --lr 1e-4 --ent 0.003 0.002 --shaping-until 0`) of run `abi2`, trained from
-scratch on ABI 2 (305 inputs, 27 acts). Both were moved onto each rule change as it landed and resumed from their
-checkpoints; the model was laddered and shipped on RULES_VERSION 10.
+**The state of the house AI** (2026-11-18). The shipped AI is update 1600 of run `abi3`, a fine-tune on ABI 3 (1741
+inputs, 27 acts) of `abi2b`'s update 1510 widened (`widen.py --old-obs 305`): `--init runs/abi3/init.pt --lr 1e-4
+--ent 0.003 0.002 --shaping-until 0 --whiff 0.01`, on RULES_VERSION 13 (14 fights the same). The whiff cost is
+there because u1510 slashed from far away: 11 whiffs a minute begun out of reach, 5.2 of them more than 60 px beyond
+it (`cargo run --release -p arena-bot --features host,onnx --example whiff`). A second run, `abi3w`, resumed from
+update 1200 with a far cost on top (`--whiff-far 0.02`); it gave up the aggressive script's matchup (80%) for no fewer
+far whiffs and was dropped.
 
-Its ladder (150 seeds):
-- vs the brain: 92.0% (seats 90.9 / 93.2; Vương Lâm 94.4 / Thất Thải 89.6);
-- vs the first mind: 92.8%;
-- vs the aggressive and turtle scripts: 89.8% and 98.6%;
-- its own mirror: seat 0 49.1%.
+Its ladder (150 seeds, RULES_VERSION 14), u1510's on the same rules in brackets:
+- vs the brain: 94.4% [90.3] (seats 94.0 / 94.7; Vương Lâm 96.8 / Thất Thải 91.9);
+- vs the first mind: 94.4% [91.2];
+- vs the aggressive and turtle scripts: 88.6% [93.3] and 99.7% [99.6];
+- its own mirror: seat 0 50.0%; Vương Lâm wins 71.8% of its rounds [64.7].
+- Whiffs: 5.6 a minute [13.6]; begun more than 60 px beyond reach 0.35 [5.18]; runs of 3 or more far whiffs in
+  150 seeds 62 [1963], the longest 7 [20].
 
-The known skew: in its own mirror Vương Lâm wins 67% of the rounds, against 53% in the brain's mirror. The policy
-leans on Thất Thải's slash, which is drawn backwards and still strikes with its reach box (`art/README.md`).
+The known skews: the mirror's look share (Vương Lâm 72%), and the aggressive script, which wins more of its close
+fights now that the house AI's pre-emptive slashes are no longer free.
 
 Next:
 1. Redraw Thất Thải's slash.
-2. Fine-tune from `runs/abi2b/last.pt` on that main, kept in the trainer's clone (`projects/arena-train`, with
-   `u1510.pt` beside it; `runs/` stays out of git).
+2. Fine-tune from `runs/abi3/u1600.pt`, kept in the trainer's clone (`projects/arena-train`; `runs/` stays out of
+   git).
 3. Ship only a checkpoint that beats this one on the ladder, on the rules it ships with.
 
 Watch the per-seat and per-look win rates in the log.
