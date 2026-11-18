@@ -12,7 +12,7 @@ wasmparser = "0.263"
 # the host: wasmtime, and the seat the duel asks
 arena-duel = { path = "../arena-duel", optional = true }
 arena-mind = { path = "../arena-mind", optional = true }
-wasmtime = { version = "40", optional = true, default-features = false, features = ["cranelift", "runtime", "std"] }
+wasmtime = { version = "50", optional = true, default-features = false, features = ["cranelift", "runtime", "std"] }
 # the host's think time, fuel and faults as events (arena-telemetry exports them when configured; nothing otherwise)
 tracing = { version = "0.1", optional = true }
 # an ONNX policy run natively (the house AI in the ladder and the tests, a trainer's opponents)
