@@ -1,9 +1,9 @@
 {
-  "fx": "arcane/arcane-cast",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
     32,
-    66
-  ]
+    35
+  ],
+  "fps": 14.29,
+  "fx": "arcane/arcane-cast",
+  "loop": false
 }

@@ -1,9 +1,9 @@
 {
-  "fx": "holy/halo-crown",
-  "fps": 12.5,
-  "loop": false,
   "anchor": [
     22,
-    48
-  ]
+    79
+  ],
+  "fps": 12.5,
+  "fx": "holy/halo-crown",
+  "loop": false
 }

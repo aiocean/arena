@@ -1,9 +1,9 @@
 {
-  "fx": "nature/nature-cast",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
     32,
-    68
-  ]
+    35
+  ],
+  "fps": 14.29,
+  "fx": "nature/nature-cast",
+  "loop": false
 }

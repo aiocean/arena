@@ -1,0 +1,18 @@
+{
+  "arcane/arcane-cast": "point",
+  "arcane/bagua-mirror": "front",
+  "holy/halo-crown": ["shift", 0, -31],
+  "ice/frost-nova": ["ground-shift", -9, 29],
+  "impacts/blood-splat": "box",
+  "impacts/crater-impact": ["ground-shift", -9, 29],
+  "melee/hammer-smash": ["ground-shift", -10, 0],
+  "melee/uppercut": "box",
+  "nature/nature-cast": "point",
+  "nature/thorn-wall": "floor",
+  "scifi/shield-hit": "body-x",
+  "shadow/shadow-spikes": "ground-box",
+  "status/blessed": ["shift", -2, -16],
+  "status/confused": "round-head",
+  "status/sleep": "from-head",
+  "water/bubble-shield": "body-x"
+}

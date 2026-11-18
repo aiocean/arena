@@ -1,10 +1,10 @@
 {
-  "fx": "water/bubble-shield",
-  "fps": 13.33,
-  "loop": true,
   "anchor": [
-    35,
+    37,
     70
   ],
-  "exit": "disappear/fade"
+  "exit": "disappear/fade",
+  "fps": 13.33,
+  "fx": "water/bubble-shield",
+  "loop": true
 }

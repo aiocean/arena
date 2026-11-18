@@ -1,14 +1,14 @@
 {
-  "fx": "arcane/bagua-mirror",
-  "fps": 18.18,
-  "loop": false,
   "anchor": [
-    20,
-    60
+    -4,
+    57
   ],
+  "fps": 18.18,
+  "fx": "arcane/bagua-mirror",
   "idle": {
     "from": 2,
-    "to": 12,
-    "secs": 2.2
-  }
+    "secs": 2.2,
+    "to": 12
+  },
+  "loop": false
 }

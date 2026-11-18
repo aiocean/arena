@@ -1,9 +1,9 @@
 {
-  "fx": "status/blessed",
-  "fps": 12.5,
-  "loop": false,
   "anchor": [
-    24,
-    58
-  ]
+    26,
+    74
+  ],
+  "fps": 12.5,
+  "fx": "status/blessed",
+  "loop": false
 }

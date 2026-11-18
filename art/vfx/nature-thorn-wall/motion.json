@@ -1,9 +1,10 @@
 {
-  "fx": "nature/thorn-wall",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
     64,
-    26
-  ]
+    64
+  ],
+  "fps": 14.29,
+  "fx": "nature/thorn-wall",
+  "ground": true,
+  "loop": false
 }
