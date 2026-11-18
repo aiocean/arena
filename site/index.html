@@ -23,6 +23,16 @@
       <p class="loader-text">Loading the arena</p>
       <div class="loader-bar" aria-hidden="true"><span></span></div>
     </div>
+    <button type="button" class="boxes-toggle" data-boxes aria-pressed="false" title="Show what the rules test hits against (H)">Hitbox <kbd>H</kbd></button>
+    <ul class="boxes-legend" hidden aria-label="What the hitbox overlay shows">
+      <li><i class="swatch gold"></i>Vương Lâm</li>
+      <li><i class="swatch cyan"></i>Thất Thải</li>
+      <li><i class="swatch strike"></i>hitbox</li>
+      <li><i class="swatch shot"></i>shot</li>
+      <li><i class="dot wrist"></i>wrist</li>
+      <li><i class="dot hilt"></i>hilt</li>
+      <li><i class="dot launch"></i>launch</li>
+    </ul>
   </section>
 
   <header class="topbar">
@@ -62,7 +72,7 @@
           <button class="button quiet" type="button" data-house>House bots</button>
         </div>
       </form>
-      <p class="muted note">A bot is a <code>.wasm</code> bot module (<a href="docs/bot.html">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). It runs here, in your browser, and nothing is uploaded. Until you drop one in, the arena shows the matches its server is fighting, live. The same two bots and the same seed play the same fight on every machine, so a seed is a replay: share the page's address.</p>
+      <p class="muted note">A bot is a <code>.wasm</code> bot module (<a href="docs/bot.html">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). It runs here, in your browser, and nothing is uploaded. Until you drop one in, the arena shows the matches its server is fighting, live. The same two bots and the same seed play the same fight on every machine, so a seed is a replay: share the page's address. <b>Hitbox</b> (or <kbd>H</kbd>) on the arena shows what the rules test hits against: each fighter's hurtboxes, a blow's hitbox in red while it can land, shots, and the hand's wrist, hilt and launch point.</p>
     </section>
 
     <section class="intro-panel frame" aria-labelledby="hero-title">

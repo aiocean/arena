@@ -1,7 +1,7 @@
 // The arena's home page: the duel is the Bevy game (crates/arena-game) on the hero's canvas; this page only starts
 // it, hands it the bot modules a player drops into a corner and the seed to fight on, and shows its status line.
 // It decides nothing about the fight.
-import init, { house, live, restart, run, setCorner, status } from "../game/arena_game.js";
+import init, { boxes, house, live, restart, run, setCorner, status } from "../game/arena_game.js";
 
 const PAGES = { home: mountHome };
 try {
@@ -48,6 +48,40 @@ async function liveRelay() {
   }
 }
 
+/** The hitbox overlay (the game's `boxes`): what the rules test hits against, drawn over the fight. Off unless asked
+ *  for: the "Hitbox" toggle or H, remembered in localStorage; `?boxes=1` (or `0`) asks for this visit only. */
+function hitboxes() {
+  const toggle = document.querySelector("button[data-boxes]");
+  const legend = document.querySelector(".boxes-legend");
+  if (!toggle) return;
+  const remembered = () => {
+    try {
+      return localStorage.getItem("arena.boxes") === "1";
+    } catch {
+      return false;
+    }
+  };
+  const show = (on, keep) => {
+    boxes(on);
+    toggle.setAttribute("aria-pressed", String(on));
+    if (legend) legend.hidden = !on;
+    document.body.dataset.boxesShown = on ? "on" : "off";
+    if (keep) {
+      try {
+        localStorage.setItem("arena.boxes", on ? "1" : "0");
+      } catch {}
+    }
+  };
+  const asked = new URLSearchParams(location.search).get("boxes");
+  show(asked === null ? remembered() : asked === "1", false);
+  const flip = () => show(toggle.getAttribute("aria-pressed") !== "true", true);
+  toggle.addEventListener("click", flip);
+  document.addEventListener("keydown", (e) => {
+    const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+    if (e.key.toLowerCase() === "h" && !e.ctrlKey && !e.metaKey && !e.altKey && !typing) flip();
+  });
+}
+
 /** The page: the duel full-screen, and under it a slot for each corner. A `.wasm` dropped into a slot takes that corner
  *  at once, the fight starting over on the seed in the box; an empty slot plays the house bot. The page's address
  *  carries the seed (`?seed=`), so a fight can be shared: the same two bots and seed play it the same anywhere. */
@@ -59,6 +93,7 @@ async function mountHome() {
 
   loading("Loading the arena", 0.2);
   await init();
+  hitboxes();
   // the server's matches, watched live, unless the address asks for a seed (a shared fight, played here)
   const relay = askedSeed() === undefined ? await liveRelay() : undefined;
   loading(relay ? "Connecting to the arena" : "Seating the bots", 0.6);

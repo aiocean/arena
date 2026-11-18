@@ -23,6 +23,8 @@
 //!   commit on its newest `match.start` in the telemetry store, read with `ARENA_OTLP_ENDPOINT` and its credentials)
 //!   and their rules builds (`window.__arena.rules`, `window.__arena.live.rules`). It fails only when the rules builds
 //!   differ; other commits on one rules build (a docs-only site deploy) or a build not known is a `WARN` line.
+//! - `boxes`: the player's "Hitbox" toggle is there, and a click flips the hitbox overlay and another flips it back
+//!   (`body[data-boxes-shown]`).
 //! - `fps` (never fails the run): the page's frame rate over ten seconds of the match, from the gaps between painted
 //!   frames (`requestAnimationFrame`): the rate, the median, the 95th percentile and the longest gap.
 //! - `module`: the deployed house bot module (`bots/policy.wasm`, fetched beside the page) has the sha256 pinned at
@@ -32,7 +34,8 @@
 //!
 //! `--profile` plays the page as a device (`arena_smoke::Profile`): `phone` (390x844 CSS pixels at pixel ratio 3,
 //! touch, a CPU four times slower, 10 Mbit/s at 150 ms), `laptop` (1366x768, twice slower, 20 Mbit/s), `desktop`
-//! (the default 1280x800, this machine). The whole page as it shows, scrolled through, is `page.png` in `--out`. The
+//! (the default 1280x800, this machine). The whole page as it shows, scrolled through, is `page.png` in `--out`, the
+//! canvas alone `canvas.png`. The
 //! CPU throttle slows the page's own thread; WebGL is drawn by SwiftShader on this machine's CPU, unthrottled, so a
 //! phone's frame rate here is a model of its script, not of its GPU.
 //!
@@ -348,6 +351,7 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         check_live_json = s.check("live.json"),
         check_live = s.check("live"),
         check_hud = s.check("hud"),
+        check_boxes = s.check("boxes"),
         check_advances = s.check("advances"),
         check_build = s.check("build"),
         check_module = s.check("module"),
@@ -744,6 +748,9 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     ));
 
     let (pa, pb) = (Picture::from_png(&first)?, Picture::from_png(&second)?);
+    // the fight as the canvas showed it, beside the window's screenshot
+    let _ = std::fs::create_dir_all(&a.out);
+    let _ = std::fs::write(a.out.join("canvas.png"), &second);
     let painted = paint(&pb);
     // the canvas as the page lays it out (CSS pixels) and as the game draws it (its backing pixels)
     let canvas = eval_string(
@@ -785,6 +792,23 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         ),
     ));
 
+    // the hitbox overlay's toggle: there, and it turns the overlay on and off again
+    let toggled = eval_string(
+        &page,
+        "(() => { const b = document.querySelector('button[data-boxes]'); if (!b) return 'no toggle'; \
+         const was = document.body.dataset.boxesShown; b.click(); const flipped = document.body.dataset.boxesShown; b.click(); b.blur(); window.scrollTo(0, 0); \
+         return was !== flipped && document.body.dataset.boxesShown === was ? 'ok' : `${was} -> ${flipped} -> ${document.body.dataset.boxesShown}`; })()",
+    )
+    .await;
+    checks.push(Check::new(
+        "boxes",
+        toggled == "ok",
+        if toggled == "ok" {
+            "the Hitbox toggle turns the overlay on and off".to_string()
+        } else {
+            format!("the Hitbox toggle did not flip and flip back: {toggled}")
+        },
+    ));
     // the frame rate over ten seconds of the match, from the gaps between painted frames
     let gaps = eval_json(
         &page,
@@ -804,6 +828,8 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
         fps.as_ref()
             .map_or("no frames painted".to_string(), Fps::line),
     ));
+    // the window's picture from the top of the page (a phone's page may have scrolled under the run)
+    let _ = eval_json(&page, "(() => { window.scrollTo(0, 0); return true })()").await;
     let full = page
         .screenshot(
             ScreenshotParams::builder()

@@ -48,6 +48,10 @@ pub enum Layer {
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Cleared;
 
+/// The pictures going to their textures: what paints over everything (the hitbox overlay) goes before it.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Uploaded;
+
 pub struct LayersPlugin;
 
 impl Plugin for LayersPlugin {
@@ -55,7 +59,7 @@ impl Plugin for LayersPlugin {
         app.init_resource::<Canvases>()
             .add_systems(Startup, spawn)
             .add_systems(Update, begin.in_set(Cleared).in_set(crate::Frame::Rules))
-            .add_systems(Update, upload.in_set(crate::Frame::Upload));
+            .add_systems(Update, upload.in_set(crate::Frame::Upload).in_set(Uploaded));
     }
 }
 

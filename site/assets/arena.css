@@ -205,6 +205,37 @@ h1, h2 { text-wrap: balance; }
 .toc a { border-left: 2px solid transparent; padding-left: 0.6rem; }
 .toc a:hover { border-left-color: var(--bronze); }
 
+/* ---------- the hitbox overlay's toggle (on the floor between the skill bars) and its legend (above it; on a
+   phone, whose floor is thin, a strip under the bars) ---------- */
+
+.boxes-toggle, .boxes-legend { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; }
+.boxes-toggle {
+  bottom: 0.35rem; padding: 0.15rem 0.5rem; border: 1px solid var(--soot, #3a3050); border-radius: 3px;
+  background: #13101bcc; color: var(--ash, #c4bade); font: 0.72rem/1.2 var(--mono, ui-monospace, monospace); cursor: pointer;
+}
+.boxes-toggle[aria-pressed="true"] { color: #ff4a4a; border-color: #ff4a4a; }
+.boxes-toggle kbd { font: inherit; opacity: 0.6; }
+.boxes-legend {
+  bottom: 2.1rem; display: flex; flex-wrap: nowrap; gap: 0.15rem 0.55rem; margin: 0; padding: 0.15rem 0.45rem;
+  list-style: none; background: #13101bcc; border-radius: 3px; color: var(--ash, #c4bade);
+  font: 0.72rem/1.2 var(--mono, ui-monospace, monospace); white-space: nowrap; pointer-events: none;
+}
+.boxes-legend[hidden] { display: none; }
+@media (max-width: 760px) {
+  .boxes-toggle { bottom: 0.15rem; padding: 0.05rem 0.35rem; font-size: 0.6rem; }
+  .boxes-legend { bottom: auto; top: 2.4rem; gap: 0 0.35rem; padding: 0.05rem 0.3rem; font-size: 0.55rem; }
+}
+.boxes-legend li { display: inline-flex; align-items: center; gap: 0.25rem; }
+.boxes-legend .swatch { width: 0.7rem; height: 0.5rem; border: 1px solid; }
+.boxes-legend .dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; box-shadow: 0 0 0 1px #0a0a0a; }
+.boxes-legend .gold { border-color: #ffc828; background: #ffc82838; }
+.boxes-legend .cyan { border-color: #3cdcff; background: #3cdcff38; }
+.boxes-legend .strike { border-color: #ff2828; background: #ff282838; }
+.boxes-legend .shot { border-color: #ff50dc; background: #ff50dc38; border-radius: 50%; }
+.boxes-legend .wrist { background: #50ff78; }
+.boxes-legend .hilt { background: #50c8ff; }
+.boxes-legend .launch { background: #ffff50; }
+
 /* ---------- the hero's loading overlay (arena.js takes it away once the fighters show) ---------- */
 
 .loader {

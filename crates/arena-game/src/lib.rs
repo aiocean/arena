@@ -13,6 +13,7 @@
 #![allow(clippy::disallowed_methods)]
 
 pub mod bots;
+pub mod boxes;
 pub mod feel;
 pub mod fighters;
 pub mod hud;
@@ -134,6 +135,7 @@ pub fn app(start: Start) -> App {
         fighters::FightersPlugin,
         units::UnitsPlugin,
         hud::HudPlugin,
+        boxes::BoxesPlugin,
     ));
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(shots::ShotsPlugin);

@@ -79,6 +79,12 @@ pub fn house() {
 }
 
 /// The status line: the seed, the round, who sits where and the score, or why a bot was refused.
+/// Show the hitbox overlay or not (`boxes`): the page's "Hitbox" toggle and its H key.
+#[wasm_bindgen]
+pub fn boxes(on: bool) {
+    crate::boxes::set(on);
+}
+
 #[wasm_bindgen]
 pub fn status() -> String {
     STATUS.with_borrow(Clone::clone)
