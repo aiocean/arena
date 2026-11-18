@@ -95,6 +95,22 @@ Ten kinds of damage, each with its ailment (design 4): bleed or daze (force), su
 damage over time; the rest stack and do something when full. The energy shield takes most kinds first, yin goes
 straight to life, soul to the sense. Nothing chills or freezes.
 
+A **bleed** deals 35% of the blow's force part a second for 5 s, every bleed at once (8 at most), and the same
+whether its bearer moves or stands (`dot::BLEED_MOVING` 1, owner's delegate, 2026-11-18: it was twice as much on a
+moving target, which made the sword basics most of a fight's damage). A **burn** deals 50% of the fire part a
+second for 4 s, only the strongest burning.
+
+**One cast, 40% of a life** (owner's delegate, 2026-11-18; `arena_calc::cap`). A skill's single cast deals at most
+**40% of a life and its shield** (0.4 × (3000 + 600) = 1440). What counts is the cast's damage at hit (all of its
+blows: its hits times its repeats; a trap, mine, totem or minion strikes once with each) plus the damage over time
+that cast lays, run out over its full duration (its burns, its bleeds, its curse's strikes), expected over crit and
+double damage, cast at the fight's level (`gem::BASE_LEVEL`) by a base fighter wearing nothing, against a base
+fighter at full life with no shield, no resistance and no evasion. It is there to stop one-shot bursts, not to set
+the pace of a fight. It is a rule of the data, not a clamp in the fight: a test (`crates/arena-calc/tests/cap.rs`)
+holds every skill of the pool to it as the pool defines it, bare. Supports are not held to it yet: a skill with its
+supports is measured (`cargo run --release -p arena-sim --example cap`, a worst single and a worst pair a skill) and
+they are tuned by the simulator's win rates.
+
 **Controls** land on the body: a stun, a hold (Định thân), a jolt or a knockdown holds the fighter where it stands and
 breaks a cast it gathers; a root stops walking and blinking; a lost soul (thất hồn) silences, so only attacks
 answer. Grit shortens each hard control after the last (design 5.2).
