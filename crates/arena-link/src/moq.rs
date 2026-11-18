@@ -23,3 +23,14 @@ pub fn broadcast(match_id: &str) -> String {
 /// Ticks between two `Frame::Through` marks: a page may step only as far as the last one, so this (with the network's
 /// delay) is the least a page must lag the fight. Six ticks is a tenth of a second.
 pub const THROUGH_EVERY: u32 = 6;
+
+/// How long the server rests between two matches, in milliseconds: the last match's track has ended, and a watching
+/// page shows its result for this long before the next is announced.
+pub const BETWEEN_MATCHES_MS: u64 = 6000;
+
+/// How far back a subscriber asks the relay to reach when it joins, in milliseconds (MoQ's subscriber max age). Joining
+/// at the live edge, the relay hands a page the group being written from its middle, which a page cannot use without
+/// the group's head (moq-net drops it: "no fill to stitch a mid-group stream onto"), and the page waits for the next
+/// group's keyframe. Reaching back over more than one group ([`GROUP_TICKS`], a second), the relay sends the last whole
+/// group first, so a page holds the match from its keyframe at once.
+pub const JOIN_REACH_MS: u64 = 3000;

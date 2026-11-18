@@ -89,4 +89,6 @@ seeds and the hashes of both files; the results are checkable without trusting t
 The home page shows matches as they are fought: `crates/arena-server` fights the house AI against itself and
 publishes each match's frames to a MoQ relay (`crates/arena-link`), and the page replays them from the decisions. The
 page and the server must run one rules build, `arena_link::RULES_VERSION`; a page on other rules says so and reloads.
-`arena-watch` checks a published match by replaying it.
+`arena-watch` checks a published match by replaying it. The server rests a few seconds between matches while the page
+shows the result, and the board under the bars shows the match's number, the round and the score between Vương Lâm
+and Thất Thải Đạo Nhân since the server started.

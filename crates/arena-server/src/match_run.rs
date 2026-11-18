@@ -16,7 +16,7 @@ use arena_duel::scripted::Scripted;
 use arena_duel::seat::{BotSeat, Brain, Fault, Log, MakeSeat, Recorder, Recording};
 use arena_duel::style::Style;
 use arena_duel::view::{DuelView, view};
-use arena_link::{Act, Arena, Decision, Ended, Forfeit, Snapshot};
+use arena_link::{Act, Arena, Decision, Ended, Forfeit, Snapshot, Tally};
 use arena_telemetry::duel::Observer;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -174,6 +174,8 @@ pub struct Match {
     ended: Option<Ended>,
     /// The duel observer, when the match is watched for telemetry (`observe`): it only reads.
     observer: Option<Observer>,
+    /// Its number in the server's run and the score before it, carried by every keyframe.
+    tally: Tally,
 }
 
 /// What stepping one tick produced: the new frames' payloads, in tick order, and whether the match is now over.
@@ -208,7 +210,13 @@ impl Match {
             sent_forfeit: [false, false],
             ended: None,
             observer: None,
+            tally: Tally::default(),
         }
+    }
+
+    /// Set where this match stands in the server's run (its number, the score before it): every keyframe carries it.
+    pub fn set_tally(&mut self, tally: Tally) {
+        self.tally = tally;
     }
 
     /// Who fights it.
@@ -292,6 +300,7 @@ impl Match {
             forfeits,
             ended: self.ended,
             ticks: self.tick,
+            tally: self.tally,
         }
     }
 
@@ -356,6 +365,18 @@ impl Match {
     }
 }
 
+/// The score after a match on `seed` ended as `ended`: the winner's fighter (its look, drawn from the seed as the
+/// rules draw it, `ladder::looks_of`) takes the match, or it is a draw.
+pub fn score(tally: Tally, seed: u32, ended: Ended) -> Tally {
+    tally.after(match ended {
+        Ended::Winner(c) => {
+            let look = arena_duel::ladder::looks_of(seed)[usize::from(c.min(1))];
+            Some(usize::from(look != arena_duel::data::Look::VuongLam))
+        }
+        Ended::Draw => None,
+    })
+}
+
 /// Split a wire snapshot back into the two corners' seat logs: what a watching page feeds its `Replay` seats.
 #[allow(dead_code)]
 pub fn logs_from_snapshot(snap: &Snapshot) -> [Log; 2] {
@@ -379,6 +400,22 @@ pub fn logs_from_snapshot(snap: &Snapshot) -> [Log; 2] {
 mod tests {
     use super::*;
     use arena_duel::seat::{MakeSeat, Replay, Seat};
+
+    #[test]
+    fn the_score_goes_to_the_winners_fighter_whatever_its_seat() {
+        let t = Tally {
+            number: 3,
+            wins: [1, 1],
+            draws: 0,
+        };
+        // an even seed seats Vương Lâm in corner 0, an odd one in corner 1
+        assert_eq!(score(t, 4, Ended::Winner(0)).wins, [2, 1]);
+        assert_eq!(score(t, 4, Ended::Winner(1)).wins, [1, 2]);
+        assert_eq!(score(t, 5, Ended::Winner(1)).wins, [2, 1]);
+        assert_eq!(score(t, 5, Ended::Winner(0)).wins, [1, 2]);
+        let d = score(t, 5, Ended::Draw);
+        assert_eq!((d.wins, d.draws, d.number), ([1, 1], 1, 3));
+    }
 
     /// Fight a match to its end (or `ticks`), keeping the fight as it stood after each step.
     fn fight(seed: u32, pairing: Pairing, ticks: u32) -> Result<(Match, Vec<DuelView>), String> {

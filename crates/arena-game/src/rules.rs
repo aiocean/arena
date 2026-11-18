@@ -183,7 +183,12 @@ fn step(
             return;
         };
         let done = (duel.state().time / TICK).round() as u32;
-        let target = m.through.saturating_sub(DELAY_TICKS);
+        // an ended match has nothing more to wait for: it plays to its last tick, where the result is
+        let target = if m.ended.is_some() {
+            m.through
+        } else {
+            m.through.saturating_sub(DELAY_TICKS)
+        };
         let behind = target.saturating_sub(done);
         fight.jumping |= behind > JUMP_TICKS;
         if fight.jumping {

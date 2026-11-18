@@ -4,6 +4,7 @@
 //! and the skill icons as sprites from their sheets, finer than the world. Hovering a skill or a buff shows what it
 //! is in a panel by the pointer (`duel-info.js`). The screen's shake leaves all of it still.
 
+pub mod board;
 mod glyphs;
 mod info;
 mod paint;
@@ -73,7 +74,8 @@ pub struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Hud>()
+        app.add_plugins(board::BoardPlugin)
+            .init_resource::<Hud>()
             .add_systems(Startup, spawn)
             .add_systems(Update, notice.in_set(crate::Frame::React))
             .add_systems(Update, draw.in_set(crate::Frame::Paint).after(Cleared))

@@ -12,7 +12,7 @@ use anyhow::{Context, Result, bail};
 use arena_duel::duel::{Duel, TICK};
 use arena_duel::seat::{MakeSeat, Replay, Seat};
 use arena_duel::view::view;
-use arena_link::moq::{NAMESPACE, TRACK};
+use arena_link::moq::{JOIN_REACH_MS, NAMESPACE, TRACK};
 use arena_link::{Applied, Ended, Follow, decode};
 use arena_server::match_run::{WINS_TO_TAKE, config_for, logs_from_snapshot};
 use url::Url;
@@ -89,7 +89,12 @@ async fn watch(origin: &moq_net::origin::Producer) -> Result<bool> {
     let mut track = broadcast
         .track(TRACK)
         .map_err(|e| anyhow::anyhow!("track: {e}"))?
-        .subscribe(None)
+        // reaching back over the last whole group, as the page does: joined at the live edge, the relay may hand over
+        // the group being written from its middle, which is dropped
+        .subscribe(
+            moq_net::track::Subscription::default()
+                .with_max_age(std::time::Duration::from_millis(JOIN_REACH_MS)),
+        )
         .await
         .map_err(|e| anyhow::anyhow!("subscribe: {e}"))?;
 

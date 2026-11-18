@@ -159,6 +159,17 @@ kiosk, Cloudflare's relay carries it, and the home page draws it.
   test (the wire snapshot replays the fought match); P3 and P4 by `arena-watch`, the native watcher, which joins a
   live match on the relay, rebuilds it from its frames and checks its replay ends where the server's did, and by the
   page itself, which joins mid-match and follows into the next.
+- **Between matches, the score, joining (2026-11-18, rules 18)**: matches ran back to back (19 to 74 s, the next
+  announced the same millisecond), so the page snapped from one fight to the next. The server now rests
+  `moq::BETWEEN_MATCHES_MS` (6 s) after a match that ended, and the page plays an ended match to its last tick (no
+  `DELAY_TICKS` left to wait for) and shows a card (`hud/board.rs`: who won, the rounds, a forfeit, the score, a
+  countdown) until the next fight begins. Every keyframe carries `Tally` (the match's number since the server
+  started, the wins by fighter, not by seat, and the draws), so the board under the bars shows the match, the round and
+  the score on a page that joined late too; the tally starts over when the server restarts. Joining at the live edge,
+  the relay may hand a subscriber the group being written from its middle, which `moq-net` drops ("no fill to stitch
+  a mid-group stream onto") until the next group's keyframe; both watchers now subscribe with a max age of
+  `moq::JOIN_REACH_MS` (3 s, over a whole group), so the relay starts them on the last whole group, keyframe first.
+  The page also follows a match again (three tries) when its subscription fails, instead of waiting for the next one.
 - **Weight**: the game's wasm is 6.6 MB gzipped with the live path (5.9 MB before); it still carries `arena-bot` for
   the page's own fights, and the house module is fetched only when the page fights on its own.
 

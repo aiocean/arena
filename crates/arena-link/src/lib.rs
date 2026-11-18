@@ -40,11 +40,11 @@ use serde::{Deserialize, Serialize};
 /// moving bearer, every bare cast under 40% of a life and its shield; 14: every skill plays its own drawn effect from
 /// pvfx; 15: Lôi Bạo Trễ, a stopped shot stays as its caster's mine; 16: every hit test on parry
 /// (`arena_calc::collide`): touching is not overlapping, a bolt a capsule swept in f64, fields and blasts striking the
-/// hurtboxes and units' bodies; 17: a bolt as thick as its drawn body). A page whose rules differ steps a
+/// hurtboxes and units' bodies; 17: a bolt as thick as its drawn body; 18: the keyframe carries the server's [`Tally`]). A page whose rules differ steps a
 /// different fight from the same decisions, so it says so and stops (`Applied::OtherRules`). Bump this with any change
 /// to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are
 /// re-pinned.
-pub const RULES_VERSION: u32 = 17;
+pub const RULES_VERSION: u32 = 18;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.
@@ -82,6 +82,28 @@ pub struct Arena {
     pub sky: f64,
 }
 
+/// Where a match stands in the server's run, as its keyframe tells a watcher: the match's number since the server
+/// started (from 1), and how the matches before it went, by fighter (not by seat: the looks are drawn from each seed),
+/// Vương Lâm's wins then Thất Thải Đạo Nhân's, and the draws. A page that joins late reads the score from here.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Tally {
+    pub number: u32,
+    pub wins: [u32; 2],
+    pub draws: u32,
+}
+
+impl Tally {
+    /// The score once one more match is over: won by fighter `winner` (0 Vương Lâm, 1 Thất Thải Đạo Nhân), or drawn.
+    pub fn after(self, winner: Option<usize>) -> Tally {
+        let mut t = self;
+        match winner {
+            Some(w) => t.wins[w.min(1)] += 1,
+            None => t.draws += 1,
+        }
+        t
+    }
+}
+
 /// The whole match so far, self-contained: a group's keyframe, and the first thing a watcher reads. From this and the
 /// decisions after it, the page rebuilds the fight exactly.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -103,6 +125,8 @@ pub struct Snapshot {
     /// How many ticks of the rules (fought or between rounds) the match had run when this was taken. A page that joins on
     /// this keyframe steps its own copy of the rules this far without drawing, then plays on live.
     pub ticks: u32,
+    /// The match's number and the score of the matches before it.
+    pub tally: Tally,
 }
 
 impl Snapshot {
@@ -117,6 +141,7 @@ impl Snapshot {
             forfeits: Vec::new(),
             ended: None,
             ticks: 0,
+            tally: Tally::default(),
         }
     }
 }

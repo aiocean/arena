@@ -75,6 +75,11 @@ fn frames_round_trip_through_postcard() -> Result<(), postcard::Error> {
         }],
         ended: Some(Ended::Winner(0)),
         ticks: 600,
+        tally: arena_link::Tally {
+            number: 12,
+            wins: [7, 3],
+            draws: 1,
+        },
     };
     let frames = vec![
         Frame::Keyframe(snapshot),

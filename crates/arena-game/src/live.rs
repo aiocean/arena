@@ -10,7 +10,7 @@
 //! browser's.
 
 use arena_duel::seat::{Log, Recording};
-use arena_link::{Applied, Arena, Ended, Follow, Frame};
+use arena_link::{Applied, Arena, Ended, Follow, Frame, Tally};
 use bevy::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -40,6 +40,8 @@ pub struct LiveMatch {
     /// Ticks of the rules the page may step: every frame for them has come.
     pub through: u32,
     pub ended: Option<Ended>,
+    /// The match's number in the server's run and the score of the matches before it.
+    pub tally: Tally,
 }
 
 /// Frames folded into the match they make, and the corners' seat logs kept in step with it.
@@ -105,6 +107,7 @@ impl Watching {
                 ],
                 through: 0,
                 ended: None,
+                tally: snap.tally,
             });
         }
         let Some(m) = self.current.as_mut() else {
@@ -128,6 +131,7 @@ impl Watching {
         }
         m.through = self.follow.through();
         m.ended = snap.ended;
+        m.tally = snap.tally;
         Ok(())
     }
 }
@@ -272,7 +276,7 @@ fn publish(live: NonSend<Live>) {
 mod net {
     use super::{Event, push};
     use arena_link::decode;
-    use arena_link::moq::{NAMESPACE, TRACK};
+    use arena_link::moq::{JOIN_REACH_MS, NAMESPACE, TRACK};
     use wasm_bindgen_futures::spawn_local;
 
     /// Set `window.__arena.live` to how watching stands.
@@ -374,13 +378,27 @@ mod net {
             }
             push(Event::NewMatch);
             push(Event::Status("Live".into()));
-            if let Err(e) = follow(&consumer, &update.prefix).await {
-                push(Event::Status(format!("A match was lost ({e})")));
+            // a match lost on the way is picked up again where its next keyframe stands, rather than left until the
+            // next match is announced
+            for attempt in 1..=FOLLOW_TRIES {
+                match follow(&consumer, &update.prefix).await {
+                    Ok(()) => break,
+                    Err(e) if attempt == FOLLOW_TRIES => {
+                        push(Event::Status(format!("A match was lost ({e})")))
+                    }
+                    Err(e) => {
+                        push(Event::Status(format!("Rejoining the match ({e})")));
+                        sleep_ms(500).await;
+                    }
+                }
             }
         }
         drop(session);
         Err("the relay stopped announcing".into())
     }
+
+    /// How many times a match is followed before it is given up for the next.
+    const FOLLOW_TRIES: u32 = 3;
 
     /// Read one match's frames until it ends.
     async fn follow(
@@ -394,7 +412,12 @@ mod net {
         let mut track = broadcast
             .track(TRACK)
             .map_err(|e| e.to_string())?
-            .subscribe(None)
+            // reaching back past the group being written, so the relay starts the page on a whole group, its keyframe
+            // first (`JOIN_REACH_MS`)
+            .subscribe(
+                moq_net::track::Subscription::default()
+                    .with_max_age(std::time::Duration::from_millis(JOIN_REACH_MS)),
+            )
             .await
             .map_err(|e| e.to_string())?;
         while let Some(mut group) = track.recv_group().await.map_err(|e| e.to_string())? {

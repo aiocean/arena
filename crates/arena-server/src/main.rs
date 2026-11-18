@@ -12,7 +12,9 @@
 //! The file form keeps the token out of a service's definition: `--relay-env` reads `KEY=VALUE` lines, takes
 //! `MOQ_PUBLISH_TOKEN`, and dials `https://<MOQ_RELAY_HOST>/<token>` (the host defaults to Cloudflare's draft-18 relay).
 //!
-//! It loops: a fresh seed, a match published as it is fought, then the next. Each match seats the house AI (the ONNX
+//! It loops: a fresh seed, a match published as it is fought, a rest of `arena_link::moq::BETWEEN_MATCHES_MS` (a
+//! watching page shows the result), then the next. Every keyframe carries the match's number and the score so far by
+//! fighter (`arena_link::Tally`), kept from the server's start. Each match seats the house AI (the ONNX
 //! policy `arena-bot` runs natively through tract) against one of the rules' minds in turn (brain, first mind,
 //! aggressive script, turtle script); the house AI's seat and the looks are drawn from the seed
 //! (`arena_server::match_run::Pairing`). The page replays each corner's decisions, so it runs no mind and no model. Each match is one MoQ
@@ -33,8 +35,9 @@
 
 use anyhow::{Context, Result};
 use arena_link::Frame;
-use arena_link::moq::{GROUP_TICKS, THROUGH_EVERY, broadcast};
-use arena_server::match_run::{Match, Pairing, Seats};
+use arena_link::moq::{BETWEEN_MATCHES_MS, GROUP_TICKS, THROUGH_EVERY, broadcast};
+use arena_link::{Ended, Tally};
+use arena_server::match_run::{Match, Pairing, Seats, score};
 use arena_server::pace::Pacer;
 use arena_server::publish::Publisher;
 use std::time::{Duration, Instant};
@@ -152,6 +155,7 @@ async fn run_matches(
     mut stop: Stop,
 ) -> Result<()> {
     let mut n: u64 = 0;
+    let mut tally = Tally::default();
     loop {
         if stop.borrow().is_some() {
             return Ok(());
@@ -170,17 +174,35 @@ async fn run_matches(
             opponent = pairing.opponent.name(),
             "new match"
         );
-        if let Err(e) = run_one(origin, &match_id, seed, pairing, seats, &mut stop).await {
-            tracing::warn!(match_id, error = %e, "match failed");
-            // a match that fails before its first wait (the relay refusing the broadcast) would otherwise loop hot,
-            // never yielding to the stop signals
-            pause_or_stop(&mut stop, RETRY).await;
+        tally.number = u32::try_from(n).unwrap_or(u32::MAX);
+        match run_one(origin, &match_id, seed, pairing, tally, seats, &mut stop).await {
+            Ok(Some(ended)) => {
+                tally = score(tally, seed, ended);
+                tracing::info!(
+                    match_id,
+                    wins_vuong_lam = tally.wins[0],
+                    wins_that_thai = tally.wins[1],
+                    draws = tally.draws,
+                    "score"
+                );
+                // the watching pages show the result before the next match begins
+                pause_or_stop(&mut stop, BETWEEN).await;
+            }
+            Ok(None) => {}
+            Err(e) => {
+                tracing::warn!(match_id, error = %e, "match failed");
+                // a match that fails before its first wait (the relay refusing the broadcast) would otherwise loop
+                // hot, never yielding to the stop signals
+                pause_or_stop(&mut stop, RETRY).await;
+            }
         }
     }
 }
 
 /// How long the server waits after a failed match before the next.
 const RETRY: Duration = Duration::from_secs(1);
+/// How long it rests after a match that ended.
+const BETWEEN: Duration = Duration::from_millis(BETWEEN_MATCHES_MS);
 
 /// Waits `pause`, or less if told to stop.
 async fn pause_or_stop(stop: &mut Stop, pause: Duration) {
@@ -193,15 +215,16 @@ async fn pause_or_stop(stop: &mut Stop, pause: Duration) {
     }
 }
 
-/// Fight and publish one match, paced to the wall clock, until it ends or the server stops.
+/// Fight and publish one match, paced to the wall clock, until it ends (its result) or the server stops (`None`).
 async fn run_one(
     origin: &moq_net::origin::Producer,
     match_id: &str,
     seed: u32,
     pairing: Pairing,
+    tally: Tally,
     seats: &Seats,
     stop: &mut Stop,
-) -> Result<()> {
+) -> Result<Option<Ended>> {
     let bc = origin
         .create_broadcast(broadcast(match_id))
         .context("create broadcast")?;
@@ -212,6 +235,7 @@ async fn run_one(
         .context("announce")?;
 
     let mut m = Match::new(seed, pairing, seats);
+    m.set_tally(tally);
     m.observe(match_id, arena_telemetry::GIT_HASH);
     let mut watched = false;
     let mut frames: u64 = 0;
@@ -247,7 +271,7 @@ async fn run_one(
                 decisions_1 = decisions[1],
                 "match stopped"
             );
-            return Ok(());
+            return Ok(None);
         }
 
         let began = Instant::now();
@@ -325,7 +349,7 @@ async fn run_one(
         resyncs = pacer.resyncs(),
         "match done"
     );
-    Ok(())
+    Ok(m.ended())
 }
 
 /// The relay's default host: Cloudflare's MoQ relay speaking draft 18.
