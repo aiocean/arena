@@ -10,7 +10,8 @@ house AI's, `../crates/arena-duel/weights/policy.onnx`, at that model's size). T
 
 `--whiff` is taken from the reward for each damaging cast that lands nothing (no hit, not guarded, not turned aside).
 
-Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end). A
+Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end;
+with `--keep-every N` also runs/<run>/u<update>.pt every N, a multiple of 25, for the ladder). A
 line holds, over its 10 updates, the share of each act (`acts`, in `Act` order) and the learner's casts: how many
 damaging ones (`casts`), the share of them that landed nothing (`whiff`), the share of the blades', blasts' and
 dashes' that began with the foe out of their reach (`out_of_reach`), the damage a cast (`dmg_cast`, % of a life), and
@@ -80,6 +81,7 @@ def main():
     ap.add_argument("--ent", type=float, nargs=2, default=[0.01, 0.002])
     ap.add_argument("--shaping-until", type=float, default=0.6, help="share of updates over which shaping falls to 0")
     ap.add_argument("--whiff", type=float, default=0.0, help="reward cost of a damaging cast that lands nothing")
+    ap.add_argument("--keep-every", type=int, default=0, help="also keep runs/<run>/u<update>.pt this often (0: never)")
     ap.add_argument("--snapshot-every", type=int, default=20)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--seed", type=int, default=1)
@@ -233,10 +235,10 @@ def main():
             log.write(json.dumps(line) + "\n")
             log.flush()
         if (update + 1) % 25 == 0 or update + 1 == args.updates:
-            torch.save(
-                {"model": policy.state_dict(), "optim": opt.state_dict(), "update": update + 1, "next_seed": league.next_seed, "size": size},
-                out / "last.pt",
-            )
+            ck = {"model": policy.state_dict(), "optim": opt.state_dict(), "update": update + 1, "next_seed": league.next_seed, "size": size}
+            torch.save(ck, out / "last.pt")
+            if args.keep_every and (update + 1) % args.keep_every == 0:
+                torch.save(ck, out / f"u{update + 1}.pt")
 
 
 if __name__ == "__main__":

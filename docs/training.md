@@ -87,6 +87,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--shaping-until` | 0.6 | share of the run over which the damage term falls to 0 (0: none at all) |
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
+| `--keep-every` | 0 | also keep `runs/<run>/u<update>.pt` every so many updates (a multiple of 25), for the ladder |
 | `--snapshot-every` | 20 | how often the latest self joins the league |
 | `--gamma`, `--lam` | 0.995, 0.95 | discount and GAE lambda |
 | `--clip`, `--epochs`, `--minibatches` | 0.2, 4, 8 | PPO clip, passes over each rollout, minibatches per pass |
