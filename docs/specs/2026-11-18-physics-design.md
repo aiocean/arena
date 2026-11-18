@@ -223,5 +223,46 @@ Every bolt and orb skill together, both mirrors: 536 casts striking 930 times be
 fork strikes more than once), 521 casts striking 939 times after (1.80). Native = wasm passes; the house module's
 three pinned fights end as they did, its bytes unchanged.
 
-The bolts still fly as points (radius 0). Their drawn bodies' radii (`bolts_data`, from the spell hitbox audit) go
-in as the next rule change once that table is on main.
+## Bolts as thick as they are drawn (RULES_VERSION 17)
+
+A bolt sweeps a capsule of its drawn body's radius (`shot::body_radius`, from `bolts_data`, which
+`cargo run --release -p arena-game --example spell_hitbox -- <out> --bolts crates/arena-duel/src/bolts_data.rs`
+measures on the effect sheets: half the drawn head's thickness, alpha 128 and up). Its forks fly as thick;
+`tests/bolt_bodies.rs` fails on a bolt motion the table does not hold. Orbs keep their own `radius`, and the marks
+the table also measures (`deathseal`, `exposemark`) are not bolts and keep their shapes.
+
+The ladder, 150 seeds both ways, house AI u1600, before (RULES 16, cb9b021) and after:
+
+| match | before | after |
+|---|---|---|
+| house vs brain | 82.9% | 83.1% |
+| house vs first mind | 93.4% | 94.0% |
+| house vs aggressive | 88.7% | 88.7% |
+| house vs turtle | 99.4% | 99.3% |
+| mirror, styles drawn (seat 0) | 49.4% | 49.6% |
+| mirror, as Vương Lâm | 71.2% | 71.1% |
+| brain vs first mind | 50.4% | 51.1% |
+| brain mirror (seat 0) | 49.8% | 47.7% |
+| brain mirror, as Vương Lâm | 53.3% | 55.0% |
+
+Each bolt's strikes a cast in both mirrors (few casts each: read the sum more than a row):
+
+| bolt | before | after |
+|---|---|---|
+| bolt | 79 / 70 (1.13) | 92 / 93 (0.99) |
+| celestialslaughter | 39 / 20 (1.95) | 45 / 17 (2.65) |
+| demonfinger | 64 / 41 (1.56) | 65 / 36 (1.81) |
+| finger | 53 / 30 (1.77) | 59 / 28 (2.11) |
+| fireball | 69 / 39 (1.77) | 71 / 38 (1.87) |
+| jithunder | 50 / 22 (2.27) | 51 / 27 (1.89) |
+| seize | 52 / 23 (2.26) | 48 / 22 (2.18) |
+| spark | 138 / 55 (2.51) | 130 / 59 (2.20) |
+| spiritchange | 51 / 25 (2.04) | 56 / 27 (2.07) |
+| springsoul | 39 / 54 (0.72) | 51 / 67 (0.76) |
+| thirdeye | 126 / 41 (3.07) | 149 / 36 (4.14) |
+| tigerflag | 88 / 49 (1.80) | 81 / 47 (1.72) |
+| voidnail | 55 / 33 (1.67) | 52 / 34 (1.53) |
+| every bolt | 903 / 502 (1.80) | 950 / 531 (1.79) |
+
+The thickest (`thirdeye` 46, `celestialslaughter` 44) strike more a cast; the rest move within the noise. Native =
+wasm passes; the house module's pinned fights end as they did.

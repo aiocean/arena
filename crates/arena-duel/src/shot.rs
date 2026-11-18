@@ -92,10 +92,20 @@ pub fn launch_bolt(state: &mut State, sp: &'static Spell, p: Payload, o: Origin)
         speed: sp.speed.unwrap_or(0.0) / T,
         range: (state.right - state.left) / T + 1.0,
     };
-    for flight in Flight::launch(&fired, &p.powers) {
+    let radius = body_radius(sp.name) / T;
+    for mut flight in Flight::launch(&fired, &p.powers) {
+        flight.radius = radius;
         let key = bolt_effect(state, sp, me, &flight);
         crate::act::push(state, sp, p.clone(), Some(key), ShotKind::Bolt { flight });
     }
+}
+
+/// How thick motion `name`'s bolt flies: its drawn body's radius in the arena's pixels (`bolts_data`, measured from
+/// the effect sheets), 0 (a point) for a motion the table does not hold. Its forks fly as thick.
+pub fn body_radius(name: &str) -> f64 {
+    crate::bolts_data::BOLT_BODIES
+        .binary_search_by(|(n, _)| (*n).cmp(name))
+        .map_or(0.0, |i| crate::bolts_data::BOLT_BODIES[i].1)
 }
 
 /// The effect of a bolt flying as `flight`, in its owner's look, facing its way.

@@ -9,6 +9,7 @@
 pub mod act;
 pub mod bar;
 pub mod body;
+mod bolts_data;
 pub mod collide;
 pub mod data;
 pub mod debug;
