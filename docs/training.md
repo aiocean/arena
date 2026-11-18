@@ -117,8 +117,22 @@ over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n
 new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
 logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
 
-**The state of the house AI** (2026-11-18, RULES_VERSION 21: spells only, the blink the one basic). The shipped AI
-is update 800 of run `abi3z`. The blade-era AI (`abi3/u1600`) cast almost nothing on these rules: 9.0% against the
+**The state of the house AI** (2026-11-18, RULES_VERSION 22: spell knockback, bodies kept apart). The shipped AI is
+update 800 of run `abi4a`, `abi3z`'s update 800 (below) fine-tuned 800 updates on RULES_VERSION 22 with its recipe
+(`--init runs/abi3z/u800.pt --lr 1e-4 --ent 0.003 0.0015 --shaping-until 3.0 --mix 0.25 0.15 0.4 0.1 0.1`, the same
+costs). On RULES 22 `abi3z/u800` still won 81.5% against the brain over the ladder but 72.7% over the house test's
+seeds 1-30; `abi4a`'s updates 200-600 were no better, 700 and 800 cleared both. A continuation (`abi4b`, brain 50%)
+did not improve in training and was stopped.
+
+Its ladder (150 seeds, RULES_VERSION 22), `abi3z/u800`'s on the same rules in brackets:
+- vs the brain: 83.5% [81.5] (seats 83.3 / 83.7; Vương Lâm 86.6 / Thất Thải 80.5), 65 rounds cut of 900 [50];
+- vs the first mind: 94.3% [94.2], 75 cut [82]; vs the aggressive and turtle scripts: 88.3% [88.4] and 99.0% [99.6];
+- its own mirror: seat 0 49.4%, 53 cut; Vương Lâm wins 66.2% of its rounds (tracked, not gated).
+- Whiffs: 3.2 a minute, 0.52 begun out of reach.
+- Distance: against the brain a median gap of 198 px, within 80 px 1.0% of the time; against the aggressive script
+  109 px and 11.5%; in its mirror 135 px and 8.1% (the ladder's `median` and `<80` columns).
+
+**RULES_VERSION 21** (spells only, the blink the one basic): update 800 of run `abi3z`. The blade-era AI (`abi3/u1600`) cast almost nothing on these rules: 9.0% against the
 brain on RULES_VERSION 20, every mirror fight cut. The way here, every run with `--whiff 0.03 --whiff-far 0.02
 --variety 0.5 --time-cost 0.0005`:
 
