@@ -724,6 +724,10 @@ fn report(
         let ranged: Vec<&&Cast> = v.iter().filter(|c| c.reach.is_some()).collect();
         let far = ranged.iter().filter(|c| c.far(0.0)).count();
         let far20 = ranged.iter().filter(|c| c.far(20.0)).count();
+        let far_wh = ranged
+            .iter()
+            .filter(|c| c.far(0.0) && c.outcome() == "whiff")
+            .count();
         let mut whiffers: BTreeMap<&str, usize> = BTreeMap::new();
         for c in v.iter().filter(|c| c.outcome() == "whiff") {
             *whiffers.entry(c.spell).or_default() += 1;
@@ -736,7 +740,7 @@ fn report(
             .map(|(s, n)| format!("{s} {n} ({:.1}/min)", *n as f64 / minutes.max(1e-9)))
             .collect();
         println!(
-            "  {bot:<10} {:>6} striking casts ({:.1}/min), whiff {:.1}% ({:.1} whiffs/min); finite-reach casts {}: begun out of reach {:.1}%, > reach+20 {:.1}%; top: {}",
+            "  {bot:<10} {:>6} striking casts ({:.1}/min), whiff {:.1}% ({:.1} whiffs/min); finite-reach casts {}: begun out of reach {:.1}%, > reach+20 {:.1}%; far whiffs {:.2}/min; top: {}",
             v.len(),
             v.len() as f64 / minutes.max(1e-9),
             pct(wh, v.len()),
@@ -744,6 +748,7 @@ fn report(
             ranged.len(),
             pct(far, ranged.len()),
             pct(far20, ranged.len()),
+            far_wh as f64 / minutes.max(1e-9),
             top.join(", ")
         );
     }
