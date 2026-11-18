@@ -8,13 +8,16 @@ with its own schedule, from another run's network (a `.pt` checkpoint, critic in
 house AI's, `../crates/arena-duel/weights/policy.onnx`, at that model's size). The network's size is yours:
 `--width`, `--hidden`, `--blocks` (a bot may be any size within its fuel; the house AI is 128, 256, 2).
 
-`--whiff` is taken from the reward for each damaging cast that lands nothing (no hit, not guarded, not turned aside).
+`--whiff` is taken from the reward for each damaging cast that lands nothing (no hit, not guarded, not turned aside);
+`--whiff-far` for each of those begun with the foe out of the blade's, blast's or dash's reach (a blow in reach that
+misses costs only `--whiff`).
 
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end;
 with `--keep-every N` also runs/<run>/u<update>.pt every N, a multiple of 25, for the ladder). A
 line holds, over its 10 updates, the share of each act (`acts`, in `Act` order) and the learner's casts: how many
 damaging ones (`casts`), the share of them that landed nothing (`whiff`), the share of the blades', blasts' and
-dashes' that began with the foe out of their reach (`out_of_reach`), the damage a cast (`dmg_cast`, % of a life), and
+dashes' that began with the foe out of their reach (`out_of_reach`), the share of the damaging ones that landed
+nothing having begun out of reach (`far_whiff`), the damage a cast (`dmg_cast`, % of a life), and
 for blades alone `melee_out_of_reach` and `melee_whiff`.
 """
 
@@ -48,7 +51,7 @@ REACHED = {"melee", "dash", "blast"}
 
 
 def cast_stats(casts):
-    """The log's cast fields from `VecEnv.casts()`: (casts, out of reach, whiffs, damage) by kind."""
+    """The log's cast fields from `VecEnv.casts()`: (casts, out of reach, whiffs, far whiffs, damage) by kind."""
     by = dict(zip(KINDS, casts))
     share = lambda a, b: round(a / b, 4) if b else 0.0
     hit = [by[k] for k in STRIKING]
@@ -59,7 +62,8 @@ def cast_stats(casts):
         "casts": n,
         "whiff": share(sum(c[2] for c in hit), n),
         "out_of_reach": share(sum(c[1] for c in reach), sum(c[0] for c in reach)),
-        "dmg_cast": share(sum(c[3] for c in hit), n),
+        "far_whiff": share(sum(c[3] for c in hit), n),
+        "dmg_cast": share(sum(c[4] for c in hit), n),
         "melee_out_of_reach": share(melee[1], melee[0]),
         "melee_whiff": share(melee[2], melee[0]),
     }
@@ -81,6 +85,7 @@ def main():
     ap.add_argument("--ent", type=float, nargs=2, default=[0.01, 0.002])
     ap.add_argument("--shaping-until", type=float, default=0.6, help="share of updates over which shaping falls to 0")
     ap.add_argument("--whiff", type=float, default=0.0, help="reward cost of a damaging cast that lands nothing")
+    ap.add_argument("--whiff-far", type=float, default=0.0, help="reward cost of a whiff begun with the foe out of reach")
     ap.add_argument("--keep-every", type=int, default=0, help="also keep runs/<run>/u<update>.pt this often (0: never)")
     ap.add_argument("--snapshot-every", type=int, default=20)
     ap.add_argument("--device", default="cpu")
@@ -159,7 +164,7 @@ def main():
                 obs_b[t], mask_b[t], act_b[t] = o, m, a.cpu()
                 logp_b[t] = dist.log_prob(a).cpu()
                 val_b[t] = policy.value_of(vlog).cpu()
-            r, d, won, length = env.step(a.cpu().numpy().astype(np.int64), shaping, args.whiff)
+            r, d, won, length = env.step(a.cpu().numpy().astype(np.int64), shaping, args.whiff, args.whiff_far)
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))
             for i in np.nonzero(d)[0]:

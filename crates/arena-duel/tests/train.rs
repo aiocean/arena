@@ -236,3 +236,53 @@ fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
         "{costly} against {want} ({whiffs} whiffs)"
     );
 }
+
+#[test]
+fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
+    // the hand above, against brain, who closes in, so some blows are thrown in reach and some from afar: the far
+    // cost takes exactly its price for each far whiff and nothing for a blow thrown in reach
+    let hand = |e: &Env| {
+        let (_, legal) = e.observe();
+        [
+            Act::Cast {
+                slot: 0,
+                aim: arena_mind::policy::Aim::Foe,
+            }
+            .index(),
+            Act::Wait.index(),
+        ]
+        .into_iter()
+        .find(|&a| legal[a])
+        .unwrap_or(0)
+    };
+    let run = |far: f32| {
+        let mut env = Env::new(cfg(12, 0, Opponent::Brain));
+        let mut paid = 0.0_f32;
+        for _ in 0..5000 {
+            let s = env.step_costs(hand(&env), 0.0, 0.0, far);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        (paid, env.take_casts())
+    };
+    let (free, casts) = run(0.0);
+    let (costly, again) = run(0.01);
+    assert_eq!(casts, again);
+    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.0.iter().map(f).sum::<u32>();
+    let (far, whiffs, far_whiffs) = (
+        total(|c| c.out_of_reach),
+        total(|c| c.whiffs),
+        total(|c| c.far_whiffs),
+    );
+    assert!(
+        far_whiffs > 0 && far_whiffs < whiffs && far_whiffs <= far,
+        "{casts:?}"
+    );
+    let want = free - 0.01 * far_whiffs as f32;
+    assert!(
+        (costly - want).abs() < 1e-3,
+        "{costly} against {want} ({far_whiffs} far whiffs)"
+    );
+}

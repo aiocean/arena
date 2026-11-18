@@ -98,11 +98,15 @@ enum Wire {
         actions: Vec<i64>,
         shaping: f32,
         whiff: f32,
+        far: f32,
         reply: Sender<Vec<Out>>,
     },
     /// The learners' casts since the last ask, summed over the worker's envs.
     Casts { reply: Sender<Casts> },
 }
+
+/// One kind's casts as `VecEnv.casts` hands them to Python: casts, out of reach, whiffs, far whiffs, damage.
+type CastRow = (u32, u32, u32, u32, f64);
 
 /// A worker's envs and the models it has been handed.
 struct Worker {
@@ -154,6 +158,7 @@ impl Worker {
                 actions,
                 shaping,
                 whiff,
+                far,
                 reply,
             } => {
                 let outs = self
@@ -162,7 +167,7 @@ impl Worker {
                     .zip(actions)
                     .map(|(env, a)| match env {
                         Some(env) => {
-                            let s = env.step_with(usize::try_from(a).unwrap_or(0), shaping, whiff);
+                            let s = env.step_costs(usize::try_from(a).unwrap_or(0), shaping, whiff, far);
                             let mut out = snapshot(env);
                             out.reward = s.reward;
                             out.done = s.done;
@@ -384,8 +389,9 @@ impl VecEnv {
     }
 
     /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: melee, dash,
-    /// blast, bolt, orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, damage)`.
-    fn casts(&self) -> PyResult<Vec<(u32, u32, u32, f64)>> {
+    /// blast, bolt, orb, zone, void, heal, ward, barrier, blink): a list of `(casts, out_of_reach, whiffs, far_whiffs,
+    /// damage)`.
+    fn casts(&self) -> PyResult<Vec<CastRow>> {
         let mut total = Casts::default();
         for (tx, _, _) in &self.workers {
             let (reply, rx) = channel();
@@ -396,7 +402,7 @@ impl VecEnv {
         Ok((0..CAST_KINDS)
             .map(|k| {
                 let c = total.0[k];
-                (c.casts, c.out_of_reach, c.whiffs, c.damage)
+                (c.casts, c.out_of_reach, c.whiffs, c.far_whiffs, c.damage)
             })
             .collect())
     }
@@ -404,13 +410,14 @@ impl VecEnv {
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     #[allow(clippy::type_complexity)]
-    #[pyo3(signature = (actions, shaping, whiff = 0.0))]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
         actions: PyReadonlyArray1<'py, i64>,
         shaping: f32,
         whiff: f32,
+        whiff_far: f32,
     ) -> PyResult<(
         Bound<'py, PyAny>,
         Bound<'py, PyAny>,
@@ -436,6 +443,7 @@ impl VecEnv {
                     actions: slice,
                     shaping,
                     whiff,
+                    far: whiff_far,
                     reply,
                 })
                 .map_err(|e| e.to_string())?;

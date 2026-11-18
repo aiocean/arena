@@ -7,7 +7,7 @@
 //! `STALL` a decision once `QUIET` seconds pass with no damage either way; minus `REPEAT` when one act (other than
 //! waiting) is chosen `RUN` times in a row; minus `HABIT` when the act chosen is already `SHARE` or more of the last
 //! `HABITS` decisions; minus the trainer's `whiff` cost for each damaging cast that lands nothing (no hit, not guarded,
-//! not turned aside).
+//! not turned aside), and its `far` cost for each of those that began with the foe out of its reach.
 //!
 //! It also counts the learner's casts by kind (`Casts`): how many, how many began out of reach (a blade, blast or dash
 //! whose reach does not get to the foe's hurtboxes), how many landed nothing, and the damage they dealt. Only a skill
@@ -40,13 +40,14 @@ const SHARE: f64 = 0.4;
 /// The kinds of cast `Casts` counts, in `data::Kind` order.
 pub const CAST_KINDS: usize = 11;
 
-/// The learner's casts of one kind: begun, begun out of reach, landed nothing, and the damage they dealt (shares of
-/// the foe's full life, 0 to 100 a life).
+/// The learner's casts of one kind: begun, begun out of reach, landed nothing, landed nothing having begun out of
+/// reach, and the damage they dealt (shares of the foe's full life, 0 to 100 a life).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CastLog {
     pub casts: u32,
     pub out_of_reach: u32,
     pub whiffs: u32,
+    pub far_whiffs: u32,
     pub damage: f64,
 }
 
@@ -60,17 +61,20 @@ impl Casts {
             a.casts += b.casts;
             a.out_of_reach += b.out_of_reach;
             a.whiffs += b.whiffs;
+            a.far_whiffs += b.far_whiffs;
             a.damage += b.damage;
         }
     }
 }
 
-/// The learner's cast in progress: its skill, its kind's index, whether it deals damage, and what it has done.
+/// The learner's cast in progress: its skill, its kind's index, whether it deals damage, whether it began with the
+/// foe out of its reach, and what it has done.
 #[derive(Clone, Copy, Debug)]
 struct Open {
     spell: &'static str,
     kind: usize,
     strikes: bool,
+    far: bool,
     landed: bool,
 }
 
@@ -180,6 +184,7 @@ pub struct Env {
     trailing: Vec<Open>,
     casts: Casts,
     whiffed: u32,
+    far_whiffed: u32,
 }
 
 impl Env {
@@ -234,6 +239,7 @@ impl Env {
             trailing: Vec::new(),
             casts: Casts::default(),
             whiffed: 0,
+            far_whiffed: 0,
         };
         env.advance();
         env
@@ -257,6 +263,12 @@ impl Env {
 
     /// As `step`, with `whiff` taken from the reward for each damaging cast that landed nothing.
     pub fn step_with(&mut self, action: usize, shaping: f32, whiff: f32) -> Step {
+        self.step_costs(action, shaping, whiff, 0.0)
+    }
+
+    /// As `step_with`, with `far` taken too for each of those whiffs that began with the foe out of its reach (a
+    /// blade, blast or dash: `Casts`' `out_of_reach`), so a blow thrown in reach costs no more than `whiff`.
+    pub fn step_costs(&mut self, action: usize, shaping: f32, whiff: f32, far: f32) -> Step {
         let length = self.duel.state().time;
         if self.done {
             return Step {
@@ -296,6 +308,7 @@ impl Env {
         let (dealt, taken, won) = self.advance();
         reward += shaping * ((dealt - taken) / 100.0) as f32;
         reward -= whiff * core::mem::take(&mut self.whiffed) as f32;
+        reward -= far * core::mem::take(&mut self.far_whiffed) as f32;
         let length = self.duel.state().time;
         let cut = won.is_none() && length >= self.limit;
         if won.is_some() || cut {
@@ -400,15 +413,17 @@ impl Env {
                 Kind::Dash if motion => mo.distance,
                 _ => None,
             };
+            let far = reach.is_some_and(|r| gap > r);
             let log = &mut self.casts.0[kind.min(CAST_KINDS - 1)];
             log.casts += 1;
-            if reach.is_some_and(|r| gap > r) {
+            if far {
                 log.out_of_reach += 1;
             }
             self.open = Some(Open {
                 spell: a.spell,
                 kind: kind.min(CAST_KINDS - 1),
                 strikes,
+                far,
                 landed: false,
             });
         }
@@ -445,6 +460,10 @@ impl Env {
             if o.strikes && !o.landed {
                 self.casts.0[o.kind].whiffs += 1;
                 self.whiffed += 1;
+                if o.far {
+                    self.casts.0[o.kind].far_whiffs += 1;
+                    self.far_whiffed += 1;
+                }
             }
         }
     }
