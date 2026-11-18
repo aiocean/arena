@@ -211,6 +211,7 @@ pub fn build(root: &Path) -> Result<Wiki, String> {
     curses(&mut wiki);
     keystones(&mut wiki);
     units(&mut wiki);
+    effects_page(&mut wiki, root, &assets)?;
     looks_page(&mut wiki, &book);
     rules(&mut wiki);
     bot(&mut wiki);
@@ -589,23 +590,32 @@ fn player_section(wiki: &mut Wiki, book: &Book, g: &Gem, sheets: &hits::Sheets) 
     let path = format!("play/{}.json", g.id);
     wiki.files
         .insert(path.clone(), serde_json::to_vec(&rec).unwrap_or_default());
+    // named by its content: the wiki's files are kept for hours, and a page must get the script it was built with
+    let script = format!("player-{}.js", img::name_of(PLAYER.as_bytes()));
     wiki.files
-        .insert("player.js".to_owned(), PLAYER.as_bytes().to_vec());
+        .insert(script.clone(), PLAYER.as_bytes().to_vec());
+    let (facts_html, windows) = hit_facts(g).unwrap_or_default();
+    let windows = serde_json::to_string(
+        &windows
+            .iter()
+            .map(|&(a, b)| [(a * 1000.0).round() / 1000.0, (b * 1000.0).round() / 1000.0])
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_default();
     format!(
-        "<h2>Player</h2><p class=\"gen\">One cast at a foe standing still, as the rules fight it, tick by tick (60 a second): the fighters' frames from their sheets, its effects as the game draws them, and every shape the rules test, the hurtboxes, its blows, shots, fields and units, the hands. Step a tick with ⟨ ⟩ or the arrow keys; the red marks under the bar are the ticks it can hit.</p><div class=\"fx-player\" data-src=\"/wiki/{path}\" data-assets=\"{}\"></div><script src=\"/wiki/player.js\" defer></script>",
-        esc(&assets_url())
+        "<h2 id=\"hits\">Player: where it hits</h2><p class=\"gen\">One cast at a foe standing still, as the rules fight it, tick by tick (60 a second): the fighters' frames from their sheets, its effects as the game draws them, and every shape the rules test (<code>arena_duel::debug::shapes</code>, the player's hitbox overlay): the hurtboxes, its blows, shots, fields and units, the hands; a bolt's sweep is the faint red trail it strikes along in a tick. Seconds from the start of the cast. Step a tick with ⟨ ⟩ or the arrow keys; the red marks under the bar are the ticks it can hit, and each stretch below jumps to its first tick.</p>{facts_html}<div class=\"fx-player\" data-src=\"/wiki/{path}\" data-assets=\"{}\" data-windows=\"{}\"></div><script src=\"/wiki/{script}\" defer></script>",
+        esc(&assets_url()),
+        esc(&windows),
     )
 }
 
 /// The skill player's script.
 const PLAYER: &str = include_str!("player.js");
 
-/// Where a skill can hit, as the rules test it: one cast at a foe standing still, its hit shapes over its effect on
-/// the moments they are tested (`hits`).
-fn hit_section(wiki: &mut Wiki, g: &Gem, sheets: &hits::Sheets) -> String {
-    let Some(trace) = hits::trace(g.id) else {
-        return String::new();
-    };
+/// Where a skill can hit, as the rules test it in one cast at a foe standing still (`hits::trace`): its facts (its
+/// wind-up, the stretches it can hit in, its shapes' sizes, a bolt's sweep) and those stretches, seconds from the cast.
+fn hit_facts(g: &Gem) -> Option<(String, Vec<(f64, f64)>)> {
+    let trace = hits::trace(g.id)?;
     let secs = |t: f64| num((t * 100.0).round() / 100.0);
     let windows = trace
         .windows()
@@ -689,24 +699,7 @@ fn hit_section(wiki: &mut Wiki, g: &Gem, sheets: &hits::Sheets) -> String {
             ),
         ));
     }
-    let mut out = format!(
-        "<h2 id=\"hits\">Where it hits</h2><p class=\"gen\">One cast at a foe standing still, as the rules test it (the shapes of <code>arena_duel::debug::shapes</code>, the player's hitbox overlay), drawn over its effect as the game places it, from the sheets this build has. Seconds from the start of the cast.</p>{}<p class=\"legend gen\">Shapes: <span style=\"background:#ff4646\"></span>shot or strike <span style=\"background:#ffa028\"></span>field <span style=\"background:#5ae678\"></span>unit <span style=\"background:#5ab4ff\"></span>the foe's body; a faint red trail is a bolt's sweep.</p><div class=\"moments\">",
-        facts(&rows)
-    );
-    for m in trace.picked() {
-        if let Some(img) = hits::draw(sheets, m, trace.ground) {
-            let (w, h) = img.dimensions();
-            let url = wiki.picture(img::webp(&img, true));
-            let _ = write!(
-                out,
-                "<figure>{}<figcaption>{} s</figcaption></figure>",
-                html::img(&url, w, h, &format!("{} at {} s", g.name, secs(m.t)), true),
-                secs(m.t)
-            );
-        }
-    }
-    out.push_str("</div>");
-    out
+    Some((facts(&rows), trace.windows()))
 }
 
 fn spell_numbers(sp: &Spell) -> Vec<(&'static str, String)> {
@@ -904,8 +897,6 @@ fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
             }
         }
         body.push_str(&player_section(wiki, book, g, sheets));
-        let hit = hit_section(wiki, g, sheets);
-        body.push_str(&hit);
         body.push_str(&cap_forms(g));
         let fit: Vec<String> = SUPPORTS
             .iter()
@@ -1286,6 +1277,95 @@ fn keystones(wiki: &mut Wiki) {
         "keystones.html",
         page("Keystones and roots", "keystones.html", &body),
     );
+}
+
+/// Every drawn effect where it sits: its largest frame where the game draws it on the first tick its skill can hit
+/// (else when first played), over both fighters' hurtboxes and the skill's hitboxes (`hits::effect_shot`); the skills
+/// that play it, linked to their players; how it was placed (`art/vfx/placing.json`, `arena-wiki` example `fx_fit`)
+/// and what is still open about it (`art/vfx/notes.json`).
+fn effects_page(wiki: &mut Wiki, root: &Path, assets: &Path) -> Result<(), String> {
+    let read =
+        |p: PathBuf| std::fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()));
+    let json = |p: &str| -> Result<BTreeMap<String, serde_json::Value>, String> {
+        serde_json::from_str(&read(root.join(p))?).map_err(|e| format!("{p}: {e}"))
+    };
+    let placing = json("art/vfx/placing.json")?;
+    let notes = json("art/vfx/notes.json")?;
+    let first = hits::first_plays();
+    // every skill that plays each effect
+    let mut by: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for g in GEMS {
+        for p in hits::plays(g.id) {
+            let skills = by.entry(p.fx).or_default();
+            if !skills.contains(&g.id) {
+                skills.push(g.id);
+            }
+        }
+    }
+    let drawn = arena_vfx::drawn::read(&read(assets.join("drawn/drawn.json"))?)?;
+    let (mut cards, mut unplayed) = (String::new(), Vec::new());
+    for d in &drawn {
+        let Some((_, play)) = first.get(d.fx.as_str()) else {
+            unplayed.push(format!("<code>{}</code>", esc(&d.fx)));
+            continue;
+        };
+        let mut pages = Vec::new();
+        for i in 0..d.layout.pages.len() {
+            let name = if i == 0 {
+                format!("drawn/{}.webp", d.file)
+            } else {
+                format!("drawn/{}-{i}.webp", d.file)
+            };
+            pages.push(img::page(&assets.join(name))?);
+        }
+        let pic = hits::effect_shot(play, d, &pages, 2).map(|im| {
+            let (w, h) = im.dimensions();
+            (wiki.picture(img::webp(&im, true)), w, h)
+        });
+        let skills = by
+            .get(d.fx.as_str())
+            .map(|s| {
+                s.iter()
+                    .map(|id| format!("<a href=\"/wiki/skill/{id}#hits\">{id}</a>"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_default();
+        let placed = placing.get(&d.fx).map(|v| match v {
+            serde_json::Value::Array(a) => format!(
+                "{} by {}, {} px",
+                a.first().and_then(|x| x.as_str()).unwrap_or_default(),
+                a.get(1).map(ToString::to_string).unwrap_or_default(),
+                a.get(2).map(ToString::to_string).unwrap_or_default()
+            ),
+            v => v.as_str().unwrap_or_default().to_owned(),
+        });
+        let _ = write!(
+            cards,
+            "<figure class=\"fx-card\" id=\"{id}\">{pic}<figcaption><b><code>{id}</code></b>{loop_}<br>Played by {skills}{placed}{note}</figcaption></figure>",
+            id = esc(&d.fx),
+            pic = pic.map_or(String::new(), |(u, w, h)| html::img(&u, w, h, &d.fx, true)),
+            loop_ = if d.layout.looping { " · loops" } else { "" },
+            placed = placed.map_or(String::new(), |p| format!(
+                "<br>Placed: <code>{}</code>",
+                esc(&p)
+            )),
+            note = notes
+                .get(&d.fx)
+                .and_then(|n| n.as_str())
+                .map_or(String::new(), |n| format!(
+                    "<br><span class=\"note\">Open: {}</span>",
+                    esc(n)
+                )),
+        );
+    }
+    let open = notes.len();
+    let body = format!(
+        "<h1>Effects</h1><p class=\"gen\">Every drawn effect where the game draws it, on the first tick its skill can hit (else when it is first played), in one cast at a foe standing still: its largest frame over the caster's hurtboxes (blue), the foe's (pink), the skill's hitboxes (red a blow or shot, orange a field, green a unit), the floor and the point the rules play it at (gold), facing east, two pixels a sheet pixel. Each skill links to its player, which plays the whole cast. <i>Placed</i> is how its anchor was set after it was judged frame by frame against these boxes (<code>art/vfx/placing.json</code>); <i>Open</i> ({open} of them) is what is still to decide (<code>art/vfx/notes.json</code>).</p><div class=\"fx-cards\">{cards}</div><h2>Played by no skill alone</h2><p>{}</p>",
+        unplayed.join(", ")
+    );
+    wiki.page("effects.html", page("Effects", "effects.html", &body));
+    Ok(())
 }
 
 fn units(wiki: &mut Wiki) {

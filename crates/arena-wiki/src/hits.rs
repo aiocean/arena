@@ -12,7 +12,6 @@ use arena_duel::seat::{MakeSeat, Script};
 use arena_duel::shot::ShotKind;
 use arena_vfx::drawn::Drawn as DrawnFx;
 use arena_vfx::sheet::Index;
-use image::{Rgba, RgbaImage};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -20,12 +19,6 @@ use std::path::Path;
 const LONGEST: f64 = 10.0;
 /// How long after its last shape a trace waits for another, seconds.
 const QUIET: f64 = 1.5;
-/// Output pixels per arena pixel: one, so a sheet's pixel (`UNIT` arena pixels) is four.
-const SCALE: f64 = 1.0;
-/// Arena pixels kept round what a moment shows.
-const MARGIN: f64 = 24.0;
-/// At most this many moments drawn a skill.
-const MOMENTS: usize = 4;
 
 /// An effect playing: its id, its place (the rules', `y` down from the top), how it is played, when it began.
 #[derive(Clone, Debug)]
@@ -77,17 +70,6 @@ impl Trace {
             }
         }
         out
-    }
-
-    /// The moments to draw: the first, the last and some between.
-    pub fn picked(&self) -> Vec<&Moment> {
-        let n = self.moments.len();
-        if n <= MOMENTS {
-            return self.moments.iter().collect();
-        }
-        let mut idx: Vec<usize> = (0..MOMENTS).map(|i| i * (n - 1) / (MOMENTS - 1)).collect();
-        idx.dedup();
-        idx.into_iter().map(|i| &self.moments[i]).collect()
     }
 }
 
@@ -372,47 +354,27 @@ pub fn trace(id: &'static str) -> Option<Trace> {
     })
 }
 
-/// The effects' sheets, read once: drawn ones and baked ones with their pages.
+/// The effects' layouts, read once: the drawn ones and the baked ones (the pictures stay on their pages: the player
+/// loads them from the game's).
 pub struct Sheets {
-    drawn: Vec<(DrawnFx, Vec<RgbaImage>)>,
+    drawn: Vec<DrawnFx>,
     baked: Index,
-    pages: Vec<RgbaImage>,
 }
 
 impl Sheets {
     pub fn read(assets: &Path) -> Result<Sheets, String> {
         let text =
             |p: &str| std::fs::read_to_string(assets.join(p)).map_err(|e| format!("{p}: {e}"));
-        let mut drawn = Vec::new();
-        for d in arena_vfx::drawn::read(&text("drawn/drawn.json")?)? {
-            let mut pages = Vec::new();
-            for i in 0..d.layout.pages.len() {
-                let name = if i == 0 {
-                    format!("drawn/{}.webp", d.file)
-                } else {
-                    format!("drawn/{}-{i}.webp", d.file)
-                };
-                pages.push(crate::img::page(&assets.join(name))?);
-            }
-            drawn.push((d, pages));
-        }
-        let baked = Index::read(&text("vfx/index.txt")?)?;
-        let mut pages = Vec::new();
-        for (file, _) in &baked.pages {
-            pages.push(crate::img::page(&assets.join("vfx").join(file))?);
-        }
         Ok(Sheets {
-            drawn,
-            baked,
-            pages,
+            drawn: arena_vfx::drawn::read(&text("drawn/drawn.json")?)?,
+            baked: Index::read(&text("vfx/index.txt")?)?,
         })
     }
 }
 
 /// A picture placed in the arena: a cell of a page (and the page's file under the game's assets), its centre (arena
 /// pixels, `y` down), arena pixels per sheet pixel, turned `angle` radians clockwise, mirrored.
-struct Placed<'a> {
-    page: &'a RgbaImage,
+struct Placed {
     file: String,
     cell: (u32, u32, u32, u32),
     cx: f64,
@@ -424,17 +386,17 @@ struct Placed<'a> {
 
 /// Where effect `p` shows `t` seconds into the cast, as the game draws it (`arena-game`'s `vfx::drawn`,
 /// `vfx::sprites`); none once it has played out.
-fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed<'a>> {
+fn place(sheets: &Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed> {
     let age = (t - p.born).max(0.0);
     let flip = p.opts.flip == Some(true);
-    if let Some((d, pages)) = sheets.drawn.iter().find(|(d, _)| d.fx == p.fx) {
+    if let Some(d) = sheets.drawn.iter().find(|d| d.fx == p.fx) {
         let school = arena_vfx::drawn::school_of(p.opts.palette);
         let Some(s) = d.shot(school, age as f32) else {
             return Vec::new();
         };
-        let Some(page) = pages.get(s.cell.page as usize) else {
+        if s.cell.page as usize >= d.layout.pages.len() {
             return Vec::new();
-        };
+        }
         // world pixels a sheet pixel, and the cell's centre from the anchor turned with it (y down)
         let k = f64::from(s.size * d.px());
         let (ox, oy) = (
@@ -451,7 +413,6 @@ fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed
         let ay = if d.layout.motion.ground { ground } else { p.y };
         let i = s.cell.page;
         return vec![Placed {
-            page,
             file: if i == 0 {
                 format!("drawn/{}.webp", d.file)
             } else {
@@ -489,11 +450,9 @@ fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed
         .flatten()
         .flatten()
         .filter_map(|c| {
-            let page = sheets.pages.get(c.page as usize)?;
             let cx = f64::from(c.dx) + f64::from(c.w) / 2.0;
             let cy = f64::from(c.dy) + f64::from(c.h) / 2.0;
             Some(Placed {
-                page,
                 file: format!("vfx/{}", sheets.baked.pages.get(c.page as usize)?.0),
                 cell: (c.x, c.y, c.w, c.h),
                 cx: p.x + (if flip { -cx } else { cx }) * UNIT,
@@ -504,235 +463,6 @@ fn place<'a>(sheets: &'a Sheets, p: &Playing, t: f64, ground: f64) -> Vec<Placed
             })
         })
         .collect()
-}
-
-impl Placed<'_> {
-    /// Its corners' box, arena pixels (`y` down).
-    fn bounds(&self) -> [f64; 4] {
-        let (w, h) = (
-            f64::from(self.cell.2) * self.k,
-            f64::from(self.cell.3) * self.k,
-        );
-        let r = libm::hypot(w, h) / 2.0;
-        let (hw, hh) = if self.angle == 0.0 {
-            (w / 2.0, h / 2.0)
-        } else {
-            (r, r)
-        };
-        [self.cx - hw, self.cy - hh, self.cx + hw, self.cy + hh]
-    }
-}
-
-const SHOT: Rgba<u8> = Rgba([255, 70, 70, 255]);
-const FIELD: Rgba<u8> = Rgba([255, 160, 40, 255]);
-const UNITS: Rgba<u8> = Rgba([90, 230, 120, 255]);
-const BODY: Rgba<u8> = Rgba([90, 180, 255, 160]);
-const GROUND: Rgba<u8> = Rgba([110, 100, 130, 255]);
-const BACK: Rgba<u8> = Rgba([16, 14, 23, 255]);
-
-fn colour(m: Mark) -> Rgba<u8> {
-    match m {
-        Mark::Field => FIELD,
-        Mark::Unit => UNITS,
-        _ => SHOT,
-    }
-}
-
-/// Moment `m` drawn: its effects from the sheets, the foe's body, the skill's shapes and sweeps over them.
-pub fn draw(sheets: &Sheets, m: &Moment, ground: f64) -> Option<RgbaImage> {
-    let placed: Vec<Placed> = m
-        .playing
-        .iter()
-        .flat_map(|p| place(sheets, p, m.t, ground))
-        .collect();
-    // the box round the shapes (y down) and the effects, kept to the shapes' neighbourhood
-    let mut bx = [f64::MAX, f64::MAX, f64::MIN, f64::MIN];
-    let grow = |bx: &mut [f64; 4], b: [f64; 4]| {
-        bx[0] = bx[0].min(b[0]);
-        bx[1] = bx[1].min(b[1]);
-        bx[2] = bx[2].max(b[2]);
-        bx[3] = bx[3].max(b[3]);
-    };
-    for d in &m.shapes {
-        let b = match d.shape {
-            Shape::Rect { x0, y0, x1, y1 } => [x0, ground - y1, x1, ground - y0],
-            Shape::Circle { x, y, r } => [x - r, ground - y - r, x + r, ground - y + r],
-        };
-        grow(&mut bx, b);
-    }
-    for s in &m.sweeps {
-        let b = [
-            s.x0.min(s.x1) - s.r,
-            ground - s.y0.max(s.y1) - s.r,
-            s.x0.max(s.x1) + s.r,
-            ground - s.y0.min(s.y1) + s.r,
-        ];
-        grow(&mut bx, b);
-    }
-    if bx[0] > bx[2] {
-        return None;
-    }
-    let near = [bx[0] - 160.0, bx[1] - 160.0, bx[2] + 160.0, bx[3] + 160.0];
-    for p in &placed {
-        let b = p.bounds();
-        let b = [
-            b[0].max(near[0]),
-            b[1].max(near[1]),
-            b[2].min(near[2]),
-            b[3].min(near[3]),
-        ];
-        if b[0] < b[2] && b[1] < b[3] {
-            grow(&mut bx, b);
-        }
-    }
-    let [x0, y0, x1, y1] = bx;
-    let (x0, y0) = (x0 - MARGIN, (y0 - MARGIN).min(ground - 8.0));
-    let (x1, y1) = (
-        x1 + MARGIN,
-        (y1 + MARGIN).max(ground + 8.0).min(ground + 16.0),
-    );
-    let to = |x: f64, y: f64| ((x - x0) * SCALE, (y - y0) * SCALE);
-    let (w, h) = (
-        ((x1 - x0) * SCALE).ceil().max(1.0) as u32,
-        ((y1 - y0) * SCALE).ceil().max(1.0) as u32,
-    );
-    let mut img = RgbaImage::from_pixel(w, h, BACK);
-    let gy = to(0.0, ground).1.round() as i32;
-    for x in 0..w as i32 {
-        put(&mut img, x, gy, GROUND);
-    }
-    for b in &m.foe {
-        let (l, t) = to(b[0], ground - b[3]);
-        let (r, bt) = to(b[2], ground - b[1]);
-        rect(&mut img, l, t, r, bt, BODY);
-    }
-    for p in &placed {
-        blit(&mut img, p, &to);
-    }
-    for s in &m.sweeps {
-        capsule(
-            &mut img,
-            to(s.x0, ground - s.y0),
-            to(s.x1, ground - s.y1),
-            s.r * SCALE,
-        );
-    }
-    for d in &m.shapes {
-        let c = colour(d.mark);
-        match d.shape {
-            Shape::Rect { x0, y0, x1, y1 } => {
-                let (l, t) = to(x0, ground - y1);
-                let (r, b) = to(x1, ground - y0);
-                rect(&mut img, l, t, r, b, c);
-            }
-            Shape::Circle { x, y, r } => {
-                let (cx, cy) = to(x, ground - y);
-                circle(&mut img, cx, cy, (r * SCALE).max(1.0), c);
-            }
-        }
-    }
-    Some(img)
-}
-
-fn put(img: &mut RgbaImage, x: i32, y: i32, c: Rgba<u8>) {
-    if x >= 0 && y >= 0 && (x as u32) < img.width() && (y as u32) < img.height() {
-        let a = u32::from(c[3]);
-        let p = img.get_pixel_mut(x as u32, y as u32);
-        for i in 0..3 {
-            p[i] = ((u32::from(c[i]) * a + u32::from(p[i]) * (255 - a)) / 255) as u8;
-        }
-        p[3] = 255;
-    }
-}
-
-fn rect(img: &mut RgbaImage, l: f64, t: f64, r: f64, b: f64, c: Rgba<u8>) {
-    let (l, t, r, b) = (
-        l.round() as i32,
-        t.round() as i32,
-        r.round() as i32,
-        b.round() as i32,
-    );
-    for x in l..=r {
-        put(img, x, t, c);
-        put(img, x, b, c);
-    }
-    for y in t + 1..b {
-        put(img, l, y, c);
-        put(img, r, y, c);
-    }
-}
-
-fn circle(img: &mut RgbaImage, cx: f64, cy: f64, r: f64, c: Rgba<u8>) {
-    let n = ((r * 8.0) as usize).max(24);
-    for i in 0..n {
-        let a = i as f64 / n as f64 * core::f64::consts::TAU;
-        put(
-            img,
-            (cx + r * libm::cos(a)).round() as i32,
-            (cy + r * libm::sin(a)).round() as i32,
-            c,
-        );
-    }
-}
-
-/// The stretch a bolt sweeps in a tick, filled faintly and outlined.
-fn capsule(img: &mut RgbaImage, (ax, ay): (f64, f64), (bx, by): (f64, f64), r: f64) {
-    let r = r.max(1.0);
-    let (l, t) = (
-        (ax.min(bx) - r).floor() as i32,
-        (ay.min(by) - r).floor() as i32,
-    );
-    let (rt, bt) = (
-        (ax.max(bx) + r).ceil() as i32,
-        (ay.max(by) + r).ceil() as i32,
-    );
-    let (dx, dy) = (bx - ax, by - ay);
-    let len2 = (dx * dx + dy * dy).max(1e-9);
-    for y in t..=bt {
-        for x in l..=rt {
-            let (px, py) = (f64::from(x) - ax, f64::from(y) - ay);
-            let u = ((px * dx + py * dy) / len2).clamp(0.0, 1.0);
-            let d = libm::hypot(px - u * dx, py - u * dy);
-            if d <= r {
-                let edge = d > r - 1.0;
-                put(img, x, y, Rgba([255, 70, 70, if edge { 255 } else { 60 }]));
-            }
-        }
-    }
-}
-
-/// Picture `p` onto `img`, nearest neighbour, turned and mirrored as placed.
-fn blit(img: &mut RgbaImage, p: &Placed, to: &dyn Fn(f64, f64) -> (f64, f64)) {
-    let b = p.bounds();
-    let (l, t) = to(b[0], b[1]);
-    let (r, bt) = to(b[2], b[3]);
-    let (cx, cy) = to(p.cx, p.cy);
-    let s = p.k * SCALE;
-    if s <= 0.0 {
-        return;
-    }
-    let (sin, cos) = (libm::sin(-p.angle), libm::cos(-p.angle));
-    let (cw, ch) = (f64::from(p.cell.2), f64::from(p.cell.3));
-    for y in (t.floor() as i32).max(0)..=(bt.ceil() as i32).min(img.height() as i32 - 1) {
-        for x in (l.floor() as i32).max(0)..=(r.ceil() as i32).min(img.width() as i32 - 1) {
-            let (vx, vy) = (f64::from(x) + 0.5 - cx, f64::from(y) + 0.5 - cy);
-            let (mut ux, uy) = (vx * cos - vy * sin, vx * sin + vy * cos);
-            if p.flip {
-                ux = -ux;
-            }
-            let (sx, sy) = (ux / s + cw / 2.0, uy / s + ch / 2.0);
-            if sx < 0.0 || sy < 0.0 || sx >= cw || sy >= ch {
-                continue;
-            }
-            let (px, py) = (p.cell.0 + sx as u32, p.cell.1 + sy as u32);
-            if px < p.page.width() && py < p.page.height() {
-                let c = *p.page.get_pixel(px, py);
-                if c[3] > 0 {
-                    put(img, x, y, c);
-                }
-            }
-        }
-    }
 }
 
 /// A fighter's frame on its sheet, from its feet (sheet pixels, one an arena pixel, `y` down): page, x, y, w, h, dx, dy.
@@ -885,4 +615,132 @@ pub fn record(
         }
     }
     (!frames.is_empty()).then(|| json!({ "skill": id, "tick": TICK, "frames": frames }))
+}
+
+/// Each effect the skills of the pool play, once: the skill and the play, on the first tick the skill can hit while
+/// the effect plays (else when it is first played).
+pub fn first_plays() -> BTreeMap<&'static str, (&'static str, Play)> {
+    let mut first: BTreeMap<&'static str, (&'static str, Play)> = BTreeMap::new();
+    for g in arena_calc::gem::GEMS {
+        for p in plays(g.id) {
+            let better = match first.get(p.fx) {
+                None => true,
+                Some((_, q)) => q.hits.is_empty() && !p.hits.is_empty(),
+            };
+            if better {
+                first.insert(p.fx, (g.id, p));
+            }
+        }
+    }
+    first
+}
+
+/// Effect `d`'s largest frame where the game draws it for `play` (facing east, its point at the rules'), with both
+/// fighters' hurtboxes (blue the caster, pink the foe), the skill's hitboxes (red a blow or shot, orange a field, green
+/// a unit), the floor and the point (gold): `k` output pixels a sheet pixel.
+pub fn effect_shot(
+    play: &Play,
+    d: &DrawnFx,
+    pages: &[image::RgbaImage],
+    k: i32,
+) -> Option<image::RgbaImage> {
+    use image::{Rgba, RgbaImage};
+    let cells = d.layout.clips.values().next()?;
+    let c = cells.iter().max_by_key(|c| c.w * c.h)?;
+    let page = pages.get(c.page as usize)?;
+    // the rules' boxes from the point, sheet pixels, `y` down, facing east
+    let rel = |b: &[f64; 4]| {
+        let (mut x0, mut x1) = ((b[0] - play.x) / UNIT, (b[2] - play.x) / UNIT);
+        if play.flip {
+            (x0, x1) = (-x1, -x0);
+        }
+        [x0, (b[1] - play.y) / UNIT, x1, (b[3] - play.y) / UNIT]
+    };
+    let floor = (FLOOR - play.y) / UNIT;
+    let lift = if d.layout.motion.ground { floor } else { 0.0 };
+    let bodies: Vec<([f64; 4], Rgba<u8>)> = play
+        .bodies
+        .iter()
+        .zip([Rgba([90, 180, 255, 255]), Rgba([255, 140, 200, 255])])
+        .flat_map(|(bs, c)| bs.iter().map(move |b| (rel(b), c)))
+        .collect();
+    let hits: Vec<([f64; 4], Rgba<u8>)> = play
+        .hits
+        .iter()
+        .map(|(m, b)| {
+            let c = match m {
+                Mark::Field => Rgba([255, 160, 40, 255]),
+                Mark::Unit => Rgba([90, 230, 120, 255]),
+                _ => Rgba([255, 70, 70, 255]),
+            };
+            (rel(b), c)
+        })
+        .collect();
+    let (dx, dy) = (f64::from(c.dx), f64::from(c.dy) + lift);
+    let mut bx = [
+        dx.min(-1.0),
+        dy.min(-1.0),
+        (dx + f64::from(c.w)).max(1.0),
+        (dy + f64::from(c.h)).max(floor + 2.0),
+    ];
+    for (b, _) in bodies.iter().chain(hits.iter()) {
+        bx = [
+            bx[0].min(b[0]),
+            bx[1].min(b[1]),
+            bx[2].max(b[2]),
+            bx[3].max(b[3]),
+        ];
+    }
+    let (x0, y0) = (bx[0].floor() as i32 - 4, bx[1].floor() as i32 - 4);
+    let (w, h) = (bx[2].ceil() as i32 + 4 - x0, bx[3].ceil() as i32 + 4 - y0);
+    let mut img = RgbaImage::from_pixel((w * k) as u32, (h * k) as u32, Rgba([20, 18, 28, 255]));
+    let at = |x: f64, y: f64| {
+        (
+            ((x - f64::from(x0)) * f64::from(k)).round() as i32,
+            ((y - f64::from(y0)) * f64::from(k)).round() as i32,
+        )
+    };
+    let put = |img: &mut RgbaImage, x: i32, y: i32, c: Rgba<u8>| {
+        if x >= 0 && y >= 0 && (x as u32) < img.width() && (y as u32) < img.height() {
+            let a = u32::from(c[3]);
+            let p = img.get_pixel_mut(x as u32, y as u32);
+            for i in 0..3 {
+                p[i] = ((u32::from(c[i]) * a + u32::from(p[i]) * (255 - a)) / 255) as u8;
+            }
+        }
+    };
+    let (_, gy) = at(0.0, floor);
+    for x in 0..w * k {
+        put(&mut img, x, gy, Rgba([110, 100, 130, 255]));
+    }
+    let (fx0, fy0) = at(dx, dy);
+    for v in 0..c.h as i32 * k {
+        for u in 0..c.w as i32 * k {
+            let (px, py) = (c.x + (u / k) as u32, c.y + (v / k) as u32);
+            if px < page.width() && py < page.height() {
+                let p = *page.get_pixel(px, py);
+                if p[3] > 0 {
+                    put(&mut img, fx0 + u, fy0 + v, p);
+                }
+            }
+        }
+    }
+    for (b, c) in bodies.iter().chain(hits.iter()) {
+        let (l, t) = at(b[0], b[1]);
+        let (r, bt) = at(b[2], b[3]);
+        for x in l..=r {
+            put(&mut img, x, t, *c);
+            put(&mut img, x, bt, *c);
+        }
+        for y in t..=bt {
+            put(&mut img, l, y, *c);
+            put(&mut img, r, y, *c);
+        }
+    }
+    let (gx, gy) = at(0.0, 0.0);
+    for i in -3..=3 {
+        put(&mut img, gx + i, gy, Rgba([243, 201, 105, 255]));
+        put(&mut img, gx, gy + i, Rgba([243, 201, 105, 255]));
+    }
+    Some(img)
 }

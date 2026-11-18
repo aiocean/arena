@@ -1,0 +1,17 @@
+{
+  "arcane/sword-slash": "The rules play it where the caster set off and leave it there while the caster dashes on: the point, not the anchor.",
+  "arcane/sword-strike": "The rules play it where the caster set off and leave it there while the caster dashes on: the point, not the anchor.",
+  "melee/spear-thrust": "The rules play it where the caster set off and leave it there while the caster lunges on: the point, not the anchor.",
+  "explosions/implosion": "Its sphere covers the whole foe, while the field the rules test is an 88 px band at the feet: a smaller picture or a taller field (the owner's call).",
+  "fire/fire-breath": "Its flames reach about 25 px past the strike box the rules test: range, the owner's call.",
+  "impacts/blood-splat": "Centred on the strike box, but far bigger than it.",
+  "arcane/mana-shield": "Its dome is lower than the caster's head.",
+  "nature/leaf-storm": "Its leaves gather behind the caster's back before they fall round the body: one anchor cannot place both; it needs a redraw or a motion.",
+  "arcane/blink-dash": "Unsure: its trail ends a little short of where the caster lands.",
+  "arcane/teleport-in": "Unsure: it stands on the foe's body, not where the caster arrives.",
+  "scifi/warp-jump": "Unsure: it stands on the foe's body, not where the caster arrives.",
+  "lightning/ball-lightning": "The rules play it at the caster's feet while the orb flies at hand height (the orb's offset is being fixed with data::orb_offset).",
+  "lightning/chain-lightning": "Unsure: anchored by its left end on the foe, the chain runs about 50 px past the foe.",
+  "nature/fissure": "Unsure: anchored by its left end on the foe, the crack runs about 45 px past the foe.",
+  "scifi/drone-thruster": "Unsure: a thruster hanging in the air ahead of the caster."
+}

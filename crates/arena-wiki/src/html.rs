@@ -27,6 +27,7 @@ pub const MENU: &[(&str, &str)] = &[
     ("curses.html", "Curses"),
     ("keystones.html", "Keystones and roots"),
     ("units.html", "Units"),
+    ("effects.html", "Effects"),
     ("looks.html", "Fighters"),
     ("rules.html", "Rules overview"),
     ("bot.html", "The bot's view"),
@@ -143,7 +144,8 @@ pub const CSS: &str = r#"
 .fx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}.fx-bar button,.fx-bar select{font:inherit;padding:2px 10px}
 .fx-layers{display:flex;flex-wrap:wrap;gap:10px;margin-left:8px;font-size:13px}.fx-track{margin-top:4px}.fx-scrub{width:100%;margin:0}
 .fx-marks{display:block;width:100%;height:6px}.fx-info{font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums}
-.fx-legend{font-size:12px;opacity:.8;margin-top:2px}.fx-can-hit{color:rgb(255,70,70)}
+.fx-legend{font-size:12px;opacity:.8;margin-top:2px}.fx-jumps{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;font-size:13px}.fx-jumps button{font:inherit;font-size:12px;padding:1px 8px}
+.fx-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.fx-card{margin:0;padding:8px;border:1px solid rgba(255,255,255,.08);border-radius:8px}.fx-card img{max-width:100%;height:auto;image-rendering:pixelated}.fx-card figcaption{font-size:13px}.fx-card .note{color:#fdba74}.fx-can-hit{color:rgb(255,70,70)}
 .wiki-main h1{font-size:26px;margin:.4em 0}.wiki-main h2{font-size:19px;margin-top:1.6em}
 .wiki-main code{font-size:.9em}
 .scroll{overflow-x:auto;max-width:100%}

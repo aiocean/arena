@@ -99,10 +99,23 @@
     }
     const legend = el('div', { class: 'fx-legend' });
     legend.innerHTML = '<span style="color:rgb(90,180,255)">■</span> caster hurtbox · <span style="color:rgb(255,140,200)">■</span> foe hurtbox · <span style="color:rgb(255,70,70)">■</span> blow / shot · <span style="color:rgb(255,160,40)">■</span> field · <span style="color:rgb(90,230,120)">■</span> unit · <span style="color:rgb(255,220,60)">●</span> hand';
+    // the stretches it can hit in (the facts above), each a button to its first tick
+    const windows = JSON.parse(root.dataset.windows || '[]');
+    const jumps = el('div', { class: 'fx-jumps' });
+    if (windows.length) jumps.append('Can hit: ');
+    for (const [a, b] of windows) {
+      const i = frames.findIndex((f) => f.t >= a - 1e-6);
+      const label = Math.abs(b - a) < 1e-9 ? `${a.toFixed(2)} s` : `${a.toFixed(2)}–${b.toFixed(2)} s`;
+      const btn = el('button', { type: 'button', text: label, title: 'Jump to its first tick' });
+      if (i < 0) btn.disabled = true;
+      btn.onclick = () => { setPlaying(false); show(i); };
+      jumps.append(btn);
+    }
     root.append(
       canvas,
       el('div', { class: 'fx-bar' }, [play, back, fwd, hitBtn, speed, toggles]),
       el('div', { class: 'fx-track' }, [scrub, marks]),
+      jumps,
       info,
       legend,
     );
