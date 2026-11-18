@@ -117,8 +117,22 @@ over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n
 new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
 logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
 
-**The state of the house AI** (2026-11-18, RULES_VERSION 22: spell knockback, bodies kept apart). The shipped AI is
-update 800 of run `abi4a`, `abi3z`'s update 800 (below) fine-tuned 800 updates on RULES_VERSION 22 with its recipe
+**The state of the house AI** (2026-11-19, RULES_VERSION 23: casts 1.6x/1.5x slower, meditation a skill in phases).
+The shipped AI is update 1200 of run `abi5a`, `abi4a`'s update 800 fine-tuned 1500 updates on RULES_VERSION 23 with
+its recipe (`--init runs/abi4a/u800.pt --lr 1e-4 --ent 0.003 0.0015 --shaping-until 3.0 --mix 0.25 0.15 0.4 0.1 0.1
+--time-cost 0.0005 --whiff 0.03 --whiff-far 0.02 --variety 0.5 --keep-every 100`). On RULES 23 `abi4a/u800` won
+47.1% against the brain over the ladder; it meditated most, and a meditating fighter is now open. Over the house
+test's seeds 1-30 against the brain, `abi5a`'s updates 600-1500 won 56, 66, 78, 74, 73, 74, 86, 70, 71 and 73%: only
+800 and 1200 cleared it, and 1200 the ladder too (u1000: 77.4% over the ladder, 73.2% over the house seeds).
+
+Its ladder (150 seeds, RULES_VERSION 23), `abi4a/u800`'s on the same rules in brackets:
+- vs the brain: 79.9% [47.1] (seats 82.9 / 76.8; Vương Lâm 85.8 / Thất Thải 73.5), 142 rounds cut of 900 [135];
+- vs the first mind: 91.8% [77.6], 180 cut [192]; vs the aggressive and turtle scripts: 78.5% [62.1] and 99.0% [98.5];
+- its own mirror: seat 0 55.4%, 152 cut, rounds 61.6 s (tracked, not gated); 8.8 casts a round a seat against 13.0
+  for `abi4a` on RULES 22, about 45% fewer a second. Its top act is the jump, not meditating.
+
+**RULES_VERSION 22** (spell knockback, bodies kept apart): update 800 of run `abi4a`, `abi3z`'s update 800 (below)
+fine-tuned 800 updates on RULES_VERSION 22 with its recipe
 (`--init runs/abi3z/u800.pt --lr 1e-4 --ent 0.003 0.0015 --shaping-until 3.0 --mix 0.25 0.15 0.4 0.1 0.1`, the same
 costs). On RULES 22 `abi3z/u800` still won 81.5% against the brain over the ladder but 72.7% over the house test's
 seeds 1-30; `abi4a`'s updates 200-600 were no better, 700 and 800 cleared both. A continuation (`abi4b`, brain 50%)
