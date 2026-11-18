@@ -3,13 +3,13 @@
 //! yet), as a share of a life and its shield.
 //!
 //! ```text
-//! cargo run --release -p arena-sim --example cap -- [--over] [--telemetry-otlp]
+//! cargo run --release -p arena-sim --example cap -- [--over] [--telemetry-dir DIR]
 //! ```
 //!
 //! `--over` prints only the skills with a form over the cap. `--suggest` prints, for each skill over the cap bare,
-//! the base that would bring it to 38% and, for a skill that lands more than once, the hits that would at its base. `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends
+//! the base that would bring it to 38% and, for a skill that lands more than once, the hits that would at its base. `--telemetry-dir DIR` (or `ARENA_TELEMETRY_DIR` set) writes
 //! one `balance.cap` event a skill and form (`form` "bare", "single" or "pair"; `supports`; `share` of 1440) under
-//! one `run_id`, service `arena-ladder`, target `arena::ladder` (`ops/observe/README.md`).
+//! one `run_id`, service `arena-ladder`, target `arena::ladder` (`ops/telemetry/README.md`).
 
 use arena_calc::cap::{CAST_CAP, Dealt, cap_life, cast_of, damaging, fitting, skill_of};
 use arena_calc::gem::{Effect, GEMS, Gem};
@@ -17,10 +17,13 @@ use arena_calc::support::{Support, excluded};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let _export = arena_telemetry::requested(&args)?.then(|| {
+    let _export = arena_telemetry::requested(&args)?.map(|dir| {
         arena_telemetry::init(
             "arena-ladder",
-            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+            arena_telemetry::Options {
+                dir: Some(dir),
+                ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
+            },
         )
     });
     let only_over = args.iter().any(|a| a == "--over");

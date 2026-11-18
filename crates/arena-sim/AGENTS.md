@@ -19,9 +19,9 @@ say how a trained bot or a player would use them.
   blinks, wards, heals, curses, intents, domains, buffs, devices). Every number is a `pub const` there.
 - `units`: traps, mines, totems and minions (`arena_calc::device`) as bodies the foe can strike.
 - `brain`: the scripted brain. `report`: what a match measured per skill. `balance`: the balance run.
-- Examples: `duel -- <seed> [--loadout-a <json|file>] [--loadout-b ...] [--telemetry-otlp]` logs one match;
-  `balance -- --seeds N --pairs M [--seed S] [--threads N] [--out file.json] [--telemetry-otlp]` prints the C/B/A/S
-  table and writes JSON (`--telemetry-otlp` sends to the telemetry store, `ops/observe`).
+- Examples: `duel -- <seed> [--loadout-a <json|file>] [--loadout-b ...] [--telemetry-dir DIR]` logs one match;
+  `balance -- --seeds N --pairs M [--seed S] [--threads N] [--out file.json] [--telemetry-dir DIR]` prints the C/B/A/S
+  table and writes JSON (`--telemetry-dir DIR` writes to the telemetry files, `ops/telemetry`).
 
 ## Calls into arena-calc
 

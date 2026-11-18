@@ -1,11 +1,11 @@
 //! One match, logged: casts, hits with their damage by kind, ailments laid, controls, deaths and each round's end.
 //!
 //! ```text
-//! cargo run --release -p arena-sim --example duel -- <seed> [--loadout-a <json or file>] [--loadout-b <json or file>] [--telemetry-otlp]
+//! cargo run --release -p arena-sim --example duel -- <seed> [--loadout-a <json or file>] [--loadout-b <json or file>] [--telemetry-dir DIR]
 //! ```
 //!
-//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends the match's summary, each round and each used skill's
-//! line to the telemetry store as `arena_ladder` events (`ops/observe/README.md`).
+//! `--telemetry-dir DIR` (or `ARENA_TELEMETRY_DIR` set) sends the match's summary, each round and each used skill's
+//! line to the telemetry files as `arena::ladder` lines (`ops/telemetry/README.md`).
 //!
 //! A loadout not given is drawn at random (`loadout::random`) from the seed. A loadout is `arena_calc::loadout::
 //! Loadout` as JSON, inline or in a file: `{"actives":[{"skill":"fireball","supports":[],"fuse":null}, ...],
@@ -28,16 +28,16 @@ fn read_loadout(arg: &str) -> Result<Loadout, String> {
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let _export = arena_telemetry::requested(&args)?.then(|| {
+    let _export = arena_telemetry::requested(&args)?.map(|dir| {
         arena_telemetry::init(
             "arena-ladder",
-            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+            arena_telemetry::Options {
+                dir: Some(dir),
+                ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
+            },
         )
     });
-    let args: Vec<String> = args
-        .into_iter()
-        .filter(|a| a != arena_telemetry::FLAG)
-        .collect();
+    let args = arena_telemetry::strip(args);
     let mut seed = 1u64;
     let mut given: [Option<Loadout>; 2] = [None, None];
     let mut i = 0;
@@ -109,7 +109,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-/// The match, its rounds and each used skill as `arena_ladder` events (nothing when telemetry is off).
+/// The match, its rounds and each used skill as `arena::ladder` events (nothing when telemetry is off).
 fn export(seed: u64, loadouts: [&Loadout; 2], m: &MatchResult) {
     let id = format!(
         "sim-{seed}-{}",

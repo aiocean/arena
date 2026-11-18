@@ -22,8 +22,8 @@ tract-onnx = { version = "0.22", optional = true, default-features = false }
 # the check: the fixed observations
 serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
 wat = "1"
-# the ladder's --telemetry-otlp: its rows and per-skill tables as events
-arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["otlp"] }
+# the ladder's --telemetry-dir: its rows and per-skill tables as lines in the telemetry files
+arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["export"] }
 tracing = "0.1"
 # the telemetry test's subscriber: what bot.end carries
 tracing-subscriber = { version = "0.3", default-features = false, features = ["registry", "std"] }

@@ -2,11 +2,11 @@
 //! support and keystone (`arena_sim::balance`), printed as a tier table and written as JSON.
 //!
 //! ```text
-//! cargo run --release -p arena-sim --example balance -- --seeds 20 --pairs 200 [--seed 1] [--threads N] [--out table.json] [--telemetry-otlp]
+//! cargo run --release -p arena-sim --example balance -- --seeds 20 --pairs 200 [--seed 1] [--threads N] [--out table.json] [--telemetry-dir DIR]
 //! ```
 //!
-//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends the run and every row (each gem, support and keystone: its
-//! win rate, use, damage) to the telemetry store as `arena_ladder` events under one `run_id` (`ops/observe/README.md`).
+//! `--telemetry-dir DIR` (or `ARENA_TELEMETRY_DIR` set) sends the run and every row (each gem, support and keystone: its
+//! win rate, use, damage) to the telemetry files as `arena::ladder` lines under one `run_id` (`ops/telemetry/README.md`).
 
 use std::time::Instant;
 
@@ -14,16 +14,16 @@ use arena_sim::balance::{Config, Table, run};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let _export = arena_telemetry::requested(&args)?.then(|| {
+    let _export = arena_telemetry::requested(&args)?.map(|dir| {
         arena_telemetry::init(
             "arena-ladder",
-            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+            arena_telemetry::Options {
+                dir: Some(dir),
+                ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
+            },
         )
     });
-    let args: Vec<String> = args
-        .into_iter()
-        .filter(|a| a != arena_telemetry::FLAG)
-        .collect();
+    let args = arena_telemetry::strip(args);
     let mut config = Config {
         seeds: 4,
         pairs: 20,
@@ -68,7 +68,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-/// The run and its rows as `arena_ladder` events (nothing when telemetry is off).
+/// The run and its rows as `arena::ladder` events (nothing when telemetry is off).
 fn export(table: &Table, took: f64) {
     let run = arena_telemetry::run_id("balance");
     let c = &table.config;

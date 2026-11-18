@@ -4,8 +4,8 @@
 //!
 //! Each decision's wall time and fuel are metric events, each fault and a module that will not start an `arena::bot`
 //! event, and an instance's totals, with its think-time and fuel percentiles, one more when it is dropped
-//! (`meter::Tally`, runtime "wasm"; `arena-telemetry` exports them when it is configured; with nothing listening they
-//! cost a clock read).
+//! (`meter::Tally`, runtime "wasm"; `arena-telemetry` writes them to its files when it is configured; with nothing
+//! listening they cost a clock read).
 
 use crate::meter::Tally;
 use crate::{ABI, ACTIONS, Admitted, DECIDE_FUEL, FUEL_EXPORT, OBS, SETUP_FUEL};

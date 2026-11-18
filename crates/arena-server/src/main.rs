@@ -27,7 +27,7 @@
 //! Run by launchd, the job needs `ProcessType` `Interactive`: launchd's default for a job without one throttles its
 //! timers, and a tick's wake then comes 40 ms late at the median and 200 ms at worst (`examples/tick_bench.rs`).
 //!
-//! Telemetry (`arena_telemetry`, `ops/observe/README.md`): with `ARENA_OTLP_ENDPOINT` set it exports each match
+//! Telemetry (`arena_telemetry`, `ops/telemetry/README.md`): with `ARENA_TELEMETRY_DIR` set it writes each match
 //! through the duel observer, and its own health: a tick's publish time, how late it runs, ticks missed and schedule
 //! resyncs, the relay's subscription.
 
@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
     if let Err(e) = &res {
         tracing::error!(error = %format!("{e:#}"), "server stopped");
     }
-    // send what is batched before the process goes (the guard's drop shuts the exporters down after)
+    // write what waits before the process goes (the guard's drop stops the writer after)
     telemetry.flush();
     drop(telemetry);
     res

@@ -1,53 +1,53 @@
 [package]
 name = "arena-telemetry"
-description = "The arena's telemetry: tracing to stderr and, when ARENA_OTLP_ENDPOINT is set, OpenTelemetry logs, traces and metrics over OTLP/HTTP into the central OpenObserve; and the duel observer, which turns what a duel step returns into structured events without touching the fight"
+description = "The arena's telemetry: tracing to stderr and, when ARENA_TELEMETRY_DIR is set, logs, spans and metrics as JSON lines in local files (one a service and day, kept 14 days and under 2 GB); the reader the query tool, the watchdog and the smoke test share; and the duel observer, which turns what a duel step returns into structured events without touching the fight"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 tracing = "0.1"
-# the exporting pipeline (`init`): off at run time unless an endpoint is configured
+# the files' lines, written and read
+serde_json.workspace = true
+# the histograms' log buckets, as the workspace asks (libm, the same on every target)
+libm.workspace = true
+# the exporting pipeline (`init`): off at run time unless a directory is configured
 tracing-subscriber = { version = "0.3", optional = true, features = ["env-filter", "registry", "fmt", "std"] }
-opentelemetry = { version = "0.33", optional = true }
-opentelemetry_sdk = { version = "0.33", optional = true }
-opentelemetry-otlp = { version = "0.33", optional = true }
-opentelemetry-appender-tracing = { version = "0.33", optional = true }
-tracing-opentelemetry = { version = "0.34", optional = true }
 # the duel observer reads a step's events and the duel's state
 arena-duel = { path = "../arena-duel", optional = true }
 arena-calc = { workspace = true, optional = true }
 
 [features]
-default = ["otlp", "duel"]
-otlp = [
-    "dep:tracing-subscriber", "dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp",
-    "dep:opentelemetry-appender-tracing", "dep:tracing-opentelemetry",
-]
+default = ["export", "duel"]
+export = ["dep:tracing-subscriber"]
 duel = ["dep:arena-duel", "dep:arena-calc"]
 
 [[example]]
 name = "observe"
-required-features = ["otlp", "duel"]
-
-[lints]
-workspace = true
-
-[dev-dependencies]
-# the query example: SQL against OpenObserve's search API
-ureq = { version = "3", default-features = false, features = ["json"] }
-serde_json.workspace = true
-# the observer's test listens to every event
-tracing-subscriber = { version = "0.3", features = ["registry"] }
+required-features = ["export", "duel"]
 
 [[example]]
 name = "query"
+# its argument tests run with `cargo test -p arena-telemetry`
+test = true
+
+[[example]]
+name = "watchdog"
+required-features = ["export"]
+# its threshold and state tests run with `cargo test -p arena-telemetry`
+test = true
 
 [[test]]
 name = "observer"
 required-features = ["duel"]
 
-[[example]]
-name = "watchdog"
-# its threshold and state tests run with `cargo test -p arena-telemetry`
-test = true
+[[test]]
+name = "files"
+required-features = ["export"]
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+# the observer's test listens to every event
+tracing-subscriber = { version = "0.3", features = ["registry"] }

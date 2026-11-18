@@ -3,7 +3,7 @@
 //! ```text
 //! cargo run --release -p arena-smoke -- [--url https://arena.aiocean.io/] [--out target/arena-smoke]
 //!     [--review ~/services/arena/site/review/smoke] [--chrome <path>] [--wait 30] [--headful] [--mbps 20]
-//!     [--profile phone|laptop|desktop] [--telemetry-otlp]
+//!     [--profile phone|laptop|desktop] [--telemetry]
 //! ```
 //!
 //! The checks, each PASS or FAIL:
@@ -20,7 +20,8 @@
 //!   so the seconds follow the bytes.
 //! - `advances`: the match moves: the frames counter grows over a few seconds and two screenshots of the fight differ.
 //! - `build`: the page's build (`window.__arena.build`, stamped by `site/build.sh`) against the live server's (the
-//!   commit on its newest `match.start` in the telemetry store, read with `ARENA_OTLP_ENDPOINT` and its credentials)
+//!   commit on its newest `match.start` of the last half hour in the server's telemetry files,
+//!   `<dir>/arena-server/<day>.jsonl`, the dir `ARENA_TELEMETRY_DIR` or `~/services/arena/telemetry`)
 //!   and their rules builds (`window.__arena.rules`, `window.__arena.live.rules`). It fails only when the rules builds
 //!   differ; other commits on one rules build (a docs-only site deploy) or a build not known is a `WARN` line.
 //! - `boxes`: the player's "Hitbox" toggle is there, and a click flips the hitbox overlay and another flips it back
@@ -46,8 +47,8 @@
 //!
 //! Every run measures the time from the navigation to the game starting (its status line set) and to the first live
 //! match frame (`window.__arena.live.frames` > 0), and the machine's 1/5/15-minute load averages when it began. With
-//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT`, `ops/observe/README.md`) it sends them as one `smoke.run` event
-//! (service `arena-smoke`, stream `arena_smoke`) and the metrics `arena_smoke_game_start_seconds`,
+//! `--telemetry` (or `ARENA_TELEMETRY_DIR` set; `ops/telemetry/README.md`) it writes them as one `smoke.run` line to
+//! `<dir>/arena-smoke/<day>.jsonl` and the metrics `arena_smoke_game_start_seconds`,
 //! `arena_smoke_first_frame_seconds` and `arena_smoke_runs_total` (`result`).
 //!
 //! It writes `screenshot.png` and `summary.json` to `--out`; with `--review <dir>` also a run page into
@@ -128,10 +129,10 @@ fn args() -> Result<Args, String> {
                 a.profile = Profile::named(&name)
                     .ok_or(format!("--profile {name}: phone, laptop or desktop"))?;
             }
-            // read by arena_telemetry::requested
-            arena_telemetry::FLAG => {}
+            // read in main: write to the telemetry files
+            "--telemetry" => {}
             "-h" | "--help" => {
-                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N] [--profile phone|laptop|desktop] [--telemetry-otlp]".into());
+                return Err("usage: arena-smoke [--url URL] [--out DIR] [--review DIR] [--chrome PATH] [--wait SECONDS] [--headful] [--mbps N] [--profile phone|laptop|desktop] [--telemetry]".into());
             }
             other => return Err(format!("unknown argument {other}")),
         }
@@ -164,19 +165,18 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let raw: Vec<String> = std::env::args().collect();
-    let export = match arena_telemetry::requested(&raw) {
-        Ok(e) => e,
-        Err(e) => {
-            eprintln!("{e}");
-            return ExitCode::from(2);
-        }
+    // `--telemetry`: the files of ARENA_TELEMETRY_DIR, else the kiosk's; without it, only when the variable is set
+    let export = if std::env::args().any(|a| a == "--telemetry") {
+        Some(arena_telemetry::files::dir())
+    } else {
+        arena_telemetry::env_dir()
     };
-    // the browser driver's own chatter stays out of stderr and the stream
-    let telemetry = export.then(|| {
+    // the browser driver's own chatter stays out of stderr and the files
+    let telemetry = export.map(|dir| {
         arena_telemetry::init(
             "arena-smoke",
             arena_telemetry::Options {
+                dir: Some(dir),
                 filter: "warn,chromiumoxide=off".into(),
                 export_filter: "warn,arena_smoke=info,chromiumoxide=off".into(),
                 ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
@@ -188,8 +188,8 @@ fn main() -> ExitCode {
         t.flush();
         if t.exporting() {
             println!(
-                "telemetry: smoke.run sent to {} (stream arena_smoke)",
-                t.endpoint().unwrap_or("")
+                "telemetry: smoke.run written to {}/arena-smoke/",
+                t.dir().map(|d| d.display().to_string()).unwrap_or_default()
             );
         }
     }
@@ -332,7 +332,7 @@ async fn attempt(a: &Args, n: u32) -> Result<(Summary, Vec<u8>), String> {
     Ok((s, shot))
 }
 
-/// The run as telemetry (exported only when `init` set an endpoint): one `smoke.run` event on the service's stream,
+/// The run as telemetry (written only when `init` set a directory): one `smoke.run` line in the service's file,
 /// the two timings as histograms and the run counted by result.
 fn record(s: &Summary, result: &str, mbps: Option<f64>) {
     let failed: Vec<&str> = s
@@ -363,7 +363,7 @@ fn record(s: &Summary, result: &str, mbps: Option<f64>) {
         load_15 = s.load.map(|l| l.fifteen),
         attempt = s.attempt,
         retried = s.retry_reason.is_some(),
-        // always set, so the stream always has the fields a dashboard names
+        // always set, so every line has the fields a query names
         retry_reason = s.retry_reason.as_deref().unwrap_or(""),
         deployed_commit = s.deployed_commit.as_deref().unwrap_or("none"),
         deployed_dirty = s.deployed_dirty,
@@ -947,31 +947,31 @@ async fn drive(browser: &Browser, a: &Args) -> Result<(Summary, Vec<u8>), String
     Ok((summary, full))
 }
 
-/// The live server's build: the `build` on its newest `match.start` of the last half hour in the telemetry store
-/// (OpenObserve's `_search`, with `ARENA_OTLP_ENDPOINT` and its credentials), or None when there is no store, no such
-/// row, or it could not be read.
+/// The live server's build: the `build` on its newest `match.start` of the last half hour in its telemetry files
+/// (`<dir>/arena-server/<day>.jsonl`, today's and, past midnight, yesterday's), or None when there are none, no such
+/// line, or they could not be read.
 fn server_build() -> Option<String> {
-    let endpoint = arena_telemetry::Endpoint::from_env().ok()??;
-    let now = SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .ok()?
-        .as_micros() as i64;
-    let sql = "SELECT build FROM arena_match WHERE body = 'match.start' AND service_name = 'arena-server' \
-               AND build IS NOT NULL ORDER BY _timestamp DESC LIMIT 1";
-    let body = serde_json::json!({"query": {"sql": sql, "start_time": now - 1_800_000_000, "end_time": now, "from": 0, "size": 1}});
-    let url = format!("{}/_search?type=logs", endpoint.url);
-    let mut req = ureq::post(&url)
-        .config()
-        .timeout_global(Some(Duration::from_secs(10)))
-        .build();
-    if let Some(auth) = &endpoint.auth {
-        req = req.header("Authorization", auth);
-    }
-    let v: Value = req.send_json(&body).ok()?.body_mut().read_json().ok()?;
-    v["hits"][0]["build"]
-        .as_str()
-        .map(str::to_string)
-        .filter(|b| !b.is_empty())
+    use arena_telemetry::read::{Scope, field, scan};
+    let now = arena_telemetry::time::now_us();
+    let scope = Scope {
+        services: vec!["arena-server".into()],
+        from_us: Some(now - 1800 * arena_telemetry::time::SECOND),
+        to_us: None,
+    };
+    let mut build = None;
+    scan(&arena_telemetry::files::dir(), &scope, |_, raw| {
+        if raw.contains("\"match.start\"")
+            && let Ok(v) = serde_json::from_str::<Value>(raw)
+            && v.get("name").and_then(Value::as_str) == Some("match.start")
+            && let Some(b) = field(&v, "build").and_then(Value::as_str)
+            && !b.is_empty()
+        {
+            build = Some(b.to_string());
+        }
+        true
+    })
+    .ok()?;
+    build
 }
 
 /// The deployed house bot module's sha256: fetched as a visitor's browser would, uncompressed.

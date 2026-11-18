@@ -7,7 +7,8 @@
 //! ```
 //!
 //! `steps` fights matches as fast as they go and prints each step's wall time; `--observe` puts the duel observer on
-//! them under a subscriber that takes every event and drops it (the events are built, nothing is exported). `pace`
+//! them under a subscriber that takes every event and drops it (the events are built, nothing is exported), or, with
+//! `ARENA_TELEMETRY_DIR` set, writes them to its files as the live server does (service `arena-server`). `pace`
 //! runs a match on the server's own pacer (`arena_server::pace`) and prints how late each tick starts on the wall
 //! clock.
 
@@ -80,7 +81,15 @@ fn main() {
         Some("steps") => {
             let matches = flag(&args, "--matches").unwrap_or(5);
             let observe = args.iter().any(|a| a == "--observe");
-            let took = if observe {
+            let took = if observe && let Some(dir) = arena_telemetry::env_dir() {
+                // the live server's own telemetry: every event written to the files, as arena-server writes them
+                let options = arena_telemetry::Options::default();
+                let (file, guard) = arena_telemetry::layer("arena-server", &options, &dir);
+                let sub = tracing_subscriber::registry().with(file);
+                let took = tracing::subscriber::with_default(sub, || steps(matches, true));
+                drop(guard);
+                took
+            } else if observe {
                 let sub = tracing_subscriber::registry().with(Sink);
                 tracing::subscriber::with_default(sub, || steps(matches, true))
             } else {

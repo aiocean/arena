@@ -1,6 +1,6 @@
 //! What a host measures of a bot, whichever runs it (`host`: wasmtime, `onnx`: tract): each decision's wall time
 //! (and fuel, for a module) as metric events, each fault as an `arena::bot` event, and an instance's totals, with
-//! its think-time and fuel distributions, as `bot.end` when it is dropped (`ops/observe/README.md`).
+//! its think-time and fuel distributions, as `bot.end` when it is dropped (`ops/telemetry/README.md`).
 //!
 //! A distribution is a fixed log-linear histogram (`Dist`): 32 buckets to each power of two, made once with the
 //! instance, so a decision costs a clock read and an increment, never an allocation, and the same samples always give

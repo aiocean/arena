@@ -1,8 +1,7 @@
 //! Fights matches of two brains with the duel observer on: what a live match sends, without the relay.
 //!
 //! ```text
-//! ARENA_OTLP_ENDPOINT=http://127.0.0.1:5080/api/default ARENA_OTLP_AUTH_FILE=~/projects/game-factory/ops/arena/observe.env \
-//!   cargo run --release -p arena-telemetry --example observe -- [--seeds 3] [--wins 2] [--limit 120]
+//! ARENA_TELEMETRY_DIR=/tmp/arena-tel cargo run --release -p arena-telemetry --example observe -- [--seeds 3] [--wins 2] [--limit 120]
 //! ```
 
 use arena_duel::duel::{Duel, DuelConfig, TICK};

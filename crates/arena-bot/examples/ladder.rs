@@ -2,14 +2,14 @@
 //! the "Done when" table of `docs/specs/2026-11-15-duel-rules-in-rust-design.md`.
 //!
 //! `cargo run --release -p arena-bot --features host,onnx --example ladder -- [--seeds 150] [--rounds 3] [--limit 120]
-//! [--onnx FILE | --bot FILE.wasm] [--telemetry] [--telemetry-otlp]`
+//! [--onnx FILE | --bot FILE.wasm] [--telemetry] [--telemetry-dir DIR]`
 //!
 //! The bot is the house AI (`weights/policy.onnx`) unless `--onnx` names another ONNX policy or `--bot` a bot module.
 //!
 //! `--telemetry` adds, for each mirror, what each seat's skills did, seat 0 beside seat 1.
 //!
-//! `--telemetry-otlp` (or `ARENA_OTLP_ENDPOINT` set) sends each row and each seat's skill table to the telemetry
-//! store as `arena_ladder` events under one `run_id`, as service `arena-ladder` (`ops/observe/README.md`).
+//! `--telemetry-dir DIR` (or `ARENA_TELEMETRY_DIR` set) writes each row and each seat's skill table to the telemetry
+//! files as `arena::ladder` lines under one `run_id`, as service `arena-ladder` (`ops/telemetry/README.md`).
 //! The bot's own measures (think-time and fuel percentiles, faults) go as `bot.end` events, one an instance (a row),
 //! under service `arena-bot`, with `runtime` "onnx" or "wasm" and `bot` "house", `onnx-<hash>` or `<file>-<hash>`.
 
@@ -40,10 +40,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rounds: u32 = arg("--rounds").map_or(Ok(3), |s| s.parse())?;
     let limit: f64 = arg("--limit").map_or(Ok(120.0), |s| s.parse())?;
     let telemetry = args.iter().any(|a| a == "--telemetry");
-    let _export = arena_telemetry::requested(&args)?.then(|| {
+    let _export = arena_telemetry::requested(&args)?.map(|dir| {
         arena_telemetry::init(
             "arena-ladder",
-            arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION")),
+            arena_telemetry::Options {
+                dir: Some(dir),
+                ..arena_telemetry::Options::tool(env!("CARGO_PKG_VERSION"))
+            },
         )
     });
     let run = arena_telemetry::run_id("ladder");
@@ -182,7 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// A row and each seat's skill table as `arena_ladder` events (nothing when telemetry is off).
+/// A row and each seat's skill table as `arena::ladder` events (nothing when telemetry is off).
 fn export_row(run: &str, name: &str, m: &Match, r: &Record) {
     let top = r
         .choices

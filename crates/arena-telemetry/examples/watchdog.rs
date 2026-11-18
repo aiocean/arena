@@ -1,24 +1,26 @@
-//! The arena's watchdog: a few checks on the live server and its telemetry, run every five minutes by launchd
-//! (`io.aiocean.arena-watchdog`, `ops/observe/README.md`, "Alerts"). No email or webhook: each run writes one row a
-//! check to the stream `arena_alerts`, appends a line to `~/Library/Logs/game-factory/arena-alerts.log`, and raises a
-//! macOS notification when a check turns from ok to failing.
+//! The arena's watchdog: a few checks on the live server and its telemetry files, run every five minutes by launchd
+//! (`io.aiocean.arena-watchdog`, `ops/telemetry/README.md`, "The watchdog"). No email or webhook: each run writes one
+//! `watchdog.check` line a check to its own file (`<dir>/arena-watchdog/<day>.jsonl`), appends a line to
+//! `~/Library/Logs/game-factory/arena-alerts.log`, and raises a macOS notification when a check turns from ok to
+//! failing. It reads the live server's files (`<dir>/arena-server/`), the last fifteen minutes of them.
 //!
 //! ```text
-//! ARENA_OTLP_ENDPOINT=http://127.0.0.1:5080/api/default ARENA_OTLP_AUTH_FILE=~/projects/game-factory/ops/arena/observe.env \
-//!   cargo run -p arena-telemetry --example watchdog            # one run; --dry prints the checks and writes nothing
+//! cargo run -p arena-telemetry --example watchdog            # one run; --dry prints the checks and writes nothing
 //! cargo build --release -p arena-telemetry --example watchdog   # target/release/examples/watchdog, installed as
-//!                                                              # ~/services/arena/observe/watchdog
+//!                                                              # ~/services/arena/watchdog/watchdog
 //! ```
 //!
-//! It exits 0 whatever it finds, the store down included; only its own bugs end it otherwise.
+//! The directory is `ARENA_TELEMETRY_DIR`, else `~/services/arena/telemetry`. It exits 0 whatever it finds; only its
+//! own bugs end it otherwise.
 
-use arena_telemetry::Endpoint;
-use serde_json::{Value, json};
+use arena_telemetry::read::{Scope, field, hist_of, number, scan};
+use arena_telemetry::{Options, files, init, time};
+use serde_json::Value;
 use std::collections::BTreeMap;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// No `match.start` from the live server for this long: it is down or stuck between matches.
 const MATCH_START_MAX_AGE_S: f64 = 600.0;
@@ -26,7 +28,7 @@ const MATCH_START_MAX_AGE_S: f64 = 600.0;
 const SNAPSHOT_MAX_AGE_S: f64 = 120.0;
 /// The window the error and tick checks count over.
 const WINDOW_S: i64 = 900;
-/// ERROR and WARN rows in `arena_server` over the window; a deploy's restart makes about ten.
+/// The live server's own ERROR and WARN lines over the window; a deploy's restart makes about ten.
 const ERRORS_MAX: f64 = 20.0;
 /// Ticks begun a whole tick late over the window (60 is one second of fight caught up).
 const MISSED_TICKS_MAX: f64 = 60.0;
@@ -34,8 +36,10 @@ const MISSED_TICKS_MAX: f64 = 60.0;
 const RESYNCS_MAX: f64 = 0.0;
 /// The worst tick lateness over the window, seconds.
 const LATE_MAX_S: f64 = 0.1;
-/// The OpenObserve data directory's size cap, bytes.
-const DATA_MAX_BYTES: f64 = 5e9;
+/// The telemetry directory's size cap, bytes (the retention keeps it under 2 GB: past it, the retention is broken).
+const DATA_MAX_BYTES: f64 = 2e9;
+/// The live server's newest file written longer ago than this: it writes nothing (down, or not exporting).
+const FRESH_MAX_AGE_S: f64 = 600.0;
 /// The least free space on the data directory's volume, bytes.
 const FREE_MIN_BYTES: f64 = 10e9;
 
@@ -44,7 +48,7 @@ const FREE_MIN_BYTES: f64 = 10e9;
 enum Status {
     Ok,
     Fail,
-    /// Not measured (the store is down): it keeps its last state.
+    /// Not measured (the files could not be read): it keeps its last state.
     Unknown,
 }
 
@@ -129,7 +133,7 @@ fn freshness(
     }
 }
 
-/// A counter or gauge that may have no stream yet: none is ok.
+/// A metric the server may not have written in the window (no tick missed): none is ok.
 fn optional(name: &'static str, value: Option<f64>, max: f64, what: &str) -> Check {
     match value {
         Some(v) => above(name, v, max, what),
@@ -138,19 +142,22 @@ fn optional(name: &'static str, value: Option<f64>, max: f64, what: &str) -> Che
             status: Status::Ok,
             value: 0.0,
             threshold: max,
-            message: format!("{what}: no data (the stream may not exist yet)"),
+            message: format!("{what}: none written in the window"),
         },
     }
 }
 
-/// The checks a run makes from what it measured; `None` for a store reading means the store could not be read.
+/// What a run measured; `Err` for a reading that could not be made.
 struct Readings {
     now_us: i64,
+    /// When the live server's newest file was last written, microseconds.
+    server_written: Result<Option<i64>, String>,
     store: Result<StoreReadings, String>,
     data_bytes: Result<f64, String>,
     free_bytes: Result<f64, String>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
 struct StoreReadings {
     last_match_start: Option<i64>,
     last_snapshot: Option<i64>,
@@ -163,15 +170,18 @@ struct StoreReadings {
 
 fn judge(r: &Readings) -> Vec<Check> {
     let mut out = Vec::new();
+    out.push(match &r.server_written {
+        Ok(t) => freshness(
+            "telemetry",
+            *t,
+            r.now_us,
+            FRESH_MAX_AGE_S,
+            "seconds since the server's file was written",
+        ),
+        Err(e) => unknown("telemetry", FRESH_MAX_AGE_S, e),
+    });
     match &r.store {
         Ok(s) => {
-            out.push(Check {
-                name: "telemetry",
-                status: Status::Ok,
-                value: 1.0,
-                threshold: 1.0,
-                message: "OpenObserve answered".into(),
-            });
             out.push(freshness(
                 "live_match_start",
                 s.last_match_start,
@@ -190,7 +200,7 @@ fn judge(r: &Readings) -> Vec<Check> {
                 "server_errors",
                 s.errors,
                 ERRORS_MAX,
-                "ERROR/WARN rows in 15 min",
+                "the server's ERROR/WARN lines in 15 min",
             ));
             out.push(above("server_panics", s.panics, 0.0, "panics in 15 min"));
             out.push(optional(
@@ -213,13 +223,6 @@ fn judge(r: &Readings) -> Vec<Check> {
             ));
         }
         Err(e) => {
-            out.push(Check {
-                name: "telemetry",
-                status: Status::Fail,
-                value: 0.0,
-                threshold: 1.0,
-                message: format!("OpenObserve unreachable: {e}"),
-            });
             for (name, t) in [
                 ("live_match_start", MATCH_START_MAX_AGE_S),
                 ("live_snapshot", SNAPSHOT_MAX_AGE_S),
@@ -229,17 +232,12 @@ fn judge(r: &Readings) -> Vec<Check> {
                 ("tick_resyncs", RESYNCS_MAX),
                 ("tick_late", LATE_MAX_S),
             ] {
-                out.push(unknown(name, t, "not measured: the store is down"));
+                out.push(unknown(name, t, &format!("not measured: {e}")));
             }
         }
     }
     out.push(match &r.data_bytes {
-        Ok(b) => above(
-            "disk_data",
-            *b,
-            DATA_MAX_BYTES,
-            "OpenObserve data dir, bytes",
-        ),
+        Ok(b) => above("disk_data", *b, DATA_MAX_BYTES, "telemetry dir, bytes"),
         Err(e) => unknown("disk_data", DATA_MAX_BYTES, e),
     });
     out.push(match &r.free_bytes {
@@ -247,7 +245,7 @@ fn judge(r: &Readings) -> Vec<Check> {
             "disk_free",
             *b,
             FREE_MIN_BYTES,
-            "free on the data volume, bytes",
+            "free on the telemetry volume, bytes",
         ),
         Err(e) => unknown("disk_free", FREE_MIN_BYTES, e),
     });
@@ -287,26 +285,23 @@ fn silenced(text: &str, name: &str) -> bool {
         .any(|l| l == "all" || l == name)
 }
 
-/// The rows written to `arena_alerts`.
-fn rows(checks: &[Check], now_us: i64, silence: &str, flipped: &[&Check]) -> Vec<Value> {
-    checks
-        .iter()
-        .map(|c| {
-            json!({
-                "_timestamp": now_us,
-                "check": c.name,
-                "status": c.status.name(),
-                "ok": c.status != Status::Fail,
-                // JSON has no infinity or NaN: the unmeasured are null
-                "value": c.value.is_finite().then_some(c.value),
-                "threshold": c.threshold,
-                "message": c.message,
-                "flipped": flipped.iter().any(|f| f.name == c.name),
-                "silenced": silenced(silence, c.name),
-                "service_name": "arena-watchdog",
-            })
-        })
-        .collect()
+/// Each check as a `watchdog.check` line in the watchdog's file.
+fn write_rows(checks: &[Check], silence: &str, flipped: &[&Check]) {
+    for c in checks {
+        tracing::info!(
+            check = c.name,
+            status = c.status.name(),
+            ok = c.status != Status::Fail,
+            // the file has no infinity or NaN: the unmeasured are null
+            value = c.value,
+            threshold = c.threshold,
+            // not `message`: that is the line's name
+            detail = %c.message,
+            flipped = flipped.iter().any(|f| f.name == c.name),
+            silenced = silenced(silence, c.name),
+            "watchdog.check"
+        );
+    }
 }
 
 /// One log line for the run.
@@ -357,90 +352,86 @@ fn utc(secs: i64) -> String {
     )
 }
 
-// ---- the world: the store, the disk, the files, the notification ----
+// ---- the world: the files, the disk, the notification ----
 
-struct Store {
-    base: String,
-    auth: String,
-    agent: ureq::Agent,
+/// Fold one line of the live server's last `WINDOW_S` into the readings.
+fn fold(r: &mut StoreReadings, ts: i64, line: &Value, now_us: i64) {
+    let s = |k: &str| line.get(k).and_then(Value::as_str).unwrap_or("");
+    let name = s("name");
+    match s("kind") {
+        "log" => {
+            let fresh = |t: f64| ts >= now_us - (t as i64) * time::SECOND;
+            if name == "match.start" && fresh(MATCH_START_MAX_AGE_S) {
+                r.last_match_start = r.last_match_start.max(Some(ts));
+            }
+            if name == "snapshot" && fresh(MATCH_START_MAX_AGE_S) {
+                r.last_snapshot = r.last_snapshot.max(Some(ts));
+            }
+            // the server's own lines, not a match's (a forfeit is a match's warning)
+            if matches!(s("level"), "ERROR" | "WARN") && !s("target").starts_with("arena::") {
+                r.errors += 1.0;
+            }
+            if name == "panic" {
+                r.panics += 1.0;
+            }
+        }
+        "metric" => {
+            let value = || field(line, ".value").and_then(number).unwrap_or(0.0);
+            match name {
+                "arena_server_missed_ticks_total" => {
+                    *r.missed_ticks.get_or_insert(0.0) += value();
+                }
+                "arena_server_resyncs_total" => *r.resyncs.get_or_insert(0.0) += value(),
+                "arena_server_late_seconds" => {
+                    if let Some(h) = hist_of(line).filter(|h| h.count > 0) {
+                        r.late_max = Some(r.late_max.map_or(h.max, |m| m.max(h.max)));
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
 }
 
-impl Store {
-    /// The first row of `sql` over the last `seconds`.
-    fn one(&self, sql: &str, kind: &str, seconds: i64, now_us: i64) -> Result<Value, String> {
-        let body = json!({"query": {"sql": sql, "start_time": now_us - seconds * 1_000_000,
-            "end_time": now_us, "from": 0, "size": 1}});
-        let url = format!("{}/_search?type={kind}", self.base);
-        let v: Value = self
-            .agent
-            .post(&url)
-            .header("Authorization", &self.auth)
-            .send_json(&body)
-            .map_err(|e| format!("{url}: {e}"))?
-            .body_mut()
-            .read_json()
-            .map_err(|e| format!("{url}: {e}"))?;
-        Ok(v["hits"].get(0).cloned().unwrap_or(Value::Null))
-    }
+/// The live server's last `WINDOW_S`, read from its files.
+fn read_server(dir: &Path, now_us: i64) -> Result<StoreReadings, String> {
+    let mut r = StoreReadings::default();
+    let scope = Scope {
+        services: vec!["arena-server".into()],
+        from_us: Some(now_us - WINDOW_S * time::SECOND),
+        to_us: Some(now_us),
+    };
+    let names = [
+        "\"match.start\"",
+        "\"snapshot\"",
+        "\"panic\"",
+        "\"level\":\"ERROR\"",
+        "\"level\":\"WARN\"",
+        "arena_server_",
+    ];
+    scan(dir, &scope, |ts, raw| {
+        if names.iter().any(|n| raw.contains(n))
+            && let Ok(v) = serde_json::from_str::<Value>(raw)
+        {
+            fold(&mut r, ts, &v, now_us);
+        }
+        true
+    })
+    .map_err(|e| format!("{}: {e}", dir.display()))?;
+    Ok(r)
+}
 
-    fn read(&self, now_us: i64) -> Result<StoreReadings, String> {
-        let live = "service_name = 'arena-server'";
-        let delta = "aggregation_temporality = 'AGGREGATION_TEMPORALITY_DELTA'";
-        let newest = |sql: &str, seconds| -> Result<Option<i64>, String> {
-            Ok(self.one(sql, "logs", seconds, now_us)?["t"].as_i64())
-        };
-        let number = |sql: &str, kind| -> Result<Option<f64>, String> {
-            Ok(self.one(sql, kind, WINDOW_S, now_us)?["v"].as_f64())
-        };
-        Ok(StoreReadings {
-            last_match_start: newest(
-                &format!(
-                    "SELECT max(_timestamp) AS t FROM arena_match WHERE body = 'match.start' AND {live}"
-                ),
-                MATCH_START_MAX_AGE_S as i64,
-            )?,
-            last_snapshot: newest(
-                &format!(
-                    "SELECT max(_timestamp) AS t FROM arena_duel_events WHERE body = 'snapshot' AND {live}"
-                ),
-                MATCH_START_MAX_AGE_S as i64,
-            )?,
-            errors: number(
-                "SELECT count(*) AS v FROM arena_server WHERE severity IN ('ERROR', 'WARN')",
-                "logs",
-            )?
-            .unwrap_or(0.0),
-            panics: number(
-                "SELECT count(*) AS v FROM arena_server WHERE body = 'panic'",
-                "logs",
-            )?
-            .unwrap_or(0.0),
-            missed_ticks: number(
-                &format!(
-                    "SELECT sum(value) AS v FROM arena_server_missed_ticks_total WHERE {delta}"
-                ),
-                "metrics",
-            )?,
-            resyncs: number(
-                &format!("SELECT sum(value) AS v FROM arena_server_resyncs_total WHERE {delta}"),
-                "metrics",
-            )?,
-            late_max: number(
-                &format!("SELECT max(value) AS v FROM arena_server_late_seconds_max WHERE {delta}"),
-                "metrics",
-            )?,
-        })
-    }
-
-    fn write(&self, rows: &[Value]) -> Result<(), String> {
-        let url = format!("{}/arena_alerts/_json", self.base);
-        self.agent
-            .post(&url)
-            .header("Authorization", &self.auth)
-            .send_json(rows)
-            .map_err(|e| format!("{url}: {e}"))?;
-        Ok(())
-    }
+/// When the live server's newest file was last written; none when it has none.
+fn server_written(dir: &Path) -> Result<Option<i64>, String> {
+    let files = files::list(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    Ok(files
+        .iter()
+        .filter(|f| f.service == "arena-server")
+        .filter_map(|f| std::fs::metadata(&f.path).ok()?.modified().ok())
+        .filter_map(|t| t.duration_since(UNIX_EPOCH).ok())
+        .map(|d| d.as_micros() as i64)
+        .max())
 }
 
 /// The bytes `dir` takes on disk, as `du` counts them: allocated blocks, so sparse files count what they use (links
@@ -519,10 +510,10 @@ fn env_path(key: &str, default: PathBuf) -> PathBuf {
 fn main() {
     let dry = std::env::args().any(|a| a == "--dry");
     let home = PathBuf::from(std::env::var_os("HOME").unwrap_or_default());
-    let observe = home.join("services/arena/observe");
-    let data_dir = env_path("ARENA_WATCHDOG_DATA", observe.join("data"));
-    let state_path = env_path("ARENA_WATCHDOG_STATE", observe.join("watchdog-state.json"));
-    let silence_path = env_path("ARENA_WATCHDOG_SILENCE", observe.join("watchdog-silence"));
+    let dir = files::dir();
+    let own = home.join("services/arena/watchdog");
+    let state_path = env_path("ARENA_WATCHDOG_STATE", own.join("watchdog-state.json"));
+    let silence_path = env_path("ARENA_WATCHDOG_SILENCE", own.join("watchdog-silence"));
     let log_path = env_path(
         "ARENA_WATCHDOG_LOG",
         home.join("Library/Logs/game-factory/arena-alerts.log"),
@@ -532,26 +523,12 @@ fn main() {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
     let now_us = now.as_micros() as i64;
-    let store = match Endpoint::from_env() {
-        Ok(Some(e)) => Ok(Store {
-            base: e.url.trim_end_matches('/').to_string(),
-            auth: e.auth.unwrap_or_default(),
-            agent: ureq::Agent::config_builder()
-                .timeout_global(Some(Duration::from_secs(20)))
-                .build()
-                .into(),
-        }),
-        Ok(None) => Err("ARENA_OTLP_ENDPOINT is not set".to_string()),
-        Err(e) => Err(e),
-    };
     let readings = Readings {
         now_us,
-        store: store
-            .as_ref()
-            .map_err(Clone::clone)
-            .and_then(|s| s.read(now_us)),
-        data_bytes: dir_bytes(&data_dir),
-        free_bytes: free_bytes(&data_dir),
+        server_written: server_written(&dir),
+        store: read_server(&dir, now_us),
+        data_bytes: dir_bytes(&dir),
+        free_bytes: free_bytes(if dir.exists() { &dir } else { &home }),
     };
     let checks = judge(&readings);
 
@@ -562,7 +539,7 @@ fn main() {
     let silence = std::fs::read_to_string(&silence_path).unwrap_or_default();
     let (flipped, next) = flips(&prev, &checks);
     let when = utc(now.as_secs() as i64);
-    let mut line = log_line(&checks, &when);
+    let line = log_line(&checks, &when);
 
     if dry {
         for c in &checks {
@@ -572,11 +549,17 @@ fn main() {
         return;
     }
 
-    if let Ok(s) = &store
-        && readings.store.is_ok()
-        && let Err(e) = s.write(&rows(&checks, now_us, &silence, &flipped))
     {
-        line.push_str(&format!(" | arena_alerts not written: {e}"));
+        let telemetry = init(
+            "arena-watchdog",
+            Options {
+                dir: Some(dir.clone()),
+                panic_hook: false,
+                ..Options::tool(env!("CARGO_PKG_VERSION"))
+            },
+        );
+        write_rows(&checks, &silence, &flipped);
+        drop(telemetry);
     }
     append(&log_path, &line);
     for c in flipped {
@@ -617,6 +600,7 @@ mod tests {
     fn readings(store: Result<StoreReadings, String>) -> Readings {
         Readings {
             now_us: NOW,
+            server_written: Ok(Some(NOW - 5_000_000)),
             store,
             data_bytes: Ok(71e6),
             free_bytes: Ok(33e9),
@@ -628,7 +612,7 @@ mod tests {
     }
 
     #[test]
-    fn a_healthy_server_passes_and_missing_streams_are_ok() {
+    fn a_healthy_server_passes_and_missing_metrics_are_ok() {
         let checks = judge(&readings(Ok(healthy())));
         assert_eq!(checks.len(), 10);
         assert!(checks.iter().all(|c| c.status == Status::Ok), "{checks:?}");
@@ -688,14 +672,82 @@ mod tests {
     }
 
     #[test]
-    fn a_store_down_fails_telemetry_and_leaves_the_rest_unknown() {
-        let checks = judge(&readings(Err("connection refused".into())));
-        assert_eq!(status(&checks, "telemetry"), Some(Status::Fail));
+    fn a_stale_server_file_fails_telemetry_and_unreadable_files_are_unknown() {
+        let mut r = readings(Ok(healthy()));
+        r.server_written = Ok(Some(NOW - 601_000_000));
+        assert_eq!(status(&judge(&r), "telemetry"), Some(Status::Fail));
+        r.server_written = Ok(None);
+        assert_eq!(status(&judge(&r), "telemetry"), Some(Status::Fail));
+        let mut r = readings(Err("permission denied".into()));
+        r.server_written = Err("permission denied".into());
+        let checks = judge(&r);
+        assert_eq!(status(&checks, "telemetry"), Some(Status::Unknown));
         assert_eq!(status(&checks, "live_match_start"), Some(Status::Unknown));
         assert_eq!(status(&checks, "disk_free"), Some(Status::Ok));
-        // the rows carry no NaN
-        let r = rows(&checks, NOW, "", &[]);
-        assert!(r.iter().all(|row| !row.to_string().contains("NaN")));
+    }
+
+    #[test]
+    fn the_server_lines_fold_into_readings() -> Result<(), String> {
+        let lines = [
+            (
+                NOW - 700_000_000,
+                r#"{"kind":"log","name":"match.start","level":"INFO","target":"arena::match"}"#,
+            ),
+            (
+                NOW - 300_000_000,
+                r#"{"kind":"log","name":"match.start","level":"INFO","target":"arena::match"}"#,
+            ),
+            (
+                NOW - 1_000_000,
+                r#"{"kind":"log","name":"snapshot","level":"INFO","target":"arena::duel"}"#,
+            ),
+            (
+                NOW - 2_000_000,
+                r#"{"kind":"log","name":"forfeit","level":"WARN","target":"arena::match"}"#,
+            ),
+            (
+                NOW - 2_000_000,
+                r#"{"kind":"log","name":"moq said no","level":"WARN","target":"moq_tokio"}"#,
+            ),
+            (
+                NOW - 2_000_000,
+                r#"{"kind":"log","name":"panic","level":"ERROR","target":"arena_telemetry"}"#,
+            ),
+            (
+                NOW - 9_000_000,
+                r#"{"kind":"metric","name":"arena_server_missed_ticks_total","type":"counter","value":4}"#,
+            ),
+            (
+                NOW - 8_000_000,
+                r#"{"kind":"metric","name":"arena_server_missed_ticks_total","type":"counter","value":3}"#,
+            ),
+            (
+                NOW - 8_000_000,
+                r#"{"kind":"metric","name":"arena_server_late_seconds","type":"histogram","count":2,"sum":0.05,"min":0.0,"max":0.04,"zero":1,"buckets":[[-37,1]]}"#,
+            ),
+            (
+                NOW - 7_000_000,
+                r#"{"kind":"metric","name":"arena_server_late_seconds","type":"histogram","count":1,"sum":0.02,"min":0.02,"max":0.02,"zero":0,"buckets":[[-46,1]]}"#,
+            ),
+        ];
+        let mut r = StoreReadings::default();
+        for (ts, raw) in lines {
+            let v: Value = serde_json::from_str(raw).map_err(|e| e.to_string())?;
+            fold(&mut r, ts, &v, NOW);
+        }
+        assert_eq!(
+            r,
+            StoreReadings {
+                last_match_start: Some(NOW - 300_000_000),
+                last_snapshot: Some(NOW - 1_000_000),
+                errors: 2.0,
+                panics: 1.0,
+                missed_ticks: Some(7.0),
+                resyncs: None,
+                late_max: Some(0.04),
+            }
+        );
+        Ok(())
     }
 
     #[test]

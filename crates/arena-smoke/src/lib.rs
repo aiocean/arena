@@ -103,7 +103,7 @@ pub struct Summary {
     pub deployed_commit: Option<String>,
     /// Whether the page was built from a tree with uncommitted changes.
     pub deployed_dirty: bool,
-    /// The live server's build: the commit on its newest `match.start` in the telemetry store, when it could be read.
+    /// The live server's build: the commit on its newest `match.start` in its telemetry files, when it could be read.
     pub server_build: Option<String>,
     /// The page's rules build (`window.__arena.rules`) and the one the server's matches are fought on
     /// (`window.__arena.live.rules`, from its keyframe), when the page says.
@@ -841,7 +841,7 @@ pub fn index_page(runs: &[Summary]) -> String {
     format!(
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>arena smoke runs</title><style>{STYLE}</style></head><body>
 <h1>Arena smoke runs</h1>
-<p class=\"muted\">The smoke test of https://arena.aiocean.io/ after each deploy (<code>cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry-otlp</code>), newest first, the last {KEEP} kept. Times are from the navigation; load is the machine's 1 / 5 / 15-minute load average when the run began.</p>
+<p class=\"muted\">The smoke test of https://arena.aiocean.io/ after each deploy (<code>cargo run --release -p arena-smoke -- --review ~/services/arena/site/review/smoke --telemetry</code>), newest first, the last {KEEP} kept. Times are from the navigation; load is the machine's 1 / 5 / 15-minute load average when the run began.</p>
 <table><tr><th>run (UTC)</th><th></th><th>checks</th><th>timings</th><th></th></tr>{rows}</table>
 </body></html>
 "
@@ -1179,7 +1179,7 @@ mod tests {
         assert!(!c.pass, "{c:?}");
         let (c, _) = compare_builds(Some("1a2b3c4d5e6f"), None, Some(10), Some(9));
         assert!(!c.pass, "{c:?}");
-        // the server's build unknown (no telemetry store): pass with a warning
+        // the server's build unknown (no telemetry files): pass with a warning
         let (c, w) = compare_builds(Some("1a2b3c4d5e6f"), None, Some(9), None);
         assert!(c.pass && w.is_some(), "{c:?} {w:?}");
     }

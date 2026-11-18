@@ -4,11 +4,11 @@
 //!
 //! Events, each with `match_id` and `round` (and inside a `match` span and a `round` span):
 //!
-//! - target `arena::match` (stream `arena_match`): `match.start` (one per seat: seed, its bot, its loadout; from the
+//! - target `arena::match`: `match.start` (one per seat: seed, its bot, its loadout; from the
 //!   live server also what runs the bot, `runtime`, and the server's commit, `build`),
 //!   `round.start`, `round.end` (winner, seconds), `forfeit` (a seat that gave up: a bot that faulted out),
 //!   `match.end` (result, rounds, seconds, cut);
-//! - target `arena::duel` (stream `arena_duel_events`): `cast`, `hit`, `stopped` (guard, barrier, ward, dodge, clash),
+//! - target `arena::duel`: `cast`, `hit`, `stopped` (guard, barrier, ward, dodge, clash),
 //!   `broken`, `dot`, `heal`, `ward`, `barrier`, `unyielding`, `ko`, `status`, `ailment`, `curse`,
 //!   `unit.spawn`, `unit.act`, `unit.hurt`, `unit.die`, and a `snapshot` of each fighter every `every` seconds of
 //!   fight time;

@@ -18,12 +18,13 @@ png = "0.18"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs"] }
-# a run as telemetry (`--telemetry-otlp`): one smoke.run event and its timings as metrics
-arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["otlp"] }
+# a run as telemetry (`--telemetry`): one smoke.run line and its timings as metrics, in the telemetry files; and the
+# live server's build, read back from them
+arena-telemetry = { path = "../arena-telemetry", default-features = false, features = ["export"] }
 tracing = "0.1"
 # the deployed house bot module's hash, against crates/arena-bot/tests/goldens/house_module.sha256
 sha2 = "0.11"
-# the live server's build, read from the telemetry store (OpenObserve's search API), and the deployed house module (https)
+# the deployed house module (https)
 ureq = { version = "3", default-features = false, features = ["json", "rustls"] }
 
 [lints]
