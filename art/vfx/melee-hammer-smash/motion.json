@@ -1,10 +1,12 @@
 {
   "anchor": [
-    54,
-    48
+    31,
+    58
   ],
   "fps": 16.67,
   "fx": "melee/hammer-smash",
   "ground": true,
-  "loop": false
+  "lead": 0.07,
+  "loop": false,
+  "scale": 1.25
 }

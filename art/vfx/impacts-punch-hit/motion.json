@@ -1,9 +1,11 @@
 {
-  "fx": "impacts/punch-hit",
-  "fps": 16.67,
-  "loop": false,
   "anchor": [
-    17,
-    21
-  ]
+    -4,
+    4
+  ],
+  "fps": 16.67,
+  "fx": "impacts/punch-hit",
+  "lead": 0.18,
+  "loop": false,
+  "scale": 0.5
 }

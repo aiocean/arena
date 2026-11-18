@@ -192,6 +192,30 @@ pub struct Sample {
     pub laid: Vec<Laid>,
     pub art: Option<Box2>,
     pub hit: Option<(Mark, Shape)>,
+    /// The point the rules play it at (y up), whether it faces west, and its age, seconds.
+    pub at: (f64, f64),
+    pub flip: bool,
+    pub age: f64,
+}
+
+/// One blow against its art, from the point the effect was played at and as it faces east (a west-facing one
+/// mirrored): the blow's box, the art's box at its largest, and the art's age when it landed and when it peaked.
+#[derive(Clone, Copy, Debug)]
+pub struct Blow {
+    pub hit: Box2,
+    pub art: Box2,
+    pub hit_age: f64,
+    pub peak_age: f64,
+}
+
+/// Box `b` from point `at`, mirrored when `flip`.
+fn from_point(b: Box2, at: (f64, f64), flip: bool) -> Box2 {
+    let (x0, x1) = if flip {
+        (at.0 - b[2], at.0 - b[0])
+    } else {
+        (b[0] - at.0, b[2] - at.0)
+    };
+    [x0, b[1] - at.1, x1, b[3] - at.1]
 }
 
 /// What an effect showed against what its spell tested, over every playing seen.
@@ -224,6 +248,8 @@ pub struct Report {
     pub marks: Vec<String>,
     /// A drawn effect no run played.
     pub unplayed: bool,
+    /// For a blow's effect: each playing's blow against its art at its largest.
+    pub blows: Vec<Blow>,
 }
 
 impl Report {
@@ -503,6 +529,9 @@ impl Gathered {
                         laid,
                         art,
                         hit: hit.map(|h| (h.mark, h.shape)),
+                        at: (p.x, p.y),
+                        flip: p.flip,
+                        age: f64::from(tick.saturating_sub(p.born)) * TICK,
                     });
                 }
             }
@@ -671,18 +700,32 @@ fn report(
     // playing, and how long after the blow that comes
     let blow = !marks.is_empty() && marks.iter().all(|m| *m == "strike");
     let mut late: Vec<f64> = Vec::new();
+    let mut blows: Vec<Blow> = Vec::new();
     let both: Vec<(Box2, Shape)> = if blow {
         playings
             .iter()
             .filter_map(|p| {
-                let struck = p.iter().find_map(|s| Some((s.tick, s.hit?.1)))?;
+                let struck = p.iter().find(|s| s.hit.is_some())?;
+                let shape = struck.hit?.1;
                 let area = |b: &Box2| (b[2] - b[0]) * (b[3] - b[1]);
+                // its impact: the first frame at four fifths of its largest (a later, larger one is its smoke spreading)
+                let most = p
+                    .iter()
+                    .filter_map(|s| s.art)
+                    .map(|b| area(&b))
+                    .fold(0.0, f64::max);
                 let peak = p
                     .iter()
-                    .filter_map(|s| Some((s.tick, s.art?)))
-                    .max_by(|a, b| area(&a.1).total_cmp(&area(&b.1)))?;
-                late.push((f64::from(peak.0) - f64::from(struck.0)) * TICK);
-                Some((peak.1, struck.1))
+                    .find(|s| s.art.is_some_and(|b| area(&b) >= 0.8 * most))?;
+                let art = peak.art?;
+                late.push(peak.age - struck.age);
+                blows.push(Blow {
+                    hit: from_point(shape_box(shape), struck.at, struck.flip),
+                    art: from_point(art, peak.at, peak.flip),
+                    hit_age: struck.age,
+                    peak_age: peak.age,
+                });
+                Some((art, shape))
             })
             .collect()
     } else {
@@ -831,6 +874,7 @@ fn report(
         verdict,
         shown,
         marks: marks.into_iter().map(str::to_string).collect(),
+        blows,
         ..Report::default()
     }
 }

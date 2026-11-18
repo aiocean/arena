@@ -1,9 +1,11 @@
 {
-  "fx": "explosions/arcane-burst",
-  "fps": 15.38,
-  "loop": false,
   "anchor": [
-    36,
-    38
-  ]
+    50,
+    28
+  ],
+  "fps": 15.38,
+  "fx": "explosions/arcane-burst",
+  "lead": 0.35,
+  "loop": false,
+  "scale": 1.25
 }

@@ -1,9 +1,11 @@
 {
-  "fx": "holy/holy-nova",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
-    64,
-    48
-  ]
+    76,
+    33
+  ],
+  "fps": 14.29,
+  "fx": "holy/holy-nova",
+  "lead": 0.28,
+  "loop": false,
+  "scale": 0.75
 }

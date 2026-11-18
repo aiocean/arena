@@ -1,9 +1,11 @@
 {
-  "fx": "shadow/shadow-tendrils",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
-    32,
-    12
-  ]
+    37,
+    25
+  ],
+  "fps": 14.29,
+  "fx": "shadow/shadow-tendrils",
+  "lead": 0.28,
+  "loop": false,
+  "scale": 1.25
 }

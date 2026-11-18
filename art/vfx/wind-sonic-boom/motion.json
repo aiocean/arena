@@ -1,9 +1,11 @@
 {
-  "fx": "wind/sonic-boom",
-  "fps": 16.67,
-  "loop": false,
   "anchor": [
-    44,
-    48
-  ]
+    85,
+    34
+  ],
+  "fps": 16.67,
+  "fx": "wind/sonic-boom",
+  "lead": 0.35,
+  "loop": false,
+  "scale": 0.75
 }

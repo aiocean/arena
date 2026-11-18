@@ -1,9 +1,11 @@
 {
-  "fx": "lightning/lightning-whip",
-  "fps": 16.67,
-  "loop": false,
   "anchor": [
-    14,
-    44
-  ]
+    86,
+    34
+  ],
+  "fps": 16.67,
+  "fx": "lightning/lightning-whip",
+  "lead": 0.25,
+  "loop": false,
+  "scale": 0.75
 }

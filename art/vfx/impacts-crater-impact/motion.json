@@ -1,10 +1,12 @@
 {
   "anchor": [
-    57,
-    49
+    58,
+    66
   ],
   "fps": 14.29,
   "fx": "impacts/crater-impact",
   "ground": true,
-  "loop": false
+  "lead": 0.28,
+  "loop": false,
+  "scale": 1.0
 }

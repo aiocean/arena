@@ -1,9 +1,11 @@
 {
-  "fx": "status/silenced",
-  "fps": 13.33,
-  "loop": false,
   "anchor": [
-    26,
-    54
-  ]
+    99,
+    37
+  ],
+  "fps": 13.33,
+  "fx": "status/silenced",
+  "lead": 0.35,
+  "loop": false,
+  "scale": 1.75
 }

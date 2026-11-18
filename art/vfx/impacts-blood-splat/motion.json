@@ -1,9 +1,11 @@
 {
   "anchor": [
-    94,
-    57
+    76,
+    40
   ],
   "fps": 14.29,
   "fx": "impacts/blood-splat",
-  "loop": false
+  "lead": 0.22,
+  "loop": false,
+  "scale": 0.5
 }

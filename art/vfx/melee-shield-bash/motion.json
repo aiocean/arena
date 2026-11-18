@@ -1,9 +1,11 @@
 {
-  "fx": "melee/shield-bash",
-  "fps": 16.67,
-  "loop": false,
   "anchor": [
-    14,
-    28
-  ]
+    30,
+    20
+  ],
+  "fps": 16.67,
+  "fx": "melee/shield-bash",
+  "lead": 0.07,
+  "loop": false,
+  "scale": 1.25
 }

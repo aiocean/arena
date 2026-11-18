@@ -1,10 +1,12 @@
 {
   "anchor": [
-    69,
-    59
+    72,
+    69
   ],
   "fps": 12.5,
   "fx": "ice/frost-nova",
   "ground": true,
-  "loop": false
+  "lead": 0.0,
+  "loop": false,
+  "scale": 0.75
 }

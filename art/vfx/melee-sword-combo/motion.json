@@ -1,9 +1,11 @@
 {
-  "fx": "melee/sword-combo",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
-    52,
-    30
-  ]
+    72,
+    22
+  ],
+  "fps": 14.29,
+  "fx": "melee/sword-combo",
+  "lead": 0.35,
+  "loop": false,
+  "scale": 1.25
 }

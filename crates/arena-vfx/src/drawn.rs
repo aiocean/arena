@@ -69,14 +69,12 @@ fn tail_secs() -> f32 {
     0.12
 }
 
-fn one() -> f32 {
-    1.0
-}
-
 /// How an effect moves, beside its frames. `px` is the world pixels one sheet pixel covers (the sheets are drawn
 /// finer than the world, smooth); `turns` a second, clockwise, from its first frame to its last; `exit`, the way it
 /// leaves once played out or stopped (`disappear/fade`: it swells and fades out); `ground`, a seal that lies on the
-/// floor, drawn there under the point it is played at even when that point is in the air.
+/// floor, drawn there under the point it is played at even when that point is in the air; `lead`, seconds of a
+/// one-shot already played when it is shown, so its strongest frame lands on the tick the rules test the blow it draws
+/// (a negative lead holds it back that long); `scale`, how much bigger than its sheet it is drawn.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Motion {
@@ -96,6 +94,16 @@ pub struct Motion {
     pub tail: Option<Tail>,
     #[serde(default)]
     pub exit: Option<String>,
+    #[serde(default)]
+    pub lead: f32,
+    /// How much bigger it is drawn than its sheet, keeping its pixels as they are (a pixel-art sheet stays sharp and
+    /// lossless, unlike a finer `px`): in quarters, so a sheet pixel covers whole screen pixels.
+    #[serde(default = "one")]
+    pub scale: f32,
+}
+
+fn one() -> f32 {
+    1.0
 }
 
 /// A sheet's layout: its pages' sizes, frames a second, whether it loops, each school's frames, how it moves.
@@ -166,7 +174,9 @@ impl Drawn {
 
     /// World pixels a sheet pixel at full size.
     pub fn px(&self) -> f32 {
-        self.layout.motion.px.unwrap_or(1.0)
+        // a layout made in code (`Motion::default()`) has no scale: its sheet's own size
+        let scale = self.layout.motion.scale;
+        self.layout.motion.px.unwrap_or(1.0) * if scale > 0.0 { scale } else { 1.0 }
     }
 
     /// The beats of a one-shot played through, over `n` frames: (first frame, last frame, seconds, flying).
@@ -196,7 +206,8 @@ impl Drawn {
         if self.layout.looping || n == 0 {
             return None;
         }
-        Some(self.beats(n).iter().map(|b| b.2).sum())
+        let lead = self.layout.motion.lead;
+        Some((self.beats(n).iter().map(|b| b.2).sum::<f32>() - lead).max(0.0))
     }
 
     /// How far it has grown in at `t`.
@@ -217,7 +228,16 @@ impl Drawn {
     pub fn shot(&self, school: &str, t: f32) -> Option<Shot> {
         let cells = self.clip(school)?;
         let n = cells.len();
-        let t = t.max(0.0);
+        // a one-shot shown `lead` seconds in (held back while that is negative)
+        let lead = if self.layout.looping {
+            0.0
+        } else {
+            self.layout.motion.lead
+        };
+        if t + lead < 0.0 {
+            return None;
+        }
+        let t = (t + lead).max(0.0);
         let fps = self.layout.fps;
         let (angle, size) = (self.angle(t), self.grown(t));
         let frame = |i: usize, at| {

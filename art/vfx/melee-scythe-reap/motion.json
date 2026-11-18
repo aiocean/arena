@@ -1,9 +1,11 @@
 {
-  "fx": "melee/scythe-reap",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
-    44,
-    58
-  ]
+    69,
+    42
+  ],
+  "fps": 14.29,
+  "fx": "melee/scythe-reap",
+  "lead": 0.15,
+  "loop": false,
+  "scale": 1.0
 }

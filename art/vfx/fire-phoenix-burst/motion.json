@@ -1,9 +1,11 @@
 {
-  "fx": "fire/phoenix-burst",
-  "fps": 14.29,
-  "loop": false,
   "anchor": [
-    64,
-    50
-  ]
+    81,
+    34
+  ],
+  "fps": 14.29,
+  "fx": "fire/phoenix-burst",
+  "lead": 0.22,
+  "loop": false,
+  "scale": 0.75
 }
