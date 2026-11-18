@@ -502,6 +502,7 @@ dependencies = [
  "arena-mind",
  "arena-vfx",
  "image",
+ "libm",
  "serde",
  "serde_json",
  "webp",

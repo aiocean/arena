@@ -15,6 +15,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 webp = "0.3"
 serde.workspace = true
 serde_json.workspace = true
+libm.workspace = true
 
 [lints]
 workspace = true

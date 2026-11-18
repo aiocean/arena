@@ -49,6 +49,17 @@ opt-level = 3
 opt-level = 3
 [profile.dev.package.tract-onnx]
 opt-level = 3
+# The picture codecs the wiki's test reads the sheets and writes its pictures with (crates/arena-wiki)
+[profile.dev.package.png]
+opt-level = 3
+[profile.dev.package.fdeflate]
+opt-level = 3
+[profile.dev.package.miniz_oxide]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.libwebp-sys]
+opt-level = 3
 
 # The game for the browser (site/build.sh): small over fast, as a page loads it. Measured with wasm-opt -Oz after:
 # "z" 21.2 MB (8.7 MB gzipped), "s" 24.0 MB. Not stripped here: wasm-bindgen reads the features section; wasm-opt

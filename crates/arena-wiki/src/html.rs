@@ -149,6 +149,10 @@ pub const CSS: &str = r#"
 .facts dt{opacity:.7}.facts dd{margin:0}
 .strip{overflow-x:auto;padding:6px 0;background:#100e17;border-radius:6px}
 .strip img{display:block;max-width:none;height:auto}
+.moments{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.moments figure{margin:0;max-width:100%;overflow-x:auto}
+.moments img{display:block;max-width:none;height:auto;border-radius:4px}
+.moments figcaption{font-size:.8em;opacity:.75}
 img.pixel{image-rendering:pixelated}
 .tag{display:inline-block;padding:0 7px;margin:0 4px 4px 0;border-radius:10px;background:rgba(255,255,255,.08);font-size:13px;text-decoration:none;color:inherit}
 .legend span{display:inline-block;width:12px;height:12px;margin:0 4px -1px 10px;border-radius:2px}

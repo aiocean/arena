@@ -9,6 +9,7 @@
 #![allow(clippy::disallowed_methods)]
 
 pub mod desc;
+pub mod hits;
 pub mod html;
 pub mod img;
 
@@ -201,7 +202,8 @@ pub fn build(root: &Path) -> Result<Wiki, String> {
         }
     }
     effects(&mut wiki, &mut book, &assets)?;
-    skills(&mut wiki, &book);
+    let sheets = hits::Sheets::read(&assets)?;
+    skills(&mut wiki, &book, &sheets);
     index(&mut wiki);
     supports(&mut wiki, &book);
     ailments(&mut wiki);
@@ -546,6 +548,115 @@ fn cap_forms(g: &Gem) -> String {
     )
 }
 
+/// Where a skill can hit, as the rules test it: one cast at a foe standing still, its hit shapes over its effect on
+/// the moments they are tested (`hits`).
+fn hit_section(wiki: &mut Wiki, g: &Gem, sheets: &hits::Sheets) -> String {
+    let Some(trace) = hits::trace(g.id) else {
+        return String::new();
+    };
+    let secs = |t: f64| num((t * 100.0).round() / 100.0);
+    let windows = trace
+        .windows()
+        .iter()
+        .map(|&(a, b)| {
+            if (b - a).abs() < 1e-9 {
+                format!("{} s", secs(a))
+            } else {
+                format!("{} to {} s", secs(a), secs(b))
+            }
+        })
+        .collect::<Vec<_>>();
+    let shown = if windows.len() > 6 {
+        format!(
+            "{}, … {} stretches in all, the last {}",
+            windows[..4].join(", "),
+            windows.len(),
+            windows[windows.len() - 1]
+        )
+    } else {
+        windows.join(", ")
+    };
+    // its shapes' sizes, each kind once
+    let mut sizes: Vec<String> = Vec::new();
+    for m in &trace.moments {
+        for d in &m.shapes {
+            let what = match d.mark {
+                arena_duel::debug::Mark::Strike => "strike box",
+                arena_duel::debug::Mark::Shot => "shot",
+                arena_duel::debug::Mark::Field => "field",
+                arena_duel::debug::Mark::Unit => "unit",
+                _ => continue,
+            };
+            let size = match d.shape {
+                arena_duel::debug::Shape::Rect { x0, y0, x1, y1 } => format!(
+                    "{what}: a box {} × {} px",
+                    num((x1 - x0).round()),
+                    num((y1 - y0).round())
+                ),
+                arena_duel::debug::Shape::Circle { r, .. } if r <= 0.0 => {
+                    format!("{what}: a point (radius 0)")
+                }
+                arena_duel::debug::Shape::Circle { r, .. } => {
+                    format!("{what}: a circle of radius {} px", num(r))
+                }
+            };
+            if !sizes.contains(&size) {
+                sizes.push(size);
+            }
+        }
+    }
+    let sweep = trace
+        .moments
+        .iter()
+        .flat_map(|m| m.sweeps.iter())
+        .map(|s| libm::hypot(s.x1 - s.x0, s.y1 - s.y0))
+        .fold(0.0_f64, f64::max);
+    let mut rows: Vec<(&str, String)> = vec![
+        ("Wind-up", format!("{} s", secs(trace.windup))),
+        ("Can hit", shown),
+        ("Shapes", sizes.join("; ")),
+    ];
+    if sweep > 0.0 {
+        let r = trace
+            .moments
+            .iter()
+            .flat_map(|m| m.sweeps.iter())
+            .map(|s| s.r)
+            .fold(0.0_f64, f64::max);
+        rows.push((
+            "Sweep",
+            format!(
+                "up to {} px a tick: a bolt strikes all along the stretch it flies in a tick, {} px either side{}",
+                num(sweep.round()),
+                num(r),
+                if sweep > 2.0 * r {
+                    " (farther than it is wide: between two frames it strikes where no picture of it is drawn)"
+                } else {
+                    ""
+                }
+            ),
+        ));
+    }
+    let mut out = format!(
+        "<h2 id=\"hits\">Where it hits</h2><p class=\"gen\">One cast at a foe standing still, as the rules test it (the shapes of <code>arena_duel::debug::shapes</code>, the player's hitbox overlay), drawn over its effect as the game places it, from the sheets this build has. Seconds from the start of the cast.</p>{}<p class=\"legend gen\">Shapes: <span style=\"background:#ff4646\"></span>shot or strike <span style=\"background:#ffa028\"></span>field <span style=\"background:#5ae678\"></span>unit <span style=\"background:#5ab4ff\"></span>the foe's body; a faint red trail is a bolt's sweep.</p><div class=\"moments\">",
+        facts(&rows)
+    );
+    for m in trace.picked() {
+        if let Some(img) = hits::draw(sheets, m, trace.ground) {
+            let (w, h) = img.dimensions();
+            let url = wiki.picture(img::webp(&img, true));
+            let _ = write!(
+                out,
+                "<figure>{}<figcaption>{} s</figcaption></figure>",
+                html::img(&url, w, h, &format!("{} at {} s", g.name, secs(m.t)), true),
+                secs(m.t)
+            );
+        }
+    }
+    out.push_str("</div>");
+    out
+}
+
 fn spell_numbers(sp: &Spell) -> Vec<(&'static str, String)> {
     let opt = |v: Option<f64>, unit: &str| v.map_or(String::new(), |v| format!("{}{unit}", num(v)));
     vec![
@@ -593,7 +704,7 @@ fn strip_html(src: &(String, u32, u32), alt: &str, pixel: bool) -> String {
     )
 }
 
-fn skills(wiki: &mut Wiki, book: &Book) {
+fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
     for g in GEMS {
         let sp = data::spell(g.id);
         let words = book.skill_words.get(g.id);
@@ -740,6 +851,8 @@ fn skills(wiki: &mut Wiki, book: &Book) {
                 }
             }
         }
+        let hit = hit_section(wiki, g, sheets);
+        body.push_str(&hit);
         body.push_str(&cap_forms(g));
         let fit: Vec<String> = SUPPORTS
             .iter()
