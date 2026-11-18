@@ -266,7 +266,7 @@ fn print_telemetry(name: &str, r: &Record) {
     for n in names {
         println!("  {n:<12} |{} |{}", skill_cells(t, n), skill_cells(f, n));
     }
-    for status in ["burn", "shock"] {
+    for status in ["burn", "bleed", "shock"] {
         let cell = |s: &SeatLog| {
             let d = s.statuses.get(status).copied().unwrap_or(0.0);
             let fin = s.finals.get(status).copied().unwrap_or(0);

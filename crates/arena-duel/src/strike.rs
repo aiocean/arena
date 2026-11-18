@@ -357,7 +357,7 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
     // what the striker gets back (a unit's blow gives its owner nothing)
     if !unit {
         let c = &mut state.fighters[by].c;
-        c.heal(out.gains.life + out.leech);
+        let gained = c.heal(out.gains.life + out.leech);
         c.qi = (c.qi + out.gains.qi).min(c.qi_max);
         c.sense = (c.sense + out.gains.sense).min(c.sense_max);
         c.gain_intent(out.gains.intent);
@@ -368,6 +368,7 @@ pub fn hurt(state: &mut State, f: usize, p: &Payload, dir: f64) -> bool {
         if out.recoil > 0.0 {
             c.hurt(out.recoil);
         }
+        note_healed(state, by, gained);
         on_hit_behaviours(state, by, f, p, &out.dealt, killed);
     }
     let attacker = &mut state.fighters[by];
@@ -520,7 +521,8 @@ fn on_hit_behaviours(
             Behaviour::LifeOnKill { share } if killed => {
                 let c = &mut state.fighters[by].c;
                 let life = c.life_max * share;
-                c.heal(life);
+                let gained = c.heal(life);
+                note_healed(state, by, gained);
             }
             Behaviour::SoulsFromSoul => {
                 let soul = dealt[Element::Soul.index()];
@@ -808,6 +810,18 @@ fn curse_event(state: &mut State, me: usize, e: curse::Event) {
     }
 }
 
+/// Fighter `me` got `gained` life back (a leech, a kill's heal, a spare life): noted for the telemetry, which reads
+/// the life a fighter lost as what it lost less what it got back.
+fn note_healed(state: &mut State, me: usize, gained: f64) {
+    if gained > 0.0 {
+        let max = state.fighters[me].c.life_max.max(1.0);
+        state.note(Note::Healed {
+            by: me,
+            share: gained / max * 100.0,
+        });
+    }
+}
+
 /// Fighter `me` at no life uses a spare life if its keystones give one (Bất Khuất once a round, Tam Mệnh and Ngọn Đèn
 /// Hồn their lives a match). Returns whether it rose.
 pub fn spare(state: &mut State, me: usize) -> bool {
@@ -822,6 +836,8 @@ pub fn spare(state: &mut State, me: usize) -> bool {
             _ => continue,
         };
         if k.on_death(&mut state.fighters[me].c, used) {
+            let risen = state.fighters[me].c.life;
+            note_healed(state, me, risen);
             let f = &mut state.fighters[me];
             if k == Keystone::Unyielding {
                 f.unyielding_used = true;

@@ -416,7 +416,7 @@ impl Table {
                     .collect();
             let _ = write!(
                 s,
-                "{{\"kind\":\"{}\",\"id\":\"{}\",\"tier\":\"{}\",\"picks\":{},\"games\":{},\"wrMinus50\":{:.3},\"usedRate\":{:.4},\"avgDamage\":{:.1},\"avgDistCast\":{:.3},\"avgDistHit\":{:.3}}}",
+                "{{\"kind\":\"{}\",\"id\":\"{}\",\"tier\":\"{}\",\"picks\":{},\"games\":{},\"wrMinus50\":{:.3},\"usedRate\":{:.4},\"avgDamage\":{:.1},\"avgDistCast\":{:.3},\"avgDistHit\":{:.3},\"casts\":{},\"hits\":{}}}",
                 kind_name(r.kind),
                 id,
                 r.tier,
@@ -426,7 +426,9 @@ impl Table {
                 r.used_rate(),
                 r.avg_damage(),
                 r.avg_cast(),
-                r.avg_hit()
+                r.avg_hit(),
+                r.casts,
+                r.hits
             );
         }
         s.push_str("]}");
