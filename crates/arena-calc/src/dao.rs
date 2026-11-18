@@ -675,7 +675,12 @@ impl Rift {
 
     /// A move ending at (`x`, `y`) is caught: a blink, inside, while the rift lasts.
     pub fn catches(&self, x: f64, y: f64, blink: bool) -> bool {
-        blink && self.left > 0.0 && libm::hypot(x - self.x, y - self.y) <= DAO.rift_radius
+        blink
+            && self.left > 0.0
+            && crate::collide::overlap(
+                &crate::collide::Shape::circle(x, y, 0.0),
+                &crate::collide::Shape::circle(self.x, self.y, DAO.rift_radius),
+            )
     }
 
     /// The tear: [`Dao::rift`] of the blinker's full life as force, through all armour.

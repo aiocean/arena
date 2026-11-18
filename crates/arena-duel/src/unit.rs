@@ -24,6 +24,7 @@
 //! A unit's blow is the built blow of the cast that made it, one blow each; its owner gets no gains from it. The
 //! rules emit `Out::Spawn`, `Out::UnitAct`, `Out::UnitHurt` and `Out::UnitDie` for the game to draw.
 
+use crate::collide::{self, Shape, overlap};
 use crate::data::{Spell, T, body_spec, motion};
 use crate::fighter::State;
 use crate::js::{js_sign, or_one};
@@ -253,9 +254,7 @@ pub fn strike_hits(
     blade: bool,
 ) -> bool {
     let bx = strike_box(state, me, x, air, face, reach, level, blade);
-    crate::frames::hurtboxes(state, 1 - me)
-        .iter()
-        .any(|h| crate::frames::overlap(bx, *h))
+    collide::touches(state, 1 - me, &Shape::rect(bx))
 }
 
 /// The box `strike_hits` tests: from `x` to `reach` ahead, `level` up from `air`, or a fighter's blade's hitbox (from
@@ -317,9 +316,9 @@ pub fn in_front(
         .iter()
         .filter(|u| u.owner == foe && !u.on_floor())
     {
-        let ahead = (u.x - x) * or_one(face);
-        let d = ahead.abs();
-        if ahead >= -u.radius() && d <= reach + u.radius() && best.is_none_or(|b| d < b.1) {
+        let d = (u.x - x).abs();
+        let reaches = Shape::rect(strike_box(state, me, x, air, face, reach, level, false));
+        if overlap(&reaches, &collide::unit_body(u)) && best.is_none_or(|b| d < b.1) {
             best = Some((Target::Unit(u.id), d));
         }
     }
@@ -337,16 +336,13 @@ pub fn enemies_near(
     level: f64,
 ) -> Vec<Target> {
     let foe = 1 - me;
-    let f = &state.fighters[foe];
+    let field = collide::area(x - radius, x + radius, air, level);
     let mut out = Vec::new();
-    if f.alive()
-        && (f.body.x - x).abs() <= radius + f.body.spec.half_width
-        && (f.body.air - air).abs() < level
-    {
+    if state.fighters[foe].alive() && collide::touches(state, foe, &field) {
         out.push(Target::Fighter(foe));
     }
     for u in state.units.iter().filter(|u| u.owner == foe) {
-        if (u.x - x).abs() <= radius + u.radius() {
+        if overlap(&field, &collide::unit_body(u)) {
             out.push(Target::Unit(u.id));
         }
     }
@@ -364,10 +360,9 @@ pub fn enemies_between(
     level: f64,
 ) -> Vec<Target> {
     let foe = 1 - me;
-    let f = &state.fighters[foe];
-    let hw = f.body.spec.half_width;
+    let path = collide::area(lo, hi, air, level);
     let mut out = Vec::new();
-    if f.alive() && f.body.x > lo - hw && f.body.x < hi + hw && (f.body.air - air).abs() < level {
+    if state.fighters[foe].alive() && collide::touches(state, foe, &path) {
         out.push(Target::Fighter(foe));
     }
     for u in state
@@ -375,7 +370,7 @@ pub fn enemies_between(
         .iter()
         .filter(|u| u.owner == foe && !u.on_floor())
     {
-        if u.x > lo - u.radius() && u.x < hi + u.radius() {
+        if overlap(&path, &collide::unit_body(u)) {
             out.push(Target::Unit(u.id));
         }
     }
@@ -770,13 +765,18 @@ fn spring(state: &mut State, i: usize, on: Target) {
 /// mine, the oldest first.
 fn detonate(state: &mut State, gi: usize) {
     let (owner, skill) = (state.groups[gi].owner, state.groups[gi].skill);
-    let foe_x = state.fighters[1 - owner].body.x;
-    let hw = state.fighters[1 - owner].body.spec.half_width;
     let spawn = state.groups[gi].placed.spawn;
-    let near =
-        state.groups[gi].placed.standing.iter().any(|d| {
-            d.armed(&spawn) && (state.from_t(d.at.x) - foe_x).abs() <= DEVICE_RADIUS * T + hw
-        });
+    let r = DEVICE_RADIUS * T;
+    // the blast's own field (`blast`), reaching the foe's body
+    let near = state.groups[gi].placed.standing.iter().any(|d| {
+        let x = state.from_t(d.at.x);
+        d.armed(&spawn)
+            && collide::touches(
+                state,
+                1 - owner,
+                &collide::area(x - r, x + r, 0.0, f64::INFINITY),
+            )
+    });
     if !near || !state.fighters[1 - owner].alive() {
         return;
     }

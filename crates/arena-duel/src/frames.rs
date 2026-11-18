@@ -147,11 +147,6 @@ pub fn hurtboxes(state: &State, f: usize) -> Vec<[f64; 4]> {
     }
 }
 
-/// Do boxes `a` and `b` overlap?
-pub fn overlap(a: [f64; 4], b: [f64; 4]) -> bool {
-    a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
-}
-
 /// The clip fighter `f`'s cast plays (a blade blow's `slash` or `overhead`, a spell's `cast` or `dash`), if it casts.
 fn act_clip(state: &State, f: usize) -> Option<&'static str> {
     let a = state.fighters.get(f)?.act?;

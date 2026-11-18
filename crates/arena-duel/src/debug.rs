@@ -2,12 +2,13 @@
 //! hitbox overlay (`arena-game`'s `boxes`): each fighter's body (where it can be hit), the area a cast strikes while
 //! the rules test it, every shot, field and unit on the field, and the points a blow and a bolt come from (the hand's
 //! wrist and hilt, a bolt's launch). Read only: nothing
-//! here decides anything. Each shape mirrors the test that uses it, named beside it, so a change to a test changes
-//! the shape drawn here in the same change.
+//! here decides anything. Each shape is made by `collide`, as the test that uses it (named beside it) makes it, so
+//! what is drawn is what is tested.
 //!
 //! Coordinates are the arena's pixels: `x` from the arena's left as the rules keep it, `y` up from the ground (the
 //! rules' `air`).
 
+use crate::collide;
 use crate::data::Kind;
 use crate::fighter::{Phase, State};
 use crate::shot::{ShotKind, orb_at};
@@ -39,22 +40,8 @@ pub enum Mark {
     Launch,
 }
 
-/// A shape in the arena's pixels.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Shape {
-    /// From (`x0`, `y0`) to (`x1`, `y1`).
-    Rect {
-        x0: f64,
-        y0: f64,
-        x1: f64,
-        y1: f64,
-    },
-    Circle {
-        x: f64,
-        y: f64,
-        r: f64,
-    },
-}
+/// A shape in the arena's pixels: the rules' own (`collide`).
+pub use crate::collide::Shape;
 
 /// One shape to draw, whose it is, and what it is.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -79,16 +66,11 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         } else {
             Mark::Body
         };
-        for h in crate::frames::hurtboxes(state, me) {
+        for shape in collide::body(state, me) {
             out.push(Drawn {
                 owner: Some(me),
                 mark,
-                shape: Shape::Rect {
-                    x0: h[0],
-                    y0: h[1],
-                    x1: h[2],
-                    y1: h[3],
-                },
+                shape,
                 skill: "",
             });
         }
@@ -97,7 +79,7 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         let point = |mark: Mark, x: f64, y: f64| Drawn {
             owner: Some(me),
             mark,
-            shape: Shape::Circle { x, y, r: 0.0 },
+            shape: Shape::circle(x, y, 0.0),
             skill: "",
         };
         if let Some(fr) = crate::frames::frame_of(state, me) {
@@ -138,7 +120,7 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         out.push(Drawn {
             owner: Some(me),
             mark: Mark::Strike,
-            shape: Shape::Rect { x0, y0, x1, y1 },
+            shape: Shape::rect([x0, y0, x1, y1]),
             skill: act.spell,
         });
     }
@@ -147,40 +129,25 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         let sp = s.spell;
         let r = sp.radius.unwrap_or(0.0);
         let drawn = match &s.kind {
-            // shot::run_bolt: shot::overlaps at the bolt's place, give or take its radius
+            // shot::run_bolt: shot::overlaps at the bolt's place, give or take its radius (collide::probe)
             ShotKind::Bolt { .. } => s
                 .bolt_at(state)
-                .map(|(x, y, _)| (Mark::Shot, Shape::Circle { x, y, r })),
+                .map(|(x, y, _)| (Mark::Shot, collide::probe(x, y, r))),
             // shot::run, Orb: shot::overlaps(bx, -by, radius)
             ShotKind::Orb { .. } => {
                 let (bx, by) = orb_at(s);
-                Some((Mark::Shot, Shape::Circle { x: bx, y: -by, r }))
+                Some((Mark::Shot, collide::probe(bx, -by, r)))
             }
             // shot::run, Zone: unit::enemies_near(x, air, radius, 40 grounded or 88)
             ShotKind::Zone { x, air, .. } => {
                 let level = if sp.grounded { 40.0 } else { 88.0 };
-                Some((
-                    Mark::Field,
-                    Shape::Rect {
-                        x0: x - r,
-                        y0: (air - level).max(0.0),
-                        x1: x + r,
-                        y1: air + level,
-                    },
-                ))
+                Some((Mark::Field, collide::area(x - r, x + r, *air, level)))
             }
-            // shot::run, Void: unit::enemies_near(x, 0, under, any height)
+            // shot::run, Void: unit::enemies_near(x, 0, under, any height), drawn up to the sky
             ShotKind::Void { x, .. } => {
                 let under = sp.under.unwrap_or(0.0);
-                Some((
-                    Mark::Field,
-                    Shape::Rect {
-                        x0: x - under,
-                        y0: 0.0,
-                        x1: x + under,
-                        y1: state.ground - state.top,
-                    },
-                ))
+                let field = collide::area(x - under, x + under, 0.0, state.ground - state.top);
+                Some((Mark::Field, field))
             }
             ShotKind::Spray => None,
         };
@@ -194,17 +161,12 @@ pub fn shapes(state: &State) -> Vec<Drawn> {
         }
     }
 
+    // unit::enemies_near, enemies_between and in_front: collide::unit_body
     for u in &state.units {
-        let r = u.radius();
         out.push(Drawn {
             owner: Some(u.owner),
             mark: Mark::Unit,
-            shape: Shape::Rect {
-                x0: u.x - r,
-                y0: 0.0,
-                x1: u.x + r,
-                y1: 2.0 * r,
-            },
+            shape: collide::unit_body(u),
             skill: u.skill,
         });
     }

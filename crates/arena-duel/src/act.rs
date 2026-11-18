@@ -338,8 +338,14 @@ pub fn deliver(
     let ks = &state.fighters[me].kit.skills[k];
     let (g, way, sp) = (ks.gem, ks.way, ks.motion);
     let foe = 1 - me;
-    let near = (state.fighters[foe].body.x - state.fighters[me].body.x).abs()
-        <= reach_of(sp) + state.fighters[foe].body.spec.half_width;
+    let near = {
+        let (x, r) = (state.fighters[me].body.x, reach_of(sp));
+        crate::collide::touches(
+            state,
+            foe,
+            &crate::collide::area(x - r, x + r, 0.0, f64::INFINITY),
+        )
+    };
     let (mx, mair) = (state.fighters[me].body.x, state.fighters[me].body.air);
     let g_ = state.ground;
     match way {

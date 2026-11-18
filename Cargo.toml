@@ -13,6 +13,8 @@ license = "MIT"
 # The damage system, a crate of the arena's own
 arena-calc = { path = "crates/arena-calc" }
 libm = "0.2"
+# Every hit test of the rules (`arena_calc::collide`): f64, libm and scalar maths, so a page and the server agree
+parry2d-f64 = { version = "=0.31.1", default-features = false, features = ["required-features", "std", "enhanced-determinism"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
 

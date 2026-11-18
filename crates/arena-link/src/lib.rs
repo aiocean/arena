@@ -38,11 +38,13 @@ use serde::{Deserialize, Serialize};
 /// blade's retry gone with its window or its broken act; 12: bot ABI 3, 1741 inputs: the casts' frames, the slots'
 /// builds and supports, both fighters' effects, the units, the foe's slots; 13: the balance pass, a bleed the same on a
 /// moving bearer, every bare cast under 40% of a life and its shield; 14: every skill plays its own drawn effect from
-/// pvfx; 15: Lôi Bạo Trễ, a stopped shot stays as its caster's mine). A page whose rules differ steps a
+/// pvfx; 15: Lôi Bạo Trễ, a stopped shot stays as its caster's mine; 16: every hit test on parry
+/// (`arena_calc::collide`): touching is not overlapping, a bolt a capsule swept in f64, fields and blasts striking the
+/// hurtboxes and units' bodies). A page whose rules differ steps a
 /// different fight from the same decisions, so it says so and stops (`Applied::OtherRules`). Bump this with any change
 /// to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`, `docs/bot.md`), as the goldens are
 /// re-pinned.
-pub const RULES_VERSION: u32 = 15;
+pub const RULES_VERSION: u32 = 16;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

@@ -22,6 +22,7 @@
 use std::collections::VecDeque;
 
 use crate::build::Built;
+use crate::collide::Shape;
 use crate::hit::Hit;
 use crate::play::{Point, Target};
 use crate::stat::{Stat, Table};
@@ -149,6 +150,8 @@ impl Strike {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Flight {
     pub pos: Point,
+    /// How thick it is: the radius of the drawn body that strikes, in T (0: a point). It sweeps a capsule.
+    pub radius: f64,
     /// Length 1.
     pub dir: Point,
     pub speed: f64,
@@ -175,22 +178,11 @@ pub struct Step {
     pub forks: Vec<Flight>,
 }
 
-/// T along `dir` (length 1) from `p` to where it first enters the circle, if it does within `reach`; 0 when `p` is
-/// inside it.
-fn entry(p: Point, dir: Point, c: Point, r: f64, reach: f64) -> Option<f64> {
-    let (fx, fy) = (p.x - c.x, p.y - c.y);
-    let b = fx * dir.x + fy * dir.y;
-    let cc = fx * fx + fy * fy - r * r;
-    if cc <= 0.0 {
-        return Some(0.0);
-    }
-    let disc = b * b - cc;
-    if disc < 0.0 || b >= 0.0 {
-        // misses, or the circle is behind
-        return None;
-    }
-    let s = -b - libm::sqrt(disc);
-    (s >= 0.0 && s <= reach).then_some(s)
+/// T along `dir` (length 1) from `p` to where a bolt as thick as `thick` first meets the circle, if it does within
+/// `reach`; 0 when it is already in it (`collide::sweeps`, the bolt's capsule).
+fn entry(p: Point, dir: Point, thick: f64, c: Point, r: f64, reach: f64) -> Option<f64> {
+    let circle = Shape::circle(c.x, c.y, r);
+    crate::collide::sweeps((p.x, p.y), (dir.x, dir.y), reach, thick, &circle)
 }
 
 impl Flight {
@@ -207,6 +199,7 @@ impl Flight {
         (0..n)
             .map(|k| Flight {
                 pos: shot.origin,
+                radius: 0.0,
                 dir: aim.rotated((f64::from(k) - mid) * SPREAD),
                 speed,
                 range_left: shot.range.max(0.0),
@@ -237,8 +230,14 @@ impl Flight {
             if !self.can_strike(t) {
                 continue;
             }
-            if let Some(s) = entry(self.pos, self.dir, t.at(), t.radius.max(0.0), reach)
-                && best.is_none_or(|(_, b)| s < b)
+            if let Some(s) = entry(
+                self.pos,
+                self.dir,
+                self.radius,
+                t.at(),
+                t.radius.max(0.0),
+                reach,
+            ) && best.is_none_or(|(_, b)| s < b)
             {
                 best = Some((i, s));
             }

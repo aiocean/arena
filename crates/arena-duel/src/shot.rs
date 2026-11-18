@@ -137,11 +137,11 @@ fn run_bolt(state: &mut State, s: &mut Shot, mut flight: Flight, dt: f64) -> boo
         match &o.kind {
             ShotKind::Bolt { .. } => {
                 let (ox, oy, _) = o.bolt_at(state)?;
-                ((ox - x).abs() < 24.0 && (oy - y).abs() < 32.0).then(|| (o.clone(), None))
+                crate::collide::bolt_meets((ox, oy), (x, y)).then(|| (o.clone(), None))
             }
             ShotKind::Orb { .. } => {
                 let (bx, by) = orb_at(o);
-                (libm::hypot(bx - x, by + y) < 40.0).then(|| (o.clone(), Some((bx, by))))
+                crate::collide::orb_meets((bx, -by), (x, y)).then(|| (o.clone(), Some((bx, by))))
             }
             _ => None,
         }
@@ -459,9 +459,7 @@ pub fn overlaps(state: &State, f: usize, x: f64, y: f64, r: f64) -> bool {
     if state.fighters[f].body.untouchable() {
         return false;
     }
-    crate::frames::hurtboxes(state, f)
-        .iter()
-        .any(|h| x > h[0] - r && x < h[2] + r && y > h[1] - r && y < h[3] + r)
+    crate::collide::touches(state, f, &crate::collide::probe(x, y, r))
 }
 
 /// Does fighter `f` stop a blow whole before it lands (a barrier turns it aside, a ward's charge erases it)? What

@@ -14,6 +14,7 @@ pub mod build;
 pub mod cap;
 pub mod card;
 pub mod charge;
+pub mod collide;
 pub mod cultivator;
 pub mod curse;
 pub mod dao;

@@ -9,6 +9,7 @@
 pub mod act;
 pub mod bar;
 pub mod body;
+pub mod collide;
 pub mod data;
 pub mod debug;
 pub mod duel;

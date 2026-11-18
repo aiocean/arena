@@ -21,6 +21,7 @@
 //! [`Spawn::damage`], `MinionDamage`'s factor.
 
 use crate::build::Built;
+use crate::collide::Shape;
 use crate::play::{Point, Target};
 use crate::stat::Stat;
 use crate::tag::Tag;
@@ -308,7 +309,9 @@ impl Placed {
             let mut best: Option<(u32, f64)> = None;
             for e in enemies.iter().filter(|e| e.alive) {
                 let gap = d.at.distance(e.at()) - e.radius.max(0.0);
-                if gap <= spawn.trigger_radius && best.is_none_or(|(_, b)| gap < b) {
+                let reach = Shape::circle(d.at.x, d.at.y, spawn.trigger_radius);
+                let body = Shape::circle(e.x, e.y, e.radius);
+                if crate::collide::overlap(&reach, &body) && best.is_none_or(|(_, b)| gap < b) {
                     best = Some((e.id, gap));
                 }
             }

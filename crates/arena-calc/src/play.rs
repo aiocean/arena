@@ -9,6 +9,7 @@
 //! increased area is `√1.4 ≈ 1.183` times the radius. Skill durations (zones, buffs, curses a skill lays) scale by
 //! [`Stat::SkillDuration`].
 
+use crate::collide::Shape as Collide;
 use crate::stat::{Stat, Table};
 
 /// A point (or a vector) on the field, in T.
@@ -127,25 +128,23 @@ pub enum Shape {
 }
 
 impl Shape {
-    /// Whether `t` is inside: alive and its body touching the shape (an overlap counts, an edge touching too).
+    /// Whether `t` is inside: alive and its body overlapping the shape (`collide::overlap`: an edge touching is
+    /// not inside).
     pub fn holds(&self, t: &Target) -> bool {
         if !t.alive {
             return false;
         }
-        match *self {
-            Shape::Circle { centre, radius } => centre.distance(t.at()) <= radius + t.radius,
+        let body = Collide::circle(t.x, t.y, t.radius);
+        let area = match *self {
+            Shape::Circle { centre, radius } => Collide::circle(centre.x, centre.y, radius),
             Shape::Band {
                 left,
                 right,
                 bottom,
                 top,
-            } => {
-                // the nearest point of the band to the centre, then the distance to it
-                let nx = t.x.clamp(left.min(right), left.max(right));
-                let ny = t.y.clamp(bottom.min(top), bottom.max(top));
-                Point::new(nx, ny).distance(t.at()) <= t.radius
-            }
-        }
+            } => Collide::rect([left, bottom, right, top]),
+        };
+        crate::collide::overlap(&area, &body)
     }
 
     /// The ids of the targets inside, in the order given.
