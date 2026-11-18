@@ -8,7 +8,7 @@ use crate::feel::Overlay;
 use crate::feel::math::{js_min, js_round, sin, sqrt};
 use crate::layers::Canvases;
 use crate::layout::Layout;
-use crate::raster::{Blend, Rgba, hex};
+use crate::raster::{Blend, Canvas, Rgba, hex};
 use crate::rules::{Fx, Pace, Shown};
 use arena_duel::out::Out;
 use bevy::prelude::*;
@@ -213,15 +213,30 @@ fn lighter(v: u8, alpha: f64) -> u16 {
     ((f32::from(v) / 255.0) * a * 255.0 + 0.5) as u16
 }
 
+/// A rectangle of the world, `[x0, y0, x1, y1]` inclusive.
+type Rect = [i32; 4];
+
 /// Adds glow `g` to the light layer `layer` (`w` wide) in its rings: a disc of whole pixels each, the widest first.
-fn ring_glow(layer: &mut [[u16; 3]], w: i32, h: i32, g: &Glow) {
+/// The rectangle it may have touched, clipped to the layer, or none.
+fn ring_glow(layer: &mut [[u16; 3]], w: i32, h: i32, g: &Glow) -> Option<Rect> {
     let finite = [g.x, g.y, g.reach, g.strength]
         .iter()
         .all(|v| v.is_finite());
     if !finite || g.strength <= FAINT || g.reach < 1.0 {
-        return;
+        return None;
     }
     let (cx, cy) = (js_round(g.x) as i32, js_round(g.y) as i32);
+    let widest = RINGS
+        .iter()
+        .map(|&(out, _)| js_round(g.reach * out) as i32)
+        .max()
+        .unwrap_or(0);
+    let rect = [
+        (cx - widest).max(0),
+        (cy - widest).max(0),
+        (cx + widest).min(w - 1),
+        (cy + widest).min(h - 1),
+    ];
     for (i, &(out, bright)) in RINGS.iter().enumerate().rev() {
         let next = RINGS.get(i + 1).map_or(0.0, |r| r.1);
         let alpha = g.strength * (bright - next);
@@ -244,42 +259,154 @@ fn ring_glow(layer: &mut [[u16; 3]], w: i32, h: i32, g: &Glow) {
             }
         }
     }
+    (rect[0] <= rect[2] && rect[1] <= rect[3]).then_some(rect)
 }
 
-/// The braziers' glow and every light, added over `back` and faintly over `front`.
+/// The braziers' glow and every light, added over `back` and faintly over `front`. The light layer is kept from frame
+/// to frame (`layer`, all dark between frames) and only the rectangles the glows touch are read and cleared.
 fn paint(
     lights: Res<Lights>,
     shown: Res<Shown>,
     layout: Res<Layout>,
     mut canvases: ResMut<Canvases>,
+    mut layer: Local<Vec<[u16; 3]>>,
 ) {
     let c = canvases.as_mut();
     let (w, h) = (c.back.w, c.back.h);
     let time = shown.view.as_ref().map_or(0.0, |v| v.time);
-    let mut layer = vec![[0u16; 3]; (w * h) as usize];
+    if layer.len() != (w * h) as usize {
+        *layer = vec![[0u16; 3]; (w * h) as usize];
+    }
     let glows = lamp_glows(layout.lamps, layout.ground, time)
         .into_iter()
         .chain(lights.list.iter().map(Light::glow));
+    let mut lit: Vec<Rect> = Vec::new();
     for g in glows {
-        ring_glow(&mut layer, w, h, &g);
+        lit.extend(ring_glow(&mut layer, w, h, &g));
     }
-    for (i, l) in layer.iter().enumerate() {
-        if *l == [0; 3] {
-            continue;
+    shine(&mut layer, w, &lit, &mut c.back, &mut c.front);
+}
+
+/// The light layer `layer` (`w` wide) over `back` (added) and `front` (its tint, faintly), within the rectangles `lit`,
+/// each pixel once though they overlap, row by row as a scan of the whole layer would; what it reads it clears.
+fn shine(layer: &mut [[u16; 3]], w: i32, lit: &[Rect], back: &mut Canvas, front: &mut Canvas) {
+    let (top, bottom) = lit
+        .iter()
+        .fold((i32::MAX, i32::MIN), |(t, b), r| (t.min(r[1]), b.max(r[3])));
+    for y in top..=bottom {
+        let mut spans: Vec<(i32, i32)> = lit
+            .iter()
+            .filter(|r| r[1] <= y && y <= r[3])
+            .map(|r| (r[0], r[2]))
+            .collect();
+        spans.sort_unstable();
+        let mut merged: Vec<(i32, i32)> = Vec::with_capacity(spans.len());
+        for (a, b) in spans {
+            match merged.last_mut() {
+                Some(last) if a <= last.1 + 1 => last.1 = last.1.max(b),
+                _ => merged.push((a, b)),
+            }
         }
-        let (x, y) = (i as i32 % w, i as i32 / w);
-        let m = l[0].max(l[1]).max(l[2]);
-        c.back
-            .put(x, y, [l[0] as u8, l[1] as u8, l[2] as u8, 255], Blend::Add);
-        let tint = [0, 1, 2].map(|k| (u32::from(l[k]) * 255 / u32::from(m)) as u8);
-        let a = (f64::from(m) * FRONT).min(255.0) as u8;
-        c.front
-            .put(x, y, [tint[0], tint[1], tint[2], a], Blend::Over);
+        for (x0, x1) in merged {
+            for x in x0..=x1 {
+                let l = core::mem::take(&mut layer[(y * w + x) as usize]);
+                if l == [0; 3] {
+                    continue;
+                }
+                let m = l[0].max(l[1]).max(l[2]);
+                back.put(x, y, [l[0] as u8, l[1] as u8, l[2] as u8, 255], Blend::Add);
+                let tint = [0, 1, 2].map(|k| (u32::from(l[k]) * 255 / u32::from(m)) as u8);
+                let a = (f64::from(m) * FRONT).min(255.0) as u8;
+                front.put(x, y, [tint[0], tint[1], tint[2], a], Blend::Over);
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn the_light_shines_only_where_the_glows_are_and_as_a_whole_scan_would() {
+        let (w, h) = (90, 50);
+        let glows = [
+            Glow {
+                x: 10.0,
+                y: 40.0,
+                reach: 30.0,
+                color: [255, 128, 0, 255],
+                strength: 0.5,
+            },
+            Glow {
+                x: 30.0,
+                y: 35.0,
+                reach: 20.0,
+                color: [80, 160, 255, 255],
+                strength: 0.8,
+            },
+            Glow {
+                x: 88.0,
+                y: 2.0,
+                reach: 12.0,
+                color: [255, 255, 255, 255],
+                strength: 0.3,
+            },
+            Glow {
+                x: -50.0,
+                y: 20.0,
+                reach: 10.0,
+                color: [255, 0, 0, 255],
+                strength: 0.9,
+            },
+        ];
+        let base = |i: usize| {
+            [
+                (i * 7 % 255) as u8,
+                (i * 13 % 255) as u8,
+                (i * 3 % 255) as u8,
+                255,
+            ]
+        };
+        let canvas = || {
+            let mut c = Canvas::new(w, h);
+            for (i, p) in c.px.iter_mut().enumerate() {
+                *p = base(i);
+            }
+            c
+        };
+        // as the light was painted before: the whole layer scanned
+        let mut layer = vec![[0u16; 3]; (w * h) as usize];
+        for g in &glows {
+            let _ = ring_glow(&mut layer, w, h, g);
+        }
+        let (mut back, mut front) = (canvas(), Canvas::new(w, h));
+        for (i, l) in layer.iter().enumerate() {
+            if *l == [0; 3] {
+                continue;
+            }
+            let (x, y) = (i as i32 % w, i as i32 / w);
+            let m = l[0].max(l[1]).max(l[2]);
+            back.put(x, y, [l[0] as u8, l[1] as u8, l[2] as u8, 255], Blend::Add);
+            let tint = [0, 1, 2].map(|k| (u32::from(l[k]) * 255 / u32::from(m)) as u8);
+            let a = (f64::from(m) * FRONT).min(255.0) as u8;
+            front.put(x, y, [tint[0], tint[1], tint[2], a], Blend::Over);
+        }
+        // as it is now: only the rectangles the glows touched
+        let mut layer = vec![[0u16; 3]; (w * h) as usize];
+        let lit: Vec<Rect> = glows
+            .iter()
+            .filter_map(|g| ring_glow(&mut layer, w, h, g))
+            .collect();
+        assert_eq!(lit.len(), 3, "the glow off the world touches nothing");
+        let (mut back2, mut front2) = (canvas(), Canvas::new(w, h));
+        shine(&mut layer, w, &lit, &mut back2, &mut front2);
+        assert!(back.px == back2.px && front.px == front2.px);
+        assert!(
+            layer.iter().all(|l| *l == [0; 3]),
+            "the layer is left dark for the next frame"
+        );
+    }
+
     use super::*;
 
     #[test]
