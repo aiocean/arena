@@ -20,6 +20,7 @@ const KNOWN: &[&str] = &[
     "arcane/sword-strike",
     "arcane/twin-shuriken",
     "arcane/vortex-ring",
+    "explosions/arcane-burst",
     "explosions/barrel-explosion",
     "explosions/cluster-bomb",
     "explosions/firework-burst",

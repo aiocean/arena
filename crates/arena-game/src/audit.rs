@@ -241,6 +241,8 @@ impl Report {
 pub const SCALE: (f64, f64) = (0.6, 1.7);
 pub const OFFSET: f64 = 0.6;
 pub const ALONE: f64 = 0.35;
+/// How far, seconds, a blow's art may peak from the tick it lands.
+pub const LATE: f64 = 0.2;
 
 fn median(mut v: Vec<f64>) -> Option<f64> {
     if v.is_empty() {
@@ -665,10 +667,30 @@ fn report(
     let samples: Vec<&Sample> = playings.iter().flatten().collect();
     let art = samples.iter().filter(|s| s.art.is_some()).count();
     let hit = samples.iter().filter(|s| s.hit.is_some()).count();
-    let both: Vec<(Box2, Shape)> = samples
-        .iter()
-        .filter_map(|s| Some((s.art?, s.hit?.1)))
-        .collect();
+    // a blow is tested on one tick and its art swells after: it is measured against the art at its largest in each
+    // playing, and how long after the blow that comes
+    let blow = !marks.is_empty() && marks.iter().all(|m| *m == "strike");
+    let mut late: Vec<f64> = Vec::new();
+    let both: Vec<(Box2, Shape)> = if blow {
+        playings
+            .iter()
+            .filter_map(|p| {
+                let struck = p.iter().find_map(|s| Some((s.tick, s.hit?.1)))?;
+                let area = |b: &Box2| (b[2] - b[0]) * (b[3] - b[1]);
+                let peak = p
+                    .iter()
+                    .filter_map(|s| Some((s.tick, s.art?)))
+                    .max_by(|a, b| area(&a.1).total_cmp(&area(&b.1)))?;
+                late.push((f64::from(peak.0) - f64::from(struck.0)) * TICK);
+                Some((peak.1, struck.1))
+            })
+            .collect()
+    } else {
+        samples
+            .iter()
+            .filter_map(|s| Some((s.art?, s.hit?.1)))
+            .collect()
+    };
     let point = |s: &Shape| matches!(s, Shape::Circle { r, .. } if *r <= 0.0);
     let areas: Vec<&(Box2, Shape)> = both.iter().filter(|(_, s)| !point(s)).collect();
     let points: Vec<&(Box2, Shape)> = both.iter().filter(|(_, s)| point(s)).collect();
@@ -728,6 +750,19 @@ fn report(
     } else if art == 0 {
         verdict.push("luật đang tính trúng mà không thấy hình vẽ".to_string());
     } else {
+        if let Some(l) = median(late).filter(|l| l.abs() > LATE) {
+            verdict.push(if l > 0.0 {
+                format!(
+                    "thời gian: hình vẽ to nhất đến sau đòn trúng {:.0} ms",
+                    l * 1000.0
+                )
+            } else {
+                format!(
+                    "thời gian: hình vẽ to nhất đến trước đòn trúng {:.0} ms",
+                    -l * 1000.0
+                )
+            });
+        }
         if let Some((w, h)) = scale {
             for (what, v) in [("bề ngang", w), ("bề cao", h)] {
                 if v < SCALE.0 {
