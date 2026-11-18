@@ -4,7 +4,8 @@
 //!
 //! Watching a live match (`live`), the duel is built on the server's seed and arena with two `Replay` seats on the
 //! corners' growing logs, and stepped only as far as the frames received reach, `DELAY_TICKS` behind them: a page that
-//! joins late or falls far behind steps there at once without drawing, one a little behind runs faster to catch up.
+//! joins late or falls far behind steps there without drawing, as many ticks a frame as `CATCH_UP_MS` allows (a whole
+//! match in one frame would hold the page for a tenth of a second), one a little behind runs faster to catch up.
 
 use crate::bots::Seating;
 use crate::layout::Layout;
@@ -12,6 +13,7 @@ use crate::live::Live;
 use arena_duel::data::UNIT;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::seat::{MakeSeat, Replay, Seat};
+use bevy::platform::time::Instant;
 use bevy::prelude::*;
 use std::rc::Rc;
 
@@ -19,8 +21,13 @@ use std::rc::Rc;
 pub const DELAY_TICKS: u32 = 18;
 /// Further behind than this, a live page runs at double pace.
 const CATCH_UP_TICKS: u32 = 60;
-/// Further behind than this (a page that joins mid-match, or a tab that slept), it steps there at once, undrawn.
+/// Further behind than this (a page that joins mid-match, or a tab that slept), it steps there undrawn.
 const JUMP_TICKS: u32 = 300;
+/// The time a frame may spend on that undrawn stepping, in ms of the main thread: the rest waits for the next frame.
+const CATCH_UP_MS: f64 = 4.0;
+/// The ticks a frame steps undrawn whatever the time, so the page outruns the match (a tick a frame at 60 Hz) on any
+/// machine.
+const CATCH_UP_TICKS_MIN: u32 = 8;
 use arena_duel::out::Out;
 use arena_duel::view::{DuelView, view};
 
@@ -57,6 +64,9 @@ pub struct Fight {
     pub duel: Option<Duel>,
     /// The layout and seating it was made for.
     made_for: (u32, u32),
+    /// A live page stepping undrawn to the frames received, over as many frames as it takes (the fighters are shown
+    /// where each frame leaves them, their effects are not): it plays at its pace again only once it is there.
+    jumping: bool,
 }
 
 pub struct RulesPlugin;
@@ -118,6 +128,7 @@ fn begin_fight(
         // the server draws the looks from the seed (`Duel::new_drawn`): built any other way, the fight is another
         fight.duel = Some(Duel::new_drawn(config, [replay(0), replay(1)]));
         fight.made_for = wanted;
+        fight.jumping = false;
         shown.seed = m.seed;
         shown.names = m.names.clone();
         shown.fight += 1;
@@ -134,6 +145,7 @@ fn begin_fight(
     let seats = [seated[0].make(), seated[1].make()];
     fight.duel = Some(Duel::new(config(&layout, seating.seed), seats));
     fight.made_for = wanted;
+    fight.jumping = false;
     shown.seed = seating.seed;
     shown.names = seating.names.clone();
     shown.fight += 1;
@@ -162,6 +174,7 @@ fn step(
     mut fx: MessageWriter<Fx>,
 ) {
     pace.ruled = 0.0;
+    let fight = fight.as_mut();
     let Some(duel) = fight.duel.as_mut() else {
         return;
     };
@@ -169,20 +182,22 @@ fn step(
         let Some(m) = live.watching.current() else {
             return;
         };
-        let state = duel.state();
-        let done = (state.time / TICK).round() as u32;
+        let done = (duel.state().time / TICK).round() as u32;
         let target = m.through.saturating_sub(DELAY_TICKS);
         let behind = target.saturating_sub(done);
-        if behind > JUMP_TICKS {
-            // joined late, or slept: step to the present undrawn. What starts in the jump is dropped, but an effect
-            // already playing is still told to stop, or it would play on for ever
-            for _ in 0..behind {
-                for out in duel.step(TICK) {
-                    if matches!(out, Out::Stop { .. }) {
-                        fx.write(Fx(out));
-                    }
-                }
-            }
+        fight.jumping |= behind > JUMP_TICKS;
+        if fight.jumping {
+            // joined late, or slept: step to the present undrawn, a frame's share at a time
+            let start = Instant::now();
+            let stepped = leap(
+                duel,
+                behind,
+                |n| n < CATCH_UP_TICKS_MIN || start.elapsed().as_secs_f64() * 1000.0 < CATCH_UP_MS,
+                |out| {
+                    fx.write(Fx(out));
+                },
+            );
+            fight.jumping = stepped < behind;
             0.0
         } else {
             let pace_run = if behind > CATCH_UP_TICKS {
@@ -191,7 +206,7 @@ fn step(
                 pace.run
             };
             // never past what has come: the last tick allowed lands exactly
-            let room = (behind as f64 * TICK - state.carry).max(0.0);
+            let room = (behind as f64 * TICK - duel.state().carry).max(0.0);
             pace_run.min(room)
         }
     } else {
@@ -206,11 +221,73 @@ fn step(
     shown.view = Some(view(duel.state()));
 }
 
+/// Steps `duel` up to `behind` ticks undrawn, while `more(ticks stepped so far)` allows: how many it stepped. What
+/// starts in the leap is dropped, but an effect already playing is still told to stop (`stop`), or it would play on
+/// for ever.
+fn leap(
+    duel: &mut Duel,
+    behind: u32,
+    mut more: impl FnMut(u32) -> bool,
+    mut stop: impl FnMut(Out),
+) -> u32 {
+    let mut stepped = 0;
+    while stepped < behind && more(stepped) {
+        for out in duel.step(TICK) {
+            if matches!(out, Out::Stop { .. }) {
+                stop(out);
+            }
+        }
+        stepped += 1;
+    }
+    stepped
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::feel::fight::FightFeel;
     use arena_duel::out::{How, PlayOpts};
+
+    /// A leap spread over frames, a few ticks each, reaches the duel a leap in one frame does, and it is told every
+    /// stop the ticks make.
+    #[test]
+    fn a_leap_spread_over_frames_lands_where_one_leap_does() {
+        let config = DuelConfig {
+            seed: 7,
+            left: 0.0,
+            right: 880.0,
+            ground: 600.0,
+            sky: 384.0,
+            effects: arena_duel::effects::all(),
+        };
+        let behind = 1500;
+        let mut whole = Duel::with_brains(config.clone());
+        let mut stops = Vec::new();
+        assert_eq!(
+            leap(
+                &mut whole,
+                behind,
+                |_| true,
+                |o| stops.push(format!("{o:?}"))
+            ),
+            behind
+        );
+        let mut spread = Duel::with_brains(config);
+        let mut spread_stops = Vec::new();
+        let (mut done, mut frames) = (0, 0);
+        while done < behind {
+            done += leap(
+                &mut spread,
+                behind - done,
+                |n| n < 37,
+                |o| spread_stops.push(format!("{o:?}")),
+            );
+            frames += 1;
+        }
+        assert_eq!(frames, behind.div_ceil(37));
+        assert_eq!(view(spread.state()), view(whole.state()));
+        assert_eq!(spread_stops, stops);
+    }
 
     /// On a live match (the server's ground) in windows of every size and shape, a hit's number stands over the
     /// struck fighter, and an effect played at its chest is drawn at its chest: the window's ground is not the
