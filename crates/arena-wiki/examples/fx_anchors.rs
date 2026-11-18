@@ -1,5 +1,6 @@
-//! Where the rules play each effect, beside the fighters: every skill of the pool cast once at a foe standing still
-//! (`hits::plays`), each effect the first time a skill plays it, its point and both fighters' hurtboxes that tick,
+//! Where the rules play each effect, beside the fighters' hurtboxes and its skill's hitboxes: every skill of the pool cast once at a foe standing still
+//! (`hits::plays`), each effect on the first tick its skill can hit while it plays (else when first played), its point, both
+//! fighters' hurtboxes and the skill's hitboxes that tick,
 //! relative to the point in sheet pixels (`UNIT` arena pixels each, `y` down, facing east: a mirrored play is turned
 //! back). For a review page that draws an effect over the bodies it plays on.
 //!
@@ -39,6 +40,7 @@ fn main() -> Result<(), String> {
                 "t": (p.t * 100.0).round() / 100.0,
                 "flip": p.flip,
                 "ground": (hits::FLOOR - p.y) / UNIT,
+                "hits": p.hits.iter().map(|(m, b)| json!({"mark": format!("{m:?}"), "box": rel(b)})).collect::<Vec<_>>(),
                 "caster": bodies[0],
                 "foe": bodies[1],
             }));

@@ -156,8 +156,10 @@ fn one_cast(id: &'static str) -> Option<Duel> {
     Duel::with_loadouts(config, [caster(id), idle()], [alone(id), alone("palm")]).ok()
 }
 
-/// An effect as the rules first play it in one cast: its id, its point (arena pixels, `y` down), whether it is
-/// mirrored, seconds since the cast began, and both fighters' hurtboxes that tick (`[x0, y0, x1, y1]`, `y` down).
+/// An effect beside the fighters in one cast: its id, its point (arena pixels, `y` down), whether it is mirrored,
+/// seconds since the cast began, both fighters' hurtboxes then and the skill's hitboxes then (`[x0, y0, x1, y1]`, `y`
+/// down; a circle is its box). The moment is the first tick the skill can hit while the effect plays, else the tick
+/// it is first played.
 #[derive(Clone, Debug)]
 pub struct Play {
     pub fx: &'static str,
@@ -166,17 +168,28 @@ pub struct Play {
     pub flip: bool,
     pub t: f64,
     pub bodies: [Vec<[f64; 4]>; 2],
+    pub hits: Vec<(Mark, [f64; 4])>,
 }
 
 /// The arena's ground in the one-cast duel (`y` down).
 pub const FLOOR: f64 = 600.0;
 
-/// Every effect one cast of skill `id` plays, the first time each is played, with the fighters' bodies then.
+/// A shape's box, `y` down.
+fn down(s: Shape) -> [f64; 4] {
+    match s {
+        Shape::Rect { x0, y0, x1, y1 } => [x0, FLOOR - y1, x1, FLOOR - y0],
+        Shape::Circle { x, y, r } => [x - r, FLOOR - y - r, x + r, FLOOR - y + r],
+    }
+}
+
+/// Every effect one cast of skill `id` plays, each once, with the fighters' bodies and the skill's hitboxes.
 pub fn plays(id: &'static str) -> Vec<Play> {
     let Some(mut duel) = one_cast(id) else {
         return Vec::new();
     };
     let mut out: Vec<Play> = Vec::new();
+    // the effects playing now: key -> (fx, x, y, flip)
+    let mut playing: BTreeMap<u32, (&'static str, f64, f64, bool)> = BTreeMap::new();
     let (mut clock, mut began) = (0.0, None::<f64>);
     while clock < LONGEST {
         let step = duel.step(TICK);
@@ -188,30 +201,57 @@ pub fn plays(id: &'static str) -> Vec<Play> {
                 .filter(|a| a.spell == id)
                 .map(|a| clock - a.t);
         }
-        let bodies = || {
-            let all = shapes(state);
-            [0, 1].map(|me| {
-                all.iter()
-                    .filter(|d| d.owner == Some(me) && d.mark == Mark::Body)
-                    .filter_map(|d| match d.shape {
-                        Shape::Rect { x0, y0, x1, y1 } => Some([x0, FLOOR - y1, x1, FLOOR - y0]),
-                        Shape::Circle { .. } => None,
-                    })
-                    .collect()
-            })
-        };
+        let t = clock - began.unwrap_or(clock);
         for o in step {
-            if let Out::Play { fx, x, y, opts, .. } = o
-                && !out.iter().any(|p| p.fx == fx)
-            {
-                out.push(Play {
+            match o {
+                Out::Play {
+                    key,
                     fx,
                     x,
                     y,
-                    flip: opts.flip == Some(true),
-                    t: clock - began.unwrap_or(clock),
-                    bodies: bodies(),
-                });
+                    opts,
+                    ..
+                } => {
+                    playing.insert(key, (fx, x, y, opts.flip == Some(true)));
+                }
+                Out::Move { key, x, y } => {
+                    if let Some(p) = playing.get_mut(&key) {
+                        (p.1, p.2) = (x, y);
+                    }
+                }
+                Out::Stop { key } => {
+                    playing.remove(&key);
+                }
+                _ => {}
+            }
+        }
+        let all = shapes(state);
+        let bodies = [0, 1].map(|me| {
+            all.iter()
+                .filter(|d| d.owner == Some(me) && d.mark == Mark::Body)
+                .map(|d| down(d.shape))
+                .collect::<Vec<_>>()
+        });
+        let hitting: Vec<(Mark, [f64; 4])> = all
+            .iter()
+            .filter(|d| d.skill == id && hits(d.mark))
+            .map(|d| (d.mark, down(d.shape)))
+            .collect();
+        for &(fx, x, y, flip) in playing.values() {
+            let now = Play {
+                fx,
+                x,
+                y,
+                flip,
+                t,
+                bodies: bodies.clone(),
+                hits: hitting.clone(),
+            };
+            match out.iter_mut().find(|p| p.fx == fx) {
+                None => out.push(now),
+                // a moment it can hit beats one it cannot
+                Some(p) if p.hits.is_empty() && !now.hits.is_empty() => *p = now,
+                Some(_) => {}
             }
         }
         if began.is_some_and(|b| clock - b > 4.0) {
