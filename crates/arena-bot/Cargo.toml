@@ -51,6 +51,10 @@ name = "whiff"
 required-features = ["host", "onnx"]
 
 [[example]]
+name = "damage"
+required-features = ["host", "onnx"]
+
+[[example]]
 name = "trace"
 required-features = ["trace"]
 
