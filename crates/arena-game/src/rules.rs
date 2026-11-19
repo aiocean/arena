@@ -12,6 +12,7 @@ use crate::layout::Layout;
 use crate::live::Live;
 use arena_duel::data::UNIT;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
+use arena_duel::fighter::State;
 use arena_duel::seat::{MakeSeat, Replay, Seat};
 use bevy::platform::time::Instant;
 use bevy::prelude::*;
@@ -67,6 +68,71 @@ pub struct Fight {
     /// A live page stepping undrawn to the frames received, over as many frames as it takes (the fighters are shown
     /// where each frame leaves them, their effects are not): it plays at its pace again only once it is there.
     jumping: bool,
+    /// The effects playing on a fighter, kept where it is (`follow`).
+    bound: Vec<Bound>,
+}
+
+/// The longest an effect on a fighter is kept on it, in the fight's seconds, if the rules never stop it (a one-shot
+/// has played out long before), and how long one stopped is kept on it while it fades.
+const BOUND_SECS: f64 = 30.0;
+const BOUND_FADE: f64 = 1.0;
+
+/// An effect the rules played on a fighter (`PlayOpts::on`: a shield, a ward, an aura, a buff or a curse on the body):
+/// its key, the fighter, where it was from the fighter as played (along, and down from the fighter's height in the
+/// air, in the lifted screen rows), and the fight's time it is let go.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Bound {
+    key: u32,
+    on: usize,
+    dx: f64,
+    dy: f64,
+    until: f64,
+}
+
+/// Keeps track of the effects on a fighter as a step's commands go by (`out`, already lifted): a play on a fighter is
+/// bound to it, a stop lets it go once it has faded.
+fn bind(bound: &mut Vec<Bound>, state: &State, out: &Out) {
+    match out {
+        Out::Play {
+            key, x, y, opts, ..
+        } => {
+            if let Some(on) = opts.on
+                && let Some(f) = state.fighters.get(on)
+            {
+                bound.push(Bound {
+                    key: *key,
+                    on,
+                    dx: x - f.body.x,
+                    dy: y + f.body.air,
+                    until: state.time + BOUND_SECS,
+                });
+            }
+        }
+        Out::Stop { key } => {
+            if let Some(b) = bound.iter_mut().find(|b| b.key == *key) {
+                b.until = b.until.min(state.time + BOUND_FADE);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Every effect on a fighter moved to where its fighter is now, as it was from it when played; those let go dropped.
+/// The rules play a shield where its caster stood and never move it: the page keeps it on the caster as it moves,
+/// leaps and is thrown (owner, 2026-11-19).
+fn follow(bound: &mut Vec<Bound>, state: &State) -> Vec<Out> {
+    bound.retain(|b| state.time <= b.until);
+    bound
+        .iter()
+        .filter_map(|b| {
+            let f = state.fighters.get(b.on)?;
+            Some(Out::Move {
+                key: b.key,
+                x: f.body.x + b.dx,
+                y: b.dy - f.body.air,
+            })
+        })
+        .collect()
 }
 
 pub struct RulesPlugin;
@@ -129,6 +195,7 @@ fn begin_fight(
         fight.duel = Some(Duel::new_drawn(config, [replay(0), replay(1)]));
         fight.made_for = wanted;
         fight.jumping = false;
+        fight.bound.clear();
         shown.seed = m.seed;
         shown.names = m.names.clone();
         shown.fight += 1;
@@ -146,6 +213,7 @@ fn begin_fight(
     fight.duel = Some(Duel::new(config(&layout, seating.seed), seats));
     fight.made_for = wanted;
     fight.jumping = false;
+    fight.bound.clear();
     shown.seed = seating.seed;
     shown.names = seating.names.clone();
     shown.fight += 1;
@@ -219,8 +287,13 @@ fn step(
     };
     pace.ruled = run;
     let dy = f64::from(layout.ground) * UNIT - duel.state().ground;
-    for mut out in duel.step(run) {
+    let outs = duel.step(run);
+    for mut out in outs {
         lift(&mut out, dy);
+        bind(&mut fight.bound, duel.state(), &out);
+        fx.write(Fx(out));
+    }
+    for out in follow(&mut fight.bound, duel.state()) {
         fx.write(Fx(out));
     }
     shown.view = Some(view(duel.state()));
@@ -365,5 +438,87 @@ mod tests {
                 f64::from(layout.ground) - world(chest)
             );
         }
+    }
+
+    /// A shield played on a fighter goes where the fighter goes, leaping and thrown, until a while after it is
+    /// stopped; an effect on no fighter stays where it was played (owner, 2026-11-19).
+    #[test]
+    fn an_effect_on_a_fighter_follows_it() {
+        let config = DuelConfig {
+            seed: 7,
+            left: 0.0,
+            right: 880.0,
+            ground: 600.0,
+            sky: 384.0,
+            effects: arena_duel::effects::all(),
+        };
+        let mut duel = Duel::with_brains(config);
+        let (x0, air0) = {
+            let b = &duel.state().fighters[1].body;
+            (b.x, b.air)
+        };
+        let mut bound = Vec::new();
+        let play = |key, on| Out::Play {
+            key,
+            fx: "golden-bell",
+            x: x0 + 4.0,
+            y: 500.0,
+            opts: PlayOpts {
+                on,
+                ..PlayOpts::default()
+            },
+        };
+        bind(&mut bound, duel.state(), &play(1, Some(1)));
+        bind(&mut bound, duel.state(), &play(2, None));
+        {
+            let b = &mut duel.state_mut().fighters[1].body;
+            b.x = x0 + 120.0;
+            b.air = air0 + 60.0;
+        }
+        assert_eq!(
+            follow(&mut bound, duel.state()),
+            [Out::Move {
+                key: 1,
+                x: x0 + 124.0,
+                y: 440.0
+            }]
+        );
+        bind(&mut bound, duel.state(), &Out::Stop { key: 1 });
+        duel.state_mut().time += BOUND_FADE / 2.0;
+        assert_eq!(
+            follow(&mut bound, duel.state()).len(),
+            1,
+            "let go while it fades"
+        );
+        duel.state_mut().time += BOUND_FADE;
+        assert!(follow(&mut bound, duel.state()).is_empty());
+    }
+
+    /// In real fights, the shields, wards, heals, auras, buffs and curses the rules show on a body are played on a
+    /// fighter.
+    #[test]
+    fn the_rules_play_a_shield_on_its_fighter() {
+        let mut on = 0;
+        for seed in 1..=6 {
+            let config = DuelConfig {
+                seed,
+                left: 0.0,
+                right: 880.0,
+                ground: 600.0,
+                sky: 384.0,
+                effects: arena_duel::effects::all(),
+            };
+            let mut duel = Duel::with_brains(config);
+            while duel.state().time < 60.0 {
+                for out in duel.step(TICK) {
+                    if let Out::Play { opts, .. } = out
+                        && opts.on.is_some()
+                    {
+                        on += 1;
+                    }
+                }
+            }
+        }
+        assert!(on > 0, "no effect played on a fighter in six fights");
     }
 }

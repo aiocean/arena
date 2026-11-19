@@ -491,6 +491,7 @@ fn animate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arena_duel::out::PlayOpts;
 
     /// Every drawn effect is one the rules play, and its sheet's pages are beside it.
     #[test]
@@ -768,5 +769,55 @@ mod tests {
             (mirrored - Vec2::new(-1.0, 1.0)).length() < 1e-4,
             "{mirrored}"
         );
+    }
+
+    /// Huyết Tán cast leftward (owner, 2026-11-19): its drawn effect is played facing left, every frame's shape
+    /// mirrored round the point the rules play it at, image and anchor, at the same height.
+    #[test]
+    fn a_play_facing_left_mirrors_image_and_anchor() {
+        let fx = "impacts/blood-splat";
+        let mut app = App::new();
+        app.insert_resource(Layout::default())
+            .insert_resource(Shown::default())
+            .add_message::<Fx>()
+            .add_systems(Update, commands);
+        for (key, flip) in [(1, false), (2, true)] {
+            app.world_mut().write_message(Fx(Out::Play {
+                key,
+                fx,
+                x: 600.0,
+                y: 400.0,
+                opts: PlayOpts {
+                    flip: Some(flip),
+                    ..PlayOpts::default()
+                },
+            }));
+        }
+        app.update();
+        let mut flips: Vec<(u32, bool)> = app
+            .world_mut()
+            .query::<(&DrawingKey, &Drawing)>()
+            .iter(app.world())
+            .map(|(k, d)| (k.0, d.flip))
+            .collect();
+        flips.sort();
+        assert_eq!(flips, [(1, false), (2, true)]);
+        let Some(drawn) = all().iter().find(|d| d.fx == fx) else {
+            unreachable!("{fx} is drawn")
+        };
+        let school = drawn::school_of(None);
+        let life = drawn.life(school).unwrap_or(1.0);
+        let mut t = 0.0;
+        while t < life {
+            if let Some(shot) = drawn.shot(school, t) {
+                let k = shot.size * drawn.px();
+                let (right, turn, _) = place(&shot, k, false);
+                let (left, mirrored, _) = place(&shot, k, true);
+                assert!((left.x + right.x).abs() < 1e-3, "{t}: {left} {right}");
+                assert!((left.y - right.y).abs() < 1e-3, "{t}: {left} {right}");
+                assert!((turn + mirrored).abs() < 1e-5, "{t}: turned the same way");
+            }
+            t += 1.0 / 30.0;
+        }
     }
 }

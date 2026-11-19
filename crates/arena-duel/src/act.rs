@@ -57,9 +57,11 @@ pub fn play(state: &mut State, fx: &'static str, x: f64, y: f64, opts: PlayOpts)
     key
 }
 
-/// Play `fx` for fighter `me`'s skill, in its look's colours: `{ ...tint, seed: roll, ...opts }`.
+/// Play `fx` for fighter `me`'s skill, in its look's colours, facing the way `me` faces unless `opts` says: `{ ...tint,
+/// flip, seed: roll, ...opts }`. Every effect is drawn facing right: one cast leftward is mirrored, image and anchor.
 pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts: PlayOpts) -> u32 {
     let base = tint(state.fighters[me].look, fx).copied();
+    let left = state.fighters[me].body.face < 0.0;
     let seed = roll_seed(state);
     let merged = PlayOpts {
         palette: opts.palette.or(base.and_then(|t| t.palette)),
@@ -69,8 +71,9 @@ pub fn cast(state: &mut State, me: usize, fx: &'static str, x: f64, y: f64, opts
         glow: opts.glow.or(base.and_then(|t| t.glow)),
         width: opts.width.or(base.and_then(|t| t.width)),
         height: opts.height.or(base.and_then(|t| t.height)),
-        flip: opts.flip,
+        flip: opts.flip.or(Some(left)),
         seed: opts.seed.or(Some(seed)),
+        on: opts.on,
     };
     play(state, fx, x, y, merged)
 }
@@ -352,7 +355,7 @@ pub fn deliver(
                     .auras
                     .light_with(kind, built.rank, true, &mut f.c, built.reservation);
             }
-            show(state, me, sp, mx, g_ - mair);
+            show(state, me, me, sp, mx, g_ - mair);
         }
         Way::Domain { damaging } => {
             if let Some(kind) = gem::domain_of(g) {
@@ -372,7 +375,7 @@ pub fn deliver(
                 let p = payload(state, me, k, &built, depth);
                 strikes(state, me, k, &built, p, target);
             } else {
-                show(state, me, sp, mx, g_ - mair);
+                show(state, me, me, sp, mx, g_ - mair);
             }
         }
         Way::Curse => {
@@ -382,6 +385,7 @@ pub fn deliver(
             show(
                 state,
                 me,
+                foe,
                 sp,
                 state.fighters[foe].body.x,
                 g_ - state.fighters[foe].body.air,
@@ -389,7 +393,7 @@ pub fn deliver(
         }
         Way::Buff => {
             buff(state, me, g.id, &built);
-            show(state, me, sp, mx, g_ - mair);
+            show(state, me, me, sp, mx, g_ - mair);
         }
         Way::Device(_) => {
             place(state, me, k, &built, target);
@@ -412,12 +416,17 @@ pub fn deliver(
     }
 }
 
-/// A skill's own effect on whoever it acts on, for a skill that strikes nothing (an intent, a buff, a curse).
-fn show(state: &mut State, me: usize, sp: &'static Spell, x: f64, y: f64) {
+/// A skill's own effect on fighter `on`, whom it acts on, for a skill that strikes nothing (an intent, a buff, a
+/// curse): it goes where `on` goes.
+fn show(state: &mut State, me: usize, on: usize, sp: &'static Spell, x: f64, y: f64) {
     if let Some(fx) = sp.fx
         && state.has(fx)
     {
-        cast_once(state, me, fx, x, y, PlayOpts::default());
+        let opts = PlayOpts {
+            on: Some(on),
+            ..PlayOpts::default()
+        };
+        cast_once(state, me, fx, x, y, opts);
     }
 }
 
@@ -480,6 +489,7 @@ pub fn strike(state: &mut State, sp: &'static Spell, p: Payload, o: Origin, targ
                 x,
                 g,
                 PlayOpts {
+                    flip: Some(face < 0.0),
                     seed: Some(me as u32 + 3),
                     ..PlayOpts::default()
                 },
@@ -552,7 +562,11 @@ pub fn strike(state: &mut State, sp: &'static Spell, p: Payload, o: Origin, targ
                 sp.fx.unwrap_or(""),
                 x,
                 g - mspec.chest - mair,
-                PlayOpts::default(),
+                // the way the blow goes, a unit's or its caster's
+                PlayOpts {
+                    flip: Some(face < 0.0),
+                    ..PlayOpts::default()
+                },
             );
             if sp.spray.is_some() {
                 let mut q = p.clone();
@@ -634,7 +648,10 @@ fn heal(state: &mut State, me: usize, sp: &'static Spell) {
         sp.fx.unwrap_or(""),
         x,
         g - body - air,
-        PlayOpts::default(),
+        PlayOpts {
+            on: Some(me),
+            ..PlayOpts::default()
+        },
     );
 }
 
@@ -660,7 +677,10 @@ fn ward(state: &mut State, me: usize, sp: &'static Spell) {
         sp.fx.unwrap_or(""),
         x,
         g - lift - air,
-        PlayOpts::default(),
+        PlayOpts {
+            on: Some(me),
+            ..PlayOpts::default()
+        },
     );
 }
 
@@ -683,6 +703,7 @@ fn barrier(state: &mut State, me: usize, k: usize) {
         g - mair,
         PlayOpts {
             seed: Some(me as u32 + 21),
+            on: Some(me),
             ..PlayOpts::default()
         },
     );

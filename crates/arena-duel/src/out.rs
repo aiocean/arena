@@ -2,7 +2,8 @@
 //! in the names and fields the page reads. Heights (`y`) are up from the ground for a fighter's
 //! event, screen y for an effect.
 
-/// How an effect is played: a look's colours, its size, which way it faces, its seed. Left out when `None`.
+/// How an effect is played: a look's colours, its size, which way it faces, its seed, the fighter it is on. Left out
+/// when `None`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct PlayOpts {
@@ -24,6 +25,10 @@ pub struct PlayOpts {
     pub flip: Option<bool>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub seed: Option<u32>,
+    /// On fighter `on` (a shield, a ward, an aura, a buff or a curse on the body): the page keeps it where that
+    /// fighter is, as it was played, for as long as it plays. The rules never move it themselves.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub on: Option<usize>,
 }
 
 /// When a blow caught the one it struck: at no weak moment, gathering a cast (a COUNTER), recovering from one (a

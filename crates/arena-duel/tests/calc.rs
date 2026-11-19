@@ -207,3 +207,32 @@ fn a_whole_fight_through_the_damage_system_replays_from_its_seed() {
     assert!(a.iter().any(|o| matches!(o, Out::Hit { .. })));
     assert_eq!(a, go());
 }
+
+/// An effect is drawn facing right: one cast leftward is played mirrored (`PlayOpts::flip`), ahead of its caster on
+/// the side it faces. Huyết Tán cast from the right played its blood-splat facing right (owner, 2026-11-19).
+#[test]
+fn an_effect_cast_leftward_is_played_mirrored() {
+    for name in ["bloodpowder", "palm"] {
+        for by in [0, 1] {
+            let mut s = still(3, loadout(&[name]), loadout(&[name]));
+            let me = s.fighters[by].body.x;
+            let left = by == 1;
+            let out = strike(&mut s, by, name);
+            let plays: Vec<_> = out
+                .iter()
+                .filter_map(|o| match o {
+                    Out::Play { x, opts, .. } => Some((*x, opts.flip)),
+                    _ => None,
+                })
+                .collect();
+            assert!(!plays.is_empty(), "{name} by {by} played nothing");
+            let (x, flip) = plays[0];
+            assert_eq!(flip, Some(left), "{name} by {by}");
+            assert_eq!(
+                x < me,
+                left,
+                "{name} by {by}: played at {x}, its caster at {me}"
+            );
+        }
+    }
+}
