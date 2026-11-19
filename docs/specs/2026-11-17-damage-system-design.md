@@ -36,7 +36,7 @@ guard; thanh chiêu xoay (bar) nhưng rút từ bộ đồ của người chơi;
 | Máu (life) | 3000 | Như `Stats.hp`. |
 | Hộ thân linh quang (ES) | 600 | Hồi 60/s sau 2 s không bị trúng. Vỡ (về 0) thì 1 s không hồi thêm. |
 | Thần thức (sense) | 100 | Hồi 4/s. Ý cảnh giữ chỗ. Về 0 thì **thất hồn**: câm 1,5 s, tắt ý cảnh. |
-| Linh lực (qi) | 100 | Hồi 3/s, thiền 16/s (như `QI_REGEN`, `MEDITATE_REGEN`). |
+| Linh lực (qi) | 100 | Hồi 8/s, thiền 21/s (như `QI_REGEN`, `MEDITATE_REGEN`). |
 | Lực đạo (might) | 400 | Gốc của mọi **Đòn** (attack). Thay `atk`. |
 | Hộ thể (armour) | 600 | Chỉ giảm sát thương Lực (mục 5.3). Thay `pdef`. |
 | Kháng 9 loại còn lại | 0% | Trần 75%, sàn −100%. Thay `mdef`. |

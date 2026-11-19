@@ -124,6 +124,10 @@ pub struct Me {
 /// The most qi a fighter holds unless its loadout says otherwise, in the qi skills cost.
 pub const FULL_QI: f64 = 100.0;
 
+/// The qi a jump costs, and a take-off into flight from the ground (the rules' `data::JUMP_QI`): with less, it does
+/// not leave the ground.
+pub const JUMP_QI: f64 = 8.0;
+
 #[cfg(feature = "serde")]
 fn full_qi() -> f64 {
     FULL_QI
@@ -138,6 +142,11 @@ impl Me {
             return self.qi;
         }
         (self.qi * self.qi_max / FULL_QI).min(100.0)
+    }
+
+    /// Whether it has the qi to leave the ground: a jump, or a take-off into flight (`JUMP_QI`).
+    pub fn can_leap(&self) -> bool {
+        self.qi * self.qi_max / FULL_QI >= JUMP_QI
     }
 }
 

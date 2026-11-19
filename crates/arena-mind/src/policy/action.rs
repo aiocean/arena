@@ -91,8 +91,9 @@ fn slotted<'a>(sense: &Sense, skills: &'a [Skill], slot: usize) -> Option<(usize
     skills.get(k).map(|s| (k, s))
 }
 
-/// Which acts can happen now: waiting always; the rest only while it can act; a cast only from a filled slot whose
-/// skill is ready, and aimed off the foe only for areas and blinks.
+/// Which acts can happen now: waiting always; the rest only while it can act; a jump, or a take-off into flight from
+/// the ground, only with the qi it costs; a cast only from a filled slot whose skill is ready, and aimed off the foe
+/// only for areas and blinks.
 pub fn legal(sense: &Sense, skills: &[Skill]) -> [bool; ACTIONS] {
     let me = &sense.me;
     let mut out = [false; ACTIONS];
@@ -104,7 +105,9 @@ pub fn legal(sense: &Sense, skills: &[Skill]) -> [bool; ACTIONS] {
             Act::Wait => true,
             _ if !me.can_act => false,
             Act::Toward | Act::Away | Act::Duck | Act::Guard | Act::Meditate => true,
-            Act::Jump | Act::FlyHigh => !me.flying,
+            // leaving the ground costs qi; flying higher from the air does not
+            Act::Jump => !me.flying && me.can_leap(),
+            Act::FlyHigh => !me.flying && (me.air > 0.0 || me.can_leap()),
             Act::Land => me.flying,
             Act::Cast { slot, aim } => slotted(sense, skills, slot).is_some_and(|(k, s)| {
                 sense.ready.get(k).copied().unwrap_or(false) && (aim == Aim::Foe || aims(s.kind))

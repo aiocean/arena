@@ -97,7 +97,8 @@ Where an aim lands:
 
 - wait is always legal;
 - while the fighter cannot act (in its own cast, or held by a status), nothing else is;
-- jump and fly high whenever not flying (a jump in mid-air does nothing), land only when flying;
+- jump whenever not flying with 8 qi or more (a jump costs 8 qi; a jump in mid-air does nothing), fly high whenever
+  not flying, from the ground only with 8 qi or more (taking off costs a jump), land only when flying;
 - a cast only from a filled slot whose skill is ready: cooled down, qi enough to pay,
   and, for a skill that deals damage, none of its last blows still playing out (`docs/rules.md`, "Skills");
   a silenced fighter casts only its attacks (the qi burst, if its loadout holds it: no spell), a sealed one cannot blink;

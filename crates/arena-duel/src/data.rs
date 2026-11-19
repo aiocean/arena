@@ -10,14 +10,15 @@ use std::sync::OnceLock;
 /// Effects the arena itself shows when they are in the registry: the lamps and the night.
 pub const DECOR: [&str; 2] = ["fire/brazier", "weather/fireflies"];
 
-/// Flying: the highest a fighter goes, and the qi it costs a second.
+/// Flying: the highest a fighter goes, and the qi it costs a second (besides the regen it stops: a second aloft is
+/// worth two of regen on the ground).
 pub struct Fly {
     pub top: f64,
     pub cost: f64,
 }
 pub const FLY: Fly = Fly {
     top: 384.0,
-    cost: 3.0,
+    cost: 8.0,
 };
 
 /// A ward holds 1 to `charges` charges for `time` seconds; each erases one whole blow.
@@ -122,8 +123,12 @@ pub const MIND: MindProfile = MindProfile {
     sky: 35.0,
 };
 
-pub const QI_REGEN: f64 = 3.0;
-pub const MEDITATE_REGEN: f64 = 16.0;
+/// Qi's regen a second, and meditation's rate in all (the damage system's base: `arena_calc::cultivator::BASE`).
+pub const QI_REGEN: f64 = arena_calc::cultivator::BASE.qi_regen;
+pub const MEDITATE_REGEN: f64 = arena_calc::cultivator::BASE.meditate_regen;
+/// The qi a jump costs, and a take-off into flight from the ground; with less, the fighter does not leave the ground
+/// (the minds and the policy's legal acts know it as `arena_mind::JUMP_QI`).
+pub const JUMP_QI: f64 = arena_mind::JUMP_QI;
 
 /// Meditation (ngồi thiền), a skill every fighter has, in three phases. Chosen while free (no cast, on the ground,
 /// not flying, not reeling) it sits down for `sit_down` seconds, sits as long as its seat keeps choosing to meditate

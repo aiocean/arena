@@ -300,7 +300,7 @@ fn dangers(out: &mut Out) -> f64 {
                         None,
                     );
                 }
-                if grounded && tti < 0.24 && tti > 0.08 {
+                if grounded && me.can_leap() && tti < 0.24 && tti > 0.08 {
                     out.push(Choice::Jump, Category::Evade, u * 1.25, None);
                 }
                 // a shot over a ducking body's height: drop under it
@@ -654,7 +654,7 @@ fn positions(out: &mut Out) {
         out.push(Choice::Fly { height: want }, category, 1.2, None);
     }
     // light on its feet: on the ground and out of reach, it bounds about rather than walking flat
-    if me.air == 0.0 && !me.flying && d > close + 10.0 && ctx.roll < 0.5 {
+    if me.air == 0.0 && !me.flying && me.can_leap() && d > close + 10.0 && ctx.roll < 0.5 {
         out.push(Choice::Jump, Category::Approach, 1.3, None);
     }
     let quiet = ctx.threats.is_empty() && !matches!(foe.doing, Doing::Act { .. });

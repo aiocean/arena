@@ -30,7 +30,8 @@ pub use reading::{Reading, is_area, is_close, is_ranged, press_range, punisher, 
 pub use rng::Rng;
 pub use sense::{
     AILMENTS, AURAS, ActFrames, ActPhase, Acting, AilmentOn, Arena, CURSES, Doing, Effects, Foe,
-    FoeSlot, KEYSTONES, Me, ROOTS, SUPPORTS, Sense, SlotX, Threat, ThreatShape, UnitKind, UnitSeen,
+    FoeSlot, JUMP_QI, KEYSTONES, Me, ROOTS, SUPPORTS, Sense, SlotX, Threat, ThreatShape, UnitKind,
+    UnitSeen,
 };
 pub use skill::{BodySize, Inflicts, Profile, Skill, SkillKind};
 pub use view::Delayed;

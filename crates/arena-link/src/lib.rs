@@ -44,11 +44,12 @@ use serde::{Deserialize, Serialize};
 /// 19: spells only, no melee: the blade, the dive and every striking dash gone, the basics a qi bolt and a close qi
 /// burst; 20: no basic that deals damage, the blink the one basic, the qi bolt and burst actives of the pool; 21:
 /// Đạo Dung Thân gone, its keystone flag kept and always off; 22: a damaging blow pushes harder the harder it hits, two
-/// bodies kept apart on their hurtboxes and a blink never landing inside the foe). A page whose rules differ steps a different fight from
+/// bodies kept apart on their hurtboxes and a blink never landing inside the foe; 23: casts slower and riskier,
+/// meditation a skill in phases; 24: qi regen 8/s, a jump or a take-off 8 qi, flight 8/s). A page whose rules differ steps a different fight from
 /// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 23;
+pub const RULES_VERSION: u32 = 24;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

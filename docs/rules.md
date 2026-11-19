@@ -94,8 +94,9 @@ cast spends one and they come back one at a time.
 
 ## Resources
 
-- **Qi** pays for most casts and for flying (3 a second, and it stops the regen). It refills on its own, 3 a second,
-  and faster while meditating (below). **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
+- **Qi** pays for most casts, for leaving the ground and for flying. A jump costs 8 qi, paid as it crouches, and so
+  does taking off into flight from the ground (`data::JUMP_QI`); with less than 8 it stays on the ground. Flying
+  costs 8 a second and stops the regen. Qi refills on its own, 8 a second, and faster while meditating (below). **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
   skills (design 1, 10). Souls come from soul damage dealt (one each 100), from kills, and from each minion that dies
   within 4 T.
 
@@ -105,8 +106,8 @@ Meditation (ngồi thiền) is a skill every fighter has, in three phases (`data
 
 - **Sitting down**, 0.4 s, once chosen while free on the ground (no cast, not flying, not reeling): it cannot act,
   move or guard.
-- **Sitting**, as long as its seat keeps choosing meditate or wait. Its qi refills 3 a second as always, and
-  meditation's extra (up to 16 a second in all) comes in blocks of 0.5 s: nothing until it has sat a whole first
+- **Sitting**, as long as its seat keeps choosing meditate or wait. Its qi refills 8 a second as always, and
+  meditation's extra (up to 21 a second in all) comes in blocks of 0.5 s: nothing until it has sat a whole first
   second, then that second's two blocks, then a block for each further whole 0.5 s. A block not yet full when it
   ends is lost.
 - **Getting up**, 0.4 s, once it chooses anything else (that choice is dropped): it cannot act, move or guard.

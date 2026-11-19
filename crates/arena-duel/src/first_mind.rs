@@ -4,7 +4,7 @@
 //! seconds, and does the best, with a little noise.
 
 use crate::bar::ready;
-use crate::data::{Kind, MIND, Spell, UNIT, spell};
+use crate::data::{JUMP_QI, Kind, MIND, Spell, UNIT, spell};
 use crate::fighter::{Fighter, Phase, State};
 use crate::js::{js_max, js_min, js_sign, or_one};
 use crate::seat::{MakeSeat, Seat};
@@ -463,7 +463,12 @@ impl FirstMind {
             out.push(opt(What::Fly(want), 1.2));
         }
         // light on its feet: on the ground and out of reach, it bounds about rather than walking flat
-        if me.body.air == 0.0 && !me.fly && d.abs() > close_range + 40.0 && self.rng.next() < 0.5 {
+        if me.body.air == 0.0
+            && !me.fly
+            && me.c.qi >= JUMP_QI
+            && d.abs() > close_range + 40.0
+            && self.rng.next() < 0.5
+        {
             out.push(opt(What::Jump, 1.3));
         }
         let threatened = state.shots.iter().any(|s| s.owner != me.index);
@@ -590,7 +595,7 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
                 if js_sign(sx - x) == me.body.face {
                     out.push(opt(What::Guard(tti + 0.15), urgency * 1.1));
                 }
-                if me.body.air == 0.0 && !me.fly && tti < 0.24 && tti > 0.08 {
+                if me.body.air == 0.0 && !me.fly && me.c.qi >= JUMP_QI && tti < 0.24 && tti > 0.08 {
                     out.push(opt(What::Jump, urgency * 1.25));
                 }
                 // a bolt over a ducking body's height: drop under it

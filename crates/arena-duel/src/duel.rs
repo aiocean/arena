@@ -3,7 +3,7 @@
 use crate::act::{advance, begin, break_act, drop_barrier, get_up, knock_out, settle, sit_down};
 use crate::bar::draw;
 use crate::body::{Drive, Motion};
-use crate::data::{BAR, DECOR, FLY, Look, QI_REGEN, ROUND_PAUSE, STALE};
+use crate::data::{BAR, DECOR, FLY, JUMP_QI, Look, QI_REGEN, ROUND_PAUSE, STALE};
 use crate::fighter::{Fighter, Sit, Slot, State, Told};
 use crate::js::{js_max, js_min};
 use crate::seat::{Brain, MakeSeat, Seat};
@@ -566,18 +566,27 @@ pub fn apply(state: &mut State, me: usize, choice: &Choice) {
     let f = &mut state.fighters[me];
     match choice {
         Choice::Move { dir } => f.intent = *dir,
-        // crouch first, then spring
+        // crouch first, then spring; leaving the ground costs qi, paid as it crouches
         Choice::Jump => {
-            if f.body.air == 0.0 {
+            if f.body.air == 0.0 && f.body.squat == 0.0 && f.c.qi >= JUMP_QI {
+                f.c.qi -= JUMP_QI;
                 f.body.squat = f.body.spec.jump_squat;
                 f.body.leap = f.body.spec.jump_speed;
             }
         }
         Choice::Guard { hold } => f.guard = *hold,
         Choice::Duck { hold } => f.body.duck = *hold,
+        // taking off from the ground costs a jump's qi; without it, it stays on the ground
         Choice::Fly { height } => {
+            let take_off = *height > 0.0 && !f.fly && f.body.air == 0.0;
+            if take_off && f.c.qi < JUMP_QI {
+                return;
+            }
             f.fly = *height > 0.0;
             f.hover = *height;
+            if take_off {
+                f.c.qi -= JUMP_QI;
+            }
             if f.fly && f.body.air == 0.0 {
                 f.body.vy = f.body.spec.jump_speed * 0.6;
             }
