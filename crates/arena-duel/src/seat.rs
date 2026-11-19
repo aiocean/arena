@@ -137,7 +137,7 @@ pub fn policy_mind(state: &State, me: usize, style: Style) -> PolicyMind {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Fault(pub String);
 
-/// A bot that answers the decisions a `PolicyMind` makes due: the duel's side of a module of the `arena-bot-3` ABI
+/// A bot that answers the decisions a `PolicyMind` makes due: the duel's side of a module of the `arena-bot-4` ABI
 /// (`docs/bot.md`, "The bot module"), so the rules do not depend on a wasm host (`arena-bot` runs one).
 pub trait Decider {
     /// A new fight of the match; `seed` is the bot's own dice for it.

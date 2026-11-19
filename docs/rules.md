@@ -82,6 +82,29 @@ the tick after its last blow ends.
 Reaches and places are in the arena's pixels (`UNIT` = 4 of them to one of the world's); the damage system's unit,
 T, is a fighter's height, 240 of the arena's pixels.
 
+### Range bands
+
+Since RULES 25 (owner, 2026-11-19) a skill thrown at the foe has a **range band**: the distances between the two
+fighters' centres, in the arena's pixels, that it can be begun from (`arena_calc::band`). Its reach tag decides it:
+
+| Reach | Band | Skills |
+|---|---|---|
+| near | 0 to 192 | the palms, bursts and close blasts (their reach is 104 to 208) |
+| mid | 112 to 400 | the seals, quakes and areas landed on the foe |
+| far | 224 to 640 | the bolts, fingers, arrows, banners and every far instant |
+
+Outside its band a skill **cannot be cast**: its slot shows not ready, a mind never picks it, and a cast asked for
+anyway is refused, with nothing paid or spent. It is checked when the cast begins: a foe that walks out of the band
+during the windup is still struck at, if the blow still reaches. So the far skills want distance and a fighter who
+wants them steps away first, the near ones want the foe close, and the middle ones sit between. The bands overlap,
+so at any distance from touching to 640 some band holds. A skill not thrown at the foe has no band: the whole arena
+(`whole`), fields and domains, auras, blessings, stances and heralds, guards, recoveries and movements (the blink),
+the devices (traps, mines, totems, minions: laid, then they strike as they will), and every skill that deals no
+damage (buffs, wards, curses with no blow). The wiki shows each skill's band ("Cast from"); a bot sees it in its
+inputs (`docs/bot.md`, "Why").
+
+The numbers are measured by the ladder (`--seeds 150 --telemetry`) before and after, in the RULES 25 commit.
+
 ## The bar
 
 A fighter's three bar slots show one of its loadout's actives each (only those cast by hand: a skill a trigger

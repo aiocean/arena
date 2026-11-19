@@ -29,9 +29,9 @@ pub use posture::{Category, Held, POSTURES, PostureDef, choose_posture};
 pub use reading::{Reading, is_area, is_close, is_ranged, press_range, punisher, read_posture};
 pub use rng::Rng;
 pub use sense::{
-    AILMENTS, AURAS, ActFrames, ActPhase, Acting, AilmentOn, Arena, CURSES, Doing, Effects, Foe,
-    FoeSlot, JUMP_QI, KEYSTONES, Me, ROOTS, SUPPORTS, Sense, SlotX, Threat, ThreatShape, UnitKind,
-    UnitSeen,
+    AILMENTS, AURAS, ActFrames, ActPhase, Acting, AilmentOn, Arena, Band, BuffKind, BuffSeen,
+    CURSES, Doing, Effects, Foe, FoeSlot, InPlay, JUMP_QI, KEYSTONES, Lasting, Me, ROOTS, SUPPORTS,
+    Sense, SlotWhy, SlotX, Threat, ThreatShape, UnitKind, UnitSeen,
 };
 pub use skill::{BodySize, Inflicts, Profile, Skill, SkillKind};
 pub use view::Delayed;

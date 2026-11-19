@@ -157,6 +157,8 @@ pub fn sense(time: f64, me: Me, foe: Foe) -> Sense {
         effects: Default::default(),
         units: vec![],
         foe_slots: [None; 6],
+        why: [None; 6],
+        lasting: Lasting::default(),
     }
 }
 

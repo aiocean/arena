@@ -696,6 +696,22 @@ fn hit_facts(g: &Gem) -> Option<(String, Vec<(f64, f64)>)> {
     Some((facts(&rows), trace.windows()))
 }
 
+/// The distances from the foe a skill can be begun at (`arena_duel::kit::band_of`).
+fn band_html(g: &Gem) -> String {
+    match arena_duel::kit::band_of(g, g.all_tags()) {
+        Some(b) if b.min > 0.0 => format!(
+            "{} to {} px from the foe: closer or farther, it cannot be cast",
+            num(b.min),
+            num(b.max)
+        ),
+        Some(b) => format!(
+            "within {} px of the foe: farther, it cannot be cast",
+            num(b.max)
+        ),
+        None => "any distance".to_owned(),
+    }
+}
+
 fn spell_numbers(sp: &Spell) -> Vec<(&'static str, String)> {
     let opt = |v: Option<f64>, unit: &str| v.map_or(String::new(), |v| format!("{}{unit}", num(v)));
     vec![
@@ -804,6 +820,7 @@ fn skills(wiki: &mut Wiki, book: &Book, sheets: &hits::Sheets) {
                 },
             ),
             ("Effects", effects),
+            ("Cast from", band_html(g)),
             ("Cost", cost_html(g)),
             ("Cooldown", format!("{} s", num(g.cooldown))),
             ("Wind-up", format!("{} s", num(g.windup))),

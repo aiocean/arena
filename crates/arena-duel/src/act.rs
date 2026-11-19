@@ -2,7 +2,7 @@
 //! skill works: `kit::Way`) and recovers; a blow is guarded, turned aside by a barrier, erased by a ward, dodged or
 //! taken (`strike::hurt`); knockouts; and the effect commands a cast plays. Each draws its dice in a fixed order.
 
-use crate::bar::{ready, spend};
+use crate::bar::{castable, spend};
 use crate::body::{BodySpec, Doing};
 use crate::data::{
     CAST_CIRCLE, CHIP, CLASH, FRAMES, KNOCKBACK, Kind, MEDITATE, RING, Spell, T, WARD,
@@ -157,7 +157,7 @@ pub fn pose(state: &mut State, f: usize) {
 pub fn begin(state: &mut State, me: usize, name: &'static str, target: Option<f64>) {
     let f = &state.fighters[me];
     let Some(k) = f.kit.index(name) else { return };
-    if !ready(f, name) {
+    if !castable(f, &state.fighters[1 - me], name) {
         return;
     }
     let Some(built) = build(state, me, k, None) else {

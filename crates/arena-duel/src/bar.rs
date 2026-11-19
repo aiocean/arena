@@ -5,11 +5,12 @@
 use crate::data::{BAR, Kind, STALE};
 use crate::fighter::{Fighter, Slot, State};
 use crate::js::js_min;
-use crate::kit::Place;
+use crate::kit::{KitSkill, Place};
 use crate::strike::can_pay;
 use arena_calc::ailment::Ailment;
 use arena_calc::gem;
 use arena_calc::tag::Tag;
+use arena_mind::{Band as SeenBand, SlotWhy};
 
 /// A die of `n` faces, 0-based: `Math.floor(rng() * n)`.
 fn pick(state: &mut State, n: usize) -> usize {
@@ -30,20 +31,65 @@ pub fn ready(f: &Fighter, name: &str) -> bool {
     let Some(k) = f.kit.get(name) else {
         return false;
     };
+    k.uses.ready() && can_pay(&f.c, &k.costs()) && !barred(f, name, k)
+}
+
+/// What bars `f` from casting `k` (named `name`) besides its cooldown and its cost: everything `ready` checks but
+/// those two.
+fn barred(f: &Fighter, name: &str, k: &KitSkill) -> bool {
     let s = k.motion;
-    !k.triggered
-        && k.usable
-        && (!matches!(k.place, Place::Active(_)) || slot_of(f, name).is_some())
-        && k.uses.ready()
-        && k.card != Some(0)
-        && !(f.silenced() && k.tags.has(Tag::Spell))
-        && !((s.kind == Kind::Blink || k.tags.has(Tag::Movement))
+    k.triggered
+        || !k.usable
+        || (matches!(k.place, Place::Active(_)) && slot_of(f, name).is_none())
+        || k.card == Some(0)
+        || (f.silenced() && k.tags.has(Tag::Spell))
+        || ((s.kind == Kind::Blink || k.tags.has(Tag::Movement))
             && (f.sealed > 0.0 || f.root > 0.0))
-        && !(k.tags.has(Tag::Guard) && f.no_guard > 0.0)
-        && !f.curses.barred(k.tags)
-        && !(f.bound && k.gem.binds())
-        && !gem::aura_of(k.gem).is_some_and(|a| f.auras.on.iter().any(|o| o.kind == a))
-        && can_pay(&f.c, &k.costs())
+        || (k.tags.has(Tag::Guard) && f.no_guard > 0.0)
+        || f.curses.barred(k.tags)
+        || (f.bound && k.gem.binds())
+        || gem::aura_of(k.gem).is_some_and(|a| f.auras.on.iter().any(|o| o.kind == a))
+}
+
+/// Why `f` can or cannot cast `name` at `foe` now, for a mind (ABI 4): its band in the minds' pixels (`scale` turns
+/// the rules' into them), the foe in it or not, and each reason it is not castable; `free` is whether `f` can act
+/// at all.
+pub fn why(f: &Fighter, foe: &Fighter, name: &str, free: bool, scale: f64) -> Option<SlotWhy> {
+    let k = f.kit.get(name)?;
+    let d = gap(f, foe);
+    let band = k.band;
+    Some(SlotWhy {
+        band: band.map(|b| SeenBand {
+            min: b.min * scale,
+            max: b.max * scale,
+        }),
+        in_band: band.is_none_or(|b| b.holds(d)),
+        cooling: !k.uses.ready(),
+        short: !can_pay(&f.c, &k.costs()),
+        too_near: band.is_some_and(|b| d < b.min),
+        too_far: band.is_some_and(|b| d > b.max),
+        barred: !free || barred(f, name, k),
+    })
+}
+
+/// Whether `f` can begin `name` at its distance from `foe` (the gap between their centres): inside the skill's range
+/// band (`kit::KitSkill::band`), and any distance for a skill with none.
+pub fn in_band(f: &Fighter, foe: &Fighter, name: &str) -> bool {
+    f.kit
+        .get(name)
+        .and_then(|k| k.band)
+        .is_none_or(|b| b.holds(gap(f, foe)))
+}
+
+/// The distance between two fighters' centres, game pixels.
+pub fn gap(f: &Fighter, foe: &Fighter) -> f64 {
+    libm::fabs(f.body.x - foe.body.x)
+}
+
+/// Can `f` cast `name` now at `foe`: it is `ready` and the foe stands inside its band (`in_band`). What a mind is
+/// told is ready, and what a cast is refused by.
+pub fn castable(f: &Fighter, foe: &Fighter, name: &str) -> bool {
+    ready(f, name) && in_band(f, foe, name)
 }
 
 /// Put `slot` at `i` of fighter `f`'s bar (one past the end grows it, as a JS array does).

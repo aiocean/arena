@@ -267,6 +267,100 @@ pub struct Sense {
     /// The foe's castable slots in the same layout as `slots` (its basics, then its bar), each what it builds to.
     #[cfg_attr(feature = "serde", serde(default))]
     pub foe_slots: [Option<FoeSlot>; SLOTS],
+    /// Why each of `slots` can or cannot be cast now, in the same order (`None` for an empty slot; ABI 4).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub why: [Option<SlotWhy>; SLOTS],
+    /// How long what is in play lasts: its own timed buffs, the domains, the fields and the auras (ABI 4).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub lasting: Lasting,
+}
+
+/// Where a skill can be begun from (`arena_calc::band`): `min..=max` game pixels between the fighters' centres.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields)
+)]
+pub struct Band {
+    pub min: f64,
+    pub max: f64,
+}
+
+/// One of its own slots: its band (`None` for a skill castable at any distance), whether the foe stands inside it,
+/// and each reason it cannot be cast now (any number of them at once; none when it is ready).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields, default)
+)]
+pub struct SlotWhy {
+    pub band: Option<Band>,
+    pub in_band: bool,
+    /// No use stored: its cooldown runs.
+    pub cooling: bool,
+    /// Short of the qi (or other resource) it costs.
+    pub short: bool,
+    /// The foe is nearer than its band's `min`, or farther than its `max`.
+    pub too_near: bool,
+    pub too_far: bool,
+    /// Anything else bars it: silenced, sealed or rooted (a movement), no guard, a curse, its last binding blow still
+    /// playing, its aura already lit, its cards spent, or the fighter cannot act.
+    pub barred: bool,
+}
+
+/// What kind of timed buff a skill laid on its caster: a stance (more damage), a blessing (less taken), or another.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub enum BuffKind {
+    Stance,
+    Blessing,
+    #[default]
+    Other,
+}
+
+/// A timed buff on itself and its seconds left.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields)
+)]
+pub struct BuffSeen {
+    pub kind: BuffKind,
+    pub left: f64,
+}
+
+/// A domain, a field or an aura in play: its own or the foe's, its seconds left (`None` while it lasts as long as it
+/// is held), seconds until it works (an aura's windup; 0 for the others), and where it stands (game pixels; `None`
+/// for an aura, which is on its holder).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields, default)
+)]
+pub struct InPlay {
+    pub mine: bool,
+    pub left: Option<f64>,
+    pub works_in: f64,
+    pub x: Option<f64>,
+}
+
+/// How long what is in play lasts, in any order (the policy sorts what it shows).
+#[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields, default)
+)]
+pub struct Lasting {
+    pub buffs: Vec<BuffSeen>,
+    pub domains: Vec<InPlay>,
+    pub fields: Vec<InPlay>,
+    pub auras: Vec<InPlay>,
 }
 
 /// A cast under way as its fighter's clip times it. Its active window opens when its blow is released (the end of
@@ -335,7 +429,7 @@ pub struct SlotX {
     pub supports: u128,
 }
 
-/// One of the foe's slots: its kind, whether it is ready, its reach (game pixels) and what it builds to.
+/// One of the foe's slots: its kind, whether it is ready, its reach (game pixels), what it builds to and its band.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
@@ -347,6 +441,11 @@ pub struct FoeSlot {
     pub ready: bool,
     pub reach: f64,
     pub built: SlotX,
+    /// Its band, and whether I stand inside it (ABI 4).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub band: Option<Band>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub in_band: bool,
 }
 
 /// One ailment on a fighter: its stacks (for a damage over time, its instances), the stacks that make it full, the

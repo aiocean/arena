@@ -45,12 +45,25 @@
 //!   one that lasts), armed, seconds to its next blow;
 //! - the foe's slots (`SLOTS` x `FOE_SLOT` = 6 x 34, 1537..1741), zero when empty: present, ready, cooldown left,
 //!   stored uses / 4, kind (12), windup, recover, the active window's start and length, damage / 50, qi / 50,
-//!   reach / 100, each ailment a blow lays over its full (11).
+//!   reach / 100, each ailment a blow lays over its full (11);
+//!
+//! ABI 4 appends to ABI 3's 1741, which keep their indices and meaning (a slot's `ready` now also says the foe
+//! stands inside its band):
+//! - why (`SLOTS` x `WHY` = 6 x 9, 1741..1795), zero when empty: has a band, its min / 100, max / 100 (zero for
+//!   none: castable at any distance), the foe in band, then why it cannot be cast now, one flag each: cooling down,
+//!   short of qi, too near, too far, barred (silenced, sealed, a curse, can't act...);
+//! - the foe's bands (`SLOTS` x `FOE_BAND` = 6 x 4, 1795..1819), zero when empty: has a band, min / 100, max / 100,
+//!   I stand in it;
+//! - buffs (`BUFFS` x `BUFF` = 4 x 5, 1819..1839): its own timed buffs, soonest to end first: present, stance,
+//!   blessing, other, time left / 10;
+//! - in play (`DOMAINS` + `FIELDS` + `AURAS_IN_PLAY` = 2 + 4 + 4, x `IN_PLAY` = 5, 1839..1889): the domains and
+//!   auras its own first, the fields nearest first, each: present, mine, time left / 10 (4 for one held as long as
+//!   its holder keeps it), seconds until it works, where it stands ahead of me / 100 (0 for an aura).
 
 use super::{SLOTS, ahead};
 use crate::sense::{
-    AILMENTS, AURAS, ActFrames, ActPhase, CURSES, Doing, Effects, Foe, KEYSTONES, ROOTS, SUPPORTS,
-    Sense, SlotX, Threat, ThreatShape, UnitKind,
+    AILMENTS, AURAS, ActFrames, ActPhase, Band, BuffKind, CURSES, Doing, Effects, Foe, InPlay,
+    KEYSTONES, ROOTS, SUPPORTS, Sense, SlotX, Threat, ThreatShape, UnitKind,
 };
 use crate::skill::{Skill, SkillKind};
 
@@ -73,9 +86,24 @@ pub const UNITS: usize = 8;
 const UNIT: usize = 12;
 /// One of the foe's slots: 23 numbers and an ailment's share each.
 const FOE_SLOT: usize = 23 + AILMENTS;
+/// A band: has one, min, max (ABI 4).
+const BAND: usize = 3;
+/// Why one of its slots can or cannot be cast: its band, in band, cooling, short of qi, too near, too far, barred.
+const WHY: usize = BAND + 6;
+/// One of the foe's slots' band and whether I stand in it.
+const FOE_BAND: usize = BAND + 1;
+/// Its own timed buffs it sees, soonest to end first: present, stance, blessing, other, time left / 10.
+pub const BUFFS: usize = 4;
+const BUFF: usize = 5;
+/// The domains (one a side), fields and auras in play it sees: present, mine, time left / 10 (`LASTS` for one held),
+/// seconds until it works, where it stands ahead of me / 100 (0 for an aura).
+pub const DOMAINS: usize = 2;
+pub const FIELDS: usize = 4;
+pub const AURAS_IN_PLAY: usize = 4;
+const IN_PLAY: usize = 5;
 
 /// Every block in order, as `docs/bot.md` names it, with its length.
-pub const BLOCKS: [(&str, usize); 11] = [
+pub const BLOCKS: [(&str, usize); 15] = [
     ("Me", ME),
     ("Foe", FOE),
     ("Threats", THREATS * THREAT),
@@ -87,6 +115,10 @@ pub const BLOCKS: [(&str, usize); 11] = [
     ("Effects", 2 * EFFECT),
     ("Units", UNITS * UNIT),
     ("Foe's slots", SLOTS * FOE_SLOT),
+    ("Why", SLOTS * WHY),
+    ("Foe's bands", SLOTS * FOE_BAND),
+    ("Buffs", BUFFS * BUFF),
+    ("In play", (DOMAINS + FIELDS + AURAS_IN_PLAY) * IN_PLAY),
 ];
 
 pub const OBS: usize = total(&BLOCKS);
@@ -145,6 +177,17 @@ impl Out {
     }
     fn skip(&mut self, n: usize) {
         self.at += n;
+    }
+    /// A band (`BAND`): has one, its min / 100 and max / 100; zero for none.
+    fn band(&mut self, b: Option<Band>) {
+        match b {
+            Some(b) => {
+                self.flag(true);
+                self.put(b.min / 100.0);
+                self.put(b.max / 100.0);
+            }
+            None => self.skip(BAND),
+        }
     }
 }
 
@@ -392,6 +435,71 @@ pub fn observe(
         o.put(f.reach / 100.0);
         for &v in &x.inflict {
             o.put(v);
+        }
+    }
+
+    // ABI 4: the bands and why a slot cannot be cast, then how long what is in play lasts
+    for w in &sense.why {
+        let Some(w) = w else {
+            o.skip(WHY);
+            continue;
+        };
+        o.band(w.band);
+        o.flag(w.in_band);
+        o.flag(w.cooling);
+        o.flag(w.short);
+        o.flag(w.too_near);
+        o.flag(w.too_far);
+        o.flag(w.barred);
+    }
+    for f in &sense.foe_slots {
+        let Some(f) = f else {
+            o.skip(FOE_BAND);
+            continue;
+        };
+        o.band(f.band);
+        o.flag(f.in_band);
+    }
+    let l = &sense.lasting;
+    let mut buffs = l.buffs.clone();
+    buffs.sort_by(|a, b| a.left.total_cmp(&b.left));
+    for i in 0..BUFFS {
+        let Some(b) = buffs.get(i) else {
+            o.skip(BUFF);
+            continue;
+        };
+        o.flag(true);
+        for k in [BuffKind::Stance, BuffKind::Blessing, BuffKind::Other] {
+            o.flag(b.kind == k);
+        }
+        o.put(b.left / 10.0);
+    }
+    // a domain or an aura: its own first; a field: nearest first
+    let mine_first = |v: &[InPlay]| {
+        let mut v = v.to_vec();
+        v.sort_by_key(|p| !p.mine);
+        v
+    };
+    let mut fields = l.fields.clone();
+    fields.sort_by(|a, b| {
+        let d = |p: &InPlay| p.x.map_or(f64::INFINITY, |x| (x - me.x).abs());
+        d(a).total_cmp(&d(b))
+    });
+    for (v, n) in [
+        (mine_first(&l.domains), DOMAINS),
+        (fields, FIELDS),
+        (mine_first(&l.auras), AURAS_IN_PLAY),
+    ] {
+        for i in 0..n {
+            let Some(p) = v.get(i) else {
+                o.skip(IN_PLAY);
+                continue;
+            };
+            o.flag(true);
+            o.flag(p.mine);
+            o.put(p.left.unwrap_or(LASTS).min(LASTS) / 10.0);
+            o.put(p.works_in);
+            o.put(p.x.map_or(0.0, |x| (x - me.x) * dir / 100.0));
         }
     }
     o.v

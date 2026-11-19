@@ -240,11 +240,11 @@ fn a_cast_that_lands_nothing_is_a_whiff_and_pays_the_whiff_cost() {
 
 #[test]
 fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
-    // the hand above, against the aggressive script, who closes in (seed 2), so some blows are thrown in reach and some from afar: the far
+    // the hand above, against the aggressive script, who closes in, so some blows are thrown in reach and some from afar: the far
     // cost takes exactly its price for each far whiff and nothing for a blow thrown in reach
     let hand = |e: &Env| {
         let (_, legal) = e.observe();
-        // the first of the bar's skills it may cast: thrown in reach or from afar
+        // the first of its skills it may cast (inside its band): thrown in reach or from afar
         (3..6)
             .map(|slot| {
                 Act::Cast {
@@ -257,8 +257,8 @@ fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
             .find(|&a| legal[a])
             .unwrap_or(0)
     };
-    let run = |far: f32| {
-        let mut env = Env::new(cfg(2, 0, Opponent::Aggressive));
+    let run = |seed: u32, far: f32| {
+        let mut env = Env::new(cfg(seed, 0, Opponent::Aggressive));
         let mut paid = 0.0_f32;
         for _ in 0..5000 {
             let s = env.step_costs(hand(&env), 0.0, 0.0, far);
@@ -269,15 +269,27 @@ fn the_far_cost_pays_only_for_whiffs_begun_out_of_reach() {
         }
         (paid, env.take_casts())
     };
-    let (free, casts) = run(0.0);
-    let (costly, again) = run(0.01);
+    let tally = |casts: &arena_duel::train::Casts| {
+        let total =
+            |f: fn(&arena_duel::train::CastLog) -> u32| casts.kinds.iter().map(f).sum::<u32>();
+        (
+            total(|c| c.out_of_reach),
+            total(|c| c.whiffs),
+            total(|c| c.far_whiffs),
+        )
+    };
+    // the range bands keep most blows in reach: the first seed whose fight has whiffs of both kinds
+    let seed = (1..60)
+        .find(|&seed| {
+            let (_, whiffs, far_whiffs) = tally(&run(seed, 0.0).1);
+            far_whiffs > 0 && far_whiffs < whiffs
+        })
+        .unwrap_or(0);
+    assert!(seed > 0, "a seed with whiffs in reach and from afar");
+    let (free, casts) = run(seed, 0.0);
+    let (costly, again) = run(seed, 0.01);
     assert_eq!(casts, again);
-    let total = |f: fn(&arena_duel::train::CastLog) -> u32| casts.kinds.iter().map(f).sum::<u32>();
-    let (far, whiffs, far_whiffs) = (
-        total(|c| c.out_of_reach),
-        total(|c| c.whiffs),
-        total(|c| c.far_whiffs),
-    );
+    let (far, whiffs, far_whiffs) = tally(&casts);
     assert!(
         far_whiffs > 0 && far_whiffs < whiffs && far_whiffs <= far,
         "{casts:?}"

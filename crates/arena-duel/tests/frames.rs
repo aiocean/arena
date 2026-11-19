@@ -115,6 +115,8 @@ fn a_fighter_that_guards_then_casts_is_not_guarding_while_it_gathers() {
     let mut s = still(1);
     s.fighters[1].guard = 5.0;
     s.fighters[1].bar = vec![common::common("lotus")];
+    // close, inside a near blow's band
+    s.fighters[1].body.x = s.fighters[0].body.x + 100.0;
     begin(&mut s, 1, "lotus", None);
     assert_eq!(s.fighters[1].guard, 0.0);
     // a burst is always turned aside by a guard: here it lands

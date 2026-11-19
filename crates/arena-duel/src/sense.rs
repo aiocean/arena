@@ -6,7 +6,7 @@
 //! system's state is mapped onto the slots that fit it and the rest left at zero (design 16).
 
 use crate::act::recover_of;
-use crate::bar::{cooldown_left, ready};
+use crate::bar::{castable, cooldown_left, in_band, why};
 use crate::data::{BAR, FRAMES, Kind, Spell, T, UNIT, spell};
 use crate::fighter::{Fighter, Phase, Sit, Slot, State};
 use crate::frames::{CAST, strike_hitbox, window_of};
@@ -22,10 +22,12 @@ use arena_calc::gem::{self, Effect};
 use arena_calc::keystone::Keystone;
 use arena_calc::loadout::ROOTS;
 use arena_calc::stat::{Source, Stat};
+use arena_calc::tag::{Tag, Tags};
 use arena_mind::policy::SLOTS;
 use arena_mind::{
-    ActFrames, ActPhase, Acting, AilmentOn, Arena, Choice, Doing, Effects, Foe, FoeSlot, Inflicts,
-    Me, Sense, Skill, SkillKind, SlotX, Threat, ThreatShape, UnitKind, UnitSeen,
+    ActFrames, ActPhase, Acting, AilmentOn, Arena, Band, BuffKind, BuffSeen, Choice, Doing,
+    Effects, Foe, FoeSlot, InPlay, Inflicts, Lasting, Me, Sense, Skill, SkillKind, SlotX, Threat,
+    ThreatShape, UnitKind, UnitSeen,
 };
 
 /// A length or speed in the arena's pixels, in the engine's.
@@ -308,6 +310,9 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
         || b.duck > 0.0
         || b.shocked > 0.0
         || !f.alive());
+    let whys = slots_at(&slots, |k| {
+        why(f, foe, f.kit.skills.get(k)?.gem.id, free, 1.0 / UNIT)
+    });
     Sense {
         time: state.time,
         me: Me {
@@ -346,7 +351,7 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             frozen: foe.root,
             shocked: foe.body.shocked,
             barrier: foe.barrier > 0.0,
-            ready: foe.spells.iter().map(|n| ready(foe, n)).collect(),
+            ready: foe.spells.iter().map(|n| castable(foe, f, n)).collect(),
         },
         arena: Arena {
             left: seen(state.left),
@@ -354,7 +359,7 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             top: seen(state.top),
         },
         threats: threats_of(state, me),
-        ready: f.spells.iter().map(|n| ready(f, n)).collect(),
+        ready: f.spells.iter().map(|n| castable(f, foe, n)).collect(),
         // every skill strikes at its own power (no bar tiers)
         power: Vec::new(),
         stacks: Vec::new(),
@@ -368,11 +373,86 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             let ks = foe.kit.skills.get(k)?;
             Some(FoeSlot {
                 kind: kind_of(ks.motion),
-                ready: ready(foe, ks.gem.id),
+                ready: castable(foe, f, ks.gem.id),
                 reach: seen(reach_of(ks.motion)),
                 built: slotx_of(foe, k)?,
+                band: ks.band.map(|b| Band {
+                    min: seen(b.min),
+                    max: seen(b.max),
+                }),
+                in_band: in_band(foe, f, ks.gem.id),
             })
         }),
+        why: whys,
+        lasting: lasting_of(state, me),
+    }
+}
+
+/// How long what is in play lasts, seen by fighter `me` (ABI 4): its own timed buffs, the domains, the fields (the
+/// vortices standing) and the auras, its own and the foe's.
+fn lasting_of(state: &State, me: usize) -> Lasting {
+    let f = &state.fighters[me];
+    let buffs =
+        f.c.effects
+            .iter()
+            .filter_map(|x| match (x.source, x.left) {
+                (Source::Skill(id), Some(left)) => {
+                    let tags = gem::gem(id).map_or(Tags::NONE, |g| Tags::of(g.tags));
+                    let kind = if tags.has(Tag::Stance) {
+                        BuffKind::Stance
+                    } else if tags.has(Tag::Blessing) {
+                        BuffKind::Blessing
+                    } else {
+                        BuffKind::Other
+                    };
+                    Some(BuffSeen { kind, left })
+                }
+                _ => None,
+            })
+            .collect();
+    let domains = state
+        .field
+        .domains
+        .iter()
+        .flatten()
+        .map(|d| InPlay {
+            mine: d.owner == me,
+            left: Some(d.left),
+            works_in: 0.0,
+            x: Some(seen(state.from_t(d.centre))),
+        })
+        .collect();
+    let fields = state
+        .shots
+        .iter()
+        .filter_map(|s| match s.kind {
+            ShotKind::Void { x, .. } => Some(InPlay {
+                mine: s.owner == me,
+                left: Some((s.spell.life.unwrap_or(0.0) - s.t).max(0.0)),
+                works_in: 0.0,
+                x: Some(seen(x)),
+            }),
+            _ => None,
+        })
+        .collect();
+    let auras = state
+        .fighters
+        .iter()
+        .enumerate()
+        .flat_map(|(i, h)| {
+            h.auras.on.iter().map(move |a| InPlay {
+                mine: i == me,
+                left: None,
+                works_in: a.windup.max(0.0),
+                x: None,
+            })
+        })
+        .collect();
+    Lasting {
+        buffs,
+        domains,
+        fields,
+        auras,
     }
 }
 

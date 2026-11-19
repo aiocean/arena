@@ -173,11 +173,45 @@ fn clash_at_equal_x_pushes_as_js() {
 }
 
 #[test]
+fn a_skill_is_begun_only_inside_its_range_band() {
+    use arena_calc::band::{FAR, MID, NEAR};
+    use arena_duel::bar::{castable, ready};
+    let at = |gap: f64, name: &'static str| {
+        let mut s = still(3);
+        s.fighters[1].bar = vec![common::common(name)];
+        s.fighters[0].body.x = 40.0;
+        s.fighters[1].body.x = 40.0 + gap;
+        let target = s.fighters[0].body.x;
+        let qi = s.fighters[1].c.qi;
+        assert!(ready(&s.fighters[1], name), "{name}");
+        let told = castable(&s.fighters[1], &s.fighters[0], name);
+        begin(&mut s, 1, name, Some(target));
+        let cast = s.fighters[1].act.is_some();
+        assert_eq!(
+            cast, told,
+            "{name} at {gap}: what a mind is told is what the rules do"
+        );
+        // a cast refused is not paid for
+        assert!(cast || s.fighters[1].c.qi == qi);
+        cast
+    };
+    // a far bolt only from far off, a near palm only close, a middle area in between
+    assert!(!at(FAR.min - 10.0, "fireball") && at(FAR.min + 10.0, "fireball"));
+    assert!(!at(FAR.max + 10.0, "fireball"));
+    assert!(at(NEAR.max - 10.0, "palm") && !at(NEAR.max + 10.0, "palm"));
+    assert!(!at(MID.min - 10.0, "collapse") && at(MID.max - 10.0, "collapse"));
+    // what is not thrown at the foe has no band
+    assert!(at(FAR.max + 100.0, "ward") && at(10.0, "ward"));
+}
+
+#[test]
 fn a_cast_pays_its_built_costs_and_spends_a_use() {
     let mut s = still(3);
     let qi = s.fighters[1].c.qi;
     let target = s.fighters[0].body.x;
     s.fighters[1].bar = vec![common::common("collapse")];
+    // inside a middle-reach band
+    s.fighters[1].body.x = target + 250.0;
     begin(&mut s, 1, "collapse", Some(target));
     assert!(s.fighters[1].act.is_some());
     assert!(s.fighters[1].c.qi < qi);
@@ -195,6 +229,8 @@ fn a_cast_still_gathering_in_its_rune_circle_when_the_foe_falls_loses_its_circle
     let mut s = still(3);
     let target = s.fighters[0].body.x;
     s.fighters[1].bar = vec![common::common("collapse")];
+    // inside a middle-reach band
+    s.fighters[1].body.x = target + 250.0;
     begin(&mut s, 1, "collapse", Some(target));
     let circle = s.fighters[1].act.and_then(|a| a.circle);
     assert!(circle.is_some());

@@ -10,7 +10,7 @@ fn runner(body: &str) -> Runner {
     let text = format!(
         r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 3)
+  (func (export "arena_abi") (result i32) i32.const 4)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -32,10 +32,10 @@ fn memory_lasts_across_calls_and_the_input_is_written() {
     // count calls at address 0; answer the count plus the mask byte of act 2 (1) read from the input
     let r = runner(
         "(i32.store (i32.const 0) (i32.add (i32.load (i32.const 0)) (i32.const 1)))
-         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 7990)))",
+         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 8582)))",
     );
     let Ok(mut bot) = r.instance() else { return };
-    assert_eq!(bot.abi(), Ok(3));
+    assert_eq!(bot.abi(), Ok(4));
     assert_eq!(bot.decide(&OBS0, &LEGAL, 0.5), Ok(2));
     assert_eq!(bot.start(9), Ok(()));
     assert_eq!(
@@ -91,9 +91,10 @@ fn a_trap_leaves_the_instance_playable() {
 
 #[test]
 fn a_module_of_another_abi_does_not_start() {
+    // an ABI 3 module (1741 inputs) is refused, not fed ABI 4's 1889
     let text = r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 2)
+  (func (export "arena_abi") (result i32) i32.const 3)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -108,10 +109,10 @@ fn a_module_of_another_abi_does_not_start() {
     );
     let Some(r) = runner else { return };
     match r.instance() {
-        Ok(_) => unreachable!("an arena-bot-2 module started"),
+        Ok(_) => unreachable!("an arena-bot-3 module started"),
         Err(f) => assert_eq!(
             f.0,
-            "arena_abi() is 2, not 3: the module is not arena-bot-3"
+            "arena_abi() is 3, not 4: the module is not arena-bot-4"
         ),
     }
 }

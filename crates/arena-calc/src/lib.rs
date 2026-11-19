@@ -10,6 +10,7 @@
 
 pub mod ailment;
 pub mod aura;
+pub mod band;
 pub mod build;
 pub mod cap;
 pub mod card;

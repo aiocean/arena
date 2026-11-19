@@ -6,6 +6,7 @@
 
 use crate::data::{Kind as Motion, SKILL_LEVEL, Spell, motion};
 use arena_calc::ailment::{AILMENTS, Ailment};
+use arena_calc::band::{self, Band};
 use arena_calc::build::{Built, Situation, Skill, build_skill};
 use arena_calc::charge::Uses;
 use arena_calc::cultivator::Cultivator;
@@ -77,6 +78,15 @@ impl Way {
     }
 }
 
+/// How far from the foe `g` cast with `tags` can be begun (`arena_calc::band`), the rules' one answer (the wiki
+/// shows it): only a skill cast as its motion has a band, never an aura, a domain, a curse, a buff or a device.
+pub fn band_of(g: &Gem, tags: Tags) -> Option<Band> {
+    match Way::of(g, tags) {
+        Way::Motion => band::band(tags, g.deals_damage()),
+        _ => None,
+    }
+}
+
 /// The device tag a skill carries, in `device::spawn`'s order (trap, mine, totem, minion).
 pub fn device_kind(tags: Tags) -> Option<device::Kind> {
     if tags.has(Tag::Trap) {
@@ -105,6 +115,9 @@ pub struct KitSkill {
     /// Its tags with its kinds of damage and its supports' `becomes`.
     pub tags: Tags,
     pub way: Way,
+    /// How far from the foe it can be begun (`arena_calc::band`): `None` for a skill not thrown at the foe, or not
+    /// cast as its motion (an aura, a domain, a curse, a buff, a device).
+    pub band: Option<Band>,
     /// How it moves and looks: the duel's skill for its id (`data::spell`).
     pub motion: &'static Spell,
     /// Its stored cooldown uses.
@@ -197,6 +210,8 @@ impl KitSkill {
                 ids |= 1 << i;
             }
         }
+        let way = Way::of(g, tags);
+        let band = band_of(g, tags);
         let mut k = KitSkill {
             gem: g,
             skill,
@@ -204,7 +219,8 @@ impl KitSkill {
             place,
             triggered,
             tags,
-            way: Way::of(g, tags),
+            way,
+            band,
             motion,
             uses: Uses::of(&built),
             count: 0,

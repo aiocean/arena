@@ -4,9 +4,9 @@ What a bot sees, what it can do, when it decides, and the file a player submits.
 `crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/arena-duel/src/seat.rs` and
 `crates/arena-bot`.
 
-## What it sees: 1741 numbers
+## What it sees: 1889 numbers
 
-Each decision the bot gets `OBS` = 1741 floats, in a frame where the foe is always ahead (positive x), so the same bot
+Each decision the bot gets `OBS` = 1889 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
 unless a scale is given. Lengths are in the world's pixels (the page's), `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
 sees the same numbers whatever the arena's pixel size, and the pixels below are the world's too.
@@ -16,6 +16,13 @@ threat in flight appears once it is 0.16 s old: that is the time to react to a d
 (where it is, a walk, a cast it gathers that is not a blow, a recovery) is current, so an opening can be taken the
 moment it shows (`arena-mind/src/view.rs`). The foe's cast block (316..327) follows its doing: it reads 0 while the
 delay still hides a blow it winds up.
+
+**ABI 4 (RULES 25) appended 148 numbers to ABI 3's 1741: 0..1741 keep their indices and meaning**, except that a
+slot's *ready* (and the foe's slots' *ready*, and the foe's share of its skills ready) now also says the foe stands
+inside the skill's range band (`docs/rules.md`, "Range bands"): a skill out of its band cannot be cast, and is not
+legal. The new numbers (1741..1889) say each slot's band and why it cannot be cast, the foe's bands, and how long its
+buffs, the domains, the fields and the auras last. A model of ABI 3 carries over with its first layer widened, zeros
+on the new inputs (`train/widen.py`): it then plays exactly as it did, and training teaches it the rest.
 
 ABI 3 appended to ABI 2's 305 numbers: 0..305 keep their indices and meaning, except that a slot's cost and damage
 are now what the skill builds to with its supports and keystones.
@@ -33,10 +40,14 @@ are now what the skill builds to with its supports and keystones.
 | 1215..1441 | 2 x 113 | **Effects** on me, then on the foe. Each ailment (11): stacks over its full, full / 10, the longest time left / 10, and for burn and bleed the strongest one's damage a second over full life x 10 (+0..+44). Stunned, rooted, down, shocked, soul lost, blink sealed, no guard, choked, rotting, seconds (+44..+53). Each of the 12 curses' time left / 10 (+53..+65). The 15 auras held (+65..+80). Its skills' buffs: how many / 3, the longest's time left / 10, their sizes summed (a stance's damage more, a blessing's damage taken less) (+80..+83). Energy shield share, ward charges / 3, barrier seconds (+83..+86). Its loadout's keystones, 20 flags, the 15th always 0 (+86..+106). Its root, one-hot over 7 (+106..+113). |
 | 1441..1537 | 8 x 12 | **Units** on the field, both sides', nearest first, zero when absent: present, mine, kind (trap, mine, totem, minion), distance ahead / 100, height over my feet / 50, life share, time left / 10 (40 s for one that lasts), armed, seconds to its next blow (0 for a trap or a mine). |
 | 1537..1741 | 6 x 34 | **Foe's slots**, its basics (the blink, two empty) then its bar, zero when empty: present, ready, cooldown left, stored uses / 4, kind (12), windup, recover, the active window's start and length, damage / 50, qi / 50, reach / 100, then each ailment a blow lays over its full (11). |
+| 1741..1795 | 6 x 9 | **Why** each of my slots can or cannot be cast, in the slots' order, zero when empty (ABI 4): has a band, its min / 100, max / 100 (all 0 for a skill castable at any distance), the foe inside it; then one flag for each reason it cannot be cast now, any number at once, none when it is ready: cooling down (no use stored), short of qi, the foe too near (closer than min), too far (farther than max), barred (silenced, sealed or rooted for a movement, no guard, a curse, its last binding blow still playing, its aura lit already, its cards spent, or I cannot act). |
+| 1795..1819 | 6 x 4 | **Foe's bands**, in its slots' order, zero when empty: has a band, min / 100, max / 100, I stand inside it (it could cast it at me from where it is). |
+| 1819..1839 | 4 x 5 | **Buffs**: my own timed buffs from my skills, soonest to end first, zero when absent: present, stance (more damage), blessing (less taken), other, time left / 10. |
+| 1839..1889 | 10 x 5 | **In play**: the domains (2: mine first), the fields (4: the vortices standing, nearest first) and the auras (4: mine first), zero when absent. Each: present, mine, time left / 10 (4, forty seconds, for an aura: it lasts while its holder keeps it), seconds until it works (an aura's wind-up; 0 for the others), where it stands ahead of me / 100 (0 for an aura, which is on its holder). |
 
 The 12 skill kinds, in order: three reserved, then blast, bolt, seeker, area, field, heal, ward, barrier, blink. The
 three reserved slots held melee, dive and dash until the arena went spells only (RULES 19): no skill is one of them
-now, so they are always 0, and the inputs keep their shape (ABI 3, 1741 inputs, unchanged). A cast's hitbox (in "My
+now, so they are always 0, and the inputs keep their shape. A cast's hitbox (in "My
 cast" and "Foe's cast") was a blade's: a spell draws none, so it reads 0 too.
 
 The damage system's lists, in their orders in `crates/arena-calc`: the 11 ailments (`ailment::Ailment::ALL`: bleed,
@@ -59,8 +70,8 @@ it is.
   rate are the burn (fire); the chill slots are soak (water) and the slow is bind (wood); the shock slots are jolt
   (thunder).
 - There is no ultimate and no rage (`docs/rules.md`, "Loadouts"). ABI 2 dropped their places: the old rage, the
-  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741. A bot of another ABI (1: 354
-  inputs, 2: 305) is refused.
+  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741, ABI 4 1741..1889. A bot of another
+  ABI (1: 354 inputs, 2: 305, 3: 1741) is refused.
 
 A skill is known by its kind and its numbers, never its name, so a bot reads a skill the bar has just drawn the same
 way as one it has seen a thousand times.
@@ -127,7 +138,7 @@ another: the arena measures decisions, not reflexes.
 
 One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
 of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
-`[1, 1741]`, output the 27 acts' logits, float32 `[1, 27]`. One command builds it into a module with the `bots/onnx`
+`[1, 1889]`, output the 27 acts' logits, float32 `[1, 27]`. One command builds it into a module with the `bots/onnx`
 template ("Bring your own model" in `docs/training.md`):
 
 ```
@@ -140,14 +151,14 @@ seat's draw `u`. A bot that wants to always play its best act trains its logits 
 
 ## The bot module
 
-A WebAssembly module of the ABI `arena-bot-3` (`crates/arena-bot`; the design and its reasons:
+A WebAssembly module of the ABI `arena-bot-4` (`crates/arena-bot`; the design and its reasons:
 `docs/specs/2026-11-16-arena-wasm-bots-design.md`). It **imports nothing** and exports:
 
 | Export | Signature | What |
 |---|---|---|
 | `memory` | memory | its linear memory |
-| `arena_abi` | `() -> i32` | returns `3`; a module that returns anything else is refused |
-| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 1741 inputs as `f32` LE, then the 27 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
+| `arena_abi` | `() -> i32` | returns `4`; a module that returns anything else is refused (an ABI 3 module too: rebuild it on ABI 4, its model widened) |
+| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 1889 inputs as `f32` LE, then the 27 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
 | `arena_start` | `(seed: i32)` | a new fight of the match; `seed` is the bot's own dice for it |
 | `arena_round` | `()` | a new round, the first included |
 | `arena_decide` | `(u: f32) -> i32` | the act, 0..30, for the decision the buffer holds; `u` is the seat's draw in [0, 1) |

@@ -170,7 +170,7 @@ fn threats_past_the_fourth_nearest_are_dropped_and_missing_ones_are_zero() {
 
 // The documented layout (`observe.rs`'s header, `docs/bot.md`): ABI 2's me 17, foe 37, threats 4 x 12, slots 6 x 33,
 // tag 5, whose indices never move; then ABI 3's two casts 11 each, slot builds 6 x 148, effects 2 x 113, units
-// 8 x 12, the foe's slots 6 x 34.
+// 8 x 12, the foe's slots 6 x 34; then ABI 4's why 6 x 9, the foe's bands 6 x 4, buffs 4 x 5, in play 10 x 5.
 const MY_WINDUP: usize = 14;
 const MY_RECOVER: usize = 15;
 const MY_LEFT: usize = 16;
@@ -192,6 +192,12 @@ const UNITS_AT: usize = 1441;
 const UNIT: usize = 12;
 const FOE_SLOTS_AT: usize = 1537;
 const FOE_SLOT: usize = 34;
+const WHY_AT: usize = 1741;
+const WHY: usize = 9;
+const FOE_BANDS_AT: usize = 1795;
+const BUFFS_AT: usize = 1819;
+const IN_PLAY_AT: usize = 1839;
+const IN_PLAY: usize = 5;
 
 #[test]
 fn obs_is_the_documented_sum() {
@@ -202,9 +208,20 @@ fn obs_is_the_documented_sum() {
     );
     assert_eq!(
         OBS,
-        TAG_AT + TAG + 2 * 11 + 6 * SLOTX + 2 * EFFECT + UNITS * UNIT + 6 * FOE_SLOT
+        TAG_AT
+            + TAG
+            + 2 * 11
+            + 6 * SLOTX
+            + 2 * EFFECT
+            + UNITS * UNIT
+            + 6 * FOE_SLOT
+            + 6 * WHY
+            + 6 * 4
+            + 4 * 5
+            + 10 * IN_PLAY
     );
-    assert_eq!(OBS, 1741);
+    assert_eq!(WHY_AT, 1741, "ABI 3's inputs keep their places");
+    assert_eq!(OBS, 1889);
     let starts: Vec<usize> = BLOCKS
         .iter()
         .scan(0, |at, b| {
@@ -226,7 +243,11 @@ fn obs_is_the_documented_sum() {
             SLOTX_AT,
             EFFECTS_AT,
             UNITS_AT,
-            FOE_SLOTS_AT
+            FOE_SLOTS_AT,
+            WHY_AT,
+            FOE_BANDS_AT,
+            BUFFS_AT,
+            IN_PLAY_AT
         ]
     );
     assert_eq!(BLOCKS.iter().map(|b| b.1).sum::<usize>(), OBS);
@@ -477,6 +498,8 @@ fn the_foes_slots_show_its_kind_and_build() {
             windup: 0.3,
             ..SlotX::default()
         },
+        band: None,
+        in_band: true,
     });
     let o = observed(&s);
     let at = FOE_SLOTS_AT + 4 * FOE_SLOT;
@@ -485,6 +508,98 @@ fn the_foes_slots_show_its_kind_and_build() {
     assert!((v(&o, at + 16) - 0.3).abs() < 1e-6);
     assert_eq!(v(&o, at + 22), 2.0, "reach / 100");
     assert!(o[FOE_SLOTS_AT..at].iter().all(|&x| x == 0.0));
+}
+
+#[test]
+fn a_slot_says_its_band_and_why_it_cannot_be_cast() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    s.slots = slots();
+    s.why[2] = Some(SlotWhy {
+        band: Some(Band {
+            min: 56.0,
+            max: 160.0,
+        }),
+        in_band: false,
+        too_near: true,
+        cooling: true,
+        ..SlotWhy::default()
+    });
+    s.foe_slots[1] = Some(FoeSlot {
+        kind: SkillKind::Blast,
+        ready: false,
+        reach: 26.0,
+        built: SlotX::default(),
+        band: Some(Band {
+            min: 0.0,
+            max: 48.0,
+        }),
+        in_band: false,
+    });
+    let o = observed(&s);
+    let at = WHY_AT + 2 * WHY;
+    assert_eq!(
+        &o[at..at + WHY],
+        &[1.0, 0.56, 1.6, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+        "has a band, 56..160, out of it, cooling, too near"
+    );
+    assert!(
+        o[WHY_AT..at].iter().all(|&x| x == 0.0),
+        "the others say nothing"
+    );
+    let at = FOE_BANDS_AT + 4;
+    assert_eq!(&o[at..at + 4], &[1.0, 0.0, 0.48, 0.0]);
+}
+
+#[test]
+fn what_is_in_play_shows_how_long_it_lasts() {
+    let mut s = sense(1.0, me(40.0), foe(150.0));
+    s.lasting = Lasting {
+        buffs: vec![
+            BuffSeen {
+                kind: BuffKind::Blessing,
+                left: 8.0,
+            },
+            BuffSeen {
+                kind: BuffKind::Stance,
+                left: 3.0,
+            },
+        ],
+        domains: vec![
+            InPlay {
+                mine: false,
+                left: Some(6.0),
+                works_in: 0.0,
+                x: Some(140.0),
+            },
+            InPlay {
+                mine: true,
+                left: Some(12.0),
+                works_in: 0.0,
+                x: Some(40.0),
+            },
+        ],
+        fields: Vec::new(),
+        auras: vec![InPlay {
+            mine: true,
+            left: None,
+            works_in: 0.5,
+            x: None,
+        }],
+    };
+    let o = observed(&s);
+    // the stance ends first
+    assert_eq!(&o[BUFFS_AT..BUFFS_AT + 5], &[1.0, 1.0, 0.0, 0.0, 0.3]);
+    assert_eq!(&o[BUFFS_AT + 5..BUFFS_AT + 10], &[1.0, 0.0, 1.0, 0.0, 0.8]);
+    // my domain first, under me; the foe's 100 ahead
+    assert_eq!(&o[IN_PLAY_AT..IN_PLAY_AT + 5], &[1.0, 1.0, 1.2, 0.0, 0.0]);
+    assert_eq!(
+        &o[IN_PLAY_AT + 5..IN_PLAY_AT + 10],
+        &[1.0, 0.0, 0.6, 0.0, 1.0]
+    );
+    // no field; my aura held, working in half a second
+    let auras = IN_PLAY_AT + 6 * IN_PLAY;
+    assert!(o[IN_PLAY_AT + 10..auras].iter().all(|&x| x == 0.0));
+    assert_eq!(&o[auras..auras + 5], &[1.0, 1.0, 4.0, 0.5, 0.0]);
 }
 
 /// Value `i` of an observation, NaN past its end.

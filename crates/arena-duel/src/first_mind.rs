@@ -3,7 +3,7 @@
 //! It scores what it could do every `THINK` seconds while it is free, seeing only what has shown for `REACTION`
 //! seconds, and does the best, with a little noise.
 
-use crate::bar::ready;
+use crate::bar::{castable, ready};
 use crate::data::{JUMP_QI, Kind, MIND, Spell, UNIT, spell};
 use crate::fighter::{Fighter, Phase, State};
 use crate::js::{js_max, js_min, js_sign, or_one};
@@ -105,7 +105,7 @@ impl FirstMind {
             return None;
         }
         self.think = THINK * (0.8 + self.rng.next() * 0.4);
-        let mut threats = dangers(state, f);
+        let mut threats = dangers(state, f, foe);
         threats.extend(blows(state, f, foe));
         let mut options = threats.clone();
         options.extend(self.attacks(state, f, foe));
@@ -226,7 +226,7 @@ impl FirstMind {
         let burst = sp(CLOSE).copied();
         let (burst_windup, burst_range) =
             burst.map_or((0.0, 0.0), |s| (s.windup, s.range.unwrap_or(0.0)));
-        if ready(me, CLOSE)
+        if castable(me, foe, CLOSE)
             && d < burst_range + 32.0
             && (foe.body.air - me.body.air).abs() < me.body.spec.body
         {
@@ -243,7 +243,7 @@ impl FirstMind {
         let chest = me.body.air + me.body.spec.chest;
         let level = chest > foe.body.air - 8.0 && chest < foe.body.air + foe.body.spec.body;
         for name in ["bolt", AFAR] {
-            if !(ready(me, name) && d > 96.0 && level) {
+            if !(castable(me, foe, name) && d > 96.0 && level) {
                 continue;
             }
             let bolt = sp(name).copied();
@@ -264,7 +264,7 @@ impl FirstMind {
             };
             out.push(opt(What::Cast(name, None), value(name, c, Some(travel))));
         }
-        if ready(me, "orb")
+        if castable(me, foe, "orb")
             && d > 160.0
             && !state
                 .shots
@@ -283,7 +283,7 @@ impl FirstMind {
             foe.intent * foe.body.spec.walk
         };
         for name in ["tribulation", "prison"] {
-            if !ready(me, name) {
+            if !castable(me, foe, name) {
                 continue;
             }
             let Some(s) = sp(name) else { continue };
@@ -299,7 +299,7 @@ impl FirstMind {
         }
         for &name in &me.spells {
             let Some(s) = sp(name) else { continue };
-            if s.kind != Kind::Zone || !ready(me, name) {
+            if s.kind != Kind::Zone || !castable(me, foe, name) {
                 continue;
             }
             // aim where the foe will be when it lands
@@ -330,7 +330,10 @@ impl FirstMind {
         }
         for &name in &me.spells {
             let Some(s) = sp(name) else { continue };
-            if s.kind == Kind::Blast && ready(me, name) && d < s.range.unwrap_or(f64::NAN) + 16.0 {
+            if s.kind == Kind::Blast
+                && castable(me, foe, name)
+                && d < s.range.unwrap_or(f64::NAN) + 16.0
+            {
                 let c = if busy > s.windup {
                     0.9
                 } else if foe.guard > 0.0 {
@@ -342,7 +345,7 @@ impl FirstMind {
             }
             // a fire or a vortex under the foe: worth it on a foe that cannot leave it soon
             if s.kind == Kind::Void
-                && ready(me, name)
+                && castable(me, foe, name)
                 && (busy > 0.4 || foe.root > 0.0 || foe.hp() < 75.0)
             {
                 // it lands its blow when it ends, burning on the way
@@ -353,7 +356,7 @@ impl FirstMind {
             }
         }
         // `me.shield === 0` in the JS never holds (fighters have `charges`, not `shield`): the first mind never wards
-        if ready(me, "heal") && me.hp() < 50.0 {
+        if castable(me, foe, "heal") && me.hp() < 50.0 {
             let safe = if d > 240.0 && foe.act.is_none() {
                 1.0
             } else if busy > 1.0 {
@@ -413,7 +416,7 @@ impl FirstMind {
         // inside the foe's burst with no burst of my own ready: get out of it
         if d.abs() < close_range + 16.0
             && me.body.air - foe.body.air < spec.chest
-            && !ready(me, CLOSE)
+            && !castable(me, foe, CLOSE)
         {
             let back = or_one(-js_sign(d));
             let room = if back < 0.0 {
@@ -439,7 +442,7 @@ impl FirstMind {
         }
         // cornered with the foe inside my range: blink past it and take the open side
         let wall = js_min(me.body.x - state.left, state.right - me.body.x);
-        if wall < 64.0 && off < -40.0 && ready(me, "blink") {
+        if wall < 64.0 && off < -40.0 && castable(me, foe, "blink") {
             let behind = foe.body.x + js_sign(foe.body.x - me.body.x) * 120.0;
             if behind > state.left + 40.0 && behind < state.right - 40.0 {
                 out.push(opt(What::Cast("blink", Some(behind)), 2.5));
@@ -526,8 +529,8 @@ fn at_wall(state: &State, f: &Fighter) -> bool {
     f.body.x <= state.left + hw + 8.0 || f.body.x >= state.right - hw - 8.0
 }
 
-/// What is coming at `me`, and the ways out of each.
-fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
+/// What is coming at `me` from `foe`, and the ways out of each.
+fn dangers(state: &State, me: &Fighter, foe: &Fighter) -> Vec<Opt> {
     let mut out: Vec<Opt> = Vec::new();
     let x = me.body.x;
     let spec = &me.body.spec;
@@ -612,7 +615,7 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
                         out.push(opt(What::Fly(0.0), urgency * 1.1));
                     }
                 }
-                if ready(me, "bolt") && tti > 0.3 {
+                if castable(me, foe, "bolt") && tti > 0.3 {
                     out.push(opt(What::Cast("bolt", None), urgency * 0.9));
                 }
                 blink(&mut out, sx, urgency * 0.7);
@@ -625,7 +628,7 @@ fn dangers(state: &State, me: &Fighter) -> Vec<Opt> {
                 }
                 let urgency = damage * (1.4 - d / 192.0);
                 out.push(opt(What::Move(or_one(js_sign(x - bx))), urgency));
-                if ready(me, "bolt") {
+                if castable(me, foe, "bolt") {
                     out.push(opt(What::Cast("bolt", None), urgency * 1.15));
                 }
                 blink(&mut out, bx, urgency * 0.9);
@@ -713,10 +716,10 @@ fn blows(state: &State, me: &Fighter, foe: &Fighter) -> Vec<Opt> {
     }
     let burst = spell(CLOSE);
     let (bw, br) = burst.map_or((0.0, 0.0), |s| (s.windup, s.range.unwrap_or(0.0)));
-    if ready(me, CLOSE) && bw < left && d < br + foe.body.spec.half_width {
+    if castable(me, foe, CLOSE) && bw < left && d < br + foe.body.spec.half_width {
         out.push(opt(What::Cast(CLOSE, None), urgency * 1.1));
     }
-    if ready(me, "blink") {
+    if castable(me, foe, "blink") {
         let to = me.body.x
             + js_sign(or_one(me.body.x - foe.body.x))
                 * spell("blink").and_then(|s| s.distance).unwrap_or(f64::NAN);
@@ -737,7 +740,7 @@ fn punisher(foe: &Fighter, me: &Fighter, time: f64) -> f64 {
     for &name in &foe.spells {
         let Some(s) = spell(name) else { continue };
         let damage = s.damage.unwrap_or(0.0);
-        if damage == 0.0 || !ready(foe, name) {
+        if damage == 0.0 || !castable(foe, me, name) {
             continue;
         }
         let range = s.range.unwrap_or(f64::NAN);
