@@ -133,8 +133,9 @@ fn asked(
     if asks.is_empty() {
         return;
     }
-    // a player asking for corners or a seed fights on the page: watching stops
+    // a player asking for corners or a seed fights on the page: watching stops, and stays stopped
     live.on = false;
+    live.fell_back = false;
     let mut corners = wanted
         .corners
         .clone()
@@ -183,7 +184,7 @@ pub fn seat(ask: Seat, seating: &mut Seating) {
     });
 }
 
-fn made(mut seating: NonSendMut<Seating>) {
+fn made(mut seating: NonSendMut<Seating>, live: NonSend<crate::live::Live>) {
     let Some((version, result, names, seed)) = MADE.with_borrow_mut(Option::take) else {
         return;
     };
@@ -194,9 +195,13 @@ fn made(mut seating: NonSendMut<Seating>) {
             seating.seed = seed;
             seating.version = version.max(seating.version + 1);
             seating.error = None;
-            let url = format!("?seed={seed}");
-            if let Some(h) = web_sys::window().and_then(|w| w.history().ok()) {
-                let _ = h.replace_state_with_url(&JsValue::NULL, "", Some(&url));
+            // the address carries a player's fight, not the stand-in a page fights while the relay is silent: a
+            // reload of it would never watch live again
+            if !live.fell_back {
+                let url = format!("?seed={seed}");
+                if let Some(h) = web_sys::window().and_then(|w| w.history().ok()) {
+                    let _ = h.replace_state_with_url(&JsValue::NULL, "", Some(&url));
+                }
             }
         }
         Err(e) => seating.error = Some(e),

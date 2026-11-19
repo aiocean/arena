@@ -148,6 +148,9 @@ pub struct Live {
     /// smoke test (`window.__arena.live`, `crates/arena-smoke`).
     pub connected: bool,
     pub frames: u64,
+    /// Set when the page gave up waiting and fights on its own (`fall_back`): a match coming later still takes the
+    /// page back (`come_back`). A player's seating clears it.
+    pub fell_back: bool,
 }
 
 thread_local! {
@@ -168,7 +171,7 @@ impl Plugin for LivePlugin {
             .add_systems(Startup, start)
             .add_systems(
                 Update,
-                (pull, fall_back, publish)
+                (pull, fall_back, come_back, publish)
                     .chain()
                     .in_set(crate::Frame::Pace),
             );
@@ -212,10 +215,25 @@ fn fall_back(
         return;
     }
     live.on = false;
+    live.fell_back = true;
     seat.write(crate::bots::Seat {
         corners: [crate::bots::Corner::House, crate::bots::Corner::House],
         seed: crate::bots::any_seed(),
     });
+}
+
+/// A page that fell back to fighting on its own watches again once a live match comes (the relay was slow, the server
+/// was restarting): the live matches are the page's, its own fight only a stand-in.
+fn come_back(mut live: NonSendMut<Live>) {
+    if returns(&live) {
+        live.on = true;
+        live.fell_back = false;
+    }
+}
+
+/// Whether a page that fell back has a live match to watch again.
+fn returns(live: &Live) -> bool {
+    live.fell_back && !live.on && live.stale.is_none() && live.watching.current().is_some()
 }
 
 /// Fold what the connection received into the match.
@@ -516,6 +534,28 @@ mod tests {
         live.on = false;
         live.frames = 0;
         assert!(!gives_up(&live, 60.0), "not watching: nothing to give up");
+        Ok(())
+    }
+
+    #[test]
+    fn a_page_that_fell_back_watches_again_when_a_match_comes() -> Result<(), String> {
+        let mut live = Live {
+            fell_back: true,
+            ..Live::default()
+        };
+        assert!(
+            !returns(&live),
+            "no match yet: it keeps fighting on its own"
+        );
+        live.watching.frame(Frame::Keyframe(Snapshot::new(
+            RULES_VERSION,
+            5,
+            ARENA,
+            ["a".into(), "b".into()],
+        )))?;
+        assert!(returns(&live), "a match came: it watches");
+        live.fell_back = false;
+        assert!(!returns(&live), "a player seated bots: it stays theirs");
         Ok(())
     }
 
