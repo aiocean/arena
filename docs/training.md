@@ -329,6 +329,7 @@ uv run python cycle.py --run c25 --pbt --exploit 300 --review ~/services/arena/s
   the best three against the bar, the house AI and (`--exploit`) a best response, which joins the pool for the next
   cycle's league to fight, and writes
   `runs/<run>/report.md` and a review page. It ships nothing; shipping the pick is "Export and check", above.
+
 ### Read it (a decision model as a reader)
 
 `train/judge.py` has a policy fight a few dozen rounds and asks TypeSafe's Jev (`typesafe/jev-1.14`, a decision
