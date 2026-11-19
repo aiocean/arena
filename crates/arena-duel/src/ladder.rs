@@ -47,8 +47,9 @@ pub struct Record {
     /// The distance between the fighters' centres over every tick of a round, counted by whole game pixels (`gaps[d]`
     /// ticks at `d` pixels apart): how near they fight (`median_gap`, `within`).
     pub gaps: Vec<u64>,
-    /// What each seat (0 left, 1 right) did, whoever sat in it.
+    /// What each seat (0 left, 1 right) did, whoever sat in it, and what the first contestant did in either.
     pub seats: [SeatLog; 2],
+    pub first: SeatLog,
     /// Rounds won by each look (Vương Lâm, Thất Thải), whoever fought in it: the looks are drawn apart from the seats
     /// (`looks_of`), so in a mirror this tells the art's edge from a seat's.
     pub by_look: [u32; 2],
@@ -105,11 +106,17 @@ pub struct SeatLog {
     pub life_lost: f64,
     /// Qi paid for its casts.
     pub qi_spent: f64,
-    /// Seconds of rounds in play, and of those, seconds spent meditating, guarding and flying.
+    /// Seconds of rounds in play, and of those, seconds spent meditating, guarding, flying and with its feet off
+    /// the ground (a jump, a flight, a launch).
     pub seconds: f64,
     pub meditating: f64,
     pub guarding: f64,
     pub flying: f64,
+    pub airborne: f64,
+    /// Its casts of a spell that hurts that landed nothing (no blow of it hit, was guarded or turned aside before
+    /// the skill was cast again or the round ended; a dodged blow lands nothing), and those still waiting by skill.
+    pub whiffs: u32,
+    pub waiting: BTreeMap<&'static str, u32>,
 }
 
 impl SeatLog {
@@ -121,6 +128,72 @@ impl SeatLog {
     fn skill(&mut self, name: &'static str) -> &mut SkillLog {
         self.skills.entry(name).or_default()
     }
+
+    /// Its casts of a spell that hurts, every skill together.
+    pub fn attacks(&self) -> u32 {
+        self.skills
+            .iter()
+            .filter(|(n, _)| hurts(n))
+            .map(|(_, k)| k.casts)
+            .sum()
+    }
+
+    /// Per minute of rounds in play: `n` of something.
+    pub fn per_minute(&self, n: u32) -> f64 {
+        if self.seconds > 0.0 {
+            60.0 * f64::from(n) / self.seconds
+        } else {
+            0.0
+        }
+    }
+
+    /// Add `o`'s match to this one (`o` settled: none of its casts still waiting).
+    pub fn add(&mut self, o: &SeatLog) {
+        for (name, k) in &o.skills {
+            let s = self.skill(name);
+            s.casts += k.casts;
+            s.landed += k.landed;
+            s.damage += k.damage;
+            s.guarded += k.guarded;
+            s.chip += k.chip;
+            s.barrier += k.barrier;
+            s.ward += k.ward;
+            s.dodged += k.dodged;
+            s.clashed += k.clashed;
+            s.broken += k.broken;
+            s.punished += k.punished;
+        }
+        for (name, d) in &o.statuses {
+            *self.statuses.entry(name).or_insert(0.0) += d;
+        }
+        for (name, n) in &o.finals {
+            *self.finals.entry(name).or_insert(0) += n;
+        }
+        self.healed += o.healed;
+        self.life_lost += o.life_lost;
+        self.qi_spent += o.qi_spent;
+        self.seconds += o.seconds;
+        self.meditating += o.meditating;
+        self.guarding += o.guarding;
+        self.flying += o.flying;
+        self.airborne += o.airborne;
+        self.whiffs += o.whiffs;
+    }
+
+    /// A blow of `name` landed: its casts waiting have not whiffed.
+    fn landed(&mut self, name: &'static str) {
+        self.waiting.remove(name);
+    }
+
+    /// The casts still waiting for a blow whiffed (the round is over).
+    fn settle(&mut self) {
+        self.whiffs += core::mem::take(&mut self.waiting).values().sum::<u32>();
+    }
+}
+
+/// Whether skill `name` hurts.
+fn hurts(name: &str) -> bool {
+    spell(name).is_some_and(|s| s.damage.is_some_and(|d| d > 0.0))
 }
 
 impl Record {
@@ -276,6 +349,12 @@ impl Seat for Watched {
             let mut logs = self.logs.borrow_mut();
             let log = &mut logs[me];
             log.skill(sp.name).casts += 1;
+            if hurts(sp.name) {
+                // the last cast of it that has not landed by now never will
+                let waiting = log.waiting.entry(sp.name).or_insert(0);
+                log.whiffs += *waiting;
+                *waiting = 1;
+            }
             log.qi_spent += f.kit.get(sp.name).map_or(0.0, |k| k.qi());
         }
         c
@@ -362,6 +441,9 @@ fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State
                     how,
                     chip,
                 } => {
+                    if how != Stop::Dodge {
+                        logs[by].landed(spell);
+                    }
                     let s = logs[by].skill(spell);
                     match how {
                         Stop::Guard => s.guarded += 1,
@@ -375,7 +457,10 @@ fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State
                 }
                 Note::Ticked { by, cause, share } => {
                     let cause = match spell(cause) {
-                        Some(sp) => Cause::Skill(sp.name),
+                        Some(sp) => {
+                            logs[by].landed(sp.name);
+                            Cause::Skill(sp.name)
+                        }
                         None => Cause::Status(cause),
                     };
                     lives.took(logs, 1 - by, cause, share);
@@ -393,6 +478,7 @@ fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State
         }) = out.get(i)
         {
             logs[*by].skill(spell).landed += 1;
+            logs[*by].landed(spell);
             lives.took(logs, 1 - by, Cause::Skill(spell), *share);
         }
     }
@@ -404,6 +490,7 @@ fn account(logs: &mut [SeatLog; 2], before: [f64; 2], out: &[Out], state: &State
         log.meditating += on(me.meditating());
         log.guarding += on(me.guard > 0.0);
         log.flying += on(me.fly);
+        log.airborne += on(me.body.air > 0.0);
     }
     if let Some(w) = state.winner {
         let name = match lives.last[1 - w] {
@@ -458,6 +545,9 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                     account(&mut logs.borrow_mut(), before, &out, duel.state());
                 }
                 let s = &duel.state();
+                if s.round != round || s.winner.is_some() && !ended {
+                    logs.borrow_mut().iter_mut().for_each(SeatLog::settle);
+                }
                 if s.round != round {
                     // the next round has begun
                     started = s.time;
@@ -484,6 +574,12 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
                     break;
                 }
             }
+            logs.borrow_mut().iter_mut().for_each(SeatLog::settle);
+            let fight = core::mem::take(&mut *logs.borrow_mut());
+            for (total, log) in r.seats.iter_mut().zip(&fight) {
+                total.add(log);
+            }
+            r.first.add(&fight[corner]);
             r.won[corner] += duel.state().wins[corner];
             r.lost[corner] += duel.state().wins[1 - corner];
             for (seat, look) in looks.iter().enumerate() {
@@ -498,7 +594,6 @@ pub fn match_up(a: &dyn Fn() -> MakeSeat, b: &dyn Fn() -> MakeSeat, m: &Match) -
     r.choices = t.choices.clone();
     r.decisions = t.decisions;
     r.attacks = t.attacks;
-    r.seats = logs.borrow().clone();
     r.mean_distance = if ticks == 0 {
         0.0
     } else {

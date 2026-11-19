@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("ladder: {seeds} seeds x both ways x {rounds} rounds, rounds cut at {limit} s\n");
     println!(
-        "{:<34} {:>7} {:>9} {:>7} {:>7} {:>5} {:>6} {:>7} {:>6} {:>6} {:>6} {:>6}",
+        "{:<34} {:>7} {:>9} {:>7} {:>7} {:>5} {:>6} {:>7} {:>6} {:>6} {:>6} {:>6} {:>6} {:>6} {:>6} {:>6} {:>6}",
         "match",
         "win",
         "seat 0",
@@ -103,7 +103,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "dist",
         "median",
         "<80",
-        "<40"
+        "<40",
+        "c/min",
+        "w/min",
+        "air",
+        "guard",
+        "topdm"
+    );
+    println!(
+        "  (c/min, w/min: the first contestant's casts of a hurting skill and its whiffs a minute; air, guard: its \
+         share of the time off the ground and guarding; topdm: its heaviest skill's share of its damage)"
     );
     // each row: its name, its seats, and whether it is a mirror whose seats the telemetry compares
     let rows: Vec<(&str, Maker<'_>, Maker<'_>, bool)> = vec![
@@ -147,6 +156,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "brain mirror (seat baseline)",
             Box::new(Brain::make),
             Box::new(Brain::make),
+            true,
+        ),
+        (
+            "first mind mirror (baseline)",
+            Box::new(FirstMind::make),
+            Box::new(FirstMind::make),
             true,
         ),
     ];
@@ -203,11 +218,16 @@ fn export_row(run: &str, name: &str, m: &Match, r: &Record) {
         .iter()
         .max_by_key(|(_, n)| **n)
         .map_or("-", |(k, _)| k.as_str());
+    let me = &r.first;
+    let top_skill = heaviest(me);
     tracing::info!(target: "arena::ladder", run_id = run, row = name, seeds = m.seeds.len(), rounds = m.rounds,
         win = r.win_rate(), seat0 = r.as_seat(0), seat1 = r.as_seat(1), won_0 = r.won[0], won_1 = r.won[1],
         lost_0 = r.lost[0], lost_1 = r.lost[1], round_seconds = r.mean_length(), timeouts = r.timeouts,
         top = top, top_share = r.most_used(), attack_share = r.attack_share(), distance = r.mean_distance,
-        median_gap = r.median_gap(), within_80 = r.within(80), within_40 = r.within(40), "ladder.row");
+        median_gap = r.median_gap(), within_80 = r.within(80), within_40 = r.within(40),
+        casts_per_min = me.per_minute(me.attacks()), whiffs_per_min = me.per_minute(me.whiffs),
+        airborne = pct(me.airborne, me.seconds) / 100.0, guarding = pct(me.guarding, me.seconds) / 100.0,
+        top_skill = top_skill.0, top_skill_share = top_skill.1 / 100.0, "ladder.row");
     for (seat, log) in r.seats.iter().enumerate() {
         let dealt = log.dealt();
         for (skill, k) in &log.skills {
@@ -220,19 +240,21 @@ fn export_row(run: &str, name: &str, m: &Match, r: &Record) {
         tracing::info!(target: "arena::ladder", run_id = run, row = name, seat = seat, dealt = dealt,
             lost = log.life_lost, healed = log.healed, qi_spent = log.qi_spent,
             seconds = log.seconds, meditating = log.meditating, guarding = log.guarding, flying = log.flying,
-            "ladder.seat");
+            airborne = log.airborne, attacks = log.attacks(), whiffs = log.whiffs, "ladder.seat");
     }
 }
 
 fn print_row(name: &str, r: &Record) {
     let pct = |x: f64| format!("{:.1}%", x * 100.0);
+    let me = &r.first;
+    let share = |a: f64| format!("{:.0}%", self::pct(a, me.seconds));
     let top = r
         .choices
         .iter()
         .max_by_key(|(_, n)| **n)
         .map_or("-", |(k, _)| k.as_str());
     println!(
-        "{:<34} {:>7} {:>9} {:>7} {:>7.1} {:>5} {:>6} {:>7} {:>6.0} {:>6.0} {:>6} {:>6}   top: {top}",
+        "{:<34} {:>7} {:>9} {:>7} {:>7.1} {:>5} {:>6} {:>7} {:>6.0} {:>6.0} {:>6} {:>6} {:>6.1} {:>6.1} {:>6} {:>6} {:>6}   top: {top}",
         name,
         pct(r.win_rate()),
         pct(r.as_seat(0)),
@@ -245,7 +267,20 @@ fn print_row(name: &str, r: &Record) {
         r.median_gap(),
         pct(r.within(80)),
         pct(r.within(40)),
+        me.per_minute(me.attacks()),
+        me.per_minute(me.whiffs),
+        share(me.airborne),
+        share(me.guarding),
+        format!("{:.0}%", heaviest(me).1),
     );
+}
+
+/// A seat's skill that took the most of the foe's life, and its share of what the seat dealt, %.
+fn heaviest(s: &SeatLog) -> (&'static str, f64) {
+    s.skills
+        .iter()
+        .max_by(|a, b| a.1.damage.total_cmp(&b.1.damage))
+        .map_or(("-", 0.0), |(n, k)| (*n, pct(k.damage, s.dealt())))
 }
 
 /// What each seat did in a mirror, seat 0 beside seat 1: per skill, then per seat.
@@ -366,6 +401,16 @@ fn print_telemetry(name: &str, r: &Record) {
     });
     line("time flying", &|s| {
         format!("{:.1}%", pct(s.flying, s.seconds))
+    });
+    line("time off the ground", &|s| {
+        format!("{:.1}%", pct(s.airborne, s.seconds))
+    });
+    line("hurting casts / whiffs a minute", &|s| {
+        format!(
+            "{:.1} / {:.1}",
+            s.per_minute(s.attacks()),
+            s.per_minute(s.whiffs)
+        )
     });
     println!();
 }

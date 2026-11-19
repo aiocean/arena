@@ -68,6 +68,8 @@ Today the reward is computed in Rust (`crates/arena-duel/src/train.rs`), per dec
 | A whiff begun with the foe out of reach (a far whiff) | `whiff_far` handed to `step`, on top of `whiff` (0 by default) |
 | Every decision (about 8 a second) | `-time_cost`, taken in `ppo.py` (`--time-cost`, 0 by default) |
 | Damage the learner's actives deal with their blows (not slash, dive or blink) | `variety` x dealt / 100 (0 by default) |
+| A decision that could cast (a cast is legal: a skill ready and paid for) and does anything else | `-idle` handed to `step` (0 by default) |
+| A damaging cast that lands (hit, guarded or turned aside) | `land` handed to `step` (0 by default) |
 
 To pay your bot differently today, edit those constants or `Env::step` and rebuild the module. A reward written in
 Python, from facts `step` hands back, is the first item of `docs/roadmap.md`.
@@ -94,6 +96,8 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
 | `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair |
 | `--time-cost` | 0 | reward cost of every decision, so a round that drags on costs more than one closed |
+| `--idle` | 0 | reward cost of a decision that could cast and moves, jumps, guards, meditates or waits instead |
+| `--land` | 0 | reward for each damaging cast that lands: with `--idle`, holding the skills back costs, against `--whiff` |
 | `--seat0` | 0.5 | share of fights in which the learner sits in seat 0 |
 | `--keep-every` | 0 | also keep `runs/<run>/u<update>.pt` every so many updates (a multiple of 25), for the ladder |
 | `--snapshot-every` | 20 | how often the latest self joins the league |

@@ -13,7 +13,9 @@ house AI's, `../crates/arena-duel/weights/policy.onnx`, at that model's size). T
 misses costs only `--whiff`). `--variety` pays that much times the share of a life the learner's actives (its
 loadout's skills, not slash, dive or blink) took with their blows: a dense bonus for winning with the whole kit.
 `--time-cost` is taken from the reward at every decision (about 8 a second): a round that drags on costs more, so a
-policy closes it rather than wait out the cut.
+policy closes it rather than wait out the cut. `--idle` is taken from a decision that could cast (a skill ready and
+paid for) and moves, jumps, guards, meditates or waits instead, and `--land` paid for each damaging cast that lands:
+together they make holding the skills back cost something, against the whiff cost that makes a cast risky.
 
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end;
 with `--keep-every N` also runs/<run>/u<update>.pt every N, a multiple of 25, for the ladder). A
@@ -95,6 +97,8 @@ def main():
     ap.add_argument("--variety", type=float, default=0.0, help="reward x the share of a life the actives' blows took")
     ap.add_argument("--whiff-far", type=float, default=0.0, help="reward cost of a whiff begun with the foe out of reach")
     ap.add_argument("--mix", type=float, nargs=5, help="opponent shares: latest self, past self, brain, first, scripted")
+    ap.add_argument("--idle", type=float, default=0.0, help="reward cost of a decision that could cast and does not")
+    ap.add_argument("--land", type=float, default=0.0, help="reward for each damaging cast that lands")
     ap.add_argument("--time-cost", type=float, default=0.0, help="reward cost of every decision (a long round costs more)")
     ap.add_argument("--keep-every", type=int, default=0, help="also keep runs/<run>/u<update>.pt this often (0: never)")
     ap.add_argument("--snapshot-every", type=int, default=20)
@@ -174,7 +178,9 @@ def main():
                 obs_b[t], mask_b[t], act_b[t] = o, m, a.cpu()
                 logp_b[t] = dist.log_prob(a).cpu()
                 val_b[t] = policy.value_of(vlog).cpu()
-            r, d, won, length = env.step(a.cpu().numpy().astype(np.int64), shaping, args.whiff, args.whiff_far, args.variety)
+            r, d, won, length = env.step(
+                a.cpu().numpy().astype(np.int64), shaping, args.whiff, args.whiff_far, args.variety, args.idle, args.land
+            )
             r = r - np.float32(args.time_cost)
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))

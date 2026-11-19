@@ -8,7 +8,9 @@
 //! waiting) is chosen `RUN` times in a row; minus `HABIT` when the act chosen is already `SHARE` or more of the last
 //! `HABITS` decisions; minus the trainer's `whiff` cost for each damaging cast that lands nothing (no hit, not guarded,
 //! not turned aside), and its `far` cost for each of those that began with the foe out of its reach; plus its `variety`
-//! x the share of a life the learner's actives (not the basics) took with their blows (`Pay`).
+//! x the share of a life the learner's actives (not the basics) took with their blows; minus its `idle` cost for a
+//! decision that could cast (a cast is legal: ready and paid for) and does something else; plus its `land` for each
+//! damaging cast that lands (`Pay`).
 //!
 //! It also counts the learner's casts by kind (`Casts`): how many, how many began out of reach (a blade, blast or dash
 //! whose reach does not get to the foe's hurtboxes), how many landed nothing, and the damage they dealt. Only a skill
@@ -21,7 +23,7 @@ use crate::scripted::Scripted;
 use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider, policy_mind};
 use crate::sense::{chosen, sense_of};
 use crate::style::Style;
-use arena_mind::policy::{ACTIONS, Due, OBS, PolicyMind};
+use arena_mind::policy::{ACTIONS, Act, Due, OBS, PolicyMind};
 use arena_mind::{Choice, Outcome};
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -63,13 +65,17 @@ pub struct Casts {
 /// What a step pays besides the round's outcome and the fixed penalties: the damage term's weight (`shaping`), the
 /// cost of a whiff (`whiff`), more for a whiff begun out of reach (`whiff_far`, on top of `whiff`), and `variety` x
 /// the share of a life the learner's actives took with their blows (a skill of its loadout, not a basic: slash, dive,
-/// blink), so a policy that wins with only the basics is not paid for it.
+/// blink), so a policy that wins with only the basics is not paid for it; `idle` taken from a decision that could
+/// cast and does not (it moves, jumps, guards, meditates or waits with a skill ready and paid for), and `land` paid
+/// for each damaging cast that lands, so a policy that holds its skills back is not left alone for it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Pay {
     pub shaping: f32,
     pub whiff: f32,
     pub whiff_far: f32,
     pub variety: f32,
+    pub idle: f32,
+    pub land: f32,
 }
 
 impl Casts {
@@ -203,6 +209,8 @@ pub struct Env {
     casts: Casts,
     whiffed: u32,
     far_whiffed: u32,
+    /// The damaging casts that landed not yet paid for.
+    landed: u32,
     /// The share of a life the learner's actives took since the last step paid for it.
     active_dealt: f64,
 }
@@ -260,6 +268,7 @@ impl Env {
             casts: Casts::default(),
             whiffed: 0,
             far_whiffed: 0,
+            landed: 0,
             active_dealt: 0.0,
         };
         env.advance();
@@ -296,7 +305,7 @@ impl Env {
                 shaping,
                 whiff,
                 whiff_far: far,
-                variety: 0.0,
+                ..Pay::default()
             },
         )
     }
@@ -308,6 +317,8 @@ impl Env {
             whiff,
             whiff_far: far,
             variety,
+            idle,
+            land,
         } = *pay;
         let length = self.duel.state().time;
         if self.done {
@@ -324,6 +335,11 @@ impl Env {
             0
         };
         let mut reward = 0.0;
+        let could_cast = (0..ACTIONS)
+            .any(|i| self.due.legal[i] && matches!(Act::from_index(i), Some(Act::Cast { .. })));
+        if could_cast && !matches!(Act::from_index(act), Some(Act::Cast { .. })) {
+            reward -= idle;
+        }
         if act != 0 && self.last == Some(act) {
             self.run += 1;
         } else {
@@ -350,6 +366,7 @@ impl Env {
         reward -= whiff * core::mem::take(&mut self.whiffed) as f32;
         reward -= far * core::mem::take(&mut self.far_whiffed) as f32;
         reward += variety * (core::mem::take(&mut self.active_dealt) / 100.0) as f32;
+        reward += land * core::mem::take(&mut self.landed) as f32;
         let length = self.duel.state().time;
         let cut = won.is_none() && length >= self.limit;
         if won.is_some() || cut {
@@ -502,6 +519,9 @@ impl Env {
             .partition(|o| o.landed || !out_still(o.spell));
         self.trailing = keep;
         for o in done {
+            if o.strikes && o.landed {
+                self.landed += 1;
+            }
             if o.strikes && !o.landed {
                 self.casts.kinds[o.kind].whiffs += 1;
                 self.whiffed += 1;

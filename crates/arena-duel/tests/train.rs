@@ -325,3 +325,71 @@ fn variety_pays_for_what_the_actives_deal_and_nothing_for_the_basics() {
     }
     assert!(dealt > 0.0, "no active dealt anything in ten fights");
 }
+
+#[test]
+fn idle_costs_a_decision_that_could_cast_and_does_not() {
+    // a hand that never casts: paid with the idle cost, it loses that cost once a decision a cast was legal in
+    let is_cast = |i: usize| matches!(Act::from_index(i), Some(Act::Cast { .. }));
+    let run = |seed: u32, idle: f32| {
+        let mut rng = Rng::new(seed);
+        let mut env = Env::new(cfg(seed, 1, Opponent::Turtle));
+        let pay = arena_duel::train::Pay {
+            idle,
+            ..Default::default()
+        };
+        let (mut paid, mut could) = (0.0_f32, 0_u32);
+        for _ in 0..3000 {
+            let legal = *env.observe().1;
+            could += u32::from((0..ACTIONS).any(|i| legal[i] && is_cast(i)));
+            let plain: Vec<usize> = (0..ACTIONS).filter(|&i| legal[i] && !is_cast(i)).collect();
+            let a = plain[(rng.next() * plain.len() as f64) as usize];
+            let s = env.step_paid(a, &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        (paid, could)
+    };
+    let (plain, could) = run(5, 0.0);
+    let (idle, again) = run(5, 0.01);
+    assert_eq!(could, again);
+    assert!(could > 0, "no cast was ever legal");
+    let want = plain - 0.01 * could as f32;
+    assert!((idle - want).abs() < 1e-3, "{idle} against {want}");
+}
+
+#[test]
+fn land_pays_for_each_damaging_cast_that_lands() {
+    // a random hand paid `land` a landed cast: the same fight paid with and without it differs by the casts that
+    // landed (casts that struck, less the whiffs; one still in the air at the end is not paid)
+    let run = |seed: u32, land: f32| {
+        let mut rng = Rng::new(seed);
+        let mut env = Env::new(cfg(seed, 0, Opponent::Turtle));
+        let pay = arena_duel::train::Pay {
+            land,
+            ..Default::default()
+        };
+        let mut paid = 0.0_f32;
+        for _ in 0..5000 {
+            let s = env.step_paid(random_legal(&env, &mut rng), &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        paid
+    };
+    let mut more = 0;
+    for seed in 14..20 {
+        let (plain, landed) = (run(seed, 0.0), run(seed, 1.0));
+        let n = landed - plain;
+        let whole = (n + 0.5) as i64;
+        assert!(
+            n >= -1e-3 && (n - whole as f32).abs() < 1e-3,
+            "seed {seed}: {n}"
+        );
+        more += whole;
+    }
+    assert!(more > 0, "no cast landed in six fights");
+}

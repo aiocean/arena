@@ -407,7 +407,7 @@ impl VecEnv {
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     #[allow(clippy::type_complexity)]
-    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0))]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
@@ -416,6 +416,8 @@ impl VecEnv {
         whiff: f32,
         whiff_far: f32,
         variety: f32,
+        idle: f32,
+        land: f32,
     ) -> PyResult<(
         Bound<'py, PyAny>,
         Bound<'py, PyAny>,
@@ -444,6 +446,8 @@ impl VecEnv {
                         whiff,
                         whiff_far,
                         variety,
+                        idle,
+                        land,
                     },
                     reply,
                 })
