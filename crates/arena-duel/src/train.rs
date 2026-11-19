@@ -286,6 +286,21 @@ impl Env {
         self.step_with(action, shaping, 0.0)
     }
 
+    /// The learner's moment in plain words, for a judge that reads text (`words::moment`).
+    pub fn moment(&self) -> String {
+        crate::words::moment(self.duel.state(), self.me)
+    }
+
+    /// Each of the learner's acts now, in words (`words::acts`).
+    pub fn acts(&self) -> Vec<String> {
+        crate::words::acts(self.duel.state(), self.me)
+    }
+
+    /// The numbers of the learner's moment (`words::brief`).
+    pub fn brief(&self) -> crate::words::Brief {
+        crate::words::brief(self.duel.state(), self.me)
+    }
+
     /// The learner's casts since this was last called, by kind.
     pub fn take_casts(&mut self) -> Casts {
         core::mem::take(&mut self.casts)

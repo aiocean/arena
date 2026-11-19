@@ -101,7 +101,13 @@ enum Wire {
     },
     /// The learners' casts since the last ask, summed over the worker's envs.
     Casts { reply: Sender<Casts> },
+    /// Each env's learner's moment in words (`Env::moment`, `acts`, `brief`).
+    Describe { reply: Sender<Vec<Option<Words>>> },
 }
+
+/// One env's moment as `VecEnv.describe` hands it to Python: its words, each act's words, and its numbers (time,
+/// life, the foe's life, qi, the foe's qi, the gap between them).
+type Words = (String, Vec<String>, (f64, f64, f64, f64, f64, f64));
 
 /// One kind's casts as `VecEnv.casts` hands them to Python: casts, out of reach, whiffs, far whiffs, damage.
 type CastRow = (u32, u32, u32, u32, f64);
@@ -145,6 +151,23 @@ impl Worker {
                 reply,
             } => {
                 let _ = reply.send(self.reset(slot, seed, learner, style, foe_style, foe, limit));
+            }
+            Wire::Describe { reply } => {
+                let words = self
+                    .envs
+                    .iter()
+                    .map(|env| {
+                        env.as_ref().map(|env| {
+                            let b = env.brief();
+                            (
+                                env.moment(),
+                                env.acts(),
+                                (b.time, b.hp, b.foe_hp, b.qi, b.foe_qi, b.gap),
+                            )
+                        })
+                    })
+                    .collect();
+                let _ = reply.send(words);
             }
             Wire::Casts { reply } => {
                 for env in self.envs.iter_mut().flatten() {
@@ -382,6 +405,21 @@ impl VecEnv {
         let obs = PyArray1::from_vec(py, obs).reshape([self.n, OBS])?;
         let mask = PyArray1::from_vec(py, mask).reshape([self.n, ACTIONS])?;
         Ok((obs.into_any(), mask.into_any()))
+    }
+
+    /// Every env's learner's moment in words, for a judge that reads text: a list of `(moment, acts, (time, hp,
+    /// foe_hp, qi, foe_qi, gap))`, `acts` the 27 acts' words, or `None` for an env never reset. Slow beside `step`:
+    /// for judging a few matches, not for training.
+    fn describe(&self) -> PyResult<Vec<Option<Words>>> {
+        let mut out = Vec::with_capacity(self.n);
+        for (tx, _, _) in &self.workers {
+            let (reply, rx) = channel();
+            tx.send(Wire::Describe { reply })
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            out.extend(rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?);
+        }
+        out.truncate(self.n);
+        Ok(out)
     }
 
     /// The learners' casts since the last call, summed over every env, by kind (`data::Kind` order: blast, bolt,

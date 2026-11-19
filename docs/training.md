@@ -329,6 +329,25 @@ uv run python cycle.py --run c25 --pbt --exploit 300 --review ~/services/arena/s
   the best three against the bar, the house AI and (`--exploit`) a best response, which joins the pool for the next
   cycle's league to fight, and writes
   `runs/<run>/report.md` and a review page. It ships nothing; shipping the pick is "Export and check", above.
+### Read it (a decision model as a reader)
+
+`train/judge.py` has a policy fight a few dozen rounds and asks TypeSafe's Jev (`typesafe/jev-1.14`, a decision
+model on OpenRouter's Decisions API: typed answers with probabilities, no text) how each round reads (deliberate,
+risky, dull, which pattern) and what it makes of a few hundred single moves, set beside the critic's advantage. Each
+moment is put in words by `arena_duel::words` (`VecEnv.describe`). It writes `rounds.json`, `summary.json` and a
+review page; nothing it says feeds a reward.
+
+```sh
+uv run python judge.py ../../arena-train/train/runs/abi6b/u1200.pt --rounds 48 --moves 300 \
+    --env-file ~/projects/game-factory/ops/.env --out runs/judge-abi6b --review ~/services/arena/site/review/jev-train
+```
+
+What it found on abi6b/u1200 (2026-11-19; 348 requests, p50 0.64 s, $0.016): asked twice it answers the same; its
+move verdicts have nothing to do with the critic's (Spearman -0.04) nor the policy's own choice (-0.08), because the
+words leave out what decides a move here (frame data, who a blow can reach; it calls walking at a foe winding up a
+palm blast a sure mistake while flying over it wins); its round scores mostly follow what code counts (risk and dull
+with meditations, about 0.6). It called 31 of 48 rounds a turtle's, the duck share the trainer's log shows. Read it
+as a second pair of eyes on style, never as a judge of play.
 
 ## Watch it
 
