@@ -45,6 +45,13 @@ generators looked at and the pictures that decided the route: `art/research/READ
    sprite", below).
 5. **Look at every frame.** A model draws an effect, a second figure, a cut-off weapon, a hand crossing into the next
    cell: redraw that picture. Check the details that drift between pictures against the master.
+   Before the owner looks, a decision model screens every picture (`cargo -Zscript art/tools/jev.rs --env-file
+   <ops/.env> --grid 4x2 <sheets>`: TypeSafe's Jev on OpenRouter, about $0.00013 and 0.6 s a picture): one figure, an
+   effect drawn on the fighter, cut off by the edge, feet inside, facing, and boxes for the feet and the figure. On
+   307 pictures with known answers (2026-11-19, https://arena.aiocean.io/review/jev-art/) it flagged no clean picture
+   for a second figure, a cut-off or the feet, caught nearly every broken one, and read east 98% of the time; its
+   "effect" check also fires on a sword's glint, and it reads three-quarter poses badly. It screens, the owner
+   decides: check what it flags on the first real batch. `art/tools/jev-eval.rs` re-measures it.
 6. **The sheet.** Cut the grid, key the ground, find the feet, scale the whole character once, and write the sheet
    the game reads (below) into `crates/arena-game/assets/fighters/`. The tool for this route is still to be written
    (`art/tools/sheet.rs`); the PixelLab characters' own `art/<character>/tools/sheet.rs` built today's sheets.
