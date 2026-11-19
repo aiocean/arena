@@ -55,6 +55,7 @@ and the league as an opponent.
   run aims at the main run's `league/`, and the main run takes the exploiter's `league/` into its `--pool`. The two
   run side by side on the desktop (about 30K steps a second each).
 - **A named mix.** `--mix latest=0.2 past=0.15 brain=0.3 pool=0.2 target=0 ...`; five numbers keep the old order.
+  `aggressive` and `turtle` are each script alone, to lean on one the pool shows the policy is weak against.
 
 ## 4. Population-based training (PBT)
 
@@ -73,7 +74,8 @@ reward terms that win are found by the population, and every generation's best i
 1. train: a PBT population, or a single run, from the shipped model (widened first if the ABI grew);
 2. add every kept checkpoint, and the house AI, to the pool and play the missing games;
 3. rank the candidates by their rating, measure the best few against the entry bar on the ladder's seeds, and
-   their exploitability when asked (`--exploit`);
+   their exploitability when asked (`--exploit`); each best response joins the pool, so the next cycle's league
+   (`--pool runs/pool/models`) fights the holes this one found;
 4. write a report (`runs/<run>/report.json` and `report.md`, and with `--review DIR` a review page): the pool's
    table, the pick against the house AI head to head, the bar, the cycles.
 

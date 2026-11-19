@@ -1,6 +1,6 @@
 import numpy as np
 
-from league import League
+from league import League, parse_mix
 
 
 class Recorder:
@@ -35,9 +35,9 @@ def test_the_learner_sits_in_each_seat_half_the_time_by_default():
 
 
 def test_mix_takes_five_numbers_in_the_old_order_or_named_shares():
-    from league import MIX, parse_mix
+    from league import MIX
 
-    assert parse_mix(["0.2", "0.15", "0.5", "0.05", "0.1"]) == [0.2, 0.15, 0.5, 0.05, 0.1, 0.0, 0.0]
+    assert parse_mix(["0.2", "0.15", "0.5", "0.05", "0.1"]) == [0.2, 0.15, 0.5, 0.05, 0.1, 0.0, 0.0, 0.0, 0.0]
     named = parse_mix(["target=1", "brain=0.5"])
     assert named == [0.5 if k == "brain" else 1.0 if k == "target" else 0.0 for k in MIX]
 
@@ -69,8 +69,15 @@ def test_snapshots_are_kept_and_a_resumed_league_fights_them_again(tmp_path, mon
     assert again.restore() == 3 and env.models[2] == b"model 2"
 
 
+def test_a_script_can_be_fought_alone():
+    env = Models()
+    league = League(env, np.random.default_rng(4), mix=parse_mix(["aggressive=1"]))
+    league.snapshots = [0]
+    assert {league.reset(i)[0] for i in range(50)} == {"aggressive"}
+
+
 def test_pfsp_draws_the_opponents_it_loses_to(tmp_path):
-    league = League(Models(), np.random.default_rng(1), mix=[0, 1, 0, 0, 0, 0, 0], pfsp=2)
+    league = League(Models(), np.random.default_rng(1), mix=parse_mix(["past=1"]), pfsp=2)
     league.snapshots = [0, 1, 2]
     for _ in range(100):
         league.record("self:0", True)  # always beaten
@@ -87,7 +94,7 @@ def test_pool_and_target_models_are_read_from_their_folders(tmp_path):
     (target / "00000.onnx").write_bytes(b"old")
     (target / "00001.onnx").write_bytes(b"new")
     env = Models()
-    league = League(env, np.random.default_rng(2), mix=[0, 0, 0, 0, 0, 0.5, 0.5], pools=[pool], target=target)
+    league = League(env, np.random.default_rng(2), mix=parse_mix(["pool=1", "target=1"]), pools=[pool], target=target)
     league.snapshots = [0]
     league.refresh()
     assert sorted(env.models[w] for w in league.pool) == [b"a", b"b"]

@@ -94,7 +94,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--variety` | 0 | reward weight of the damage the actives' blows deal (a bonus for using the whole kit) |
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
-| `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair; or `kind=share` for those and `pool`, `target` |
+| `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair; or `kind=share` for those and `pool`, `target`, `aggressive`, `turtle` (one script alone) |
 | `--pfsp` | 0 | draw a past self or a pool model with weight (1 - p)^k, p the learner's recent win rate against it (0: uniform) |
 | `--pool` | | folders whose `*.onnx` are the `pool` opponents (the pool's `runs/pool/models`, another run's `league/`), read again at each snapshot |
 | `--target` | | the `target` opponent: a model, or a folder whose newest `*.onnx` is fought (an exploiter aimed at a main run's `league/`) |
@@ -326,7 +326,8 @@ uv run python cycle.py --run c25 --pbt --exploit 300 --review ~/services/arena/s
   fitness is the share of rounds won, the bottom quarter copies the top quarter and perturbs its values. Member 0
   starts on the house AI's recipe. `runs/<run>/pbt.jsonl` is each generation; `runs/<run>/best/` its best members.
 - **The cycle** (`cycle.py`): trains (PBT or one run) from the house AI, rates the candidates in the pool, measures
-  the best three against the bar, the house AI and (`--exploit`) a best response, and writes
+  the best three against the bar, the house AI and (`--exploit`) a best response, which joins the pool for the next
+  cycle's league to fight, and writes
   `runs/<run>/report.md` and a review page. It ships nothing; shipping the pick is "Export and check", above.
 
 ## Watch it

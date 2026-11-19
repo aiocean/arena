@@ -13,8 +13,19 @@ import numpy as np
 
 from net import to_onnx
 
-# opponent shares: latest self, a past self, the brain, the first mind, the scripted pair, a pool model, the target
-MIX = {"latest": 0.35, "past": 0.25, "brain": 0.15, "first": 0.10, "scripted": 0.15, "pool": 0.0, "target": 0.0}
+# opponent shares: latest self, a past self, the brain, the first mind, the scripted pair (either, drawn), a pool
+# model, the target, and each script alone (to lean on one the policy is weak against)
+MIX = {
+    "latest": 0.35,
+    "past": 0.25,
+    "brain": 0.15,
+    "first": 0.10,
+    "scripted": 0.15,
+    "pool": 0.0,
+    "target": 0.0,
+    "aggressive": 0.0,
+    "turtle": 0.0,
+}
 OLD_ORDER = ["latest", "past", "brain", "first", "scripted"]  # five numbers of `--mix`, as before
 STYLES = 3
 POOL_IDS, TARGET_IDS = 1_000_000, 2_000_000  # model ids of pool models and targets, apart from the snapshots'

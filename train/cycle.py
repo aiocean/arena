@@ -10,7 +10,8 @@ report (`docs/specs/2026-11-19-model-improvement-design.md`, 5). It ships nothin
 2. Add every kept checkpoint, and the house AI, to the pool and fight the missing games (`pool.py`).
 3. Take the `--top` best-rated candidates; measure each against the entry bar on the ladder's seeds and head to
    head against the house AI over the pool's seeds, and with `--exploit N` its exploitability after N updates of a
-   best response (`exploit.py`).
+   best response (`exploit.py`). Each best response joins the pool (`<run>-x-<candidate>/best`): the next cycle's
+   league fights it (`--pool runs/pool/models`), so the holes found are the ones the next model must close.
 4. The pick: the best-rated candidate that clears the bar. `runs/<run>/report.json` and `report.md`; with
    `--review DIR` also `DIR/index.html`, a review page.
 
@@ -65,6 +66,7 @@ def measure(pool, name, house, args):
         run = f"{args.run}-x-{name.replace('/', '-')}"
         file = pool.root / "models" / pool.members[name]["file"]
         cmd = [sys.executable, "exploit.py", str(file), "--run", run, "--updates", str(args.exploit), "--pool", str(pool.root)]
+        cmd.append("--pool-add")
         subprocess.run(cmd + ["--threads", str(args.threads)], cwd=HERE, check=True)
         m["exploitability"] = json.loads((HERE / "runs" / run / "exploit.json").read_text())["exploitability"]
     return m
