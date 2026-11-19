@@ -1,7 +1,7 @@
 // The arena's home page: the duel is the Bevy game (crates/arena-game) on the hero's canvas; this page only starts
 // it, hands it the bot modules a player drops into a corner and the seed to fight on, and shows its status line.
 // It decides nothing about the fight.
-import init, { boxes, house, live, restart, run, setCorner, status } from "../game/arena_game.js";
+import init, { boxes, corners, house, live, restart, run, setCorner, status } from "../game/arena_game.js";
 
 const PAGES = { home: mountHome };
 try {
@@ -153,6 +153,15 @@ async function mountHome() {
       const seed = text.match(/^Seed (\d+)/)?.[1];
       if (seed && document.activeElement !== seedInput) seedInput.value = seed;
     }
+    // watching a live match, a slot no bot was dropped into names who plays its look there
+    const live = corners();
+    inputs.forEach((input, i) => {
+      const seat = input.closest(".seat");
+      if (seat.classList.contains("chosen")) return;
+      const name = live[i] ?? "house bot";
+      const file = seat.querySelector(".seat-file");
+      if (file.textContent !== name) file.textContent = name;
+    });
     line.classList.toggle("error", text.startsWith("Not a bot"));
     if (line.textContent !== text) line.textContent = text;
   }, 250);

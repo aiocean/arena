@@ -35,6 +35,7 @@ thread_local! {
     /// Corners made by a finished compile: the seating they were asked for, or why they could not be.
     static MADE: RefCell<Option<Made>> = const { RefCell::new(None) };
     static STATUS: RefCell<String> = const { RefCell::new(String::new()) };
+    static CORNERS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     static HOUSE_BYTES: RefCell<Option<Arc<Vec<u8>>>> = const { RefCell::new(None) };
 }
 
@@ -88,6 +89,22 @@ pub fn boxes(on: bool) {
 #[wasm_bindgen]
 pub fn status() -> String {
     STATUS.with_borrow(Clone::clone)
+}
+
+/// Who plays each look in the live match being watched, Vương Lâm's then Thất Thải's ("old house AI", "house AI"),
+/// for the page's two slots; empty when the page is not watching one.
+#[wasm_bindgen]
+pub fn corners() -> Vec<String> {
+    CORNERS.with_borrow(Clone::clone)
+}
+
+/// A live corner's bot as the page names it: the server's `previous` is the house AI before this one.
+fn label(name: &str) -> &str {
+    match name {
+        "previous" => "old house AI",
+        "house" => "house AI",
+        other => other,
+    }
 }
 
 pub struct WebPlugin;
@@ -192,17 +209,27 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
             (Some(e), _, _) => e.clone(),
             (None, Some(m), Some(v)) => {
                 // the server draws each seat's look from the seed: on an odd one seat 0 is Thất Thải
-                let looks = arena_duel::ladder::looks_of(m.seed).map(short);
+                let looks = arena_duel::ladder::looks_of(m.seed);
+                let by_look = |l| {
+                    let seat = looks.iter().position(|&x| x == l).unwrap_or(0);
+                    label(&m.names[seat]).to_string()
+                };
+                let shown = vec![
+                    by_look(arena_duel::data::Look::VuongLam),
+                    by_look(arena_duel::data::Look::ThatThai),
+                ];
+                CORNERS.with_borrow_mut(|c| *c = shown);
+                let looks = looks.map(short);
                 format!(
                     "Seed {} · live · round {} · {} ({}) {} – {} {} ({})",
                     m.seed,
                     v.round,
                     looks[0],
-                    m.names[0],
+                    label(&m.names[0]),
                     v.wins[0],
                     v.wins[1],
                     looks[1],
-                    m.names[1]
+                    label(&m.names[1])
                 )
             }
             _ => live.status.clone(),
@@ -210,6 +237,7 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
         STATUS.with_borrow_mut(|s| *s = text);
         return;
     }
+    CORNERS.with_borrow_mut(Vec::clear);
     let text = match (&seating.error, &shown.view) {
         (Some(e), _) => format!("Not a bot for this season: {e}"),
         (None, Some(v)) => format!(
