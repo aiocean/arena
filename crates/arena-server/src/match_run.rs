@@ -9,9 +9,11 @@
 //! rules, so whatever sits in a corner here, the page needs only the rules.
 
 use arena_bot::onnx::Onnx;
+use arena_duel::data::Look;
 use arena_duel::duel::{Duel, DuelConfig, TICK};
 use arena_duel::effects;
 use arena_duel::first_mind::FirstMind;
+use arena_duel::ladder::looks_of;
 use arena_duel::scripted::Scripted;
 use arena_duel::seat::{BotSeat, Brain, Fault, Log, MakeSeat, Recorder, Recording};
 use arena_duel::style::Style;
@@ -62,6 +64,8 @@ pub const MAX_TICKS: u32 = 5 * 60 * 60; // five minutes
 pub enum Bot {
     /// The house AI, `weights/policy.onnx`, in the balanced style (as the ladder measures it).
     House,
+    /// The house AI before it, `weights/policy-prev.onnx`, in the same style.
+    Previous,
     Brain,
     First,
     Aggressive,
@@ -73,6 +77,7 @@ impl Bot {
     pub fn name(self) -> &'static str {
         match self {
             Bot::House => "house",
+            Bot::Previous => "previous",
             Bot::Brain => "brain",
             Bot::First => "first",
             Bot::Aggressive => "aggressive",
@@ -83,7 +88,7 @@ impl Bot {
     /// What runs it, as its telemetry's `runtime` says.
     pub fn runtime(self) -> &'static str {
         match self {
-            Bot::House => "onnx",
+            Bot::House | Bot::Previous => "onnx",
             _ => "builtin",
         }
     }
@@ -98,13 +103,13 @@ pub struct Pairing {
 }
 
 impl Pairing {
-    /// The `n`th match's pairing (counted from 1) on `seed`: the house AI against itself (owner, 2026-11-18: the page
-    /// shows house against house only), its seat drawn from the seed (`house_seat`) and the looks from the seed too
-    /// (`Duel::new_drawn`), so neither look keeps one seat. `n` stays for a rotation to come.
+    /// The `n`th match's pairing (counted from 1) on `seed`: the house AI against the one before it, the old one
+    /// always Vương Lâm (owner, 2026-11-19). The looks are drawn from the seed (`Duel::new_drawn`), so the house AI
+    /// sits where Thất Thải Đạo Nhân does (`house_seat`). `n` stays for a rotation to come.
     pub fn of(_n: u64, seed: u32) -> Pairing {
         Pairing {
             house_seat: house_seat(seed),
-            opponent: Bot::House,
+            opponent: Bot::Previous,
         }
     }
 
@@ -116,15 +121,19 @@ impl Pairing {
     }
 }
 
-/// The house AI's seat on `seed`: the top bit of the seed mixed, so it is drawn apart from the looks (the seed's
-/// parity, `ladder::looks_of`).
+/// The house AI's seat on `seed`: the one the seed gives Thất Thải Đạo Nhân's look (`ladder::looks_of`), the old
+/// house AI taking Vương Lâm's.
 pub fn house_seat(seed: u32) -> usize {
-    (seed.wrapping_mul(0x9E37_79B1) >> 31) as usize
+    looks_of(seed)
+        .iter()
+        .position(|&l| l == Look::ThatThai)
+        .unwrap_or(1)
 }
 
 /// Makes a corner's seat by its bot's kind: the seat factory, holding what a kind loads once (the house AI's model).
 pub struct Seats {
     house: Onnx,
+    previous: Onnx,
 }
 
 impl Seats {
@@ -132,6 +141,7 @@ impl Seats {
     pub fn new() -> Result<Seats, Fault> {
         Ok(Seats {
             house: Onnx::house()?,
+            previous: Onnx::previous()?,
         })
     }
 
@@ -140,6 +150,7 @@ impl Seats {
     pub fn maker(&self, bot: Bot) -> MakeSeat {
         match bot {
             Bot::House => BotSeat::make(self.house.decider(), Some(Style::Balanced)),
+            Bot::Previous => BotSeat::make(self.previous.decider(), Some(Style::Balanced)),
             Bot::Brain => Brain::make(),
             Bot::First => FirstMind::make(),
             Bot::Aggressive => Scripted::aggressive(),
@@ -460,6 +471,7 @@ mod tests {
             (1_234, 1, Bot::Turtle),
             (99, 0, Bot::Aggressive),
             (5, 1, Bot::House),
+            (6, 1, Bot::Previous),
         ] {
             let pairing = Pairing {
                 house_seat,
@@ -498,11 +510,18 @@ mod tests {
         Ok(())
     }
 
-    /// Every live match is the house AI against itself, its seat from the seed, and both seats come up.
+    /// Every live match is the house AI against the one before it, the old one always Vương Lâm, on either seat.
     #[test]
-    fn pairings_are_house_against_house_and_draw_the_seat() {
-        for n in 1..=8 {
-            assert_eq!(Pairing::of(n, 5).bots(), [Bot::House, Bot::House]);
+    fn pairings_put_the_previous_house_ai_on_vuong_lam() {
+        for seed in 1..=64_u32 {
+            let bots = Pairing::of(1, seed).bots();
+            for (look, bot) in looks_of(seed).iter().zip(bots) {
+                let want = match look {
+                    Look::VuongLam => Bot::Previous,
+                    Look::ThatThai => Bot::House,
+                };
+                assert_eq!(bot, want, "seed {seed}");
+            }
         }
         let seats: Vec<usize> = (0..64_u32).map(house_seat).collect();
         assert!(seats.contains(&0) && seats.contains(&1));

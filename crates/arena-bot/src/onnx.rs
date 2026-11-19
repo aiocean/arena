@@ -19,6 +19,9 @@ use tract_onnx::prelude::*;
 
 /// The house AI the arena ships, as ONNX.
 pub const HOUSE: &[u8] = include_bytes!("../../arena-duel/weights/policy.onnx");
+/// The house AI before it (`weights/policy-prev.onnx`): the live page's Vương Lâm, against the house AI (owner,
+/// 2026-11-19). A new house AI moves the old `policy.onnx` here.
+pub const PREVIOUS: &[u8] = include_bytes!("../../arena-duel/weights/policy-prev.onnx");
 
 /// A loaded, optimised ONNX policy: the observation, float32 `[1, 1889]`, to the acts' logits, `[1, 27]` or `[27]`.
 /// Cheap to clone; many seats share one.
@@ -54,6 +57,11 @@ impl Onnx {
     /// The house AI.
     pub fn house() -> Result<Onnx, Fault> {
         Onnx::load(HOUSE).map(|o| o.named("house"))
+    }
+
+    /// The house AI before this one.
+    pub fn previous() -> Result<Onnx, Fault> {
+        Onnx::load(PREVIOUS).map(|o| o.named("previous"))
     }
 
     /// The same policy under `name` in its telemetry.
