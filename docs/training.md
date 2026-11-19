@@ -94,7 +94,11 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--whiff` | 0 | reward cost of a damaging cast that lands nothing |
 | `--variety` | 0 | reward weight of the damage the actives' blows deal (a bonus for using the whole kit) |
 | `--whiff-far` | 0 | reward cost of a whiff begun with the foe out of reach (a blow in reach that misses costs only `--whiff`) |
-| `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair |
+| `--mix` | 0.35 0.25 0.15 0.10 0.15 | the league's opponent shares: latest self, a past self, the brain, the first mind, the scripted pair; or `kind=share` for those and `pool`, `target` |
+| `--pfsp` | 0 | draw a past self or a pool model with weight (1 - p)^k, p the learner's recent win rate against it (0: uniform) |
+| `--pool` | | folders whose `*.onnx` are the `pool` opponents (the pool's `runs/pool/models`, another run's `league/`), read again at each snapshot |
+| `--target` | | the `target` opponent: a model, or a folder whose newest `*.onnx` is fought (an exploiter aimed at a main run's `league/`) |
+| `--stop-at` | | stop and save at this update, the schedule still the `--updates` one |
 | `--time-cost` | 0 | reward cost of every decision, so a round that drags on costs more than one closed |
 | `--idle` | 0 | reward cost of a decision that could cast and moves, jumps, guards, meditates or waits instead |
 | `--land` | 0 | reward for each damaging cast that lands: with `--idle`, holding the skills back costs, against `--whiff` |
@@ -106,7 +110,7 @@ uv run python ppo.py --run v2 --resume runs/v2/last.pt           # continue a ru
 | `--device`, `--seed` | cpu, 1 | torch device; the seed for torch, numpy and the fight seeds |
 | `--init` | | start from a `.pt` checkpoint or an ONNX model (the house AI's: `../crates/arena-duel/weights/policy.onnx`), at its size, with a fresh schedule |
 | `--width`, `--hidden`, `--blocks` | 128, 256, 2 | the network's size for a run from scratch (any size a bot's fuel allows) |
-| `--resume` | | continue a run, optimiser and schedule included; the league restarts with only the current policy (past selves are not saved) |
+| `--resume` | | continue a run, optimiser and schedule included; the league reads its past selves back from `runs/<run>/league/` |
 
 It writes `runs/<run>/log.jsonl` every 10 updates (speed, losses, entropy, round length, and the win rate against
 each opponent, overall and per seat: `win/brain`, `win/latest/seat0`, ...; the share of each act, `acts`; and the
@@ -114,7 +118,7 @@ learner's casts: `casts`, `whiff`, `out_of_reach`, `far_whiff`, `active_dmg`, `d
 `runs/<run>/last.pt` every 25.
 
 **Opponents** (`league.py`): its latest self 35%, a past self 25%, the brain 15%, the first mind 10%, the scripted
-pair 15%; seats, styles and both loadouts drawn per fight.
+pair 15%; seats, styles and both loadouts drawn per fight. Every snapshot is kept as `runs/<run>/league/<n>.onnx`.
 
 **A wider observation.** An ABI that appends inputs keeps the old ones at their indices, so a trained policy carries
 over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n>` copies its first layer into the
@@ -290,6 +294,40 @@ shows the rules' own fairness). Since RULES 19 no one slashes (the arena is spel
 any more; the look share is to be measured again on the new rules.
 `--telemetry` adds what each seat's skills did in each mirror: casts, landed, damage, guarded, broken, punished,
 final blows.
+
+## Getting better over time
+
+The ladder measures a bot against fixed opponents. Whether a model is better than the one before it, what beats it
+and which reward terms helped, the trainer answers with no players at all
+(`docs/specs/2026-11-19-model-improvement-design.md`):
+
+```sh
+cd train
+uv run python pool.py init && uv run python pool.py add runs/abi6b/u800.pt runs/abi6b/u1200.pt
+uv run python pool.py play && uv run python pool.py table      # ratings, the Nash mixture, the cycles
+uv run python exploit.py ../crates/arena-duel/weights/policy.onnx --run x-house --updates 300
+uv run python pbt.py --run pbt1 --init ../crates/arena-duel/weights/policy.onnx -- --shaping-until 3.0 --pfsp 2
+uv run python cycle.py --run c25 --pbt --exploit 300 --review ~/services/arena/site/review/c25
+```
+
+- **The pool** (`pool.py`, `runs/pool/`): the built-in minds, the house AI and any checkpoint (of any ABI: a narrower
+  one is widened), every pair fought over seeds 500,000-500,039 both ways (apart from the ladder's), all fought
+  again when the rules change. Its table rates each member by a Bradley-Terry fit on the Elo scale (the brain at
+  1000, with ±2 standard errors), gives each member's payoff against the meta-game's Nash mixture (0 for the members
+  nothing beats on balance), and lists the cycles (A beats B beats C beats A, each by 55%). Pick a checkpoint by its
+  rating there; the entry bar stays the gate.
+- **Exploitability** (`exploit.py`): a best response fine-tuned from the model against the model alone; its share of
+  the rounds against the model over the pool's seeds, less a half. Near 0, no hole found.
+- **The league** keeps its past selves on disk, draws by PFSP (`--pfsp 2`), and takes other folders' models
+  (`--pool`); a main run and an exploiter run side by side: the exploiter with `--target runs/main/league --mix
+  target=1`, the main run with `--pool runs/pool/models runs/exploit/league`.
+- **PBT** (`pbt.py`): 4 members by default, each a run with its own `--lr`, `--ent`, `--idle`, `--land`, `--whiff`,
+  `--whiff-far`, `--variety`, `--time-cost`; every 100 updates they fight one another, the brain and the house AI,
+  fitness is the share of rounds won, the bottom quarter copies the top quarter and perturbs its values. Member 0
+  starts on the house AI's recipe. `runs/<run>/pbt.jsonl` is each generation; `runs/<run>/best/` its best members.
+- **The cycle** (`cycle.py`): trains (PBT or one run) from the house AI, rates the candidates in the pool, measures
+  the best three against the bar, the house AI and (`--exploit`) a best response, and writes
+  `runs/<run>/report.md` and a review page. It ships nothing; shipping the pick is "Export and check", above.
 
 ## Watch it
 

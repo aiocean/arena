@@ -18,11 +18,16 @@ cargo run --release -p arena-bot --features host,onnx --example ladder -- --seed
 
 - `net.py`: the network (any size: `--width`, `--hidden`, `--blocks`), its export to ONNX and back; the HL-Gauss
   critic.
-- `league.py`: who the learner fights (latest self 35%, a past self 25%, brain 15%, first mind 10%, scripted 15%),
+- `league.py`: who the learner fights (latest self 35%, a past self 25%, brain 15%, first mind 10%, scripted 15%;
+  other folders' models and a target when asked, past selves and those drawn by PFSP with `--pfsp`, every snapshot kept
+  in `runs/<run>/league/`),
   and in which seat (each fight draws both fighters' loadouts at random from the seed, and their looks apart from the
   seats). The shipped policy was trained on the old rules (two schools, and inputs that named its seat); it needs a
   retrain on the damage system (`docs/specs/2026-11-17-damage-system-design.md`, 13 and 16).
 - `ppo.py`: the trainer. CPU beats MPS for this network (on an M4 laptop, 10.2K vs 8.1K env steps/s).
+- `pool.py`, `exploit.py`, `pbt.py`, `cycle.py`: getting better over time with no players (`docs/training.md`,
+  "Getting better over time"): the pool and its rating, a model's exploitability, population-based training, and the
+  whole cycle on one command, its report a review page.
 - `export.py`: the shipped file and `crates/arena-duel/tests/fixtures/policy_check.json`, which
   `cargo test -p arena-bot --features onnx --test house` checks against the native ONNX run.
 

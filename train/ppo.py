@@ -17,6 +17,13 @@ policy closes it rather than wait out the cut. `--idle` is taken from a decision
 paid for) and moves, jumps, guards, meditates or waits instead, and `--land` paid for each damaging cast that lands:
 together they make holding the skills back cost something, against the whiff cost that makes a cast risky.
 
+The league (`league.py`): `--mix` gives the opponents' shares (five numbers in the old order, or `kind=share` for
+latest, past, brain, first, scripted, pool, target); `--pfsp k` draws past selves and pool models by (1 - win rate)^k;
+`--pool DIR...` makes every `*.onnx` in those folders (the pool's `runs/pool/models`, another run's `league/`) a pool
+opponent, read again at each snapshot; `--target` is a model, or a folder whose newest `*.onnx` is fought (an
+exploiter aimed at a main run's `league/`). Each snapshot is kept in runs/<run>/league/, and a resumed run fights its
+past selves again. `--stop-at N` stops at update N with the schedule of `--updates` (`pbt.py` runs a generation so).
+
 Writes runs/<run>/log.jsonl (one line every 10 updates) and runs/<run>/last.pt (every 25 updates and at the end;
 with `--keep-every N` also runs/<run>/u<update>.pt every N, a multiple of 25, for the ladder). A
 line holds, over its 10 updates, the share of each act (`acts`, in `Act` order) and the learner's casts: how many
@@ -38,7 +45,7 @@ import torch
 from torch.distributions import Categorical
 
 import arena_duel as pd
-from league import League
+from league import League, parse_mix
 from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss
 
 
@@ -96,7 +103,10 @@ def main():
     ap.add_argument("--whiff", type=float, default=0.0, help="reward cost of a damaging cast that lands nothing")
     ap.add_argument("--variety", type=float, default=0.0, help="reward x the share of a life the actives' blows took")
     ap.add_argument("--whiff-far", type=float, default=0.0, help="reward cost of a whiff begun with the foe out of reach")
-    ap.add_argument("--mix", type=float, nargs=5, help="opponent shares: latest self, past self, brain, first, scripted")
+    ap.add_argument("--mix", nargs="+", help="opponent shares: 5 numbers (latest past brain first scripted) or kind=share")
+    ap.add_argument("--pfsp", type=float, default=0.0, help="draw past selves and pool models by (1 - win rate)^k (0: uniform)")
+    ap.add_argument("--pool", nargs="+", default=[], help="folders whose *.onnx are the pool kind's opponents")
+    ap.add_argument("--target", help="the target kind's opponent: a model, or a folder's newest *.onnx")
     ap.add_argument("--idle", type=float, default=0.0, help="reward cost of a decision that could cast and does not")
     ap.add_argument("--land", type=float, default=0.0, help="reward for each damaging cast that lands")
     ap.add_argument("--time-cost", type=float, default=0.0, help="reward cost of every decision (a long round costs more)")
@@ -105,6 +115,7 @@ def main():
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--seat0", type=float, default=0.5, help="share of fights in which the learner sits in seat 0")
+    ap.add_argument("--stop-at", type=int, help="stop (and save) at this update, the schedule still the --updates one")
     ap.add_argument("--resume")
     ap.add_argument("--init", help="start from this network (.pt or .onnx) with a fresh schedule")
     ap.add_argument("--width", type=int, default=WIDTH)
@@ -131,7 +142,17 @@ def main():
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
     start = 0
     env = pd.VecEnv(n, args.threads)
-    league = League(env, rng, seed=1_000_000 + args.seed * 10_000_000, seat0=args.seat0, mix=args.mix)
+    league = League(
+        env,
+        rng,
+        seed=1_000_000 + args.seed * 10_000_000,
+        seat0=args.seat0,
+        mix=parse_mix(args.mix),
+        dir=out / "league",
+        pfsp=args.pfsp,
+        pools=args.pool,
+        target=args.target,
+    )
     # a resumed run takes its network from its checkpoint (long-run.sh passes the run's --init again on a resume)
     if args.init and not args.resume:
         path = pathlib.Path(args.init)
@@ -145,6 +166,11 @@ def main():
         opt.load_state_dict(ck["optim"])
         start = ck["update"]
         league.next_seed = ck["next_seed"]
+        print(f"resumed at update {start} with {league.restore()} past selves", flush=True)
+    else:
+        for f in (out / "league").glob("*.onnx"):  # a run started again from scratch
+            f.unlink()
+    league.refresh()
     league.snapshot(policy.cpu())
     policy.to(dev)
     kinds = [league.reset(i) for i in range(n)]
@@ -162,7 +188,8 @@ def main():
     log = open(out / "log.jsonl", "a")
     tick = time.time()
 
-    for update in range(start, args.updates):
+    end = min(args.updates, args.stop_at or args.updates)
+    for update in range(start, end):
         lr, ent_coef, shaping = schedule(update, args.updates, args.lr, args.ent, args.shaping_until)
         for g in opt.param_groups:
             g["lr"] = lr
@@ -185,7 +212,8 @@ def main():
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))
             for i in np.nonzero(d)[0]:
-                kind, style, seat = kinds[i]
+                kind, style, seat, key = kinds[i]
+                league.record(key, won[i] == 1)
                 results[kind].append(float(won[i] == 1))
                 results[f"{kind}/seat{seat}"].append(float(won[i] == 1))
                 if kind == "brain":
@@ -235,6 +263,7 @@ def main():
                 stats["clipfrac"] += ((ratio - 1).abs() > args.clip).float().mean().item()
 
         if (update + 1) % args.snapshot_every == 0:
+            league.refresh()
             league.snapshot(policy.cpu())
             policy.to(dev)
         if (update + 1) % 10 == 0:
@@ -246,6 +275,8 @@ def main():
                 "shaping": round(shaping, 3),
                 **{f: round(v / k, 4) for f, v in stats.items()},
                 "len": round(float(np.mean(lengths)), 1) if lengths else 0,
+                "league": len(league.snapshots),
+                "pool": len(league.pool),
                 "top_act": round(float(acts.max() / max(acts.sum(), 1)), 3),
                 "acts": [round(float(x), 4) for x in acts / max(acts.sum(), 1)],
                 **cast_stats(env.casts()),
@@ -256,7 +287,7 @@ def main():
             print(json.dumps(line), flush=True)
             log.write(json.dumps(line) + "\n")
             log.flush()
-        if (update + 1) % 25 == 0 or update + 1 == args.updates:
+        if (update + 1) % 25 == 0 or update + 1 == end:
             ck = {"model": policy.state_dict(), "optim": opt.state_dict(), "update": update + 1, "next_seed": league.next_seed, "size": size}
             torch.save(ck, out / "last.pt")
             if args.keep_every and (update + 1) % args.keep_every == 0:
