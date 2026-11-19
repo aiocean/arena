@@ -148,10 +148,11 @@ impl Seen {
     }
 }
 
-/// A fighter's face in its medallion: the `size` square at (`x`, `y`) its portrait fits.
+/// A fighter's face in its medallion: the `size` square at (`x`, `y`) its portrait fits. `look` picks the sheet the
+/// face comes from: the fighter's look, not its corner (the looks are drawn from the seed apart from the seats).
 #[derive(Clone, Copy, Debug)]
 pub struct Face {
-    pub school: usize,
+    pub look: usize,
     pub x: i32,
     pub y: i32,
     pub size: i32,
@@ -274,7 +275,7 @@ pub fn bars(
         let mx = if right { g.right - medal } else { g.left };
         medallion(pen, mx, top, medal);
         faces.push(Face {
-            school: f.index.min(1),
+            look: f.look as usize,
             x: mx + 3,
             y: top + 3,
             size: medal - 6,

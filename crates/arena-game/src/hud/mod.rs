@@ -222,7 +222,7 @@ fn place(
     let unit = UNIT as f32;
     for (FaceSprite(i), mut sprite, mut transform, mut visibility) in &mut faces {
         let face = hud.painted.faces.get(*i);
-        let look = face.and_then(|f| looks.as_ref()?.0.get(f.school));
+        let look = face.and_then(|f| looks.as_ref()?.0.get(f.look));
         let (Some(face), Some(look)) = (face, look) else {
             *visibility = Visibility::Hidden;
             continue;
