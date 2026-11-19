@@ -118,7 +118,9 @@ cast spends one and they come back one at a time.
 ## Resources
 
 - **Qi** pays for most casts, for leaving the ground and for flying. A jump costs 8 qi, paid as it crouches, and so
-  does taking off into flight from the ground (`data::JUMP_QI`); with less than 8 it stays on the ground. Flying
+  does taking off into flight, from the ground or in the air, falling from a jump or a landing (`data::JUMP_QI`;
+  RULES 26, owner 2026-11-20: before it, a fighter in the air took off again for nothing); with less than 8 it does not
+  leave the ground or take off. Flying
   costs 8 a second and stops the regen. Qi refills on its own, 8 a second, and faster while meditating (below). **Life**, **lifespan**, **killing intent**, **souls**, **sense** and **stars** pay for some
   skills (design 1, 10). Souls come from soul damage dealt (one each 100), from kills, and from each minion that dies
   within 4 T.

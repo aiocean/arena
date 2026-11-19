@@ -91,8 +91,8 @@ fn slotted<'a>(sense: &Sense, skills: &'a [Skill], slot: usize) -> Option<(usize
     skills.get(k).map(|s| (k, s))
 }
 
-/// Which acts can happen now: waiting always; the rest only while it can act; a jump, or a take-off into flight from
-/// the ground, only with the qi it costs; a cast only from a filled slot whose skill is ready, and aimed off the foe
+/// Which acts can happen now: waiting always; the rest only while it can act; a jump, or a take-off into flight
+/// (from the ground or the air), only with the qi it costs; meditating only on the ground; a cast only from a filled slot whose skill is ready, and aimed off the foe
 /// only for areas and blinks.
 pub fn legal(sense: &Sense, skills: &[Skill]) -> [bool; ACTIONS] {
     let me = &sense.me;
@@ -104,10 +104,12 @@ pub fn legal(sense: &Sense, skills: &[Skill]) -> [bool; ACTIONS] {
         *o = match act {
             Act::Wait => true,
             _ if !me.can_act => false,
-            Act::Toward | Act::Away | Act::Duck | Act::Guard | Act::Meditate => true,
-            // leaving the ground costs qi; flying higher from the air does not
+            Act::Toward | Act::Away | Act::Duck | Act::Guard => true,
+            // it sits down only from the ground (`Choice::Meditate` in the air is dropped)
+            Act::Meditate => !me.flying && me.air <= 0.0,
+            // leaving the ground costs qi, and so does taking off from the air (RULES 26)
             Act::Jump => !me.flying && me.can_leap(),
-            Act::FlyHigh => !me.flying && (me.air > 0.0 || me.can_leap()),
+            Act::FlyHigh => !me.flying && me.can_leap(),
             Act::Land => me.flying,
             Act::Cast { slot, aim } => slotted(sense, skills, slot).is_some_and(|(k, s)| {
                 sense.ready.get(k).copied().unwrap_or(false) && (aim == Aim::Foe || aims(s.kind))

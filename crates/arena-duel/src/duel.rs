@@ -576,9 +576,10 @@ pub fn apply(state: &mut State, me: usize, choice: &Choice) {
         }
         Choice::Guard { hold } => f.guard = *hold,
         Choice::Duck { hold } => f.body.duck = *hold,
-        // taking off from the ground costs a jump's qi; without it, it stays on the ground
+        // taking off costs a jump's qi, from the ground or in the air (falling from a jump or a landing: RULES 26);
+        // without it, it does not take off
         Choice::Fly { height } => {
-            let take_off = *height > 0.0 && !f.fly && f.body.air == 0.0;
+            let take_off = *height > 0.0 && !f.fly;
             if take_off && f.c.qi < JUMP_QI {
                 return;
             }
