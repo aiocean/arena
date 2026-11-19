@@ -335,25 +335,28 @@ uv run python cycle.py --run c25 --pbt --exploit 300 --review ~/services/arena/s
   cycle's league to fight, and writes
   `runs/<run>/report.md` and a review page. It ships nothing; shipping the pick is "Export and check", above.
 
-### Read it (a decision model as a reader)
+### Read it: how it looks (the coach)
 
-`train/judge.py` has a policy fight a few dozen rounds and asks TypeSafe's Jev (`typesafe/jev-1.14`, a decision
-model on OpenRouter's Decisions API: typed answers with probabilities, no text) how each round reads (deliberate,
-risky, dull, which pattern) and what it makes of a few hundred single moves, set beside the critic's advantage. Each
-moment is put in words by `arena_duel::words` (`VecEnv.describe`). It writes `rounds.json`, `summary.json` and a
-review page; nothing it says feeds a reward.
+`train/judge.py` fights policies on the same seeds and puts side by side what code counts of how they look (flicker:
+a move undone within a second; ducks, take-offs, time in the air, sits, casts) and what TypeSafe's Jev
+(`typesafe/jev-1.14`, a decision model on OpenRouter's Decisions API: typed answers with probabilities, no text)
+reads in 3-second clips, whole rounds and single moves, given the rules (`RULES` there, from this repo's
+`docs/rules.md`). Each moment is put in words by `arena_duel::words` (`VecEnv.describe`). The loop around it (read the
+worst clips, tie them to the pay, a variant beside a control, judge and ladder) is the `arena-coach` skill
+(`.claude/skills/arena-coach`).
 
 ```sh
-uv run python judge.py ../../arena-train/train/runs/abi6b/u1200.pt --rounds 48 --moves 300 \
-    --env-file ~/projects/game-factory/ops/.env --out runs/judge-abi6b --review ~/services/arena/site/review/jev-train
+uv run python judge.py ../../arena-train/train/runs/abi7a/u1200.pt runs/<run>/u200.pt --names house <run> \
+    --env-file ~/projects/game-factory/ops/.env --out runs/judge-<run> --review ~/services/arena/site/review/jev-coach
 ```
 
-What it found on abi6b/u1200 (2026-11-19; 348 requests, p50 0.64 s, $0.016): asked twice it answers the same; its
-move verdicts have nothing to do with the critic's (Spearman -0.04) nor the policy's own choice (-0.08), because the
-words leave out what decides a move here (frame data, who a blow can reach; it calls walking at a foe winding up a
-palm blast a sure mistake while flying over it wins); its round scores mostly follow what code counts (risk and dull
-with meditations, about 0.6). It called 31 of 48 rounds a turtle's, the duck share the trainer's log shows. Read it
-as a second pair of eyes on style, never as a judge of play.
+What it found (2026-11-19, https://arena.aiocean.io/review/jev-coach/): abi7a/u1200 sits down and gets up at once
+(96% of its meditations end before they gain anything) and, out of qi, keeps taking off while falling (the mask lets
+it fly up from the air with no qi, and meditate in the air). 200 updates from it with `--flicker 0.01 --fly 0.01
+--short-sit 0.03` won 85.3% against the brain (control 86.5%) with 0.8 wasted sits a minute (6.9) and 7.2 take-offs
+(20.7); `--flicker 0.03` on top flickered 39% less than the house AI for about 4 points. Jev, rules or not, cannot
+judge a single move (Spearman with the critic about 0); on clips it follows the counts and agrees which run looks
+calmer. A second pair of eyes on how a fight looks, never a judge of play.
 
 ## Watch it
 
