@@ -190,10 +190,21 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
     if live.on {
         let text = match (&live.stale, live.watching.current(), &shown.view) {
             (Some(e), _, _) => e.clone(),
-            (None, Some(m), Some(v)) => format!(
-                "Seed {} · live · round {} · Vương Lâm ({}) {} – {} Thất Thải ({})",
-                m.seed, v.round, m.names[0], v.wins[0], v.wins[1], m.names[1]
-            ),
+            (None, Some(m), Some(v)) => {
+                // the server draws each seat's look from the seed: on an odd one seat 0 is Thất Thải
+                let looks = arena_duel::ladder::looks_of(m.seed).map(short);
+                format!(
+                    "Seed {} · live · round {} · {} ({}) {} – {} {} ({})",
+                    m.seed,
+                    v.round,
+                    looks[0],
+                    m.names[0],
+                    v.wins[0],
+                    v.wins[1],
+                    looks[1],
+                    m.names[1]
+                )
+            }
             _ => live.status.clone(),
         };
         STATUS.with_borrow_mut(|s| *s = text);
@@ -208,6 +219,14 @@ fn say(shown: Res<Shown>, seating: NonSend<Seating>, live: NonSend<crate::live::
         (None, None) => "Seating the bots".to_string(),
     };
     STATUS.with_borrow_mut(|s| *s = text);
+}
+
+/// A look's name as the status line writes it.
+fn short(look: arena_duel::data::Look) -> &'static str {
+    match look {
+        arena_duel::data::Look::VuongLam => "Vương Lâm",
+        arena_duel::data::Look::ThatThai => "Thất Thải",
+    }
 }
 
 /// What sits in corner `c`, made ready: a module admitted, compiled and instantiated.
