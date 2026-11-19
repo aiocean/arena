@@ -39,6 +39,11 @@ const RUN: u32 = 6;
 const HABIT: f32 = 0.004;
 const HABITS: usize = 40;
 const SHARE: f64 = 0.4;
+/// A move chosen again within this many seconds, with another between, is a flicker (`Pay::flicker`).
+const FLICKER: f64 = 1.0;
+/// A meditation left within this many seconds of choosing it gained nothing (0.4 s down, a whole second sat):
+/// `Pay::short_sit`.
+const SIT: f64 = 1.4;
 
 /// The kinds of cast `Casts` counts, in `data::Kind` order.
 pub const CAST_KINDS: usize = 9;
@@ -68,7 +73,14 @@ pub struct Casts {
 /// blink), so a policy that wins with only the basics is not paid for it; `idle` taken from a decision that could
 /// cast and does not (it moves, jumps, guards, meditates or waits with a skill ready and paid for), and `land` paid
 /// for each damaging cast that lands, so a policy that holds its skills back is not left alone for it.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+///
+/// How it looks: `flicker` taken from a move that undoes the one before it within `FLICKER` seconds (duck, stand,
+/// duck: an act other than a wait or a cast chosen again with another between them), `fly` from each take-off into
+/// flight, `short_sit` from a meditation left before it could gain anything (another act chosen within `SIT` seconds
+/// of sitting down: sitting down and getting up are 0.8 s it cannot act, and the extra qi starts after a whole
+/// second sat), and `repeat` and `habit` scaling the fixed penalties for choosing one act again and again (`REPEAT`,
+/// `HABIT`; 1 keeps them as they were, 0 drops them).
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pay {
     pub shaping: f32,
     pub whiff: f32,
@@ -76,6 +88,29 @@ pub struct Pay {
     pub variety: f32,
     pub idle: f32,
     pub land: f32,
+    pub flicker: f32,
+    pub fly: f32,
+    pub short_sit: f32,
+    pub repeat: f32,
+    pub habit: f32,
+}
+
+impl Default for Pay {
+    fn default() -> Pay {
+        Pay {
+            shaping: 0.0,
+            whiff: 0.0,
+            whiff_far: 0.0,
+            variety: 0.0,
+            idle: 0.0,
+            land: 0.0,
+            flicker: 0.0,
+            fly: 0.0,
+            short_sit: 0.0,
+            repeat: 1.0,
+            habit: 1.0,
+        }
+    }
 }
 
 impl Casts {
@@ -201,6 +236,10 @@ pub struct Env {
     run: u32,
     /// The last `HABITS` acts it chose.
     recent: VecDeque<usize>,
+    /// The two acts before this one, with the time each was chosen, the older first (`Pay::flicker`).
+    before: [Option<(usize, f64)>; 2],
+    /// When it chose to meditate, while it has not chosen anything else since (`Pay::short_sit`).
+    sat: Option<f64>,
     done: bool,
     /// The cast under way, the casts ended whose shots or later blows are still out, the learner's casts since the
     /// trainer last took them, and the whiffs not yet paid for.
@@ -262,6 +301,8 @@ impl Env {
             last: None,
             run: 0,
             recent: VecDeque::with_capacity(HABITS + 1),
+            before: [None, None],
+            sat: None,
             done: false,
             open: None,
             trailing: Vec::new(),
@@ -334,6 +375,11 @@ impl Env {
             variety,
             idle,
             land,
+            flicker,
+            fly,
+            short_sit,
+            repeat,
+            habit,
         } = *pay;
         let length = self.duel.state().time;
         if self.done {
@@ -362,14 +408,41 @@ impl Env {
         }
         self.last = Some(act);
         if act != 0 && self.run >= RUN {
-            reward -= REPEAT;
+            reward -= REPEAT * repeat;
+        }
+        let now = self.duel.state().time;
+        let plain = act != 0 && !matches!(Act::from_index(act), Some(Act::Cast { .. }));
+        if let [Some((older, t)), Some((prev, _))] = self.before
+            && plain
+            && older == act
+            && prev != act
+            && now - t < FLICKER
+        {
+            reward -= flicker;
+        }
+        self.before = [self.before[1], Some((act, now))];
+        match Act::from_index(act) {
+            Some(Act::Meditate) => {
+                self.sat.get_or_insert(now);
+            }
+            Some(Act::Wait) => {}
+            _ => {
+                if self.sat.take().is_some_and(|t| now - t < SIT) {
+                    reward -= short_sit;
+                }
+            }
+        }
+        if matches!(Act::from_index(act), Some(Act::FlyHigh))
+            && !self.duel.state().fighters[self.me].fly
+        {
+            reward -= fly;
         }
         if self.quiet >= QUIET {
             reward -= STALL;
         }
         let same = self.recent.iter().filter(|&&a| a == act).count();
         if self.recent.len() == HABITS && same as f64 >= SHARE * HABITS as f64 {
-            reward -= HABIT;
+            reward -= HABIT * habit;
         }
         self.recent.push_back(act);
         if self.recent.len() > HABITS {

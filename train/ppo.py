@@ -109,6 +109,11 @@ def main():
     ap.add_argument("--target", help="the target kind's opponent: a model, or a folder's newest *.onnx")
     ap.add_argument("--idle", type=float, default=0.0, help="reward cost of a decision that could cast and does not")
     ap.add_argument("--land", type=float, default=0.0, help="reward for each damaging cast that lands")
+    ap.add_argument("--flicker", type=float, default=0.0, help="reward cost of a move that undoes the one before it within 1 s")
+    ap.add_argument("--fly", type=float, default=0.0, help="reward cost of each take-off into flight")
+    ap.add_argument("--short-sit", type=float, default=0.0, help="reward cost of a meditation left before it gains anything")
+    ap.add_argument("--repeat", type=float, default=1.0, help="scale of the fixed penalty for one act chosen again and again")
+    ap.add_argument("--habit", type=float, default=1.0, help="scale of the fixed penalty for an act that fills 40%% of the last 40")
     ap.add_argument("--time-cost", type=float, default=0.0, help="reward cost of every decision (a long round costs more)")
     ap.add_argument("--keep-every", type=int, default=0, help="also keep runs/<run>/u<update>.pt this often (0: never)")
     ap.add_argument("--snapshot-every", type=int, default=20)
@@ -206,7 +211,17 @@ def main():
                 logp_b[t] = dist.log_prob(a).cpu()
                 val_b[t] = policy.value_of(vlog).cpu()
             r, d, won, length = env.step(
-                a.cpu().numpy().astype(np.int64), shaping, args.whiff, args.whiff_far, args.variety, args.idle, args.land
+                a.cpu().numpy().astype(np.int64), shaping,
+                args.whiff,
+                args.whiff_far,
+                args.variety,
+                args.idle,
+                args.land,
+                flicker=args.flicker,
+                fly=args.fly,
+                short_sit=args.short_sit,
+                repeat=args.repeat,
+                habit=args.habit,
             )
             r = r - np.float32(args.time_cost)
             np.add.at(acts, a.cpu().numpy(), 1)

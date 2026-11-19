@@ -405,3 +405,102 @@ fn land_pays_for_each_damaging_cast_that_lands() {
     }
     assert!(more > 0, "no cast landed in six fights");
 }
+
+#[test]
+fn flicker_costs_a_move_undone_within_a_second_and_dropping_the_repeat_penalties_only_pays_more() {
+    // duck, walk, duck, walk...: each act chosen again with the other between, inside a second, costs `flicker`;
+    // the same fight paid without it differs by a whole number of flickers, and some are counted
+    let run = |pay: arena_duel::train::Pay| {
+        let mut env = Env::new(cfg(31, 0, Opponent::Turtle));
+        let (duck, toward) = (Act::Duck.index(), Act::Toward.index());
+        let mut paid = 0.0_f32;
+        for i in 0..400 {
+            let (_, legal) = env.observe();
+            let want = if i % 2 == 0 { duck } else { toward };
+            let s = env.step_paid(if legal[want] { want } else { 0 }, &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        paid
+    };
+    let plain = run(arena_duel::train::Pay::default());
+    let costly = run(arena_duel::train::Pay {
+        flicker: 1.0,
+        ..Default::default()
+    });
+    let flickers = plain - costly;
+    assert!(flickers >= 5.0, "{flickers} flickers");
+    let frac = flickers.rem_euclid(1.0);
+    assert!(!(1e-3..=1.0 - 1e-3).contains(&frac), "{flickers}");
+    // one act held: no flicker, and the repeat and habit penalties are all it pays beyond the fight
+    let held = |repeat: f32| {
+        let mut env = Env::new(cfg(31, 0, Opponent::Turtle));
+        let duck = Act::Duck.index();
+        let pay = arena_duel::train::Pay {
+            flicker: 1.0,
+            repeat,
+            habit: repeat,
+            ..Default::default()
+        };
+        let mut paid = 0.0_f32;
+        for _ in 0..400 {
+            let (_, legal) = env.observe();
+            let s = env.step_paid(if legal[duck] { duck } else { 0 }, &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        paid
+    };
+    assert!(held(0.0) > held(1.0), "{} {}", held(0.0), held(1.0));
+    assert!(held(1.0) > -50.0, "no flicker when one act is held");
+}
+
+#[test]
+fn a_meditation_left_at_once_costs_short_sit_and_one_sat_through_does_not() {
+    // meditate then walk at once, over and over: each costs `short_sit`; meditate and wait out two seconds first:
+    // nothing
+    let run = |hold: usize, short_sit: f32| {
+        let mut env = Env::new(cfg(33, 0, Opponent::Turtle));
+        let (sit, toward) = (Act::Meditate.index(), Act::Toward.index());
+        let pay = arena_duel::train::Pay {
+            short_sit,
+            ..Default::default()
+        };
+        let (mut paid, mut i) = (0.0_f32, 0usize);
+        let mut sat_at = 0.0;
+        for _ in 0..600 {
+            let (_, legal) = env.observe();
+            let t = env.brief().time;
+            let a = match i {
+                0 if legal[sit] => {
+                    sat_at = t;
+                    i = 1;
+                    sit
+                }
+                1 if t - sat_at >= hold as f64 => {
+                    i = 0;
+                    toward
+                }
+                _ => 0,
+            };
+            let s = env.step_paid(a, &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        paid
+    };
+    let short = run(0, 0.0) - run(0, 1.0);
+    assert!(short >= 3.0, "{short} short sits");
+    let frac = short.rem_euclid(1.0);
+    assert!(!(1e-3..=1.0 - 1e-3).contains(&frac), "{short}");
+    assert!(
+        (run(2, 0.0) - run(2, 1.0)).abs() < 1e-3,
+        "a whole sit costs nothing"
+    );
+}

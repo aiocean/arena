@@ -5,6 +5,7 @@
 use arena_mind::policy::{ACTIONS, Act, Aim};
 use arena_mind::{ActPhase, Doing, Sense, Skill, SkillKind, ThreatShape};
 
+use crate::data::UNIT;
 use crate::fighter::State;
 use crate::sense::{sense_of, skill_of};
 
@@ -19,8 +20,16 @@ pub struct Brief {
     pub foe_hp: f64,
     pub qi: f64,
     pub foe_qi: f64,
-    /// Game pixels between the two, centre to centre.
+    /// The arena's pixels between the two, centre to centre (the range bands' pixels: the arena is 880 wide).
     pub gap: f64,
+    pub flying: bool,
+    /// Height of its feet over the ground, the arena's pixels.
+    pub air: f64,
+}
+
+/// A length the minds see (`sense::seen`) in the arena's pixels, the ones the rules and `docs/rules.md` speak in.
+fn px(v: f64) -> f64 {
+    v * UNIT
 }
 
 /// The numbers of fighter `me`'s moment.
@@ -32,7 +41,9 @@ pub fn brief(state: &State, me: usize) -> Brief {
         foe_hp: s.foe.hp,
         qi: s.me.qi_level(),
         foe_qi: s.foe.qi,
-        gap: (s.foe.x - s.me.x).abs(),
+        gap: px((s.foe.x - s.me.x).abs()),
+        flying: s.me.flying,
+        air: px(s.me.air),
     }
 }
 
@@ -67,7 +78,7 @@ fn skill_line(s: &Skill) -> String {
         };
     }
     if s.reach > 0.0 {
-        out += &format!("; reach {:.0}px", s.reach);
+        out += &format!("; reach {:.0}px", px(s.reach));
     }
     out + ")"
 }
@@ -122,8 +133,8 @@ pub fn moment(state: &State, me: usize) -> String {
     let s = sense_of(state, me);
     let f = &state.fighters[me];
     let skills: Vec<Skill> = f.spells.iter().map(|n| skill_of(n)).collect();
-    let gap = (s.foe.x - s.me.x).abs();
-    let width = s.arena.right - s.arena.left;
+    let gap = px((s.foe.x - s.me.x).abs());
+    let width = px(s.arena.right - s.arena.left);
     let mut lines = vec![format!(
         "Spell duel between two cultivators, {:.1}s into the round. The arena is {width:.0}px wide; the two stand \
          {gap:.0}px apart.",
@@ -216,7 +227,7 @@ pub fn moment(state: &State, me: usize) -> String {
                     } else {
                         "moving away".into()
                     };
-                    format!("a bolt {:.0}px away, {eta}", (s.me.x - x).abs())
+                    format!("a bolt {:.0}px away, {eta}", px((s.me.x - x).abs()))
                 }
                 ThreatShape::Area {
                     x,
@@ -224,15 +235,17 @@ pub fn moment(state: &State, me: usize) -> String {
                     lands_in,
                     ..
                 } => format!(
-                    "a strike landing {:.0}px from me (radius {radius:.0}px) in {lands_in:.2}s",
-                    (s.me.x - x).abs()
+                    "a strike landing {:.0}px from me (radius {:.0}px) in {lands_in:.2}s",
+                    px((s.me.x - x).abs()),
+                    px(*radius)
                 ),
                 ThreatShape::Seeker { x, .. } => {
-                    format!("a homing orb {:.0}px away", (s.me.x - x).abs())
+                    format!("a homing orb {:.0}px away", px((s.me.x - x).abs()))
                 }
                 ThreatShape::Field { x, reach } => format!(
-                    "a field {:.0}px from me, hurting within {reach:.0}px",
-                    (s.me.x - x).abs()
+                    "a field {:.0}px from me, hurting within {:.0}px",
+                    px((s.me.x - x).abs()),
+                    px(*reach)
                 ),
                 ThreatShape::Barrage { lands_in } => {
                     format!("a barrage whose next blow lands in {lands_in:.2}s")

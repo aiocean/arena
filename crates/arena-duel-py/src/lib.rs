@@ -106,8 +106,8 @@ enum Wire {
 }
 
 /// One env's moment as `VecEnv.describe` hands it to Python: its words, each act's words, and its numbers (time,
-/// life, the foe's life, qi, the foe's qi, the gap between them).
-type Words = (String, Vec<String>, (f64, f64, f64, f64, f64, f64));
+/// life, the foe's life, qi, the foe's qi, the gap between them, flying, height over the ground).
+type Words = (String, Vec<String>, (f64, f64, f64, f64, f64, f64, bool, f64));
 
 /// One kind's casts as `VecEnv.casts` hands them to Python: casts, out of reach, whiffs, far whiffs, damage.
 type CastRow = (u32, u32, u32, u32, f64);
@@ -162,7 +162,7 @@ impl Worker {
                             (
                                 env.moment(),
                                 env.acts(),
-                                (b.time, b.hp, b.foe_hp, b.qi, b.foe_qi, b.gap),
+                                (b.time, b.hp, b.foe_hp, b.qi, b.foe_qi, b.gap, b.flying, b.air),
                             )
                         })
                     })
@@ -408,7 +408,7 @@ impl VecEnv {
     }
 
     /// Every env's learner's moment in words, for a judge that reads text: a list of `(moment, acts, (time, hp,
-    /// foe_hp, qi, foe_qi, gap))`, `acts` the 27 acts' words, or `None` for an env never reset. Slow beside `step`:
+    /// foe_hp, qi, foe_qi, gap, flying, air))`, `acts` the 27 acts' words, or `None` for an env never reset. Slow beside `step`:
     /// for judging a few matches, not for training.
     fn describe(&self) -> PyResult<Vec<Option<Words>>> {
         let mut out = Vec::with_capacity(self.n);
@@ -446,7 +446,7 @@ impl VecEnv {
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     // the pay terms stay flat keyword arguments, as `ppo.py` passes them
     #[allow(clippy::type_complexity, clippy::too_many_arguments)]
-    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0))]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0, flicker = 0.0, fly = 0.0, short_sit = 0.0, repeat = 1.0, habit = 1.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
@@ -457,6 +457,11 @@ impl VecEnv {
         variety: f32,
         idle: f32,
         land: f32,
+        flicker: f32,
+        fly: f32,
+        short_sit: f32,
+        repeat: f32,
+        habit: f32,
     ) -> PyResult<(
         Bound<'py, PyAny>,
         Bound<'py, PyAny>,
@@ -487,6 +492,11 @@ impl VecEnv {
                         variety,
                         idle,
                         land,
+                        flicker,
+                        fly,
+                        short_sit,
+                        repeat,
+                        habit,
                     },
                     reply,
                 })
