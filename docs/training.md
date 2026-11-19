@@ -121,8 +121,23 @@ over: `uv run python widen.py runs/<run>/last.pt runs/<new>/init.pt --old-obs <n
 new network's first columns, the new columns at zero, and checks that with the new inputs at zero both give the same
 logits. `ppo.py --init runs/<new>/init.pt` then fine-tunes it to use them. ABI 3's house AI started so, from ABI 2's.
 
-**The state of the house AI** (2026-11-19, RULES_VERSION 23: casts 1.6x/1.5x slower, meditation a skill in phases).
-The shipped AI is update 1200 of run `abi5a`, `abi4a`'s update 800 fine-tuned 1500 updates on RULES_VERSION 23 with
+**The state of the house AI** (2026-11-19, RULES_VERSION 24: qi regen 8/s, a jump costs 8 qi, flight 8 qi/s). The
+shipped AI is update 1200 of run `abi6b`, two fine-tunes from `abi5a/u1200` paid to cast: `abi5c` (800 updates on
+RULES 23) then `abi6b` (1200 on RULES 24), each `--lr 1e-4 --ent 0.002 0.0015 --shaping-until 3.0 --mix 0.2 0.15 0.5
+0.05 0.1 --time-cost 0.0005 --whiff-far 0.02 --variety 0.5` with `--idle 0.003 --land 0.03 --whiff 0.01`, then
+`--idle 0.004 --land 0.04 --whiff 0.01`. On RULES 23 the idle and land terms barely raised the casts (the house AI
+spent 93% of the qi it earned, its casts 34 qi each): it ducked instead of jumping. On RULES 24 they doubled them.
+A gentler run (`abi6a`, from `abi5b/u800`: idle 0.002, land 0.03, whiff 0.015) came out a little weaker (u1200: 77.2%
+against the brain, 10.5 casts a minute in the mirror).
+
+Its ladder (150 seeds, RULES_VERSION 24), `abi5a/u1200`'s on the same rules in brackets where measured:
+- vs the brain: 78.5% [71.4] (seats 82.4 / 74.8); vs the first mind: 87.7%; vs the aggressive and turtle scripts:
+  62.9% and 99.8%;
+- its own mirror: seat 0 48.8%; 10.7 hurting casts a minute a seat [5.4], 5.4 whiffs; off the ground 27% of the
+  time [58%], guarding 3%; its heaviest skill 4% of its damage. The bar asked 15 casts a minute: not reached.
+
+**RULES_VERSION 23** (casts 1.6x/1.5x slower, meditation a skill in phases).
+The shipped AI was update 1200 of run `abi5a`, `abi4a`'s update 800 fine-tuned 1500 updates on RULES_VERSION 23 with
 its recipe (`--init runs/abi4a/u800.pt --lr 1e-4 --ent 0.003 0.0015 --shaping-until 3.0 --mix 0.25 0.15 0.4 0.1 0.1
 --time-cost 0.0005 --whiff 0.03 --whiff-far 0.02 --variety 0.5 --keep-every 100`). On RULES 23 `abi4a/u800` won
 47.1% against the brain over the ladder; it meditated most, and a meditating fighter is now open. Over the house

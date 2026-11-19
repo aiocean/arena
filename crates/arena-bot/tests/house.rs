@@ -64,8 +64,6 @@ fn a_model_that_is_not_a_policy_is_refused() {
 /// to 18 rounds, too few to judge 65% a seat on the spells-only rules, where every checkpoint near the bar lost seat
 /// 0 of seeds 1-6 to the brain while winning that seat 82% over the ladder's 150.
 #[test]
-#[ignore = "abi5a u1200 was trained on RULES 23; qi regen 8/s, jumps and take-offs at 8 qi and flight at 8/s leave \
-            it under the bar against the brain: a retrain follows"]
 fn the_house_ai_clears_the_entry_bar() -> Result<(), Box<dyn std::error::Error>> {
     let onnx = Onnx::house().map_err(|e| e.0)?;
     let m = Match {
