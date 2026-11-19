@@ -406,7 +406,8 @@ impl VecEnv {
 
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
-    #[allow(clippy::type_complexity)]
+    // the pay terms stay flat keyword arguments, as `ppo.py` passes them
+    #[allow(clippy::type_complexity, clippy::too_many_arguments)]
     #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0))]
     fn step<'py>(
         &mut self,
