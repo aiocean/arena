@@ -53,8 +53,11 @@ pub const DEVICE_RADIUS: f64 = 1.0;
 pub const MINION_EVERY: f64 = 1.0;
 /// The motion a minion's blows move as: the basic burst of qi (no blade: the arena is spells only).
 pub const MINION_BLOW: &str = "qiburst";
-/// The effect a unit appears and goes in, when the registry has it.
-pub const UNIT_FX: &str = "spawn/poof";
+/// The effects a unit appears and goes in, by kind, when the registry has them.
+pub const TRAP_FX: &str = "spawn/trap-poof";
+pub const MINE_FX: &str = "spawn/mine-poof";
+pub const TOTEM_FX: &str = "spawn/totem-poof";
+pub const MINION_FX: &str = "spawn/minion-poof";
 /// The effect a mine goes off in, when the registry has it.
 pub const BLAST_FX: &str = "explosions/small-explosion";
 
@@ -494,17 +497,23 @@ fn put(
             skill,
             x,
         });
-        poof(state, x);
+        poof(state, sp.kind, x);
     }
 }
 
-/// The puff a unit appears and goes in.
-fn poof(state: &mut State, x: f64) {
-    if state.has(UNIT_FX) {
+/// The puff a unit appears and goes in, chosen by its kind.
+fn poof(state: &mut State, kind: Kind, x: f64) {
+    let fx = match kind {
+        Kind::Trap => TRAP_FX,
+        Kind::Mine => MINE_FX,
+        Kind::Totem => TOTEM_FX,
+        Kind::Minion => MINION_FX,
+    };
+    if state.has(fx) {
         let g = state.ground;
         crate::act::play(
             state,
-            UNIT_FX,
+            fx,
             x,
             g,
             crate::out::PlayOpts {
@@ -529,8 +538,9 @@ fn remove(state: &mut State, i: usize) {
         return;
     }
     let u = state.units.remove(i);
-    state.emit(Out::UnitDie { id: u.id, x: u.x });
-    poof(state, u.x);
+    let (kind, x) = (u.kind, u.x);
+    state.emit(Out::UnitDie { id: u.id, x });
+    poof(state, kind, x);
 }
 
 /// Unit `id` is gone, if it still stands.

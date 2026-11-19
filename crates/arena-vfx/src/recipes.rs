@@ -43,7 +43,7 @@ mod tests {
     use crate::{Paint, Spawn};
 
     /// The effects the duel plays (and a plain hit): each must be here.
-    const WANTED: [&str; 41] = [
+    const WANTED: [&str; 45] = [
         "arcane/bagua-mirror",
         "arcane/comet-rings",
         "arcane/comma-seal",
@@ -80,6 +80,10 @@ mod tests {
         "shadow/winter-ordeal",
         "spawn/poof",
         "spawn/swirl-portal",
+        "spawn/trap-poof",
+        "spawn/mine-poof",
+        "spawn/totem-poof",
+        "spawn/minion-poof",
         "water/splash",
         "water/water-jet",
         "weather/fireflies",

@@ -14,7 +14,7 @@ use arena_duel::out::Out;
 use bevy::prelude::*;
 
 /// How far an effect's light reaches, in world pixels; those not listed reach `REACH_DEFAULT`.
-const REACH: [(&str, f64); 10] = [
+const REACH: [(&str, f64); 14] = [
     ("explosions/plasma-explosion", 70.0),
     ("explosions/implosion", 60.0),
     ("explosions/dirt-explosion", 46.0),
@@ -24,6 +24,10 @@ const REACH: [(&str, f64); 10] = [
     ("arcane/rune-circle", 34.0),
     ("impacts/parry", 30.0),
     ("spawn/poof", 28.0),
+    ("spawn/trap-poof", 14.0),
+    ("spawn/mine-poof", 24.0),
+    ("spawn/totem-poof", 32.0),
+    ("spawn/minion-poof", 30.0),
     // a trail rides on a fighter: a faint glow
     ("projectiles/trail", 12.0),
 ];
