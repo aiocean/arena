@@ -5,6 +5,7 @@ and `from_onnx` reads them back from a model.
 """
 
 import io
+import threading
 import math
 
 import torch
@@ -98,6 +99,11 @@ class Logits(nn.Module):
         return self.policy.logits(self.policy.trunk(obs))
 
 
+# torch's ONNX exporter keeps global state: one export at a time (the pool fights its games on threads, and each may
+# carry an older model over through an export)
+_EXPORT = threading.Lock()
+
+
 def to_onnx(policy):
     """The policy as an ONNX model's bytes (opset 17, the legacy exporter: tract reads it), what `bots/onnx` builds
     into a bot module and the trainer's envs seat (`VecEnv.set_model`)."""
@@ -105,7 +111,7 @@ def to_onnx(policy):
     policy.eval()
     buf = io.BytesIO()
     obs = policy.inp.in_features
-    with torch.no_grad():
+    with _EXPORT, torch.no_grad():
         torch.onnx.export(
             Logits(policy).cpu(),
             (torch.zeros(1, obs),),
