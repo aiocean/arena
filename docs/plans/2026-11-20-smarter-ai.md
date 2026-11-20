@@ -105,7 +105,7 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 | D | – |
 | E | fixes 1 and 2 landed, bit for bit (decisions a second on one thread, median of 3 under load: first 6.2k to 9.8k, brain 3.9k to 7.1k, aggressive 3.8k to 6.9k, turtle 4.7k to 10.0k, ONNX 2.5k to 3.8k; `arena-bot` example `env_speed`); 3 and 4 next |
 | F | – |
-| G | Rust side landed: `Env::fork` / `restore_from` / `reseed(salt)`, `Env::rollout` / `lookahead`, `VecEnv.lookahead(i, depth, samples, model_id, ...)` and `lookahead_many` (NaN for illegal acts; `leaves=True` gives each rollout's return, discount and leaf obs for a value bootstrap). Every legal act (about 11) rolled out 8 decisions, the learner on the house AI after the first, under a load of 30: 17.5 ms a root against the brain, 28 ms against ONNX, 16 ms against the turtle, about 1.6-2.6 ms a rollout (`env_speed --lookahead 8`). Next: the Python side (targets, the imitation loss in `ppo.py`); trainer side: `ppo.py --search N` (expert iteration, normalised targets weighted by the search's margin) |
+| G | parked (2026-11-21). The Rust side works (`Env::fork`, `VecEnv.lookahead_many`, 17-28 ms a root). `ppo.py --search` hurt every time, from abi5-mem against a control 600 updates long: z-scored targets (abi5-search) fell to 25-33% against the brain; pi * exp(A / temp) (srch2) 83% to 62%; reweighing only the acts it plays (srch3) 70% at 530, the control 80%; entropy rose each time. An 8-decision rollout with a leaf critic does not see further than PPO's critic already does. Worth trying again only with deeper rollouts to the round's end, or a critic trained on the search's own leaves |
 | H | – |
 
 ## What the study found (2026-11-20)
