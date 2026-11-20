@@ -130,7 +130,7 @@ def markdown(report):
         )
     if report.get("house_look"):
         h = report["house_look"]
-        lines.append(f"| house AI | | | | | | | | | | {looks({'look': h})} |")
+        lines.append(f"| house AI | | | | | | | | | {looks({'look': h})} |")
     lines.append("\n## The pool\n")
     lines.append("| member | elo | ±2se | rate | nash | mix |")
     lines.append("|---|---|---|---|---|---|")
