@@ -14,6 +14,8 @@ uv run maturin develop --release -m ../crates/arena-duel-py/Cargo.toml 2>&1 | ta
 uv run pytest -q 2>&1 | tail -3
 uv run pytest -q >/dev/null 2>&1 || { echo "FAIL pytest"; exit 1; }
 for try in 1 2 3 4 5 6; do
+  # a full disk kills a run at once: wait for room rather than burn the tries on it
+  while [ "$(df -k . | awk 'NR==2 {print $4}')" -lt 5000000 ]; do echo "WAIT disk full $(date)"; sleep 600; done
   if [ -f "runs/$RUN/last.pt" ]; then
     echo "TRAIN resume try $try $(date)"
     uv run python ppo.py --run "$RUN" --resume "runs/$RUN/last.pt" "$@"
