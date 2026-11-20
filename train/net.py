@@ -30,8 +30,15 @@ class Policy(nn.Module):
     """relu(in), `blocks` residual blocks, a LayerNorm, a simplicial embedding (softmaxes of 8), the policy head; and
     the value head (bins over [-1.5, 1.5]) from the trunk's normalised output."""
 
-    def __init__(self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5):
+    def __init__(self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0):
         super().__init__()
+        # the asymmetric critic (`ppo.py --privileged`): what only the critic sees (`VecEnv.privileged`), embedded and
+        # added to the trunk's output before the value head; the policy head never reads it, so the bot is unchanged
+        self.priv = (
+            nn.Sequential(nn.Linear(privileged, width), nn.ReLU(), nn.Linear(width, width), nn.LayerNorm(width, eps=1e-5))
+            if privileged
+            else None
+        )
         self.inp = nn.Linear(obs, width)
         self.blocks = nn.ModuleList([Block(width, hidden) for _ in range(blocks)])
         self.out_ln = nn.LayerNorm(width, eps=1e-5)
@@ -55,15 +62,22 @@ class Policy(nn.Module):
         s = self.sem(z).view(*z.shape[:-1], self.width // GROUP, GROUP).softmax(-1).flatten(-2)
         return self.pi(s)
 
-    def forward(self, obs, mask):
-        """Masked logits (an illegal act gets -1e8) and the value logits."""
+    def forward(self, obs, mask, priv=None):
+        """Masked logits (an illegal act gets -1e8) and the value logits (with `priv`, the critic's extra inputs, when
+        the policy has an asymmetric critic)."""
         z = self.trunk(obs)
-        return self.logits(z).masked_fill(~mask, -1e8), self.value(z)
+        v = z + self.priv(priv) if self.priv is not None and priv is not None else z
+        return self.logits(z).masked_fill(~mask, -1e8), self.value(v)
 
     def value_of(self, value_logits):
         """The critic's expected return."""
         centres = (self.support[:-1] + self.support[1:]) / 2
         return (value_logits.softmax(-1) * centres).sum(-1)
+
+
+def without_priv(model):
+    """A state dict without the asymmetric critic's layers (`priv.*`): what the policy and its exports need."""
+    return {k: v for k, v in model.items() if not k.startswith("priv.")}
 
 
 def hl_gauss(returns, support, sigma):

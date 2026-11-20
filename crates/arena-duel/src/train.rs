@@ -23,7 +23,8 @@ use crate::scripted::Scripted;
 use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider, policy_mind};
 use crate::sense::{chosen, sense_of};
 use crate::style::Style;
-use arena_mind::policy::{ACTIONS, Act, Due, OBS, PolicyMind};
+use arena_mind::Delayed;
+use arena_mind::policy::{ACTIONS, Act, Due, OBS, PolicyMind, TAG, observe};
 use arena_mind::{Choice, Outcome};
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -187,6 +188,9 @@ pub struct Step {
     pub length: f64,
 }
 
+/// The critic's extra inputs (`Env::privileged`): an observation from the foe's side, the clock and the rounds won.
+pub const PRIVILEGED: usize = OBS + 3;
+
 /// What passes between the env and its learner's seat.
 #[derive(Default)]
 struct Wire {
@@ -321,6 +325,29 @@ impl Env {
     /// What the learner sees now and what it may do.
     pub fn observe(&self) -> (&[f32; OBS], &[bool; ACTIONS]) {
         (&self.due.obs, &self.due.legal)
+    }
+
+    /// What only the critic may see (the asymmetric critic, `docs/plans/2026-11-20-smarter-ai.md`, B): the duel as
+    /// the foe sees it now, with no reaction delay, written as an observation (its slots, cooldowns, qi, its cast),
+    /// then the round's clock over its limit and the rounds each side has won / 3. `PRIVILEGED` floats; the policy
+    /// never sees them, so the bot's inputs are unchanged.
+    pub fn privileged(&self) -> Vec<f32> {
+        let state = self.duel.state();
+        let foe = 1 - self.me;
+        let sense = sense_of(state, foe);
+        let mut view = Delayed::new();
+        view.push(&sense);
+        let (me, threats) = view.seen(sense.time, 0.0);
+        let skills: Vec<_> = state.fighters[foe]
+            .spells
+            .iter()
+            .map(|n| crate::sense::skill_of(n))
+            .collect();
+        let mut out = observe(&sense, &me, &threats, &skills, &[0.0; TAG]).to_vec();
+        out.push((state.time / self.limit.max(1.0)) as f32);
+        out.push(state.wins[self.me] as f32 / 3.0);
+        out.push(state.wins[foe] as f32 / 3.0);
+        out
     }
 
     /// Answer the learner's decision with `action` (an act it may not do is a wait), run the duel to its next

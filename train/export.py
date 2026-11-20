@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 import arena_duel as pd
-from net import Policy, from_onnx, to_onnx
+from net import Policy, from_onnx, to_onnx, without_priv
 from widen import current, widen
 
 HERE = pathlib.Path(__file__).parent
@@ -42,7 +42,7 @@ def load(path):
     if path.suffix == ".pt":
         ck = torch.load(path, map_location="cpu", weights_only=True)
         policy = Policy(pd.OBS, pd.ACTIONS, **ck.get("size", {}))
-        model = ck["model"]
+        model = without_priv(ck["model"])
         old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
         if (old, acts) != (pd.OBS, pd.ACTIONS):  # an older ABI's checkpoint, widened: it plays as it did
             model = widen(model, old, pd.OBS, acts, pd.ACTIONS)

@@ -7,7 +7,7 @@ use arena_bot::onnx::Onnx;
 use arena_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use arena_duel::seat::SharedDecider;
 use arena_duel::style::Style;
-use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent, Pay};
+use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent, PRIVILEGED, Pay};
 use arena_mind::policy::{ACTIONS, OBS};
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
@@ -59,6 +59,8 @@ enum Foe {
 struct Out {
     obs: Vec<f32>,
     mask: Vec<bool>,
+    /// The critic's extra inputs (`Env::privileged`), empty unless the VecEnv was made with `privileged=True`.
+    privileged: Vec<f32>,
     reward: f32,
     done: bool,
     won: i8,
@@ -70,6 +72,7 @@ impl Out {
         Out {
             obs: vec![0.0; OBS],
             mask: vec![false; ACTIONS],
+            privileged: Vec::new(),
             reward: 0.0,
             done: true,
             won: 0,
@@ -119,16 +122,19 @@ struct Worker {
     effects: Vec<String>,
     /// The casts of envs since reset, until `Wire::Casts` takes them.
     casts: Casts,
+    /// Whether each snapshot carries the critic's extra inputs.
+    privileged: bool,
 }
 
 impl Worker {
-    fn run(n: usize, rx: Receiver<Wire>) {
+    fn run(n: usize, rx: Receiver<Wire>, privileged: bool) {
         let effects = arena_duel::effects::all();
         let mut w = Worker {
             envs: (0..n).map(|_| None).collect(),
             models: HashMap::new(),
             effects,
             casts: Casts::default(),
+            privileged,
         };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
@@ -187,7 +193,7 @@ impl Worker {
                     .map(|(env, a)| match env {
                         Some(env) => {
                             let s = env.step_paid(usize::try_from(a).unwrap_or(0), &pay);
-                            let mut out = snapshot(env);
+                            let mut out = snapshot(env, self.privileged);
                             out.reward = s.reward;
                             out.done = s.done;
                             out.won = match s.won {
@@ -239,7 +245,7 @@ impl Worker {
             effects: self.effects.clone(),
         };
         let env = Env::new(cfg);
-        let out = snapshot(&env);
+        let out = snapshot(&env, self.privileged);
         let place = self
             .envs
             .get_mut(slot)
@@ -253,11 +259,16 @@ impl Worker {
 }
 
 /// An env's current decision.
-fn snapshot(env: &Env) -> Out {
+fn snapshot(env: &Env, privileged: bool) -> Out {
     let (obs, mask) = env.observe();
     Out {
         obs: obs.to_vec(),
         mask: mask.to_vec(),
+        privileged: if privileged {
+            env.privileged()
+        } else {
+            Vec::new()
+        },
         reward: 0.0,
         done: false,
         won: 0,
@@ -294,8 +305,11 @@ fn style(i: usize) -> PyResult<Style> {
 #[pymethods]
 impl VecEnv {
     /// `n` envs on `threads` worker threads. Each must be `reset` before it steps.
+    /// `n` envs on `threads` worker threads; with `privileged` each decision also carries the critic's extra inputs
+    /// (`privileged()`).
     #[new]
-    fn new(n: usize, threads: usize) -> PyResult<VecEnv> {
+    #[pyo3(signature = (n, threads, privileged = false))]
+    fn new(n: usize, threads: usize, privileged: bool) -> PyResult<VecEnv> {
         let threads = threads.clamp(1, n.max(1));
         let mut workers = Vec::new();
         let mut handles = Vec::new();
@@ -305,7 +319,7 @@ impl VecEnv {
             let (tx, rx) = channel();
             let handle = std::thread::Builder::new()
                 .name(format!("duel-env-{t}"))
-                .spawn(move || Worker::run(len, rx))
+                .spawn(move || Worker::run(len, rx, privileged))
                 .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
             workers.push((tx, start, len));
             handles.push(handle);
@@ -405,6 +419,21 @@ impl VecEnv {
         let obs = PyArray1::from_vec(py, obs).reshape([self.n, OBS])?;
         let mask = PyArray1::from_vec(py, mask).reshape([self.n, ACTIONS])?;
         Ok((obs.into_any(), mask.into_any()))
+    }
+
+    /// Every env's critic-only inputs (`float32[n, PRIVILEGED]`): the duel from the foe's side with no delay, the
+    /// clock and the rounds won. Zeros unless the VecEnv was made with `privileged=True`.
+    fn privileged<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let v: Vec<f32> = self
+            .outs
+            .iter()
+            .flat_map(|o| {
+                let mut row = o.privileged.clone();
+                row.resize(PRIVILEGED, 0.0);
+                row
+            })
+            .collect();
+        Ok(PyArray1::from_vec(py, v).reshape([self.n, PRIVILEGED])?.into_any())
     }
 
     /// Every env's learner's moment in words, for a judge that reads text: a list of `(moment, acts, (time, hp,
@@ -670,5 +699,6 @@ fn duel_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("HOUSE", PyBytes::new(m.py(), arena_bot::onnx::HOUSE))?;
     m.add("OBS", OBS)?;
     m.add("ACTIONS", ACTIONS)?;
+    m.add("PRIVILEGED", PRIVILEGED)?;
     Ok(())
 }

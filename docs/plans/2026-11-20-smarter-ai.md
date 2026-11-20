@@ -100,7 +100,7 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 | phase | state |
 |---|---|
 | A | done: `cycle.py` look gate (96 rounds, 10% slack) |
-| B | – |
+| B | landed: `ppo.py --privileged` (the value head also reads the duel from the foe's side, undelayed; the bot unchanged) |
 | C | landed (RULES 27, ABI 5: 2055 inputs, 29 acts; the house AI widened, plays as before); retrain next |
 | D | – |
 | E | profiled (below) |

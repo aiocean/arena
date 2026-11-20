@@ -30,7 +30,7 @@ import numpy as np
 import torch
 
 import arena_duel as pd
-from net import Policy, _initializers, from_onnx, to_onnx
+from net import Policy, _initializers, from_onnx, to_onnx, without_priv
 from widen import current, widen
 
 HERE = pathlib.Path(__file__).parent
@@ -47,7 +47,7 @@ def load_policy(path):
     path = pathlib.Path(path)
     if path.suffix == ".pt":
         ck = torch.load(path, map_location="cpu", weights_only=True)
-        model, size = ck["model"], ck.get("size", {})
+        model, size = without_priv(ck["model"]), ck.get("size", {})
     else:
         data = path.read_bytes()
         found = _initializers(data)

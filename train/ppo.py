@@ -46,7 +46,7 @@ from torch.distributions import Categorical
 
 import arena_duel as pd
 from league import League, parse_mix
-from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss
+from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss, without_priv
 from widen import current, widen
 
 
@@ -84,6 +84,13 @@ def cast_stats(casts):
         "blast_out_of_reach": share(blast[1], blast[0]),
         "blast_whiff": share(blast[2], blast[0]),
     }
+
+
+def load_init(policy, model):
+    """Start `policy` from `model`: an asymmetric critic's extra layers start fresh when the model has none."""
+    missing, unexpected = policy.load_state_dict(model if policy.priv is not None else without_priv(model), strict=False)
+    if unexpected or any(not k.startswith("priv.") for k in missing):
+        raise ValueError(f"the model does not fit: missing {missing}, unexpected {unexpected}")
 
 
 def main():
@@ -124,6 +131,7 @@ def main():
     ap.add_argument("--seat0", type=float, default=0.5, help="share of fights in which the learner sits in seat 0")
     ap.add_argument("--stop-at", type=int, help="stop (and save) at this update, the schedule still the --updates one")
     ap.add_argument("--resume")
+    ap.add_argument("--privileged", action="store_true", help="an asymmetric critic: the value head also sees VecEnv.privileged")
     ap.add_argument("--init", help="start from this network (.pt or .onnx) with a fresh schedule")
     ap.add_argument("--width", type=int, default=WIDTH)
     ap.add_argument("--hidden", type=int, default=HIDDEN)
@@ -145,10 +153,11 @@ def main():
     elif args.init:
         init = from_onnx(current(pathlib.Path(args.init).read_bytes()), pd.OBS, pd.ACTIONS)
         size = dict(width=init.width, hidden=init.blocks[0].up.out_features, blocks=len(init.blocks))
-    policy = Policy(pd.OBS, pd.ACTIONS, **size).to(dev)
+    priv_n = pd.PRIVILEGED if args.privileged else 0
+    policy = Policy(pd.OBS, pd.ACTIONS, **size, privileged=priv_n).to(dev)
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
     start = 0
-    env = pd.VecEnv(n, args.threads)
+    env = pd.VecEnv(n, args.threads, privileged=args.privileged)
     league = League(
         env,
         rng,
@@ -168,9 +177,9 @@ def main():
             old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
             if (old, acts) != (pd.OBS, pd.ACTIONS):  # an older ABI's checkpoint, widened: it plays as it did
                 model = widen(model, old, pd.OBS, acts, pd.ACTIONS)
-            policy.load_state_dict(model)
+            load_init(policy, model)
         else:
-            policy.load_state_dict(init.state_dict())
+            load_init(policy, init.state_dict())
     if args.resume:
         ck = torch.load(args.resume, map_location=dev, weights_only=True)
         policy.load_state_dict(ck["model"])
@@ -187,6 +196,7 @@ def main():
     kinds = [league.reset(i) for i in range(n)]
 
     obs_b = torch.zeros(T, n, pd.OBS)
+    priv_b = torch.zeros(T, n, pd.PRIVILEGED) if args.privileged else None
     mask_b = torch.zeros(T, n, pd.ACTIONS, dtype=torch.bool)
     act_b = torch.zeros(T, n, dtype=torch.long)
     logp_b = torch.zeros(T, n)
@@ -209,8 +219,11 @@ def main():
         for t in range(T):
             obs, mask = env.observe()
             o, m = torch.from_numpy(obs), torch.from_numpy(mask)
+            pv = torch.from_numpy(env.privileged()) if args.privileged else None
             with torch.no_grad():
-                logits, vlog = policy(o.to(dev), m.to(dev))
+                logits, vlog = policy(o.to(dev), m.to(dev), None if pv is None else pv.to(dev))
+                if pv is not None:
+                    priv_b[t] = pv
                 dist = Categorical(logits=logits)
                 a = dist.sample()
                 obs_b[t], mask_b[t], act_b[t] = o, m, a.cpu()
@@ -245,7 +258,8 @@ def main():
 
         with torch.no_grad():
             obs, mask = env.observe()
-            _, vlog = policy(torch.from_numpy(obs).to(dev), torch.from_numpy(mask).to(dev))
+            pv = torch.from_numpy(env.privileged()).to(dev) if args.privileged else None
+            _, vlog = policy(torch.from_numpy(obs).to(dev), torch.from_numpy(mask).to(dev), pv)
             nxt = policy.value_of(vlog).cpu()
         adv = torch.zeros(T, n)
         gae = torch.zeros(n)
@@ -261,13 +275,14 @@ def main():
         B = T * n
         flat = lambda x: x.reshape(B, *x.shape[2:]).to(dev)
         O, M, A, LP, ADV, RET = map(flat, (obs_b, mask_b, act_b, logp_b, adv, ret))
+        PV = flat(priv_b) if priv_b is not None else None
         mb = B // args.minibatches
         stats = defaultdict(float)
         for _ in range(args.epochs):
             perm = torch.randperm(B, device=dev)
             for k in range(args.minibatches):
                 idx = perm[k * mb : (k + 1) * mb]
-                logits, vlog = policy(O[idx], M[idx])
+                logits, vlog = policy(O[idx], M[idx], None if PV is None else PV[idx])
                 dist = Categorical(logits=logits)
                 ratio = (dist.log_prob(A[idx]) - LP[idx]).exp()
                 a_n = (ADV[idx] - ADV[idx].mean()) / (ADV[idx].std() + 1e-8)
