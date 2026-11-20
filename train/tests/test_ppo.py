@@ -41,3 +41,19 @@ def test_an_asymmetric_critic_trains_and_its_policy_exports_as_any_other(tmp_pat
     assert env.privileged().shape == (2, pd.PRIVILEGED)
     assert env.privileged()[0].any() and not env.privileged()[1].any()
     shutil.rmtree(out)
+
+
+def test_a_run_with_search_imitates_the_lookahead_and_logs_it():
+    """`--search`: some decisions are searched (`VecEnv.lookahead_many`) and the policy imitates the target."""
+    import json
+    import subprocess
+    import sys
+
+    here = pathlib.Path(__file__).parent.parent
+    out = here / "runs" / "test-search-unit"
+    shutil.rmtree(out, ignore_errors=True)
+    cmd = [sys.executable, "ppo.py", "--run", "test-search-unit", "--updates", "10", "--envs", "8", "--steps", "16"]
+    subprocess.run(cmd + ["--threads", "2", "--search", "4", "--search-depth", "3"], cwd=here, check=True)
+    line = json.loads((out / "log.jsonl").read_text().splitlines()[-1])
+    assert line["search_kl"] >= 0 and 0 <= line["search_agree"] <= 1
+    shutil.rmtree(out)

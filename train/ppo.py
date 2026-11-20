@@ -86,6 +86,59 @@ def cast_stats(casts):
     }
 
 
+def search(env, policy, league, args, pay, update, dev, rng):
+    """Expert iteration (`docs/plans/2026-11-20-smarter-ai.md`, G): at `args.search` live decisions, roll every legal
+    act out `args.search_depth` of the learner's decisions with the latest snapshot of the policy (`VecEnv.lookahead`,
+    reseeded dice), value each as its paid return plus the critic at the leaf, and make the softmax of those values
+    (`args.search_temp`) a target the policy imitates. Returns the batch (obs, mask, target, privileged) and stats."""
+    t0 = time.time()
+    obs, mask = env.observe()
+    k = min(args.search, len(obs))
+    idx = sorted(rng.choice(len(obs), size=k, replace=False).tolist())
+    found = env.lookahead_many(
+        idx, args.search_depth, args.search_samples, league.snapshots[-1], gamma=args.gamma,
+        salt=update * 100_003 + 7, leaves=True, **pay,
+    )
+    values = torch.from_numpy(found["values"])  # [k, A], NaN for an illegal act
+    ret = torch.from_numpy(found["ret"])  # [k, A, s]
+    disc = torch.from_numpy(found["discount"])
+    leaf = torch.from_numpy(found["obs"])
+    legal = ~torch.isnan(values)
+    with torch.no_grad():
+        flat_obs = leaf.reshape(-1, leaf.shape[-1]).to(dev)
+        pv = None
+        if policy.priv is not None:
+            pv = torch.from_numpy(found["privileged"]).reshape(-1, pd.PRIVILEGED).to(dev)
+        _, vlog = policy(flat_obs, torch.ones(flat_obs.shape[0], pd.ACTIONS, dtype=torch.bool, device=dev), pv)
+        v_leaf = policy.value_of(vlog).cpu().reshape(ret.shape)
+    q = (ret + disc * v_leaf).mean(-1)
+    # each decision's values normalised over its legal acts, so the temperature means the same everywhere; a decision
+    # whose acts the search cannot tell apart (a spread under `search_margin`) weighs less
+    n_legal = legal.sum(-1, keepdim=True).clamp_min(1)
+    mean = (q.nan_to_num() * legal).sum(-1, keepdim=True) / n_legal
+    std = (((q.nan_to_num() - mean) ** 2) * legal).sum(-1, keepdim=True).div(n_legal).sqrt()
+    qn = torch.where(legal, (q.nan_to_num() - mean) / (std + 1e-4), torch.full_like(q, -1e9))
+    target = torch.softmax(qn / args.search_temp, -1) * legal
+    target = target / target.sum(-1, keepdim=True).clamp_min(1e-12)
+    hi = torch.where(legal, q, torch.full_like(q, -1e9)).max(-1).values
+    lo = torch.where(legal, q, torch.full_like(q, 1e9)).min(-1).values
+    weight = ((hi - lo) / args.search_margin).clamp(0, 1)
+    o = torch.from_numpy(obs[idx])
+    m = torch.from_numpy(mask[idx])
+    p = torch.from_numpy(env.privileged()[idx]) if args.privileged else None
+    with torch.no_grad():
+        logits, _ = policy(o.to(dev), m.to(dev), None if p is None else p.to(dev))
+        agree = (logits.argmax(-1).cpu() == target.argmax(-1)).float().mean().item()
+    spread = hi - lo
+    stats = {
+        "search_weight": round(float(weight.mean()), 3),
+        "search_s": round(time.time() - t0, 2),
+        "search_agree": round(agree, 3),
+        "search_spread": round(float(spread.median()), 4),
+    }
+    return {"batch": (o, m, target, p, weight), "stats": stats}
+
+
 def load_init(policy, model):
     """Start `policy` from `model`: an asymmetric critic's extra layers start fresh when the model has none."""
     missing, unexpected = policy.load_state_dict(model if policy.priv is not None else without_priv(model), strict=False)
@@ -131,6 +184,12 @@ def main():
     ap.add_argument("--seat0", type=float, default=0.5, help="share of fights in which the learner sits in seat 0")
     ap.add_argument("--stop-at", type=int, help="stop (and save) at this update, the schedule still the --updates one")
     ap.add_argument("--resume")
+    ap.add_argument("--search", type=int, default=0, help="decisions searched each update (expert iteration; 0: none)")
+    ap.add_argument("--search-depth", type=int, default=8, help="the learner's decisions a rollout of each act runs")
+    ap.add_argument("--search-samples", type=int, default=1, help="reseeded rollouts of each act, averaged")
+    ap.add_argument("--search-temp", type=float, default=0.3, help="the target's temperature over the acts' normalised values")
+    ap.add_argument("--search-margin", type=float, default=0.02, help="a decision weighs fully once its best and worst act differ this much")
+    ap.add_argument("--search-coef", type=float, default=0.5, help="the weight of imitating the search's target")
     ap.add_argument("--privileged", action="store_true", help="an asymmetric critic: the value head also sees VecEnv.privileged")
     ap.add_argument("--init", help="start from this network (.pt or .onnx) with a fresh schedule")
     ap.add_argument("--width", type=int, default=WIDTH)
@@ -216,7 +275,16 @@ def main():
             g["lr"] = lr
 
         policy.eval()
+        pay = dict(
+            shaping=shaping, whiff=args.whiff, whiff_far=args.whiff_far, variety=args.variety, idle=args.idle,
+            land=args.land, flicker=args.flicker, fly=args.fly, duck=args.duck, short_sit=args.short_sit,
+            repeat=args.repeat, habit=args.habit,
+        )
+        searched = None
+        search_at = int(rng.integers(T)) if args.search else -1
         for t in range(T):
+            if t == search_at:
+                searched = search(env, policy, league, args, pay, update, dev, rng)
             obs, mask = env.observe()
             o, m = torch.from_numpy(obs), torch.from_numpy(mask)
             pv = torch.from_numpy(env.privileged()) if args.privileged else None
@@ -276,6 +344,9 @@ def main():
         flat = lambda x: x.reshape(B, *x.shape[2:]).to(dev)
         O, M, A, LP, ADV, RET = map(flat, (obs_b, mask_b, act_b, logp_b, adv, ret))
         PV = flat(priv_b) if priv_b is not None else None
+        if searched is not None:
+            S_O, S_M, S_T, S_PV, S_W = (None if x is None else x.to(dev) for x in searched["batch"])
+            S_H = -(S_T * S_T.clamp_min(1e-12).log()).sum(-1)  # the target's entropy: the imitation logged as a KL
         mb = B // args.minibatches
         stats = defaultdict(float)
         for _ in range(args.epochs):
@@ -290,6 +361,13 @@ def main():
                 vloss = -(hl_gauss(RET[idx], policy.support, policy.sigma) * vlog.log_softmax(-1)).sum(-1).mean()
                 ent = dist.entropy().mean()
                 loss = pg + vloss - ent_coef * ent
+                if searched is not None:
+                    # expert iteration: the policy leans toward what the search found best (`search`)
+                    s_logits, _ = policy(S_O, S_M, S_PV)
+                    ce = -(S_T * s_logits.log_softmax(-1).clamp_min(-1e4)).sum(-1)
+                    imitate = (S_W * ce).sum() / S_W.sum().clamp_min(1e-6)
+                    loss = loss + args.search_coef * imitate
+                    stats["search_kl"] += ((S_W * (ce - S_H)).sum() / S_W.sum().clamp_min(1e-6)).item()
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(policy.parameters(), 0.5)
@@ -317,6 +395,7 @@ def main():
                 "top_act": round(float(acts.max() / max(acts.sum(), 1)), 3),
                 "acts": [round(float(x), 4) for x in acts / max(acts.sum(), 1)],
                 **cast_stats(env.casts()),
+                **(searched["stats"] if searched is not None else {}),
                 **{f"win/{o}": round(float(np.mean(v)), 3) for o, v in sorted(results.items())},
             }
             acts[:] = 0
