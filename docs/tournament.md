@@ -12,7 +12,7 @@ house AI may still change, and a change may mean a bot needs retraining. There a
 in testing; the release workflow (`.github/workflows/release.yml`, a tag `arena-s<N>`) is kept, dormant, for when
 seasons start.
 
-What a bot depends on, and what a later season would freeze: the rules; the 1889 inputs, the 27 acts, the legality
+What a bot depends on, and what a later season would freeze: the rules; the 2055 inputs, the 29 acts, the legality
 rules and the timing; the bot ABI (`arena-bot-4`), the module features it accepts and its budgets (`docs/bot.md`,
 "The bot module"). The model inside a bot is never part of it: any size, any shape, retrained at will.
 

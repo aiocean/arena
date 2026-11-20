@@ -31,7 +31,7 @@ import torch
 
 import arena_duel as pd
 from net import Policy, _initializers, from_onnx, to_onnx
-from widen import widen
+from widen import current, widen
 
 HERE = pathlib.Path(__file__).parent
 POOL = HERE / "runs" / "pool"
@@ -50,13 +50,13 @@ def load_policy(path):
         model, size = ck["model"], ck.get("size", {})
     else:
         data = path.read_bytes()
-        old = _initializers(data)["inp.weight"].shape[1]
-        p = from_onnx(data, old, pd.ACTIONS)
+        found = _initializers(data)
+        p = from_onnx(data, found["inp.weight"].shape[1], found["pi.weight"].shape[0])
         model = {k: v for k, v in p.state_dict().items()}
         size = dict(width=p.width, hidden=p.blocks[0].up.out_features, blocks=len(p.blocks))
-    old = model["inp.weight"].shape[1]
-    if old != pd.OBS:
-        model = widen(model, old, pd.OBS)
+    old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
+    if (old, acts) != (pd.OBS, pd.ACTIONS):
+        model = widen(model, old, pd.OBS, acts, pd.ACTIONS)
     policy = Policy(pd.OBS, pd.ACTIONS, **size)
     policy.load_state_dict(model)
     return policy.eval()
@@ -65,8 +65,8 @@ def load_policy(path):
 def onnx_of(path):
     """A model's ONNX bytes at today's observation."""
     path = pathlib.Path(path)
-    if path.suffix == ".onnx" and _initializers(path.read_bytes())["inp.weight"].shape[1] == pd.OBS:
-        return path.read_bytes()
+    if path.suffix == ".onnx":
+        return current(path.read_bytes())
     return to_onnx(load_policy(path))
 
 

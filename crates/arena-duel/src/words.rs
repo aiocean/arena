@@ -283,6 +283,8 @@ pub fn acts(state: &State, me: usize) -> Vec<String> {
             Some(Act::Jump) => "jump".into(),
             Some(Act::Duck) => "duck".into(),
             Some(Act::Guard) => "guard".into(),
+            Some(Act::DuckLong) => "duck long".into(),
+            Some(Act::GuardLong) => "guard long".into(),
             Some(Act::FlyHigh) => "fly up".into(),
             Some(Act::Land) => "land".into(),
             Some(Act::Meditate) => "sit down and meditate to regain qi".into(),

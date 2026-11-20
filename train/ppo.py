@@ -47,6 +47,7 @@ from torch.distributions import Categorical
 import arena_duel as pd
 from league import League, parse_mix
 from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss
+from widen import current, widen
 
 
 def schedule(update, updates, lr, ent, shaping_until):
@@ -142,7 +143,7 @@ def main():
     elif args.init and pathlib.Path(args.init).suffix == ".pt":
         size = torch.load(args.init, map_location="cpu", weights_only=True).get("size", size)
     elif args.init:
-        init = from_onnx(pathlib.Path(args.init).read_bytes(), pd.OBS, pd.ACTIONS)
+        init = from_onnx(current(pathlib.Path(args.init).read_bytes()), pd.OBS, pd.ACTIONS)
         size = dict(width=init.width, hidden=init.blocks[0].up.out_features, blocks=len(init.blocks))
     policy = Policy(pd.OBS, pd.ACTIONS, **size).to(dev)
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)
@@ -163,7 +164,11 @@ def main():
     if args.init and not args.resume:
         path = pathlib.Path(args.init)
         if path.suffix == ".pt":
-            policy.load_state_dict(torch.load(path, map_location=dev, weights_only=True)["model"])
+            model = torch.load(path, map_location=dev, weights_only=True)["model"]
+            old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
+            if (old, acts) != (pd.OBS, pd.ACTIONS):  # an older ABI's checkpoint, widened: it plays as it did
+                model = widen(model, old, pd.OBS, acts, pd.ACTIONS)
+            policy.load_state_dict(model)
         else:
             policy.load_state_dict(init.state_dict())
     if args.resume:

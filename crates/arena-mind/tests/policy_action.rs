@@ -14,7 +14,10 @@ fn slotted(mut s: Sense) -> Sense {
 
 #[test]
 fn every_index_round_trips_through_act() {
-    assert_eq!(ACTIONS, 9 + SLOTS * 3);
+    // nine plain acts, three aims a slot, then ABI 5's long duck and long guard after the casts
+    assert_eq!(ACTIONS, 9 + SLOTS * 3 + 2);
+    assert_eq!(Act::DuckLong.index(), 9 + SLOTS * 3);
+    assert_eq!(Act::GuardLong.index(), 9 + SLOTS * 3 + 1);
     for i in 0..ACTIONS {
         let a = Act::from_index(i).unwrap_or(Act::Wait);
         assert_eq!(a.index(), i, "{a:?}");
@@ -183,4 +186,20 @@ fn a_cast_maps_to_the_slot_skills_name_and_aim() {
             target: Some(220.0)
         }
     );
+}
+
+#[test]
+fn a_long_duck_or_guard_is_held_longer_and_legal_when_a_short_one_is() {
+    let kit = kit();
+    let s = slotted(sense(1.0, me(40.0), foe(150.0)));
+    let l = legal(&s, &kit);
+    assert_eq!(l[Act::DuckLong.index()], l[Act::Duck.index()]);
+    assert_eq!(l[Act::GuardLong.index()], l[Act::Guard.index()]);
+    let f = foe(150.0);
+    let hold = |a| match choice(a, &s, &f, &kit) {
+        Choice::Duck { hold } | Choice::Guard { hold } => hold,
+        _ => f64::NAN,
+    };
+    assert!(hold(Act::DuckLong) > hold(Act::Duck));
+    assert!(hold(Act::GuardLong) > hold(Act::Guard));
 }

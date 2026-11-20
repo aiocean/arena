@@ -46,12 +46,14 @@ use serde::{Deserialize, Serialize};
 /// Đạo Dung Thân gone, its keystone flag kept and always off; 22: a damaging blow pushes harder the harder it hits, two
 /// bodies kept apart on their hurtboxes and a blink never landing inside the foe; 23: casts slower and riskier,
 /// meditation a skill in phases; 24: qi regen 8/s, a jump or a take-off 8 qi, flight 8/s; 25: range bands, a skill thrown at the foe begun only from its reach's distance, and bot ABI
-/// 4, 1889 inputs: each slot's band and why it cannot be cast, how long buffs, domains, fields and auras last). A
+/// 4, 1889 inputs: each slot's band and why it cannot be cast, how long buffs, domains, fields and auras last; 27:
+/// bot ABI 5, 2055 inputs and 29 acts: its last 3 acts and the foe's last 4 starts, each with its age, and a long duck
+/// and a long guard). A
 /// page whose rules differ steps a different fight from
 /// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 26;
+pub const RULES_VERSION: u32 = 27;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

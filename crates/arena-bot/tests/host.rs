@@ -10,7 +10,7 @@ fn runner(body: &str) -> Runner {
     let text = format!(
         r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 4)
+  (func (export "arena_abi") (result i32) i32.const 5)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -32,10 +32,10 @@ fn memory_lasts_across_calls_and_the_input_is_written() {
     // count calls at address 0; answer the count plus the mask byte of act 2 (1) read from the input
     let r = runner(
         "(i32.store (i32.const 0) (i32.add (i32.load (i32.const 0)) (i32.const 1)))
-         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 8582)))",
+         (i32.add (i32.load (i32.const 0)) (i32.load8_u (i32.const 9246)))",
     );
     let Ok(mut bot) = r.instance() else { return };
-    assert_eq!(bot.abi(), Ok(4));
+    assert_eq!(bot.abi(), Ok(5));
     assert_eq!(bot.decide(&OBS0, &LEGAL, 0.5), Ok(2));
     assert_eq!(bot.start(9), Ok(()));
     assert_eq!(
@@ -91,10 +91,10 @@ fn a_trap_leaves_the_instance_playable() {
 
 #[test]
 fn a_module_of_another_abi_does_not_start() {
-    // an ABI 3 module (1741 inputs) is refused, not fed ABI 4's 1889
+    // an ABI 4 module (1889 inputs) is refused, not fed ABI 5's 2055
     let text = r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 3)
+  (func (export "arena_abi") (result i32) i32.const 4)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -109,10 +109,10 @@ fn a_module_of_another_abi_does_not_start() {
     );
     let Some(r) = runner else { return };
     match r.instance() {
-        Ok(_) => unreachable!("an arena-bot-3 module started"),
+        Ok(_) => unreachable!("an arena-bot-4 module started"),
         Err(f) => assert_eq!(
             f.0,
-            "arena_abi() is 3, not 4: the module is not arena-bot-4"
+            "arena_abi() is 4, not 5: the module is not arena-bot-5"
         ),
     }
 }

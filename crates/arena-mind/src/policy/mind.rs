@@ -6,7 +6,7 @@
 //! now. That split lets a trainer answer between ticks (`begin`, `due`, `queue`) with the same timing the game
 //! plays (`think`): a 1/60 s wait on top of the reaction delay.
 
-use super::{ACTIONS, Act, Net, OBS, TAG, choice, legal, observe, sample};
+use super::{ACTIONS, Act, FoeAct, Memory, Net, OBS, TAG, choice, legal, observe_with, sample};
 use crate::choice::Choice;
 use crate::rng::Rng;
 use crate::sense::Sense;
@@ -34,6 +34,10 @@ pub struct PolicyMind {
     hold: f64,
     view: Delayed,
     queued: Option<usize>,
+    /// What it remembers of its own acts and the foe's (ABI 5).
+    memory: Memory,
+    /// The time of the decision now due, for `queue` to remember the act by.
+    asked: f64,
 }
 
 impl PolicyMind {
@@ -56,6 +60,8 @@ impl PolicyMind {
             hold: 0.0,
             view: Delayed::new(),
             queued: None,
+            memory: Memory::default(),
+            asked: 0.0,
         }
     }
 
@@ -80,6 +86,8 @@ impl PolicyMind {
         if dt <= 0.0 {
             return None;
         }
+        let (seen, _) = self.view.seen(sense.time, self.reaction);
+        self.memory.saw(FoeAct::of(&sense.me, &seen), sense.time);
         let i = self.queued.take()?;
         let act = Act::from_index(i)?;
         if !legal(sense, &self.skills).get(i).copied().unwrap_or(false) {
@@ -98,7 +106,8 @@ impl PolicyMind {
         self.clock = self.think * (0.8 + 0.4 * self.rng.next());
         let u = self.rng.next() as f32;
         let (foe, threats) = self.view.seen(sense.time, self.reaction);
-        let obs = observe(sense, &foe, &threats, &self.skills, &self.tag);
+        self.asked = sense.time;
+        let obs = observe_with(sense, &foe, &threats, &self.skills, &self.tag, &self.memory);
         Some(Due {
             obs,
             legal: legal(sense, &self.skills),
@@ -109,6 +118,7 @@ impl PolicyMind {
     /// The act to hand back next tick.
     pub fn queue(&mut self, act: usize) {
         self.queued = Some(act);
+        self.memory.chose(act, self.asked);
     }
 
     /// A new round: it forgets what it saw and what it meant to do, and waits 0.4-0.7 s before it acts, as `Mind`
@@ -118,6 +128,7 @@ impl PolicyMind {
         self.hold = 0.0;
         self.view.clear();
         self.queued = None;
+        self.memory.clear();
     }
 
     /// Think nothing for `seconds`.

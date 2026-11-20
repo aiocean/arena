@@ -198,6 +198,8 @@ const FOE_BANDS_AT: usize = 1795;
 const BUFFS_AT: usize = 1819;
 const IN_PLAY_AT: usize = 1839;
 const IN_PLAY: usize = 5;
+const MY_ACTS_LEN: usize = 3 * 30;
+const FOE_ACTS_LEN: usize = 4 * 19;
 
 #[test]
 fn obs_is_the_documented_sum() {
@@ -219,9 +221,17 @@ fn obs_is_the_documented_sum() {
             + 6 * 4
             + 4 * 5
             + 10 * IN_PLAY
+            + MY_ACTS_LEN
+            + FOE_ACTS_LEN
     );
     assert_eq!(WHY_AT, 1741, "ABI 3's inputs keep their places");
-    assert_eq!(OBS, 1889);
+    assert_eq!(
+        WHY_AT + 6 * WHY + 6 * 4 + 4 * 5 + 10 * IN_PLAY,
+        1889,
+        "ABI 4's inputs keep their places"
+    );
+    // ABI 5 appends what it remembers: 3 of its own acts (29 acts + age), 4 of the foe's (19 each)
+    assert_eq!(OBS, 1889 + 3 * 30 + 4 * 19);
     let starts: Vec<usize> = BLOCKS
         .iter()
         .scan(0, |at, b| {
@@ -247,7 +257,9 @@ fn obs_is_the_documented_sum() {
             WHY_AT,
             FOE_BANDS_AT,
             BUFFS_AT,
-            IN_PLAY_AT
+            IN_PLAY_AT,
+            1889,
+            1889 + MY_ACTS_LEN
         ]
     );
     assert_eq!(BLOCKS.iter().map(|b| b.1).sum::<usize>(), OBS);
@@ -605,4 +617,58 @@ fn what_is_in_play_shows_how_long_it_lasts() {
 /// Value `i` of an observation, NaN past its end.
 fn v(o: &[f32], i: usize) -> f32 {
     o.get(i).copied().unwrap_or(f32::NAN)
+}
+
+/// Where a named block starts (`OBS` for none).
+fn block_at(name: &str) -> usize {
+    let mut at = 0;
+    for (n, len) in BLOCKS {
+        if n == name {
+            return at;
+        }
+        at += len;
+    }
+    OBS
+}
+
+#[test]
+fn it_remembers_its_last_acts_and_the_foes_newest_first_with_their_age() {
+    use arena_mind::policy::{ACTIONS, Act, FoeAct, Memory, observe_with};
+    let s = sense(3.0, me(40.0), foe(150.0));
+    let mut m = Memory::default();
+    let none = observe_with(&s, &foe(150.0), &[], &kit(), &[0.0; TAG], &m);
+    assert_eq!(
+        none,
+        observe(&s, &foe(150.0), &[], &kit(), &[0.0; TAG]),
+        "an empty memory reads all zero"
+    );
+    let mine = block_at("My acts");
+    assert!(none[mine..].iter().all(|&x| x == 0.0));
+    m.chose(Act::Duck.index(), 2.0);
+    m.chose(Act::Toward.index(), 2.5);
+    m.saw(FoeAct::Idle, 1.0);
+    m.saw(FoeAct::Idle, 1.5); // the same thing again is not a new start
+    m.saw(FoeAct::Guard, 2.2);
+    let o = observe_with(&s, &foe(150.0), &[], &kit(), &[0.0; TAG], &m);
+    let entry = ACTIONS + 1;
+    // newest first: walking toward 0.5 s ago, then the duck 1 s ago, then nothing
+    assert_eq!(o[mine + Act::Toward.index()], 1.0);
+    assert!((o[mine + ACTIONS] - 0.25).abs() < 1e-6);
+    assert_eq!(o[mine + entry + Act::Duck.index()], 1.0);
+    assert!((o[mine + entry + ACTIONS] - 0.5).abs() < 1e-6);
+    assert!(
+        o[mine + 2 * entry..mine + 3 * entry]
+            .iter()
+            .all(|&x| x == 0.0)
+    );
+    let theirs = block_at("Foe's acts");
+    let entry = 6 + 12 + 1;
+    assert_eq!(o[theirs + 3], 1.0, "guarding, newest");
+    assert_eq!(o[theirs + entry], 1.0, "idle before it");
+    assert!(
+        (o[theirs + entry + entry - 1] - 1.0).abs() < 1e-6,
+        "idle began 2 s ago"
+    );
+    assert!(o[theirs + 2 * entry..].iter().all(|&x| x == 0.0));
+    assert_eq!(theirs + 4 * entry, OBS);
 }

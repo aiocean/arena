@@ -4,9 +4,9 @@ What a bot sees, what it can do, when it decides, and the file a player submits.
 `crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/arena-duel/src/seat.rs` and
 `crates/arena-bot`.
 
-## What it sees: 1889 numbers
+## What it sees: 2055 numbers
 
-Each decision the bot gets `OBS` = 1889 floats, in a frame where the foe is always ahead (positive x), so the same bot
+Each decision the bot gets `OBS` = 2055 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
 unless a scale is given. Lengths are in the world's pixels (the page's), `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
 sees the same numbers whatever the arena's pixel size, and the pixels below are the world's too.
@@ -16,6 +16,14 @@ threat in flight appears once it is 0.16 s old: that is the time to react to a d
 (where it is, a walk, a cast it gathers that is not a blow, a recovery) is current, so an opening can be taken the
 moment it shows (`arena-mind/src/view.rs`). The foe's cast block (316..327) follows its doing: it reads 0 while the
 delay still hides a blow it winds up.
+
+**ABI 5 (RULES 27) appended 166 numbers to ABI 4's 1889, which keep their indices and meaning:** what the
+fighter remembers. Its own last 3 acts (1889..1979) and the last 4 things it saw the foe start (1979..2055), each with
+how long ago, so a bot that ducked a moment ago knows it, and one that saw the foe guard, then walk in, then wind up a
+bolt can read the pattern. The memory is the arena's, the same for every bot, and it forgets at each round. ABI 5 also
+added two acts after the casts (27 and 28: a duck and a guard held 1 s), so a bot can commit to a long duck in one
+decision instead of three short ones. A model of ABI 4 carries over with its first layer widened, zeros on the new
+inputs, and two new logits that start far below the rest (`train/widen.py`): it then plays as it did.
 
 **ABI 4 (RULES 25) appended 148 numbers to ABI 3's 1741: 0..1741 keep their indices and meaning**, except that a
 slot's *ready* (and the foe's slots' *ready*, and the foe's share of its skills ready) now also says the foe stands
@@ -44,6 +52,8 @@ are now what the skill builds to with its supports and keystones.
 | 1795..1819 | 6 x 4 | **Foe's bands**, in its slots' order, zero when empty: has a band, min / 100, max / 100, I stand inside it (it could cast it at me from where it is). |
 | 1819..1839 | 4 x 5 | **Buffs**: my own timed buffs from my skills, soonest to end first, zero when absent: present, stance (more damage), blessing (less taken), other, time left / 10. |
 | 1839..1889 | 10 x 5 | **In play**: the domains (2: mine first), the fields (4: the vortices standing, nearest first) and the auras (4: mine first), zero when absent. Each: present, mine, time left / 10 (4, forty seconds, for an aura: it lasts while its holder keeps it), seconds until it works (an aura's wind-up; 0 for the others), where it stands ahead of me / 100 (0 for an aura, which is on its holder). |
+| 1889..1979 | 3 x 30 | **My acts**, the last 3 I chose, newest first, zero when none (ABI 5): the act one-hot over the 29 acts (the table below), seconds since I chose it / 2. |
+| 1979..2055 | 4 x 19 | **Foe's acts**, the last 4 things I saw the foe start, newest first, zero when none (ABI 5): idle, moving toward me, moving away, guarding, meditating, flying (6), the kind of skill it uses, one-hot over 12 as in the foe's block (only for a skill), seconds since / 2. A start is a change in what it is seen doing, through the same reaction delay as the foe's block. |
 
 The 12 skill kinds, in order: three reserved, then blast, bolt, seeker, area, field, heal, ward, barrier, blink. The
 three reserved slots held melee, dive and dash until the arena went spells only (RULES 19): no skill is one of them
@@ -70,8 +80,8 @@ it is.
   rate are the burn (fire); the chill slots are soak (water) and the slow is bind (wood); the shock slots are jolt
   (thunder).
 - There is no ultimate and no rage (`docs/rules.md`, "Loadouts"). ABI 2 dropped their places: the old rage, the
-  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741, ABI 4 1741..1889. A bot of another
-  ABI (1: 354 inputs, 2: 305, 3: 1741) is refused.
+  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741, ABI 4 1741..1889, ABI 5 1889..2055. A bot
+  of another ABI (1: 354 inputs, 2: 305, 3: 1741, 4: 1889) is refused.
 
 A skill is known by its kind and its numbers, never its name, so a bot reads a skill the bar has just drawn the same
 way as one it has seen a thousand times.
@@ -79,9 +89,9 @@ way as one it has seen a thousand times.
 What it does not see: the sense, the resources besides qi and life, the skills in its pool that are not on its bar,
 and the foe's supports. The two corners see the same kinds of numbers, so neither side knows more.
 
-## What it can do: 27 acts
+## What it can do: 29 acts
 
-`ACTIONS` = 27, each at a fixed index:
+`ACTIONS` = 29, each at a fixed index:
 
 | Index | Act |
 |---|---|
@@ -95,6 +105,8 @@ and the foe's supports. The two corners see the same kinds of numbers, so neithe
 | 7 | land |
 | 8 | meditate |
 | 9 + 3 x slot + aim | cast the skill in `slot` (0..6) with `aim` 0, 1 or 2 |
+| 27 | duck held long (1 s; ABI 5) |
+| 28 | guard held long (1 s; ABI 5) |
 
 Where an aim lands:
 
@@ -125,7 +137,7 @@ it is played) is dropped, and the fighter keeps doing what it was doing.
 - The bot thinks every 0.12 s, jittered between 0.8x and 1.2x on its own seeded dice (`TEMPERAMENT.think`): at most
   about eight decisions a second.
 - A decision comes only while the fighter can act: never during its own cast, while it sits down or gets up, a stagger, a freeze or shock, the
-  crouch before a jump, or the 0.4 s of a duck. After a round starts, the first decision comes 0.4-0.7 s in.
+  crouch before a jump, or a duck's hold (0.4 s, or 1 s for a long one). After a round starts, the first decision comes 0.4-0.7 s in.
 - What it decides on one tick is played on the next.
 - An act lasts until the next one: walking carries on and `wait` stops it. Meditating is a skill with phases
   (`docs/rules.md`, "Meditation"): `meditate` sits down (0.4 s, no decision), sitting carries on through `meditate`
@@ -140,7 +152,7 @@ another: the arena measures decisions, not reflexes.
 
 One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
 of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
-`[1, 1889]`, output the 27 acts' logits, float32 `[1, 27]`. One command builds it into a module with the `bots/onnx`
+`[1, 2055]`, output the 29 acts' logits, float32 `[1, 29]`. One command builds it into a module with the `bots/onnx`
 template ("Bring your own model" in `docs/training.md`):
 
 ```
@@ -153,14 +165,14 @@ seat's draw `u`. A bot that wants to always play its best act trains its logits 
 
 ## The bot module
 
-A WebAssembly module of the ABI `arena-bot-4` (`crates/arena-bot`; the design and its reasons:
+A WebAssembly module of the ABI `arena-bot-5` (`crates/arena-bot`; the design and its reasons:
 `docs/specs/2026-11-16-arena-wasm-bots-design.md`). It **imports nothing** and exports:
 
 | Export | Signature | What |
 |---|---|---|
 | `memory` | memory | its linear memory |
-| `arena_abi` | `() -> i32` | returns `4`; a module that returns anything else is refused (an ABI 3 module too: rebuild it on ABI 4, its model widened) |
-| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 1889 inputs as `f32` LE, then the 27 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
+| `arena_abi` | `() -> i32` | returns `5`; a module that returns anything else is refused (an ABI 4 module too: rebuild it on ABI 5, its model widened) |
+| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 2055 inputs as `f32` LE, then the 29 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
 | `arena_start` | `(seed: i32)` | a new fight of the match; `seed` is the bot's own dice for it |
 | `arena_round` | `()` | a new round, the first included |
 | `arena_decide` | `(u: f32) -> i32` | the act, 0..30, for the decision the buffer holds; `u` is the seat's draw in [0, 1) |

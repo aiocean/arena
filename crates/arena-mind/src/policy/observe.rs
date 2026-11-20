@@ -59,8 +59,17 @@
 //! - in play (`DOMAINS` + `FIELDS` + `AURAS_IN_PLAY` = 2 + 4 + 4, x `IN_PLAY` = 5, 1839..1889): the domains and
 //!   auras its own first, the fields nearest first, each: present, mine, time left / 10 (4 for one held as long as
 //!   its holder keeps it), seconds until it works, where it stands ahead of me / 100 (0 for an aura).
+//!
+//! ABI 5 appends what the policy remembers (`Memory`, kept by `PolicyMind`) to ABI 4's 1889, which keep their
+//! indices and meaning:
+//! - my acts (`MY_ACTS` x `MY_ACT` = 3 x 30, 1889..1979), newest first, zero when none: the act one-hot over
+//!   `ACTIONS`, seconds since I chose it / 2;
+//! - the foe's acts (`FOE_ACTS` x `FOE_ACT` = 4 x 19, 1979..2055), the last things I saw it start, newest first,
+//!   zero when none: idle, moving toward me, moving away, guarding, meditating, flying, the kind of skill it uses
+//!   (12), seconds since / 2.
 
-use super::{SLOTS, ahead};
+use super::memory::{FOE_ACTS, FoeAct, MY_ACTS, Memory};
+use super::{ACTIONS, SLOTS, ahead};
 use crate::sense::{
     AILMENTS, AURAS, ActFrames, ActPhase, Band, BuffKind, CURSES, Doing, Effects, Foe, InPlay,
     KEYSTONES, ROOTS, SUPPORTS, Sense, SlotX, Threat, ThreatShape, UnitKind,
@@ -101,9 +110,14 @@ pub const DOMAINS: usize = 2;
 pub const FIELDS: usize = 4;
 pub const AURAS_IN_PLAY: usize = 4;
 const IN_PLAY: usize = 5;
+/// One act of its own it remembers (ABI 5): the act, one-hot over `ACTIONS`, and seconds since it chose it / 2.
+const MY_ACT: usize = ACTIONS + 1;
+/// One start of the foe's it remembers (ABI 5): idle, toward, away, guard, meditate, fly, the skill's kind (12),
+/// seconds since / 2.
+const FOE_ACT: usize = 6 + RESERVED_KINDS + KINDS.len() + 1;
 
 /// Every block in order, as `docs/bot.md` names it, with its length.
-pub const BLOCKS: [(&str, usize); 15] = [
+pub const BLOCKS: [(&str, usize); 17] = [
     ("Me", ME),
     ("Foe", FOE),
     ("Threats", THREATS * THREAT),
@@ -119,6 +133,8 @@ pub const BLOCKS: [(&str, usize); 15] = [
     ("Foe's bands", SLOTS * FOE_BAND),
     ("Buffs", BUFFS * BUFF),
     ("In play", (DOMAINS + FIELDS + AURAS_IN_PLAY) * IN_PLAY),
+    ("My acts", MY_ACTS * MY_ACT),
+    ("Foe's acts", FOE_ACTS * FOE_ACT),
 ];
 
 pub const OBS: usize = total(&BLOCKS);
@@ -199,6 +215,18 @@ pub fn observe(
     threats: &[Threat],
     skills: &[Skill],
     tag: &[f32; TAG],
+) -> [f32; OBS] {
+    observe_with(sense, foe, threats, skills, tag, &Memory::default())
+}
+
+/// `observe`, with what the policy remembers (ABI 5's "My acts" and "Foe's acts"; `PolicyMind` keeps `memory`).
+pub fn observe_with(
+    sense: &Sense,
+    foe: &Foe,
+    threats: &[Threat],
+    skills: &[Skill],
+    tag: &[f32; TAG],
+    memory: &Memory,
 ) -> [f32; OBS] {
     let me = &sense.me;
     let a = &sense.arena;
@@ -502,6 +530,40 @@ pub fn observe(
             o.put(p.x.map_or(0.0, |x| (x - me.x) * dir / 100.0));
         }
     }
+
+    let now = sense.time;
+    for m in &memory.mine {
+        let Some((act, t)) = *m else {
+            o.skip(MY_ACT);
+            continue;
+        };
+        for i in 0..ACTIONS {
+            o.flag(i == act);
+        }
+        o.put((now - t).max(0.0) / 2.0);
+    }
+    for m in &memory.foe {
+        let Some((what, t)) = *m else {
+            o.skip(FOE_ACT);
+            continue;
+        };
+        for c in [
+            FoeAct::Idle,
+            FoeAct::Toward,
+            FoeAct::Away,
+            FoeAct::Guard,
+            FoeAct::Meditate,
+            FoeAct::Fly,
+        ] {
+            o.flag(what == c);
+        }
+        o.kind(match what {
+            FoeAct::Skill(k) => Some(k),
+            _ => None,
+        });
+        o.put((now - t).max(0.0) / 2.0);
+    }
+    debug_assert_eq!(o.at, OBS);
     o.v
 }
 

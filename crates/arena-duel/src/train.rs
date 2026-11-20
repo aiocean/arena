@@ -440,7 +440,7 @@ impl Env {
         {
             reward -= fly;
         }
-        if matches!(Act::from_index(act), Some(Act::Duck)) {
+        if matches!(Act::from_index(act), Some(Act::Duck | Act::DuckLong)) {
             reward -= duck;
         }
         if self.quiet >= QUIET {

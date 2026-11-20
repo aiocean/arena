@@ -1,5 +1,6 @@
-//! What the policy can do: nine plain acts and a cast from each slot at one of three aims, `ACTIONS` in all, each
-//! with a fixed index; which of them can happen now (`legal`); and the `Choice` each one is.
+//! What the policy can do: nine plain acts, a cast from each slot at one of three aims, then (ABI 5) a long duck and
+//! a long guard, `ACTIONS` in all, each with a fixed index (the long holds come last, so the older indices keep
+//! their meaning); which of them can happen now (`legal`); and the `Choice` each one is.
 
 use super::ahead;
 use crate::choice::Choice;
@@ -10,7 +11,9 @@ use crate::skill::{Skill, SkillKind};
 pub const SLOTS: usize = 6;
 const PLAIN: usize = 9;
 const AIMS: usize = 3;
-pub const ACTIONS: usize = PLAIN + SLOTS * AIMS;
+/// The acts ABI 5 appended after the casts: a duck and a guard held long.
+const LONG: usize = 2;
+pub const ACTIONS: usize = PLAIN + SLOTS * AIMS + LONG;
 
 /// How far ahead of or behind the foe an aimed cast lands, game pixels.
 const AIM: f64 = 30.0;
@@ -20,6 +23,8 @@ const BESIDE: f64 = 20.0;
 const FLY: f64 = 0.6;
 /// How long a duck or guard is held, seconds.
 const HOLD: f64 = 0.4;
+/// How long a long duck or guard is held, seconds (ABI 5): one decision that commits, where three short ones flicker.
+const HOLD_LONG: f64 = 1.0;
 
 /// Where a cast aims, seen from the fighter: at the foe, past it, or short of it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -41,7 +46,14 @@ pub enum Act {
     FlyHigh,
     Land,
     Meditate,
-    Cast { slot: usize, aim: Aim },
+    Cast {
+        slot: usize,
+        aim: Aim,
+    },
+    /// A duck held `HOLD_LONG` (ABI 5).
+    DuckLong,
+    /// A guard held `HOLD_LONG` (ABI 5).
+    GuardLong,
 }
 
 const PLAINS: [Act; PLAIN] = [
@@ -63,6 +75,8 @@ impl Act {
             Act::Cast { slot, aim } => {
                 PLAIN + slot * AIMS + AIMED.iter().position(|&a| a == aim).unwrap_or(0)
             }
+            Act::DuckLong => PLAIN + SLOTS * AIMS,
+            Act::GuardLong => PLAIN + SLOTS * AIMS + 1,
             plain => PLAINS.iter().position(|&a| a == plain).unwrap_or(0),
         }
     }
@@ -74,7 +88,11 @@ impl Act {
         let c = i - PLAIN;
         let slot = c / AIMS;
         if slot >= SLOTS {
-            return None;
+            return match i - PLAIN - SLOTS * AIMS {
+                0 => Some(Act::DuckLong),
+                1 => Some(Act::GuardLong),
+                _ => None,
+            };
         }
         AIMED.get(c % AIMS).map(|&aim| Act::Cast { slot, aim })
     }
@@ -104,7 +122,9 @@ pub fn legal(sense: &Sense, skills: &[Skill]) -> [bool; ACTIONS] {
         *o = match act {
             Act::Wait => true,
             _ if !me.can_act => false,
-            Act::Toward | Act::Away | Act::Duck | Act::Guard => true,
+            Act::Toward | Act::Away | Act::Duck | Act::Guard | Act::DuckLong | Act::GuardLong => {
+                true
+            }
             // it sits down only from the ground (`Choice::Meditate` in the air is dropped)
             Act::Meditate => !me.flying && me.air <= 0.0,
             // leaving the ground costs qi, and so does taking off from the air (RULES 26)
@@ -131,6 +151,8 @@ pub fn choice(act: Act, sense: &Sense, foe: &Foe, skills: &[Skill]) -> Choice {
         Act::Jump => Choice::Jump,
         Act::Duck => Choice::Duck { hold: HOLD },
         Act::Guard => Choice::Guard { hold: HOLD },
+        Act::DuckLong => Choice::Duck { hold: HOLD_LONG },
+        Act::GuardLong => Choice::Guard { hold: HOLD_LONG },
         Act::FlyHigh => Choice::Fly {
             height: a.top * FLY,
         },

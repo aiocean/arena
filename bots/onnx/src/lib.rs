@@ -1,7 +1,7 @@
-//! A bot module of the `arena-bot-4` ABI (`docs/bot.md`, "The bot module") that runs an ONNX model with tract.
+//! A bot module of the `arena-bot-5` ABI (`docs/bot.md`, "The bot module") that runs an ONNX model with tract.
 //!
-//! The model takes the observation, float32 `[1, 1889]`, as its first input and gives one logit per act, float32
-//! `[1, 27]` or `[27]`, as its first output. The bot picks the act as the shipped bot does: a softmax over the legal
+//! The model takes the observation, float32 `[1, 2055]`, as its first input and gives one logit per act, float32
+//! `[1, 29]` or `[29]`, as its first output. The bot picks the act as the shipped bot does: a softmax over the legal
 //! acts, read with the arena's draw `u` (`arena_mind::policy::sample`). Change `arena_decide` to pick otherwise.
 //!
 //! The model is read and optimised once, in the first `arena_start` of a match (it costs about a quarter of that
@@ -15,7 +15,7 @@ use tract_onnx::prelude::*;
 
 static MODEL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/model.onnx"));
 
-/// What the arena writes before each decision: the observation (1889 `f32` LE), then the legal mask (27 bytes).
+/// What the arena writes before each decision: the observation (2055 `f32` LE), then the legal mask (29 bytes).
 static INPUT: [AtomicU8; OBS * 4 + ACTIONS] = [const { AtomicU8::new(0) }; OBS * 4 + ACTIONS];
 
 type Plan = TypedRunnableModel<TypedModel>;
@@ -53,7 +53,7 @@ fn logits(obs: Vec<f32>) -> TractResult<[f32; ACTIONS]> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn arena_abi() -> i32 {
-    4
+    5
 }
 
 #[unsafe(no_mangle)]

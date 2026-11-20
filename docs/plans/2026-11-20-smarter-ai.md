@@ -44,8 +44,8 @@ Appended to the observation, so 0..1889 keep their meaning and `widen.py` carrie
 - **The foe's last acts:** the last 4 things the foe was seen to start (its doing or a skill kind, as the delayed
   view shows them), each with seconds ago.
 
-Acts with a duration: duck and guard each come short (0.25 s) and long (0.8 s), in place of the one fixed 0.4 s
-hold, which takes ACTIONS from 27 to 29. The new acts are appended so old indices keep their meaning; `widen.py`
+Acts with a duration: a long duck and a long guard (1 s) beside the short ones (0.4 s, kept as they were so an old
+model's acts keep their meaning), which takes ACTIONS from 27 to 29. The new acts are appended so old indices keep their meaning; `widen.py`
 also widens the policy head.
 
 The ABI change needs, together:
@@ -101,9 +101,48 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 |---|---|
 | A | done: `cycle.py` look gate (96 rounds, 10% slack) |
 | B | – |
-| C | – |
+| C | landed (RULES 27, ABI 5: 2055 inputs, 29 acts; the house AI widened, plays as before); retrain next |
 | D | – |
-| E | profiling |
+| E | profiled (below) |
 | F | – |
-| G | studying the clone |
+| G | the clone is cheap and exact (below) |
 | H | – |
+
+## What the study found (2026-11-20)
+
+Measured while four trainers ran, so absolute speeds are pessimistic.
+
+**The clone (G).** Everything a running duel holds can be copied except `Seats` (`Box<dyn Seat>`, `duel.rs`):
+- the minds lack only a `derive(Clone)`;
+- the ONNX seat keeps its model behind an `Arc`;
+- the learner's seat needs a fresh wire.
+
+A prototype adds `Seat::fork`, `Duel::fork_with` / `restore_with` and `Env::fork` / `restore_from`.
+- A restore into a spare env costs 20-28 µs, against 150-240 µs a decision.
+- Replaying from the seed and the act log costs about 1000 times more.
+- A fork stepped with the same acts matched the original bit for bit, 20 of 20 against each opponent.
+- Every legal act rolled out 8 decisions costs 8.5 ms a root decision against the brain, 15 ms against ONNX.
+
+A rollout must reseed the rules' dice and the foe's, or the search would know the future crits and samples.
+
+**The env (E).** Decisions a second on one thread: first 10.8k, brain 6.5k, aggressive 6.1k, ONNX 4.2k. Where the
+time goes:
+
+| share | what |
+|---|---|
+| 30% | `sense_of` every tick for each policy seat, though a decision is due every 7-18 ticks; inside it, `KitSkill::costs` allocates a `Vec` per call |
+| 22% | the ONNX opponent (tract, 70 µs a call at batch 1) |
+| 17.5% | `unit::gather`/`scatter`: a fresh query state each tick, units or none |
+| 1% | `observe` |
+
+In `ppo.py`:
+- the main thread waits on the workers 61% of the time;
+- the workers sit idle 27-38% while Python runs the policy;
+- 11% goes to copying observations into numpy.
+
+The fixes, by size:
+1. Sense in full only when a decision is due, and cache the kit's costs (+25-35%).
+2. Cheap unit gather/scatter (+15-20%).
+3. Overlap Python with the env: step half the envs while torch runs the other half, writing into preallocated
+   buffers (+30-40% wall).
+4. Then batch the ONNX opponents.

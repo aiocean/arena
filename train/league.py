@@ -12,6 +12,7 @@ from collections import defaultdict, deque
 import numpy as np
 
 from net import to_onnx
+from widen import current
 
 # opponent shares: latest self, a past self, the brain, the first mind, the scripted pair (either, drawn), a pool
 # model, the target, and each script alone (to lean on one the policy is weak against)
@@ -88,7 +89,7 @@ class League:
             return 0
         for f in sorted(self.dir.glob("*.onnx")):
             wid = len(self.snapshots)
-            self.env.set_model(wid, f.read_bytes())
+            self.env.set_model(wid, current(f.read_bytes()))
             self.snapshots.append(wid)
         return len(self.snapshots)
 
@@ -101,7 +102,7 @@ class League:
                     continue
                 wid = POOL_IDS + len(self.seen)
                 try:
-                    self.env.set_model(wid, f.read_bytes())
+                    self.env.set_model(wid, current(f.read_bytes()))
                 except ValueError:
                     continue  # a model of another observation: not this run's opponent
                 old = self.seen.get(f)
@@ -120,7 +121,7 @@ class League:
         if self.target and self.target[:2] == (f, mtime):
             return
         wid = TARGET_IDS + (self.target[2] - TARGET_IDS + 1 if self.target else 0)
-        self.env.set_model(wid, f.read_bytes())
+        self.env.set_model(wid, current(f.read_bytes()))
         self.target = (f, mtime, wid)
 
     def weight(self, key):

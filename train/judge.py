@@ -267,7 +267,7 @@ def look(moves):
         "seconds": round(secs, 1),
         "changes_per_s": round(changes / secs, 2),
         "flicker_per_min": round(flicker * per_min, 1),
-        "duck_per_min": round(names.count("duck") * per_min, 1),
+        "duck_per_min": round(sum(1 for n in names if n.startswith("duck")) * per_min, 1),
         "takeoffs_per_min": round(takeoffs * per_min, 1),
         "air_share": round(airborne, 3),
         "meditate_per_min": round(sum(1 for n in names if "meditate" in n) * per_min, 1),

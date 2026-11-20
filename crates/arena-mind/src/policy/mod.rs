@@ -3,14 +3,16 @@
 //! tag that says who the fighter is.
 
 mod action;
+mod memory;
 mod mind;
 mod net;
 mod observe;
 
 pub use action::{ACTIONS, Act, Aim, SLOTS, choice, legal};
+pub use memory::{FOE_ACTS, FoeAct, MY_ACTS, Memory};
 pub use mind::{Due, PolicyMind};
 pub use net::{GROUP, HIDDEN, Net, NetError, Tensor, WIDTH, sample};
-pub use observe::{BLOCKS, OBS, TAG, UNITS, observe};
+pub use observe::{BLOCKS, OBS, TAG, UNITS, observe, observe_with};
 
 use crate::sense::{Foe, Me};
 

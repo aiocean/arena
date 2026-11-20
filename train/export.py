@@ -15,6 +15,7 @@ import torch
 
 import arena_duel as pd
 from net import Policy, from_onnx, to_onnx
+from widen import current, widen
 
 HERE = pathlib.Path(__file__).parent
 HOUSE = HERE / "../crates/arena-duel/weights/policy.onnx"
@@ -41,9 +42,13 @@ def load(path):
     if path.suffix == ".pt":
         ck = torch.load(path, map_location="cpu", weights_only=True)
         policy = Policy(pd.OBS, pd.ACTIONS, **ck.get("size", {}))
-        policy.load_state_dict(ck["model"])
+        model = ck["model"]
+        old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
+        if (old, acts) != (pd.OBS, pd.ACTIONS):  # an older ABI's checkpoint, widened: it plays as it did
+            model = widen(model, old, pd.OBS, acts, pd.ACTIONS)
+        policy.load_state_dict(model)
     else:
-        policy = from_onnx(path.read_bytes(), pd.OBS, pd.ACTIONS)
+        policy = from_onnx(current(path.read_bytes()), pd.OBS, pd.ACTIONS)
     return policy.eval()
 
 
