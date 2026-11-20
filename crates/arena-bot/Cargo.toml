@@ -55,6 +55,10 @@ name = "damage"
 required-features = ["host", "onnx"]
 
 [[example]]
+name = "env_speed"
+required-features = ["onnx"]
+
+[[example]]
 name = "trace"
 required-features = ["trace"]
 
