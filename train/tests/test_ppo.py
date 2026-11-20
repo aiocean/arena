@@ -1,5 +1,6 @@
 """The trainer's schedule: learning rate and entropy fall over the run, shaping fades to 0 (or is off)."""
 
+import os
 import pathlib
 import shutil
 
@@ -28,7 +29,7 @@ def test_an_asymmetric_critic_trains_and_its_policy_exports_as_any_other(tmp_pat
     import arena_duel as pd
     from export import load
 
-    run = "test-priv"
+    run = f"test-priv-{os.getpid()}"
     out = pathlib.Path(__file__).parent.parent / "runs" / run
     cmd = [sys.executable, "ppo.py", "--run", run, "--updates", "2", "--envs", "8", "--steps", "16", "--threads", "2"]
     subprocess.run(cmd + ["--privileged"], cwd=pathlib.Path(__file__).parent.parent, check=True)
@@ -50,9 +51,10 @@ def test_a_run_with_search_imitates_the_lookahead_and_logs_it():
     import sys
 
     here = pathlib.Path(__file__).parent.parent
-    out = here / "runs" / "test-search-unit"
+    run = f"test-search-{os.getpid()}"
+    out = here / "runs" / run
     shutil.rmtree(out, ignore_errors=True)
-    cmd = [sys.executable, "ppo.py", "--run", "test-search-unit", "--updates", "10", "--envs", "8", "--steps", "16"]
+    cmd = [sys.executable, "ppo.py", "--run", run, "--updates", "10", "--envs", "8", "--steps", "16"]
     subprocess.run(cmd + ["--threads", "2", "--search", "4", "--search-depth", "3"], cwd=here, check=True)
     line = json.loads((out / "log.jsonl").read_text().splitlines()[-1])
     assert line["search_kl"] >= 0 and 0 <= line["search_agree"] <= 1
