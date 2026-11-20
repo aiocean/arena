@@ -35,6 +35,7 @@ for the close blasts alone `blast_out_of_reach` and `blast_whiff`.
 """
 
 import argparse
+import os
 import json
 import pathlib
 import time
@@ -111,30 +112,46 @@ def search(env, policy, league, args, pay, update, dev, rng):
             pv = torch.from_numpy(found["privileged"]).reshape(-1, pd.PRIVILEGED).to(dev)
         _, vlog = policy(flat_obs, torch.ones(flat_obs.shape[0], pd.ACTIONS, dtype=torch.bool, device=dev), pv)
         v_leaf = policy.value_of(vlog).cpu().reshape(ret.shape)
-    q = (ret + disc * v_leaf).mean(-1)
-    # each decision's values normalised over its legal acts, so the temperature means the same everywhere; a decision
-    # whose acts the search cannot tell apart (a spread under `search_margin`) weighs less
-    n_legal = legal.sum(-1, keepdim=True).clamp_min(1)
-    mean = (q.nan_to_num() * legal).sum(-1, keepdim=True) / n_legal
-    std = (((q.nan_to_num() - mean) ** 2) * legal).sum(-1, keepdim=True).div(n_legal).sqrt()
-    qn = torch.where(legal, (q.nan_to_num() - mean) / (std + 1e-4), torch.full_like(q, -1e9))
-    target = torch.softmax(qn / args.search_temp, -1) * legal
-    target = target / target.sum(-1, keepdim=True).clamp_min(1e-12)
-    hi = torch.where(legal, q, torch.full_like(q, -1e9)).max(-1).values
-    lo = torch.where(legal, q, torch.full_like(q, 1e9)).min(-1).values
-    weight = ((hi - lo) / args.search_margin).clamp(0, 1)
+    per = ret + disc * v_leaf  # [k, A, s]: each reseeded rollout's value
+    q = per.mean(-1)
     o = torch.from_numpy(obs[idx])
     m = torch.from_numpy(mask[idx])
     p = torch.from_numpy(env.privileged()[idx]) if args.privileged else None
     with torch.no_grad():
         logits, _ = policy(o.to(dev), m.to(dev), None if p is None else p.to(dev))
-        agree = (logits.argmax(-1).cpu() == target.argmax(-1)).float().mean().item()
+        logits = logits.cpu()
+    # the target improves on the policy rather than replacing it (pi * exp(A / temp), A in return units): where the
+    # search cannot tell the acts apart it stays the policy, and only a real difference in value moves it. Turning
+    # each decision's values into z-scores instead made noise as sharp as a signal (abi5-search, 2026-11-21).
+    n_legal = legal.sum(-1, keepdim=True).clamp_min(1)
+    mean = (q.nan_to_num() * legal).sum(-1, keepdim=True) / n_legal
+    adv = torch.where(legal, q.nan_to_num() - mean, torch.zeros_like(q))
+    prior = torch.where(legal, torch.log_softmax(logits.masked_fill(~legal, -1e9), -1), torch.full_like(q, -1e9))
+    target = torch.softmax(prior + adv / args.search_temp, -1) * legal
+    target = target / target.sum(-1, keepdim=True).clamp_min(1e-12)
+    # a decision weighs by how far the spread among the acts the policy plays (and the search's best) stands above the
+    # rollouts' own noise (the acts' mean standard error): an act it never plays scoring badly teaches it nothing
+    played = legal & (prior.exp() > 0.01)
+    played[torch.arange(len(q)), torch.where(legal, q, torch.full_like(q, -1e9)).argmax(-1)] = True
+    hi = torch.where(played, q, torch.full_like(q, -1e9)).max(-1).values
+    lo = torch.where(played, q, torch.full_like(q, 1e9)).min(-1).values
+    s = per.shape[-1]
+    if s > 1:
+        se = (per.std(-1) / s**0.5).nan_to_num()
+        noise = (se * legal).sum(-1) / n_legal.squeeze(-1)
+    else:
+        noise = torch.zeros_like(hi)
+    weight = ((hi - lo) / (args.search_margin + 2 * noise)).clamp(0, 1)
+    agree = (logits.argmax(-1) == target.argmax(-1)).float().mean().item()
+    if os.environ.get("ARENA_SEARCH_DUMP"):
+        torch.save({"ret": ret, "disc": disc, "v_leaf": v_leaf, "q": q, "logits": logits, "mask": m, "idx": idx}, os.environ["ARENA_SEARCH_DUMP"])
     spread = hi - lo
     stats = {
         "search_weight": round(float(weight.mean()), 3),
         "search_s": round(time.time() - t0, 2),
         "search_agree": round(agree, 3),
         "search_spread": round(float(spread.median()), 4),
+        "search_noise": round(float(noise.median()), 4),
     }
     return {"batch": (o, m, target, p, weight), "stats": stats}
 
@@ -186,8 +203,9 @@ def main():
     ap.add_argument("--resume")
     ap.add_argument("--search", type=int, default=0, help="decisions searched each update (expert iteration; 0: none)")
     ap.add_argument("--search-depth", type=int, default=8, help="the learner's decisions a rollout of each act runs")
-    ap.add_argument("--search-samples", type=int, default=1, help="reseeded rollouts of each act, averaged")
-    ap.add_argument("--search-temp", type=float, default=0.3, help="the target's temperature over the acts' normalised values")
+    ap.add_argument("--search-samples", type=int, default=4, help="reseeded rollouts of each act, averaged")
+    ap.add_argument("--search-temp", type=float, default=0.1, help="the target's temperature over the acts' advantages (return units)")
+    ap.add_argument("--search-after", type=int, default=100, help="updates of plain PPO first, so the critic the search leans on has learned")
     ap.add_argument("--search-margin", type=float, default=0.02, help="a decision weighs fully once its best and worst act differ this much")
     ap.add_argument("--search-coef", type=float, default=0.5, help="the weight of imitating the search's target")
     ap.add_argument("--privileged", action="store_true", help="an asymmetric critic: the value head also sees VecEnv.privileged")
@@ -281,7 +299,7 @@ def main():
             repeat=args.repeat, habit=args.habit,
         )
         searched = None
-        search_at = int(rng.integers(T)) if args.search else -1
+        search_at = int(rng.integers(T)) if args.search and update >= args.search_after else -1
         for t in range(T):
             if t == search_at:
                 searched = search(env, policy, league, args, pay, update, dev, rng)
