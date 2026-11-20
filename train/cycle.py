@@ -12,7 +12,10 @@ report (`docs/specs/2026-11-19-model-improvement-design.md`, 5). It ships nothin
    head against the house AI over the pool's seeds, and with `--exploit N` its exploitability after N updates of a
    best response (`exploit.py`). Each best response joins the pool (`<run>-x-<candidate>/best`): the next cycle's
    league fights it (`--pool runs/pool/models`), so the holes found are the ones the next model must close.
-4. The pick: the best-rated candidate that clears the bar. `runs/<run>/report.json` and `report.md`; with
+4. How each fights (`judge.py`'s counts, no decision model; `--look-rounds`): a candidate that flickers, ducks or
+   takes off more than `LOOK_SLACK` over the house AI's rate, or casts that much less, fails the look gate
+   (`docs/plans/2026-11-20-smarter-ai.md`, A).
+5. The pick: the best-rated candidate that clears the bar and the look gate. `runs/<run>/report.json` and `report.md`; with
    `--review DIR` also `DIR/index.html`, a review page.
 
 Exporting the pick (`export.py`), the house AI's tests and the module's re-pinning stay a session's steps
@@ -26,9 +29,13 @@ import pathlib
 import subprocess
 import sys
 
+import types
+
 import torch
 
 import arena_duel as pd
+import judge
+from export import load
 from pool import POOL, Pool, load_policy, print_table
 
 HERE = pathlib.Path(__file__).parent
@@ -72,6 +79,30 @@ def measure(pool, name, house, args):
     return m
 
 
+# how much worse than the house AI a candidate may look: flicker, ducks and take-offs at most this share more a
+# minute, casts at most this share fewer
+LOOK_SLACK = 0.10
+WORSE_IF_MORE = ("flicker_per_min", "duck_per_min", "takeoffs_per_min")
+WORSE_IF_LESS = ("casts_per_min",)
+
+
+def look_of(model, rounds):
+    """How `model` (.pt or .onnx) fights over `rounds` rounds against the house AI, the brain, the aggressive and the
+    turtle: `judge.look_rounds` of `judge.fight`, the same seeds for every model."""
+    a = types.SimpleNamespace(
+        rounds=rounds, seed=9001, limit=90.0, gamma=0.995, lam=0.95, shaping=0.667, whiff=0.01, whiff_far=0.02,
+        variety=0.5, idle=0.004, land=0.04, time_cost=0.0005,
+    )
+    return judge.look_rounds(judge.fight(load(model), a))
+
+
+def look_gate(look, house):
+    """The reasons a look fails against the house AI's (none: it passes)."""
+    why = [k for k in WORSE_IF_MORE if look[k] > house[k] * (1 + LOOK_SLACK) + 0.5]
+    why += [k for k in WORSE_IF_LESS if look[k] < house[k] * (1 - LOOK_SLACK)]
+    return why
+
+
 def pct(x):
     return f"{100 * x:.1f}%"
 
@@ -82,8 +113,11 @@ def markdown(report):
     lines.append(f"From `{report['from']}`; rules `{t['fingerprint']}`; pool seeds {t['seeds'][0]}-{t['seeds'][1] - 1}.\n")
     pick = report["pick"]
     lines.append(f"**Pick: {pick}**\n" if pick else "**No candidate clears the bar.**\n")
-    lines.append("| candidate | elo | ±2se | nash | bar | vs brain (seat 0 / 1) | vs first | vs house | exploitability |")
-    lines.append("|---|---|---|---|---|---|---|---|---|")
+    lines.append(
+        "| candidate | elo | ±2se | nash | bar | vs brain (seat 0 / 1) | vs first | vs house | exploitability "
+        "| look | flicker | ducks | take-offs | casts |"
+    )
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     rows = {r["name"]: r for r in t["rows"]}
     for m in report["measured"]:
         r, b = rows[m["name"]], m["bar"]
@@ -92,8 +126,11 @@ def markdown(report):
         lines.append(
             f"| {m['name']} | {r['elo']:.0f} | {2 * r['se']:.0f} | {r['nash']:.3f} | {'pass' if b['passed'] else 'fail'} "
             f"| {pct(vb['win_rate'])} ({pct(vb['as_seat0'])} / {pct(vb['as_seat1'])}) | {pct(vf['win_rate'])} "
-            f"| {pct(m['vs_house']['win_rate'])} | {'' if x is None else f'{x:+.3f}'} |"
+            f"| {pct(m['vs_house']['win_rate'])} | {'' if x is None else f'{x:+.3f}'} | {looks(m)} |"
         )
+    if report.get("house_look"):
+        h = report["house_look"]
+        lines.append(f"| house AI | | | | | | | | | | {looks({'look': h})} |")
     lines.append("\n## The pool\n")
     lines.append("| member | elo | ±2se | rate | nash | mix |")
     lines.append("|---|---|---|---|---|---|")
@@ -102,6 +139,16 @@ def markdown(report):
     lines.append(f"\nCycles (each beats the next by 55% or more): {len(t['cycles'])}")
     lines += [f"- {' > '.join(c)} > {c[0]}" for c in t["cycles"][:20]]
     return "\n".join(lines) + "\n"
+
+
+def looks(m):
+    """A candidate's look cells: the gate, then flicker, ducks, take-offs and casts a minute."""
+    lk = m.get("look")
+    if not lk:
+        return "| | | |"
+    gate = "" if "look_fails" not in m else ("pass" if not m["look_fails"] else "fail: " + ", ".join(m["look_fails"]))
+    cells = [f"{lk[k]:.1f}" for k in ("flicker_per_min", "duck_per_min", "takeoffs_per_min", "casts_per_min")]
+    return " | ".join([gate, *cells])
 
 
 def review_page(md):
@@ -148,6 +195,7 @@ def main():
     ap.add_argument("--exploit", type=int, default=0, help="updates of a best response against each measured one")
     ap.add_argument("--pool", default=str(POOL))
     ap.add_argument("--review", help="a folder for the review page (index.html)")
+    ap.add_argument("--look-rounds", type=int, default=96, help="rounds fought to see how each fights (0: no look gate)")
     ap.add_argument("ppo", nargs=argparse.REMAINDER, help="after --: arguments for ppo.py")
     args = ap.parse_args()
     extra = [a for a in args.ppo if a != "--"]
@@ -158,6 +206,7 @@ def main():
     pool = Pool(args.pool)
     pool.init(pool.seeds)  # the built-ins, and the house AI as shipped now
     names = [pool.add(c, f"{args.run}/{c.stem}") for c in candidates]
+    checkpoint = dict(zip(names, candidates))
     pool.play(args.threads)
     table = pool.table()
     print_table(table)
@@ -165,8 +214,14 @@ def main():
     ranked = [r["name"] for r in table["rows"] if r["name"] in names][: args.top]
     house = bytes(pd.HOUSE)
     measured = [measure(pool, n, house, args) for n in ranked]
-    passed = [m["name"] for m in measured if m["bar"]["passed"]]
-    report = {"run": args.run, "from": args.source, "table": table, "measured": measured}
+    house_look = None
+    if args.look_rounds:
+        house_look = look_of(HOUSE, args.look_rounds)
+        for m in measured:
+            m["look"] = look_of(checkpoint[m["name"]], args.look_rounds)
+            m["look_fails"] = look_gate(m["look"], house_look)
+    passed = [m["name"] for m in measured if m["bar"]["passed"] and not m.get("look_fails")]
+    report = {"run": args.run, "from": args.source, "table": table, "measured": measured, "house_look": house_look}
     report["pick"] = passed[0] if passed else None
     (out / "report.json").write_text(json.dumps(report, indent=1))
     md = markdown(report)
