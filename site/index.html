@@ -51,7 +51,7 @@
 
   <main>
     <section class="insert frame" id="insert" aria-labelledby="insert-title">
-      <p class="eyebrow" id="insert-title">Put your bot in · it takes its corner at once</p>
+      <h2 class="insert-title" id="insert-title">Put your bot in. It takes its corner at once.</h2>
       <p id="status" class="status" role="status" aria-live="polite"></p>
       <form id="match" class="match">
         <label class="seat" data-school="thunder">
@@ -74,12 +74,13 @@
           <button class="button quiet" type="button" data-house>House bots</button>
         </div>
       </form>
-      <p class="muted note">A bot is a <code>.wasm</code> bot module (<a href="docs/bot">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). It runs here, in your browser, and nothing is uploaded. Until you drop one in, the arena shows the matches its server is fighting, live. The same two bots and the same seed play the same fight on every machine, so a seed is a replay: share the page's address. <b>Hitbox</b> (or <kbd>H</kbd>) on the arena shows what the rules test hits against: each fighter's hurtboxes, a blow's hitbox in red while it can land, shots, and the hand's wrist, hilt and launch point.</p>
+      <p class="muted note">A bot is a <code>.wasm</code> bot module (<a href="docs/bot">the bot</a>; build one from an ONNX model with <code>cargo run -p arena-bot --example onnx</code>). It runs here, in your browser, and nothing is uploaded. Until you drop one in, the arena shows the matches its server is fighting, live.</p>
+      <p class="muted note">The same two bots and the same seed play the same fight on every machine, so a seed is a replay: share the page's address. <b>Hitbox</b> (or <kbd>H</kbd>) on the arena shows what the rules test hits against: each fighter's hurtboxes, a blow's hitbox in red while it can land, shots, and the hand's wrist, hilt and launch point.</p>
     </section>
 
     <section class="intro-panel frame" aria-labelledby="hero-title">
       <div class="pitch">
-        <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above · the house bot in both corners until you put yours in, every frame decided by a network</p>
+        <p class="eyebrow live"><span class="dot" aria-hidden="true"></span>Live above: the house bot in both corners until you put yours in.</p>
         <h1 id="hero-title">Train a bot.<br><span class="thunder">Vương Lâm</span> or <span class="frost">Thất Thải Đạo Nhân</span>, it fights for you.</h1>
         <p class="lede">Two cultivators fight round after round. Neither is played by a person: each corner is a neural network trained to win. Train your own, any size, hand it in as ONNX, and it fights everyone else's.</p>      </div>
       <div class="actions">
@@ -90,7 +91,6 @@
     </section>
 
     <section class="section schools" aria-labelledby="schools-title">
-      <p class="eyebrow">No classes</p>
       <h2 id="schools-title">Two seats, two loadouts</h2>
       <div class="versus">
         <article class="school frame" data-school="thunder">
@@ -111,11 +111,10 @@
           </ul>
         </article>
       </div>
-      <p class="muted balance">Both seats start equal; a fight is won by the loadout and how it is played. <a href="docs/rules#loadouts">The full rules</a></p>
+      <p class="muted balance">No classes: both seats start equal, and a fight is won by the loadout and how it is played. <a href="docs/rules#loadouts">The full rules</a></p>
     </section>
 
     <section class="section how" aria-labelledby="how-title">
-      <p class="eyebrow">From clone to the arena</p>
       <h2 id="how-title">How a bot gets made</h2>
       <ol class="how-steps">
         <li class="frame">
@@ -154,7 +153,6 @@ seed 201521</code></pre>
     </section>
 
     <section class="section" aria-labelledby="docs-title">
-      <p class="eyebrow">Read before you train</p>
       <h2 id="docs-title">For bot authors</h2>
       <ul class="cards arena-docs">
         <li><a class="card" href="docs/rules"><span class="card-num">01</span><span class="card-name">Rules</span><span class="card-id">Loadouts, skills, the bar, resources, statuses, frame data, rounds.</span></a></li>

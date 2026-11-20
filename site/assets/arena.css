@@ -4,8 +4,8 @@
 .arena {
   --thunder: #ffcf3d;
   --thunder-deep: #3a2a0c;
-  --frost: #8fdcff;
-  --frost-deep: #0f2a3a;
+  --frost: #b4c4ec;
+  --frost-deep: #1c2340;
   --bronze: #b8893c;
   --bronze-hi: #f0cf7a;
   --deep: #2a1c0e;
@@ -24,8 +24,7 @@
     calc(var(--px) * -2) 0 0 0 var(--deep), calc(var(--px) * 2) 0 0 0 var(--deep),
     0 calc(var(--px) * -2) 0 0 var(--deep), 0 calc(var(--px) * 2) 0 0 var(--deep),
     calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--deep), var(--px) calc(var(--px) * -1) 0 0 var(--deep),
-    calc(var(--px) * -1) var(--px) 0 0 var(--deep), var(--px) var(--px) 0 0 var(--deep),
-    inset 0 var(--px) 0 0 #f0cf7a30;
+    calc(var(--px) * -1) var(--px) 0 0 var(--deep), var(--px) var(--px) 0 0 var(--deep);
 }
 
 /* a pixel diamond: the brand's mark */
@@ -41,7 +40,7 @@
 .eyebrow {
   margin: 0 0 0.5rem; font: 500 0.8rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bronze-hi);
 }
-.eyebrow.live { display: flex; align-items: center; gap: 0.55rem; color: var(--ash); letter-spacing: 0.06em; text-transform: none; }
+.eyebrow.live { display: flex; align-items: center; gap: 0.55rem; color: var(--ash); letter-spacing: 0; text-transform: none; }
 .eyebrow .dot { width: 8px; height: 8px; background: #ff5a4a; box-shadow: 0 0 0 3px #ff5a4a33; animation: pulse 1.6s steps(2) infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 
@@ -96,7 +95,7 @@ h1, h2 { text-wrap: balance; }
 .school { background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 70%, var(--panel)), var(--panel) 60%); }
 .school header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
 .school h3 { margin: 0; font: 700 2rem var(--display); color: var(--tone); text-shadow: 0 3px 0 #000; }
-.school .corner { order: 2; font: 500 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ash); }
+.school .corner { order: 2; font: 500 0.8rem var(--mono); color: var(--ash); }
 .school > p { color: var(--ash); margin-bottom: 1rem; }
 .school dl { display: flex; gap: 0.6rem; margin: 0 0 1.1rem; }
 .school dl div { flex: 1; padding: 0.5rem 0.7rem; background: #0d0b12; border-left: 3px solid var(--tone); }
@@ -106,7 +105,7 @@ h1, h2 { text-wrap: balance; }
 .school li { position: relative; padding-left: 1.1rem; margin: 0.45rem 0; color: var(--ash); }
 .school li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; background: var(--tone); }
 .school li b { color: var(--tone); font-family: var(--mono); font-weight: 500; }
-.schools .balance { margin: 1.75rem 0 0; text-align: center; font-size: 0.95rem; }
+.schools .balance { margin: 1.75rem auto 0; max-width: 65ch; text-align: center; font-size: 0.95rem; }
 
 .how-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; counter-reset: step; }
 .how-steps li { counter-increment: step; display: flex; flex-direction: column; margin: 0; padding: 1.4rem 1.4rem 1.2rem; }
@@ -141,7 +140,7 @@ h1, h2 { text-wrap: balance; }
   margin: 2.5rem max(clamp(1rem, 4vw, 2.5rem), calc((100vw - 76rem) / 2 + clamp(1rem, 4vw, 2.5rem))) 2rem;
 }
 .insert .status {
-  margin: 0 0 1.5rem; padding: 0.6rem 0.9rem; min-height: 2.6em; text-align: center;
+  margin: 0 auto 1.5rem; max-width: 65ch; padding: 0.6rem 0.9rem; min-height: 2.6em; text-align: center;
   font: 500 0.95rem var(--mono); font-variant-numeric: tabular-nums; color: var(--wax);
   background: #0d0b12; border: 1px solid var(--soot);
 }
@@ -176,8 +175,10 @@ h1, h2 { text-wrap: balance; }
 .insert .seed button { cursor: pointer; color: var(--ash); }
 .insert .seed button:hover { color: var(--wax); border-color: var(--wax); }
 .insert .button { cursor: pointer; padding-inline: 2rem; }
-.insert .eyebrow { margin: 0 0 0.75rem; }
-.insert .note { margin: 1.5rem 0 0; font-size: 0.9rem; text-align: center; max-width: none; }
+#insert { scroll-margin-top: 5rem; }
+.insert-title { margin: 0 0 1rem; text-align: center; font: 700 clamp(1.3rem, 2.4vw, 1.7rem) var(--display); color: var(--wax); }
+.insert .note { margin: 1.5rem auto 0; font-size: 0.9rem; max-width: 65ch; }
+.insert .note + .note { margin-top: 0.75rem; }
 
 /* ---------- docs ---------- */
 
@@ -254,7 +255,7 @@ h1, h2 { text-wrap: balance; }
 }
 .frost-orb {
   right: 0; background: var(--frost);
-  box-shadow: 0 0 0 3px #e6f8ff inset, 0 0 0 3px #2f6f93, 0 0 18px 4px #8fdcff66;
+  box-shadow: 0 0 0 3px #eef1fb inset, 0 0 0 3px #4a5788, 0 0 18px 4px #b4c4ec66;
   animation: clash-right 1.1s steps(8) infinite;
 }
 /* the spark where they meet: a pixel cross that flares on contact */
