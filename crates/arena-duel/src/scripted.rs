@@ -5,7 +5,7 @@ use crate::bar::ready;
 use crate::data::TEMPERAMENT;
 use crate::fighter::State;
 use crate::seat::{MakeSeat, Seat};
-use crate::sense::{chosen, sense_of, skill_of};
+use crate::sense::{chosen, glance_of, skill_of};
 use arena_mind::{ActPhase, Choice, Delayed, Doing, Outcome, SkillKind};
 
 /// How a scripted fighter plays.
@@ -69,7 +69,8 @@ impl Seat for Scripted {
 impl Scripted {
     /// What it does this tick, in the engine's pixels, as it sees the fight.
     fn decide(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
-        let sense = sense_of(state, me);
+        // it reads only itself, the foe and the clock
+        let sense = glance_of(state, me);
         if dt > 0.0 {
             self.clock -= dt;
             self.hold = (self.hold - dt).max(0.0);

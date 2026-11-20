@@ -9,7 +9,7 @@ use crate::pick::{Read, pick};
 use crate::posture::{Category, Held, POSTURES, choose_posture};
 use crate::reading::{Reading, press_range, read_posture};
 use crate::rng::Rng;
-use crate::sense::{Foe, Sense};
+use crate::sense::{Foe, Sense, Threat};
 use crate::skill::{BodySize, Profile, Skill};
 use crate::view::Delayed;
 use crate::yomi::Yomi;
@@ -122,8 +122,29 @@ impl Mind {
 
     /// Take in this tick's sense, `dt` seconds after the last; a thought when it is time to think and free to act.
     pub fn think(&mut self, sense: &Sense, dt: f64) -> Option<Thought> {
+        let (foe, threats) = self.glance(sense, dt)?;
+        self.decide(sense, foe, threats)
+    }
+
+    /// `think` on a sense that may be only a glance (the clock, `me`, the foe, the arena and the threats, which it
+    /// takes in every tick): `fill` completes it only when it is time to think, so a tick between thoughts costs a
+    /// glance. The same as `think` on the whole sense.
+    pub fn think_glancing(
+        &mut self,
+        sense: &mut Sense,
+        fill: impl FnOnce(&mut Sense),
+        dt: f64,
+    ) -> Option<Thought> {
+        let (foe, threats) = self.glance(sense, dt)?;
+        fill(sense);
+        self.decide(sense, foe, threats)
+    }
+
+    /// The part of a tick that reads only the glance: the clocks, the view, what it learns of the foe; the foe and
+    /// threats as it sees them when it is time to think and free to act.
+    fn glance(&mut self, sense: &Sense, dt: f64) -> Option<(Foe, Vec<Threat>)> {
         self.now = sense.time;
-        let began = *self.began.get_or_insert(sense.time);
+        self.began.get_or_insert(sense.time);
         if dt > 0.0 {
             self.clock -= dt;
             self.calm = (self.calm - dt).max(0.0);
@@ -135,6 +156,12 @@ impl Mind {
         if !sense.me.can_act || self.clock > 0.0 || self.hold > 0.0 {
             return None;
         }
+        Some((foe, threats))
+    }
+
+    /// A thought, from the whole sense.
+    fn decide(&mut self, sense: &Sense, foe: Foe, threats: Vec<Threat>) -> Option<Thought> {
+        let began = self.began.unwrap_or(sense.time);
         self.clock = self.profile.think * (0.8 + 0.4 * self.rng.next());
         // each skill as hard as it strikes now
         let skills = powered(&self.skills, &sense.power);

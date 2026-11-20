@@ -204,7 +204,12 @@ pub fn payload(state: &State, me: usize, k: usize, built: &Built, depth: u8) -> 
 
 /// Whether a cultivator can pay `costs` now.
 pub fn can_pay(c: &Cultivator, costs: &[(Resource, f64)]) -> bool {
-    costs.iter().all(|&(r, v)| match r {
+    costs.iter().all(|&(r, v)| can_pay_one(c, r, v))
+}
+
+/// Whether a cultivator can pay `v` of `r` now.
+pub fn can_pay_one(c: &Cultivator, r: Resource, v: f64) -> bool {
+    match r {
         Resource::Qi => c.qi >= v,
         Resource::Life => true,
         Resource::Lifespan => c.lifespan >= v,
@@ -213,7 +218,7 @@ pub fn can_pay(c: &Cultivator, costs: &[(Resource, f64)]) -> bool {
         Resource::Sense => c.sense >= v,
         Resource::DeathQi => c.death_qi >= v,
         Resource::Star(s) => c.stars[s as usize] >= v,
-    })
+    }
 }
 
 /// Pays `built`'s costs from `c`; returns the qi paid.

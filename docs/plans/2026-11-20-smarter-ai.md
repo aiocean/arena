@@ -103,7 +103,7 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 | B | landed: `ppo.py --privileged` (the value head also reads the duel from the foe's side, undelayed; the bot unchanged) |
 | C | landed (RULES 27, ABI 5: 2055 inputs, 29 acts; the house AI widened, plays as before); retrain next |
 | D | – |
-| E | profiled (below) |
+| E | fixes 1 and 2 landed, bit for bit (decisions a second on one thread, median of 3 under load: first 6.2k to 9.8k, brain 3.9k to 7.1k, aggressive 3.8k to 6.9k, turtle 4.7k to 10.0k, ONNX 2.5k to 3.8k; `arena-bot` example `env_speed`); 3 and 4 next |
 | F | – |
 | G | the clone is cheap and exact (below) |
 | H | – |
@@ -146,3 +146,11 @@ The fixes, by size:
 3. Overlap Python with the env: step half the envs while torch runs the other half, writing into preallocated
    buffers (+30-40% wall).
 4. Then batch the ONNX opponents.
+
+Fixes 1 and 2 landed: a seat glances every tick (`sense::glance_of`: the clock, itself, the foe, the threats) and
+fills in the rest (`sense::fill`) only on a tick where its mind reads it (`PolicyMind::step`, `Mind::think_glancing`;
+the scripted seats only glance), a kit skill's costs are checked without a `Vec`, and the units' queries are kept
+from tick to tick. `cargo run --release -p arena-bot --features onnx --example env_speed` prints a fingerprint of
+every observation, legal mask and reward: the same before and after against every opponent, and every golden holds.
+In `ppo.py` the main thread waits in `VecEnv.step` 72% of the time and spends 1% in `observe`: the copy the study
+counted is torch's, so fix 3 is the overlap, a change to `ppo.py`'s rollout loop.

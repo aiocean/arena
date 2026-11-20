@@ -147,19 +147,37 @@ fn body(life: f64) -> Cultivator {
     c
 }
 
-/// The units of the rules' world into `State::units`, in id order: the first system of a tick.
+/// The units of the rules' world into `State::units`, in id order: the first system of a tick (`gathering`).
 pub fn gather(world: &mut World) {
-    let mut q = world.query::<&Unit>();
+    let mut q = world.query();
+    gather_with(world, &mut q);
+}
+
+/// `gather` as the tick runs it, its query kept from tick to tick (a fresh one each tick cost more than the units).
+pub fn gathering(world: &mut World, mut q: Local<QueryState<&'static Unit>>) {
+    gather_with(world, &mut q);
+}
+
+fn gather_with(world: &mut World, q: &mut QueryState<&'static Unit>) {
     let mut units: Vec<Unit> = q.iter(world).cloned().collect();
     units.sort_by_key(|u| u.id);
     world.resource_mut::<State>().units = units;
 }
 
 /// `State::units` back into the rules' world: changed ones written, new ones spawned in id order, gone ones
-/// despawned. The last system of a tick.
+/// despawned. The last system of a tick (`scattering`).
 pub fn scatter(world: &mut World) {
+    let mut q = world.query();
+    scatter_with(world, &mut q);
+}
+
+/// `scatter` as the tick runs it, its query kept from tick to tick.
+pub fn scattering(world: &mut World, mut q: Local<QueryState<(Entity, &'static mut Unit)>>) {
+    scatter_with(world, &mut q);
+}
+
+fn scatter_with(world: &mut World, q: &mut QueryState<(Entity, &'static mut Unit)>) {
     let units = world.resource::<State>().units.clone();
-    let mut q = world.query::<(Entity, &mut Unit)>();
     let mut gone = Vec::new();
     let mut seen = Vec::new();
     for (e, mut u) in q.iter_mut(world) {

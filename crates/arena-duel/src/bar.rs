@@ -6,7 +6,6 @@ use crate::data::{BAR, Kind, STALE};
 use crate::fighter::{Fighter, Slot, State};
 use crate::js::js_min;
 use crate::kit::{KitSkill, Place};
-use crate::strike::can_pay;
 use arena_calc::ailment::Ailment;
 use arena_calc::gem;
 use arena_calc::tag::Tag;
@@ -31,7 +30,7 @@ pub fn ready(f: &Fighter, name: &str) -> bool {
     let Some(k) = f.kit.get(name) else {
         return false;
     };
-    k.uses.ready() && can_pay(&f.c, &k.costs()) && !barred(f, name, k)
+    k.uses.ready() && k.payable(&f.c) && !barred(f, name, k)
 }
 
 /// What bars `f` from casting `k` (named `name`) besides its cooldown and its cost: everything `ready` checks but
@@ -65,7 +64,7 @@ pub fn why(f: &Fighter, foe: &Fighter, name: &str, free: bool, scale: f64) -> Op
         }),
         in_band: band.is_none_or(|b| b.holds(d)),
         cooling: !k.uses.ready(),
-        short: !can_pay(&f.c, &k.costs()),
+        short: !k.payable(&f.c),
         too_near: band.is_some_and(|b| d < b.min),
         too_far: band.is_some_and(|b| d > b.max),
         barred: !free || barred(f, name, k),

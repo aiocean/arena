@@ -297,10 +297,18 @@ pub fn threats_of(state: &State, me: usize) -> Vec<Threat> {
 
 /// What fighter `me` could perceive this tick, as arena-mind reads it: the true state; it sees late on its own.
 pub fn sense_of(state: &State, me: usize) -> Sense {
+    let mut sense = glance_of(state, me);
+    fill(state, me, &mut sense);
+    sense
+}
+
+/// The part of `sense_of` a mind reads every tick (the clock, itself, the foe, the arena, the threats), the rest left
+/// empty until `fill` completes it: a policy keeps its view of the foe every tick but decides only every few
+/// (`PolicyMind::step`). `fill` on a glance is `sense_of`, bit for bit.
+pub fn glance_of(state: &State, me: usize) -> Sense {
     let f = &state.fighters[me];
     let foe = &state.fighters[1 - me];
     let b = &f.body;
-    let slots = slots_of(f);
     // sitting down to meditate or getting up, it cannot act; sitting, it may stay or get up
     let free = !(f.act.is_some()
         || f.sits(Sit::Down)
@@ -310,9 +318,6 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
         || b.duck > 0.0
         || b.shocked > 0.0
         || !f.alive());
-    let whys = slots_at(&slots, |k| {
-        why(f, foe, f.kit.skills.get(k)?.gem.id, free, 1.0 / UNIT)
-    });
     Sense {
         time: state.time,
         me: Me {
@@ -359,33 +364,55 @@ pub fn sense_of(state: &State, me: usize) -> Sense {
             top: seen(state.top),
         },
         threats: threats_of(state, me),
-        ready: f.spells.iter().map(|n| castable(f, foe, n)).collect(),
-        // every skill strikes at its own power (no bar tiers)
+        ready: Vec::new(),
         power: Vec::new(),
         stacks: Vec::new(),
-        slotx: slots_at(&slots, |k| slotx_of(f, k)),
-        slots,
-        me_act: act_frames_of(state, me),
-        foe_act: act_frames_of(state, 1 - me),
-        effects: [effects_of(f), effects_of(foe)],
-        units: units_of(state, me),
-        foe_slots: slots_at(&slots_of(foe), |k| {
-            let ks = foe.kit.skills.get(k)?;
-            Some(FoeSlot {
-                kind: kind_of(ks.motion),
-                ready: castable(foe, f, ks.gem.id),
-                reach: seen(reach_of(ks.motion)),
-                built: slotx_of(foe, k)?,
-                band: ks.band.map(|b| Band {
-                    min: seen(b.min),
-                    max: seen(b.max),
-                }),
-                in_band: in_band(foe, f, ks.gem.id),
-            })
-        }),
-        why: whys,
-        lasting: lasting_of(state, me),
+        slots: Vec::new(),
+        me_act: None,
+        foe_act: None,
+        slotx: Default::default(),
+        effects: Default::default(),
+        units: Vec::new(),
+        foe_slots: Default::default(),
+        why: Default::default(),
+        lasting: Lasting::default(),
     }
+}
+
+/// Completes fighter `me`'s glance (`glance_of`) into all it senses (`sense_of`).
+pub fn fill(state: &State, me: usize, sense: &mut Sense) {
+    let f = &state.fighters[me];
+    let foe = &state.fighters[1 - me];
+    let slots = slots_of(f);
+    let free = sense.me.can_act;
+    sense.why = slots_at(&slots, |k| {
+        why(f, foe, f.kit.skills.get(k)?.gem.id, free, 1.0 / UNIT)
+    });
+    sense.ready = f.spells.iter().map(|n| castable(f, foe, n)).collect();
+    // every skill strikes at its own power (no bar tiers)
+    sense.power = Vec::new();
+    sense.stacks = Vec::new();
+    sense.slotx = slots_at(&slots, |k| slotx_of(f, k));
+    sense.me_act = act_frames_of(state, me);
+    sense.foe_act = act_frames_of(state, 1 - me);
+    sense.effects = [effects_of(f), effects_of(foe)];
+    sense.units = units_of(state, me);
+    sense.foe_slots = slots_at(&slots_of(foe), |k| {
+        let ks = foe.kit.skills.get(k)?;
+        Some(FoeSlot {
+            kind: kind_of(ks.motion),
+            ready: castable(foe, f, ks.gem.id),
+            reach: seen(reach_of(ks.motion)),
+            built: slotx_of(foe, k)?,
+            band: ks.band.map(|b| Band {
+                min: seen(b.min),
+                max: seen(b.max),
+            }),
+            in_band: in_band(foe, f, ks.gem.id),
+        })
+    });
+    sense.slots = slots;
+    sense.lasting = lasting_of(state, me);
 }
 
 /// How long what is in play lasts, seen by fighter `me` (ABI 4): its own timed buffs, the domains, the fields (the

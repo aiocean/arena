@@ -74,6 +74,35 @@ impl PolicyMind {
         now
     }
 
+    /// `begin` then `due` on a sense that may be only a glance: the clock, `me`, the foe and the threats, which the
+    /// view takes in every tick. `fill` completes it, once, only when either half reads the rest (an act to hand
+    /// back with time passing, or a decision due), so a tick between decisions costs a glance and nothing more. The
+    /// same as `begin` and `due` on the whole sense.
+    pub fn step(
+        &mut self,
+        sense: &mut Sense,
+        fill: impl FnOnce(&mut Sense),
+        dt: f64,
+    ) -> (Option<Choice>, Option<Due>) {
+        let mut fill = Some(fill);
+        if dt > 0.0
+            && self.queued.is_some()
+            && let Some(f) = fill.take()
+        {
+            f(sense);
+        }
+        let now = self.begin(sense, dt);
+        let due = if sense.me.can_act && self.clock <= 0.0 && self.hold <= 0.0 {
+            if let Some(f) = fill.take() {
+                f(sense);
+            }
+            self.due(sense)
+        } else {
+            None
+        };
+        (now, due)
+    }
+
     /// The first half of a tick: the clocks run, the foe is seen, and the act queued last time is handed back as a
     /// `Choice`, unless it cannot happen now. In hit-stop (`dt = 0`) nothing runs and the act waits.
     pub fn begin(&mut self, sense: &Sense, dt: f64) -> Option<Choice> {

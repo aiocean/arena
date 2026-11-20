@@ -3,7 +3,7 @@
 
 use crate::data::{MIND, TEMPERAMENT, UNIT};
 use crate::fighter::State;
-use crate::sense::{chosen, sense_of, skill_of};
+use crate::sense::{chosen, fill, glance_of, skill_of};
 use crate::style::{Style, tag};
 use arena_mind::policy::{ACTIONS, OBS, PolicyMind};
 use arena_mind::{BodySize, Choice, Mind, Outcome, Posture, Profile, Thought};
@@ -95,7 +95,10 @@ impl Brain {
 
 impl Seat for Brain {
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
-        let thought = self.mind.think(&sense_of(state, me), dt)?;
+        let mut sense = glance_of(state, me);
+        let thought = self
+            .mind
+            .think_glancing(&mut sense, |s| fill(state, me, s), dt)?;
         let choice = chosen(thought.choice.clone());
         self.thought = Some(thought);
         Some(choice)
@@ -187,9 +190,9 @@ impl Seat for BotSeat {
         if self.forfeit {
             return None;
         }
-        let sense = sense_of(state, me);
-        let now = self.mind.begin(&sense, dt);
-        if let Some(d) = self.mind.due(&sense) {
+        let mut sense = glance_of(state, me);
+        let (now, due) = self.mind.step(&mut sense, |s| fill(state, me, s), dt);
+        if let Some(d) = due {
             match self.decider.borrow_mut().decide(&d.obs, &d.legal, d.u) {
                 Ok(act) => self.mind.queue(
                     usize::try_from(act)

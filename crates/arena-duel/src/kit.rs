@@ -279,6 +279,11 @@ impl KitSkill {
     /// Its costs before a cast: the skill's, times its fitting supports' cost multipliers (what a mind is told it
     /// can pay; the cast pays what it builds to).
     pub fn costs(&self) -> Vec<(Resource, f64)> {
+        self.each_cost().collect()
+    }
+
+    /// `costs` one by one, nothing gathered (a mind asks every tick).
+    pub fn each_cost(&self) -> impl Iterator<Item = (Resource, f64)> + '_ {
         let own = self.skill.all_tags();
         let factor: f64 = self
             .supports
@@ -286,17 +291,18 @@ impl KitSkill {
             .filter(|s| s.fits(own))
             .map(|s| s.cost)
             .product();
-        self.skill
-            .costs
-            .iter()
-            .map(|&(r, v)| (r, v * factor))
-            .collect()
+        self.skill.costs.iter().map(move |&(r, v)| (r, v * factor))
+    }
+
+    /// Whether `c` can pay its costs now (`strike::can_pay` on `costs`).
+    pub fn payable(&self, c: &Cultivator) -> bool {
+        self.each_cost()
+            .all(|(r, v)| crate::strike::can_pay_one(c, r, v))
     }
 
     /// The qi it costs before a cast.
     pub fn qi(&self) -> f64 {
-        self.costs()
-            .iter()
+        self.each_cost()
             .filter(|c| c.0 == Resource::Qi)
             .map(|c| c.1)
             .sum()

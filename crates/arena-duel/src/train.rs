@@ -21,7 +21,7 @@ use crate::fighter::State;
 use crate::first_mind::FirstMind;
 use crate::scripted::Scripted;
 use crate::seat::{BotSeat, Brain, MakeSeat, Seat, SharedDecider, policy_mind};
-use crate::sense::{chosen, sense_of};
+use crate::sense::{chosen, fill, glance_of, sense_of};
 use crate::style::Style;
 use arena_mind::Delayed;
 use arena_mind::policy::{ACTIONS, Act, Due, OBS, PolicyMind, TAG, observe};
@@ -206,13 +206,13 @@ struct Learner {
 
 impl Seat for Learner {
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
-        let sense = sense_of(state, me);
+        let mut sense = glance_of(state, me);
         let mut wire = self.wire.borrow_mut();
         if let Some(a) = wire.answer.take() {
             self.mind.queue(a);
         }
-        let now = self.mind.begin(&sense, dt);
-        if let Some(due) = self.mind.due(&sense) {
+        let (now, due) = self.mind.step(&mut sense, |s| fill(state, me, s), dt);
+        if let Some(due) = due {
             wire.ask = Some(due);
         }
         now.map(chosen)

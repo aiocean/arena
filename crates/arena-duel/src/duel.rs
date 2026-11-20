@@ -226,7 +226,7 @@ pub fn tick_schedule() -> Schedule {
     let fighting = |f: Res<Fighting>| f.0;
     tick.add_systems(
         (
-            unit::gather,
+            unit::gathering,
             clock,
             between_rounds.run_if(not(fighting)),
             (
@@ -234,7 +234,7 @@ pub fn tick_schedule() -> Schedule {
             )
                 .chain()
                 .run_if(fighting),
-            unit::scatter,
+            unit::scattering,
         )
             .chain(),
     );
