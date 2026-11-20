@@ -446,7 +446,7 @@ impl VecEnv {
     /// `(reward float32[n], done bool[n], won int8[n] (1 won, -1 lost, 0 neither), length float32[n])`.
     // the pay terms stay flat keyword arguments, as `ppo.py` passes them
     #[allow(clippy::type_complexity, clippy::too_many_arguments)]
-    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0, flicker = 0.0, fly = 0.0, short_sit = 0.0, repeat = 1.0, habit = 1.0))]
+    #[pyo3(signature = (actions, shaping, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0, flicker = 0.0, fly = 0.0, duck = 0.0, short_sit = 0.0, repeat = 1.0, habit = 1.0))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
@@ -459,6 +459,7 @@ impl VecEnv {
         land: f32,
         flicker: f32,
         fly: f32,
+        duck: f32,
         short_sit: f32,
         repeat: f32,
         habit: f32,
@@ -494,6 +495,7 @@ impl VecEnv {
                         land,
                         flicker,
                         fly,
+                        duck,
                         short_sit,
                         repeat,
                         habit,

@@ -110,6 +110,7 @@ def main():
     ap.add_argument("--idle", type=float, default=0.0, help="reward cost of a decision that could cast and does not")
     ap.add_argument("--land", type=float, default=0.0, help="reward for each damaging cast that lands")
     ap.add_argument("--flicker", type=float, default=0.0, help="reward cost of a move that undoes the one before it within 1 s")
+    ap.add_argument("--duck", type=float, default=0.0, help="reward cost of each choice to duck")
     ap.add_argument("--fly", type=float, default=0.0, help="reward cost of each take-off into flight")
     ap.add_argument("--short-sit", type=float, default=0.0, help="reward cost of a meditation left before it gains anything")
     ap.add_argument("--repeat", type=float, default=1.0, help="scale of the fixed penalty for one act chosen again and again")
@@ -219,6 +220,7 @@ def main():
                 args.land,
                 flicker=args.flicker,
                 fly=args.fly,
+                duck=args.duck,
                 short_sit=args.short_sit,
                 repeat=args.repeat,
                 habit=args.habit,

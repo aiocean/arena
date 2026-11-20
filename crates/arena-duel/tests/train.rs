@@ -504,3 +504,35 @@ fn a_meditation_left_at_once_costs_short_sit_and_one_sat_through_does_not() {
         "a whole sit costs nothing"
     );
 }
+
+#[test]
+fn each_duck_costs_duck() {
+    // duck whenever it may: the cost is `duck` times the ducks chosen, and nothing else changes
+    let run = |duck: f32| {
+        let mut env = Env::new(cfg(35, 0, Opponent::Turtle));
+        let act = Act::Duck.index();
+        let pay = arena_duel::train::Pay {
+            duck,
+            ..Default::default()
+        };
+        let (mut paid, mut ducks) = (0.0_f32, 0);
+        for _ in 0..400 {
+            let (_, legal) = env.observe();
+            let a = if legal[act] { act } else { 0 };
+            ducks += usize::from(a == act);
+            let s = env.step_paid(a, &pay);
+            paid += s.reward;
+            if s.done {
+                break;
+            }
+        }
+        (paid, ducks)
+    };
+    let (plain, ducks) = run(0.0);
+    let (costly, _) = run(1.0);
+    assert!(ducks > 0);
+    assert!(
+        ((plain - costly) - ducks as f32).abs() < 1e-2,
+        "{plain} {costly} {ducks}"
+    );
+}

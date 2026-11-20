@@ -76,7 +76,7 @@ pub struct Casts {
 ///
 /// How it looks: `flicker` taken from a move that undoes the one before it within `FLICKER` seconds (duck, stand,
 /// duck: an act other than a wait or a cast chosen again with another between them), `fly` from each take-off into
-/// flight, `short_sit` from a meditation left before it could gain anything (another act chosen within `SIT` seconds
+/// flight, `duck` from each choice to duck (a dodge that pays must pay more than it), `short_sit` from a meditation left before it could gain anything (another act chosen within `SIT` seconds
 /// of sitting down: sitting down and getting up are 0.8 s it cannot act, and the extra qi starts after a whole
 /// second sat), and `repeat` and `habit` scaling the fixed penalties for choosing one act again and again (`REPEAT`,
 /// `HABIT`; 1 keeps them as they were, 0 drops them).
@@ -90,6 +90,7 @@ pub struct Pay {
     pub land: f32,
     pub flicker: f32,
     pub fly: f32,
+    pub duck: f32,
     pub short_sit: f32,
     pub repeat: f32,
     pub habit: f32,
@@ -106,6 +107,7 @@ impl Default for Pay {
             land: 0.0,
             flicker: 0.0,
             fly: 0.0,
+            duck: 0.0,
             short_sit: 0.0,
             repeat: 1.0,
             habit: 1.0,
@@ -377,6 +379,7 @@ impl Env {
             land,
             flicker,
             fly,
+            duck,
             short_sit,
             repeat,
             habit,
@@ -436,6 +439,9 @@ impl Env {
             && !self.duel.state().fighters[self.me].fly
         {
             reward -= fly;
+        }
+        if matches!(Act::from_index(act), Some(Act::Duck)) {
+            reward -= duck;
         }
         if self.quiet >= QUIET {
             reward -= STALL;
