@@ -105,7 +105,7 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 | D | – |
 | E | fixes 1 and 2 landed, bit for bit (decisions a second on one thread, median of 3 under load: first 6.2k to 9.8k, brain 3.9k to 7.1k, aggressive 3.8k to 6.9k, turtle 4.7k to 10.0k, ONNX 2.5k to 3.8k; `arena-bot` example `env_speed`); 3 and 4 next |
 | F | – |
-| G | the clone is cheap and exact (below) |
+| G | Rust side landed: `Env::fork` / `restore_from` / `reseed(salt)`, `Env::rollout` / `lookahead`, `VecEnv.lookahead(i, depth, samples, model_id, ...)` and `lookahead_many` (NaN for illegal acts; `leaves=True` gives each rollout's return, discount and leaf obs for a value bootstrap). Every legal act (about 11) rolled out 8 decisions, the learner on the house AI after the first, under a load of 30: 17.5 ms a root against the brain, 28 ms against ONNX, 16 ms against the turtle, about 1.6-2.6 ms a rollout (`env_speed --lookahead 8`). Next: the Python side (targets, the imitation loss in `ppo.py`) |
 | H | – |
 
 ## What the study found (2026-11-20)

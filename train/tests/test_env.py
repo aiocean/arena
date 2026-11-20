@@ -110,3 +110,30 @@ def test_a_bot_module_is_not_run_from_python():
         assert "ONNX" in str(e)
         return
     raise AssertionError("accepted")
+
+
+def test_lookahead_values_the_legal_acts_and_leaves_the_env_alone():
+    env = pd.VecEnv(4, 2, privileged=True)
+    env.set_model(0, pd.HOUSE)
+    for i in range(4):
+        env.reset(i, 10 + i, i % 2, 1, 1, ["brain", "turtle", "first", "policy"][i], 0, 90.0)
+    obs, mask = env.observe()
+    obs, mask = obs.copy(), mask.copy()
+    v = env.lookahead(1, 4, 2, 0, shaping=1.0)
+    assert v.shape == (pd.ACTIONS,) and v.dtype == np.float32
+    assert np.array_equal(np.isfinite(v), mask[1])
+    assert np.array_equal(v, env.lookahead(1, 4, 2, 0, shaping=1.0), equal_nan=True), "one salt, one answer"
+    many = env.lookahead_many([0, 1, 2, 3], 4, 2, 0, shaping=1.0)
+    assert many.shape == (4, pd.ACTIONS)
+    assert np.array_equal(many[1], v, equal_nan=True)
+    assert np.array_equal(np.isfinite(many), mask)
+    d = env.lookahead_many([3, 0], 3, 2, 0, gamma=0.9, leaves=True)
+    assert d["ret"].shape == (2, pd.ACTIONS, 2) and d["obs"].shape == (2, pd.ACTIONS, 2, pd.OBS)
+    assert d["privileged"].shape == (2, pd.ACTIONS, 2, pd.PRIVILEGED)
+    legal = mask[[3, 0]]
+    assert np.allclose(d["values"][legal], d["ret"].mean(axis=2)[legal])
+    assert (d["discount"][legal] > 0).all() and np.abs(d["obs"][legal]).sum() > 0
+    after, after_mask = env.observe()
+    assert np.array_equal(after, obs) and np.array_equal(after_mask, mask)
+    # the envs step on as if no search had been made
+    env.step(np.zeros(4, dtype=np.int64), 0.0)

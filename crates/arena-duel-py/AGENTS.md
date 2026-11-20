@@ -10,7 +10,10 @@ For the trainer. Read the root `AGENTS.md` ("Where code goes") before changing a
 opponents (an ONNX model's bytes, run natively; no wasm host here, so the build stays light), `reset(i, seed, learner, style, foe_style,
 opponent, model_id, limit)`, `observe()` →
 `(obs float32[n, OBS], mask bool[n, ACTIONS])`, `step(actions int64[n], shaping)` →
-`(reward, done, won, length)`; `bout`, `entry_bar`; `OBS`, `ACTIONS`, `HOUSE` (the house AI's ONNX bytes) and `BOTS` (the built-in seats' names). Each env is built and stepped on one thread (it holds `Rc`s
+`(reward, done, won, length)`; `lookahead(i, depth, samples, model_id, gamma, salt, leaves, **pay)` → each act's
+mean return over rollouts of copies of env `i` (`Env::rollout`; NaN for an illegal act; with `leaves=True` a dict
+with each rollout's return, discount and leaf `obs`/`privileged`) and `lookahead_many(indices, ...)` across the
+workers, the GIL released; `bout`, `entry_bar`; `OBS`, `ACTIONS`, `HOUSE` (the house AI's ONNX bytes) and `BOTS` (the built-in seats' names). Each env is built and stepped on one thread (it holds `Rc`s
 and seats); only plain arrays cross threads.
 
 ## Belongs here

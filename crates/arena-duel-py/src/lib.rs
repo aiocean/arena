@@ -8,7 +8,7 @@ use arena_duel::ladder::{Bot, Match, Record, entry_bar_of};
 use arena_duel::seat::SharedDecider;
 use arena_duel::style::Style;
 use arena_duel::train::{CAST_KINDS, Casts, Env, EnvConfig, Opponent, PRIVILEGED, Pay};
-use arena_mind::policy::{ACTIONS, OBS};
+use arena_mind::policy::{ACTIONS, OBS, sample};
 use numpy::{PyArray1, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -103,14 +103,51 @@ enum Wire {
         reply: Sender<Vec<Out>>,
     },
     /// The learners' casts since the last ask, summed over the worker's envs.
-    Casts { reply: Sender<Casts> },
+    Casts {
+        reply: Sender<Casts>,
+    },
     /// Each env's learner's moment in words (`Env::moment`, `acts`, `brief`).
-    Describe { reply: Sender<Vec<Option<Words>>> },
+    Describe {
+        reply: Sender<Vec<Option<Words>>>,
+    },
+    /// A search at each of `slots`' decisions (`Env::rollout`), in order.
+    Lookahead {
+        slots: Vec<usize>,
+        ask: Ask,
+        reply: Sender<Result<Vec<Search>, String>>,
+    },
+}
+
+/// What a search asks: the decisions each rollout makes, the rollouts an act, the policy (a model id) that answers
+/// after the first, the discount, the salt of the dice, what a step pays, and whether to keep the leaves.
+#[derive(Clone, Copy, Debug)]
+struct Ask {
+    depth: u32,
+    samples: u32,
+    model: u32,
+    gamma: f32,
+    salt: u64,
+    pay: Pay,
+    leaves: bool,
+}
+
+/// One decision's search: each act's mean return (NaN for an illegal act), and per act and rollout its return, its
+/// discount at the leaf (0 once the round ended), and with `leaves` the leaf's observation and critic inputs.
+struct Search {
+    values: Vec<f32>,
+    ret: Vec<f32>,
+    discount: Vec<f32>,
+    obs: Vec<f32>,
+    privileged: Vec<f32>,
 }
 
 /// One env's moment as `VecEnv.describe` hands it to Python: its words, each act's words, and its numbers (time,
 /// life, the foe's life, qi, the foe's qi, the gap between them, flying, height over the ground).
-type Words = (String, Vec<String>, (f64, f64, f64, f64, f64, f64, bool, f64));
+type Words = (
+    String,
+    Vec<String>,
+    (f64, f64, f64, f64, f64, f64, bool, f64),
+);
 
 /// One kind's casts as `VecEnv.casts` hands them to Python: casts, out of reach, whiffs, far whiffs, damage.
 type CastRow = (u32, u32, u32, u32, f64);
@@ -124,6 +161,8 @@ struct Worker {
     casts: Casts,
     /// Whether each snapshot carries the critic's extra inputs.
     privileged: bool,
+    /// The env a search restores into, again and again.
+    spare: Option<Env>,
 }
 
 impl Worker {
@@ -135,6 +174,7 @@ impl Worker {
             effects,
             casts: Casts::default(),
             privileged,
+            spare: None,
         };
         while let Ok(msg) = rx.recv() {
             w.answer(msg);
@@ -168,12 +208,18 @@ impl Worker {
                             (
                                 env.moment(),
                                 env.acts(),
-                                (b.time, b.hp, b.foe_hp, b.qi, b.foe_qi, b.gap, b.flying, b.air),
+                                (
+                                    b.time, b.hp, b.foe_hp, b.qi, b.foe_qi, b.gap, b.flying, b.air,
+                                ),
                             )
                         })
                     })
                     .collect();
                 let _ = reply.send(words);
+            }
+            Wire::Lookahead { slots, ask, reply } => {
+                let r = slots.iter().map(|&s| self.search(s, &ask)).collect();
+                let _ = reply.send(r);
             }
             Wire::Casts { reply } => {
                 for env in self.envs.iter_mut().flatten() {
@@ -209,6 +255,82 @@ impl Worker {
                     .collect();
                 let _ = reply.send(outs);
             }
+        }
+    }
+
+    /// Search env `slot`'s decision (`Ask`): every legal act rolled out `samples` times, rollout `k` of every act on the
+    /// same dice (`train::sample_salt`), the learner answered after the first decision by model `ask.model`.
+    fn search(&mut self, slot: usize, ask: &Ask) -> Result<Search, String> {
+        let env = self
+            .envs
+            .get(slot)
+            .and_then(Option::as_ref)
+            .ok_or(format!("env slot {slot} was never reset"))?;
+        let model = self
+            .models
+            .get(&ask.model)
+            .ok_or(format!("no model {}: set_model first", ask.model))?;
+        let n = ask.samples.max(1) as usize;
+        let mut out = Search {
+            values: vec![f32::NAN; ACTIONS],
+            ret: vec![f32::NAN; ACTIONS * n],
+            discount: vec![0.0; ACTIONS * n],
+            obs: if ask.leaves {
+                vec![0.0; ACTIONS * n * OBS]
+            } else {
+                Vec::new()
+            },
+            privileged: if ask.leaves && self.privileged {
+                vec![0.0; ACTIONS * n * PRIVILEGED]
+            } else {
+                Vec::new()
+            },
+        };
+        let (_, legal) = env.observe();
+        let legal = *legal;
+        let mut fault = None;
+        let mut policy =
+            |obs: &[f32; OBS], legal: &[bool; ACTIONS], u: f32| match model.0.logits(obs) {
+                Ok(l) => sample(&l, legal, u),
+                Err(e) => {
+                    fault.get_or_insert(e.0);
+                    0
+                }
+            };
+        for a in (0..ACTIONS).filter(|&a| legal[a]) {
+            let mut sum = 0.0;
+            for k in 0..n {
+                let salt = arena_duel::train::sample_salt(ask.salt, k as u32);
+                let r = env
+                    .rollout(
+                        &mut self.spare,
+                        a,
+                        ask.depth,
+                        ask.gamma,
+                        Some(salt),
+                        &ask.pay,
+                        &mut policy,
+                    )
+                    .ok_or("the opponent's seat cannot be copied (a bot module)")?;
+                let j = a * n + k;
+                sum += r.ret;
+                out.ret[j] = r.ret;
+                out.discount[j] = r.discount;
+                if ask.leaves
+                    && let Some(leaf) = &self.spare
+                {
+                    out.obs[j * OBS..(j + 1) * OBS].copy_from_slice(leaf.observe().0);
+                    if self.privileged {
+                        out.privileged[j * PRIVILEGED..(j + 1) * PRIVILEGED]
+                            .copy_from_slice(&leaf.privileged());
+                    }
+                }
+            }
+            out.values[a] = sum / n as f32;
+        }
+        match fault {
+            Some(e) => Err(format!("model {}: {e}", ask.model)),
+            None => Ok(out),
         }
     }
 
@@ -433,7 +555,9 @@ impl VecEnv {
                 row
             })
             .collect();
-        Ok(PyArray1::from_vec(py, v).reshape([self.n, PRIVILEGED])?.into_any())
+        Ok(PyArray1::from_vec(py, v)
+            .reshape([self.n, PRIVILEGED])?
+            .into_any())
     }
 
     /// Every env's learner's moment in words, for a judge that reads text: a list of `(moment, acts, (time, hp,
@@ -445,7 +569,10 @@ impl VecEnv {
             let (reply, rx) = channel();
             tx.send(Wire::Describe { reply })
                 .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-            out.extend(rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?);
+            out.extend(
+                rx.recv()
+                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?,
+            );
         }
         out.truncate(self.n);
         Ok(out)
@@ -460,7 +587,10 @@ impl VecEnv {
             let (reply, rx) = channel();
             tx.send(Wire::Casts { reply })
                 .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-            total.add(&rx.recv().map_err(|e| PyRuntimeError::new_err(e.to_string()))?);
+            total.add(
+                &rx.recv()
+                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?,
+            );
         }
         let rows = (0..CAST_KINDS)
             .map(|k| {
@@ -469,6 +599,132 @@ impl VecEnv {
             })
             .collect();
         Ok((rows, total.active_damage))
+    }
+
+    /// Search env `i`'s decision (expert iteration, `docs/plans/2026-11-20-smarter-ai.md`, G): for each legal act, a
+    /// copy of the env answers it, then the learner's next `depth - 1` decisions are answered by the ONNX policy
+    /// `model` (`set_model`; sampled with the copy's dice), and the rewards are summed (discounted by `gamma`, paid as
+    /// `step` pays with the same keywords), nothing added for what follows; `samples` copies an act, each reseeded
+    /// from `salt` (copy `k` of every act meets the same dice) so none knows the real fight's future rolls. Returns
+    /// each act's mean (`float32[ACTIONS]`, NaN for an illegal act); with `leaves=True` a dict of it (`values`) and,
+    /// per act and copy, `ret`, `discount` (`gamma` to the decisions made, 0 once the round ended: add
+    /// `discount * V(leaf)`), the leaf's `obs` and `privileged` (`float32[ACTIONS, samples, ...]`). Run on the worker
+    /// that owns env `i`, the GIL released; the env itself is left as it was.
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (i, depth, samples, model, gamma = 1.0, salt = 0, leaves = false, shaping = 0.0, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0, flicker = 0.0, fly = 0.0, duck = 0.0, short_sit = 0.0, repeat = 1.0, habit = 1.0))]
+    fn lookahead<'py>(
+        &self,
+        py: Python<'py>,
+        i: usize,
+        depth: u32,
+        samples: u32,
+        model: u32,
+        gamma: f32,
+        salt: u64,
+        leaves: bool,
+        shaping: f32,
+        whiff: f32,
+        whiff_far: f32,
+        variety: f32,
+        idle: f32,
+        land: f32,
+        flicker: f32,
+        fly: f32,
+        duck: f32,
+        short_sit: f32,
+        repeat: f32,
+        habit: f32,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let pay = Pay {
+            shaping,
+            whiff,
+            whiff_far,
+            variety,
+            idle,
+            land,
+            flicker,
+            fly,
+            duck,
+            short_sit,
+            repeat,
+            habit,
+        };
+        let ask = Ask {
+            depth,
+            samples,
+            model,
+            gamma,
+            salt,
+            pay,
+            leaves,
+        };
+        let found = self.search(py, &[i], ask)?;
+        let all = searches(py, found, samples, leaves)?;
+        if leaves {
+            // one search: drop the leading axis
+            let d = all.cast_into::<PyDict>()?;
+            for key in ["values", "ret", "discount", "obs", "privileged"] {
+                if let Some(v) = d.get_item(key)? {
+                    d.set_item(key, v.get_item(0)?)?;
+                }
+            }
+            return Ok(d.into_any());
+        }
+        all.get_item(0)
+    }
+
+    /// `lookahead` at each env of `indices` (`int64[k]` or a list), every worker searching its own envs at once:
+    /// `float32[k, ACTIONS]`, or with `leaves=True` the dict with a leading axis of `k`.
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (indices, depth, samples, model, gamma = 1.0, salt = 0, leaves = false, shaping = 0.0, whiff = 0.0, whiff_far = 0.0, variety = 0.0, idle = 0.0, land = 0.0, flicker = 0.0, fly = 0.0, duck = 0.0, short_sit = 0.0, repeat = 1.0, habit = 1.0))]
+    fn lookahead_many<'py>(
+        &self,
+        py: Python<'py>,
+        indices: Vec<usize>,
+        depth: u32,
+        samples: u32,
+        model: u32,
+        gamma: f32,
+        salt: u64,
+        leaves: bool,
+        shaping: f32,
+        whiff: f32,
+        whiff_far: f32,
+        variety: f32,
+        idle: f32,
+        land: f32,
+        flicker: f32,
+        fly: f32,
+        duck: f32,
+        short_sit: f32,
+        repeat: f32,
+        habit: f32,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let pay = Pay {
+            shaping,
+            whiff,
+            whiff_far,
+            variety,
+            idle,
+            land,
+            flicker,
+            fly,
+            duck,
+            short_sit,
+            repeat,
+            habit,
+        };
+        let ask = Ask {
+            depth,
+            samples,
+            model,
+            gamma,
+            salt,
+            pay,
+            leaves,
+        };
+        let found = self.search(py, &indices, ask)?;
+        searches(py, found, samples, leaves)
     }
 
     /// Step every env with `actions` (`int64[n]`; an env that is done or never reset ignores its action):
@@ -566,6 +822,108 @@ impl VecEnv {
             PyArray1::from_vec(py, length).into_any(),
         ))
     }
+}
+
+impl VecEnv {
+    /// Search each env of `indices` on the worker that owns it, the workers at once, the GIL released: the
+    /// searches in `indices`' order.
+    fn search(&self, py: Python<'_>, indices: &[usize], ask: Ask) -> PyResult<Vec<Search>> {
+        let mut by_worker: Vec<Vec<(usize, usize)>> = vec![Vec::new(); self.workers.len()];
+        for (k, &i) in indices.iter().enumerate() {
+            let w = self
+                .workers
+                .iter()
+                .position(|(_, start, len)| i >= *start && i < start + len)
+                .ok_or_else(|| PyValueError::new_err(format!("no env {i} of {}", self.n)))?;
+            by_worker[w].push((k, i - self.workers[w].1));
+        }
+        let workers: Vec<Sender<Wire>> = self.workers.iter().map(|(tx, _, _)| tx.clone()).collect();
+        let found = py.detach(move || -> Result<Vec<Option<Search>>, String> {
+            let mut replies = Vec::new();
+            for (tx, jobs) in workers.iter().zip(&by_worker) {
+                if jobs.is_empty() {
+                    continue;
+                }
+                let (reply, rx) = channel();
+                tx.send(Wire::Lookahead {
+                    slots: jobs.iter().map(|&(_, s)| s).collect(),
+                    ask,
+                    reply,
+                })
+                .map_err(|e| e.to_string())?;
+                replies.push((jobs, rx));
+            }
+            let mut out: Vec<Option<Search>> = (0..indices_len(&by_worker)).map(|_| None).collect();
+            for (jobs, rx) in replies {
+                let found = rx.recv().map_err(|e| e.to_string())??;
+                for (&(k, _), s) in jobs.iter().zip(found) {
+                    out[k] = Some(s);
+                }
+            }
+            Ok(out)
+        });
+        found
+            .map_err(PyValueError::new_err)?
+            .into_iter()
+            .map(|s| s.ok_or_else(|| PyRuntimeError::new_err("a search went unanswered")))
+            .collect()
+    }
+}
+
+/// How many searches the workers were handed.
+fn indices_len(by_worker: &[Vec<(usize, usize)>]) -> usize {
+    by_worker.iter().map(Vec::len).sum()
+}
+
+/// The searches as Python takes them: the values `float32[k, ACTIONS]`, and with `leaves` a dict of them and, per act
+/// and rollout, `ret` and `discount` (`float32[k, ACTIONS, samples]`), `obs` (`float32[k, ACTIONS, samples, OBS]`) and
+/// `privileged` (`float32[k, ACTIONS, samples, PRIVILEGED]`, zeros unless the VecEnv was made with it).
+fn searches<'py>(
+    py: Python<'py>,
+    found: Vec<Search>,
+    samples: u32,
+    leaves: bool,
+) -> PyResult<Bound<'py, PyAny>> {
+    let k = found.len();
+    let n = samples.max(1) as usize;
+    let values: Vec<f32> = found
+        .iter()
+        .flat_map(|s| s.values.iter().copied())
+        .collect();
+    let values = PyArray1::from_vec(py, values).reshape([k, ACTIONS])?;
+    if !leaves {
+        return Ok(values.into_any());
+    }
+    let ret: Vec<f32> = found.iter().flat_map(|s| s.ret.iter().copied()).collect();
+    let discount: Vec<f32> = found
+        .iter()
+        .flat_map(|s| s.discount.iter().copied())
+        .collect();
+    let obs: Vec<f32> = found.iter().flat_map(|s| s.obs.iter().copied()).collect();
+    let privileged: Vec<f32> = found
+        .iter()
+        .flat_map(|s| {
+            let mut p = s.privileged.clone();
+            p.resize(ACTIONS * n * PRIVILEGED, 0.0);
+            p
+        })
+        .collect();
+    let d = PyDict::new(py);
+    d.set_item("values", values)?;
+    d.set_item("ret", PyArray1::from_vec(py, ret).reshape([k, ACTIONS, n])?)?;
+    d.set_item(
+        "discount",
+        PyArray1::from_vec(py, discount).reshape([k, ACTIONS, n])?,
+    )?;
+    d.set_item(
+        "obs",
+        PyArray1::from_vec(py, obs).reshape([k, ACTIONS, n, OBS])?,
+    )?;
+    d.set_item(
+        "privileged",
+        PyArray1::from_vec(py, privileged).reshape([k, ACTIONS, n, PRIVILEGED])?,
+    )?;
+    Ok(d.into_any())
 }
 
 impl Drop for VecEnv {
