@@ -124,6 +124,11 @@ impl Decider for OnnxBot {
         Ok(())
     }
 
+    /// It keeps no memory: a forked seat shares it (its telemetry then counts the copies' decisions too).
+    fn stateless(&self) -> bool {
+        true
+    }
+
     fn decide(&mut self, obs: &[f32; OBS], legal: &[bool; ACTIONS], u: f32) -> Result<i32, Fault> {
         let began = Instant::now();
         let r = self.onnx.logits(obs).map(|l| sample(&l, legal, u));

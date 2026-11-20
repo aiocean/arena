@@ -161,6 +161,50 @@ impl Duel {
         duel
     }
 
+    /// A copy of this duel, stepped apart from it from here on: the same state, units and round, each seat copied
+    /// (`Seat::fork`), in a world and schedule of its own. Stepped as the original is, it fights the same fight bit for
+    /// bit. `None` when a seat cannot be copied (a bot module).
+    pub fn fork(&self) -> Option<Duel> {
+        let [a, b] = &self.world.non_send::<Seats>().0;
+        Some(self.fork_with([a.fork()?, b.fork()?]))
+    }
+
+    /// A copy of this duel (as `fork`) with `seats` in its corners.
+    pub fn fork_with(&self, seats: [Box<dyn Seat>; 2]) -> Duel {
+        let mut world = World::new();
+        world.insert_resource(self.state().clone());
+        world.insert_non_send(Seats(seats));
+        world.insert_resource(*self.world.resource::<Fighting>());
+        unit::scatter(&mut world);
+        Duel {
+            world,
+            tick: tick_schedule(),
+        }
+    }
+
+    /// Become a copy of `other` with `seats` in its corners, keeping this duel's world and schedule (cheaper than
+    /// `fork_with`: a search restores one spare duel again and again).
+    pub fn restore_with(&mut self, other: &Duel, seats: [Box<dyn Seat>; 2]) {
+        self.world.resource_mut::<State>().clone_from(other.state());
+        *self.world.resource_mut::<Fighting>() = *other.world.resource::<Fighting>();
+        self.world.non_send_mut::<Seats>().0 = seats;
+        unit::scatter(&mut self.world);
+    }
+
+    /// Both seats, to copy (`Seat::fork`).
+    pub fn seats(&self) -> &[Box<dyn Seat>; 2] {
+        &self.world.non_send::<Seats>().0
+    }
+
+    /// New dice for the rules and both seats, drawn from `salt` (the same salt, the same dice): a copy rolled out by
+    /// a search must not know the original's future crits, evasions and samples. Nothing else changes.
+    pub fn reseed(&mut self, salt: u64) {
+        self.state_mut().rng = Rng::new(salted(salt, 0));
+        for (i, seat) in self.world.non_send_mut::<Seats>().0.iter_mut().enumerate() {
+            seat.reseed(salted(salt, 1 + i as u64));
+        }
+    }
+
     /// A duel of two brains.
     pub fn with_brains(config: DuelConfig) -> Duel {
         Duel::new(config, [Brain::make(), Brain::make()])
@@ -215,6 +259,14 @@ impl Duel {
         }
         core::mem::take(&mut self.state_mut().out)
     }
+}
+
+/// Dice `k` of the ones drawn from `salt` (splitmix64): unrelated streams for the rules and each seat.
+fn salted(salt: u64, k: u64) -> u32 {
+    let mut z = salt.wrapping_add(k.wrapping_add(1).wrapping_mul(0x9e37_79b9_7f4a_7c15));
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    ((z ^ (z >> 31)) >> 32) as u32
 }
 
 /// One tick of the rules as a schedule: the units gathered in id order, the clock, the pause between rounds, the

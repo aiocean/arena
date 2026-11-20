@@ -48,6 +48,7 @@ fn opt(what: What, score: f64) -> Opt {
 }
 
 /// The first mind of one fighter.
+#[derive(Clone)]
 pub struct FirstMind {
     rng: Rng,
     think: f64,
@@ -489,6 +490,14 @@ impl FirstMind {
 }
 
 impl Seat for FirstMind {
+    fn fork(&self) -> Option<Box<dyn Seat>> {
+        Some(Box::new(self.clone()))
+    }
+
+    fn reseed(&mut self, seed: u32) {
+        self.rng = Rng::new(seed);
+    }
+
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         self.calm = js_max(0.0, self.calm - dt);
         self.hold = js_max(0.0, self.hold - dt);

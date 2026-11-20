@@ -191,8 +191,33 @@ pub struct Step {
 /// The critic's extra inputs (`Env::privileged`): an observation from the foe's side, the clock and the rounds won.
 pub const PRIVILEGED: usize = OBS + 3;
 
+/// What one rollout from a decision earned (`Env::rollout`): `ret`, the sum of each decision's reward x `gamma` to the
+/// decisions before it; `discount`, `gamma` to the decisions made, 0 when the round ended (so a value of the leaf
+/// adds as `ret + discount * value`); whether the round ended; and the decisions made.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Rollout {
+    pub ret: f32,
+    pub discount: f32,
+    pub done: bool,
+    pub decisions: u32,
+}
+
+/// The policy that answers a rollout's decisions after its first: what the learner sees, what it may do and its
+/// draw, to an act.
+pub type Rollouts<'a> = dyn FnMut(&[f32; OBS], &[bool; ACTIONS], f32) -> usize + 'a;
+
+/// Both seats of a duel.
+type Pair = [Box<dyn Seat>; 2];
+
+/// The salt of a search's sample `k` from its `salt`: every act's rollout `k` meets the same dice.
+pub fn sample_salt(salt: u64, k: u32) -> u64 {
+    salt ^ u64::from(k)
+        .wrapping_add(1)
+        .wrapping_mul(0xd1b5_4a32_d192_ed03)
+}
+
 /// What passes between the env and its learner's seat.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct Wire {
     ask: Option<Due>,
     answer: Option<usize>,
@@ -205,6 +230,16 @@ struct Learner {
 }
 
 impl Seat for Learner {
+    // no `fork`: a copy needs a wire of its own, which `Env::fork` lays
+
+    fn reseed(&mut self, seed: u32) {
+        self.mind.reseed(seed);
+    }
+
+    fn policy(&self) -> Option<&PolicyMind> {
+        Some(&self.mind)
+    }
+
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         let mut sense = glance_of(state, me);
         let mut wire = self.wire.borrow_mut();
@@ -320,6 +355,190 @@ impl Env {
         };
         env.advance();
         env
+    }
+
+    /// Both seats of a copy of this env, the learner's on a wire of its own (returned); `None` when the opponent's
+    /// seat cannot be copied (a bot module).
+    fn fork_seats(&self) -> Option<(Pair, Rc<RefCell<Wire>>)> {
+        let wire = Rc::new(RefCell::new(self.wire.borrow().clone()));
+        let seats = self.duel.seats();
+        let one = |i: usize| -> Option<Box<dyn Seat>> {
+            if i == self.me {
+                Some(Box::new(Learner {
+                    mind: seats[i].policy()?.clone(),
+                    wire: Rc::clone(&wire),
+                }))
+            } else {
+                seats[i].fork()
+            }
+        };
+        let pair = [one(0)?, one(1)?];
+        Some((pair, wire))
+    }
+
+    /// A copy of this env at this decision, stepped apart from it from here on (a world and schedule of its own):
+    /// answered as the original is, it pays and observes the same bit for bit. `None` against an opponent whose seat
+    /// cannot be copied (a bot module).
+    pub fn fork(&self) -> Option<Env> {
+        let (seats, wire) = self.fork_seats()?;
+        Some(Env {
+            duel: self.duel.fork_with(seats),
+            me: self.me,
+            limit: self.limit,
+            wire,
+            due: self.due.clone(),
+            quiet: self.quiet,
+            last: self.last,
+            run: self.run,
+            recent: self.recent.clone(),
+            before: self.before,
+            sat: self.sat,
+            done: self.done,
+            open: self.open,
+            trailing: self.trailing.clone(),
+            casts: self.casts,
+            whiffed: self.whiffed,
+            far_whiffed: self.far_whiffed,
+            landed: self.landed,
+            active_dealt: self.active_dealt,
+        })
+    }
+
+    /// Become a copy of `o` (as `fork`), keeping this env's world and schedule: cheaper than `fork`, for a spare env
+    /// a search restores again and again. False, and nothing changed, when `o`'s opponent cannot be copied.
+    pub fn restore_from(&mut self, o: &Env) -> bool {
+        let Some((seats, wire)) = o.fork_seats() else {
+            return false;
+        };
+        self.duel.restore_with(&o.duel, seats);
+        self.wire = wire;
+        self.me = o.me;
+        self.limit = o.limit;
+        self.due.clone_from(&o.due);
+        self.quiet = o.quiet;
+        self.last = o.last;
+        self.run = o.run;
+        self.recent.clone_from(&o.recent);
+        self.before = o.before;
+        self.sat = o.sat;
+        self.done = o.done;
+        self.open = o.open;
+        self.trailing.clone_from(&o.trailing);
+        self.casts = o.casts;
+        self.whiffed = o.whiffed;
+        self.far_whiffed = o.far_whiffed;
+        self.landed = o.landed;
+        self.active_dealt = o.active_dealt;
+        true
+    }
+
+    /// New dice for the rules and both seats (the learner's too), drawn from `salt` (`Duel::reseed`): a copy rolled
+    /// out by a search must not know the original's future crits, evasions, clocks and samples. The decision now due
+    /// keeps its draw (`u`); the same salt gives the same dice.
+    pub fn reseed(&mut self, salt: u64) {
+        self.duel.reseed(salt);
+    }
+
+    /// The duel's state now.
+    pub fn state(&self) -> &State {
+        self.duel.state()
+    }
+
+    /// The draw the decision now due samples with (the learner's dice, `Due::u`).
+    pub fn draw(&self) -> f32 {
+        self.due.u
+    }
+
+    /// Roll `act` out from this decision in `spare` (made a copy of this env: forked the first time, restored after),
+    /// its dice reseeded from `salt` (`None`: the original's dice, so the copy fights the original's fight): answer
+    /// `act`, then up to `depth - 1` more decisions with `policy(obs, legal, u)`, each paid as `step_paid` pays it.
+    /// The leaf is `spare` as left (`observe`, `privileged`). `None` against an opponent that cannot be copied.
+    #[allow(clippy::too_many_arguments)]
+    pub fn rollout(
+        &self,
+        spare: &mut Option<Env>,
+        act: usize,
+        depth: u32,
+        gamma: f32,
+        salt: Option<u64>,
+        pay: &Pay,
+        policy: &mut Rollouts<'_>,
+    ) -> Option<Rollout> {
+        let env = match spare {
+            Some(env) => {
+                if !env.restore_from(self) {
+                    return None;
+                }
+                env
+            }
+            None => spare.insert(self.fork()?),
+        };
+        if let Some(salt) = salt {
+            env.reseed(salt);
+        }
+        let mut out = Rollout {
+            ret: 0.0,
+            discount: 1.0,
+            done: env.done,
+            decisions: 0,
+        };
+        let mut a = act;
+        while out.decisions < depth.max(1) && !env.done {
+            let s = env.step_paid(a, pay);
+            out.ret += out.discount * s.reward;
+            out.discount *= gamma;
+            out.decisions += 1;
+            out.done = s.done;
+            if !s.done {
+                a = policy(&env.due.obs, &env.due.legal, env.due.u);
+            }
+        }
+        if out.done {
+            out.discount = 0.0;
+        }
+        Some(out)
+    }
+
+    /// Every act's worth at this decision by search: for each legal act, the mean `Rollout::ret` of `samples`
+    /// rollouts of `depth` decisions (`rollout`), sample `k` reseeded from `salt` and `k` alike for every act (the
+    /// acts meet the same dice), nothing added for what follows the leaf. An illegal act, or every act once the round
+    /// is over, is NaN. `None` against an opponent that cannot be copied.
+    #[allow(clippy::too_many_arguments)]
+    pub fn lookahead(
+        &self,
+        spare: &mut Option<Env>,
+        depth: u32,
+        samples: u32,
+        gamma: f32,
+        salt: u64,
+        pay: &Pay,
+        policy: &mut Rollouts<'_>,
+    ) -> Option<[f32; ACTIONS]> {
+        let mut worth = [f32::NAN; ACTIONS];
+        if self.done {
+            return Some(worth);
+        }
+        let n = samples.max(1);
+        for (a, w) in worth.iter_mut().enumerate() {
+            if !self.due.legal[a] {
+                continue;
+            }
+            let mut sum = 0.0;
+            for k in 0..n {
+                let r = self.rollout(
+                    spare,
+                    a,
+                    depth,
+                    gamma,
+                    Some(sample_salt(salt, k)),
+                    pay,
+                    policy,
+                )?;
+                sum += r.ret;
+            }
+            *w = sum / n as f32;
+        }
+        Some(worth)
     }
 
     /// What the learner sees now and what it may do.

@@ -164,4 +164,10 @@ impl PolicyMind {
     pub fn hold(&mut self, seconds: f64) {
         self.hold = seconds;
     }
+
+    /// Its dice started again from `seed`, nothing else changed: a copy rolled out by a search draws its own clock
+    /// and samples (`arena_duel::train::Env::reseed`).
+    pub fn reseed(&mut self, seed: u32) {
+        self.rng = Rng::new(seed);
+    }
 }

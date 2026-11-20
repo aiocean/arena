@@ -18,6 +18,7 @@ enum Plan {
 }
 
 /// A scripted seat.
+#[derive(Clone)]
 pub struct Scripted {
     plan: Plan,
     view: Delayed,
@@ -49,6 +50,10 @@ impl Scripted {
 }
 
 impl Seat for Scripted {
+    fn fork(&self) -> Option<Box<dyn Seat>> {
+        Some(Box::new(self.clone()))
+    }
+
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         self.decide(state, me, dt).map(chosen)
     }

@@ -23,6 +23,7 @@ const WHY_TOP: usize = 5;
 const LATE_FROM: f64 = 80.0;
 const LATE_FULL: f64 = 105.0;
 
+#[derive(Clone)]
 pub struct Mind {
     profile: Profile,
     body: BodySize,
@@ -109,6 +110,12 @@ impl Mind {
     /// No thought for `seconds`.
     pub fn hold(&mut self, seconds: f64) {
         self.hold = seconds;
+    }
+
+    /// Its dice started again from `seed`, nothing else changed: a copy rolled out by a search draws its own future
+    /// (`arena_duel::train::Env::reseed`).
+    pub fn reseed(&mut self, seed: u32) {
+        self.rng = Rng::new(seed);
     }
 
     /// Fill every thought's `why`.

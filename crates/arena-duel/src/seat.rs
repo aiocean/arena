@@ -26,12 +26,25 @@ pub trait Seat {
     fn forfeit(&self) -> bool {
         false
     }
+    /// A copy of this seat for a copy of the duel (`Duel::fork`), deciding from here on as this one would; `None` for a
+    /// seat that cannot be copied (a bot module, which keeps state of its own in its instance; a recorder; a script).
+    fn fork(&self) -> Option<Box<dyn Seat>> {
+        None
+    }
+    /// Its dice started again from `seed` (a seat with none ignores it): a copy rolled out by a search must not know
+    /// the original's future draws (`train::Env::reseed`).
+    fn reseed(&mut self, _seed: u32) {}
+    /// Its policy mind, for a seat that decides through one (the trainer's learner, a bot).
+    fn policy(&self) -> Option<&PolicyMind> {
+        None
+    }
 }
 
 /// Makes fighter `me`'s seat once the fighters exist (a brain is told both fighters' spells).
 pub type MakeSeat = Box<dyn FnOnce(&State, usize) -> Box<dyn Seat>>;
 
 /// arena-mind's brain with its fighter's skills and the one temperament both seats share.
+#[derive(Clone)]
 pub struct Brain {
     mind: Mind,
     /// Its last thought.
@@ -94,6 +107,14 @@ impl Brain {
 }
 
 impl Seat for Brain {
+    fn fork(&self) -> Option<Box<dyn Seat>> {
+        Some(Box::new(self.clone()))
+    }
+
+    fn reseed(&mut self, seed: u32) {
+        self.mind.reseed(seed);
+    }
+
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         let mut sense = glance_of(state, me);
         let thought = self
@@ -149,6 +170,11 @@ pub trait Decider {
     fn round(&mut self) -> Result<(), Fault>;
     /// The act for a due decision: an index into the acts; any other number is a wait.
     fn decide(&mut self, obs: &[f32; OBS], legal: &[bool; ACTIONS], u: f32) -> Result<i32, Fault>;
+    /// Whether its answers depend only on what each `decide` is handed (it keeps no memory between calls, as an ONNX
+    /// policy), so a copy of its seat may share it (`Seat::fork`). A module keeps what it likes: never.
+    fn stateless(&self) -> bool {
+        false
+    }
 }
 
 /// One bot's instance, shared by every fight of a match: it remembers across them.
@@ -156,6 +182,7 @@ pub type SharedDecider = Rc<RefCell<dyn Decider>>;
 
 /// A bot module in a fighter's seat: the policy's clock, view and dice (`PolicyMind`) around the module's answers.
 /// A fault gives up the round it happened in; one in `start` gives up the fight's first round.
+#[derive(Clone)]
 pub struct BotSeat {
     decider: SharedDecider,
     pub mind: PolicyMind,
@@ -186,6 +213,22 @@ impl BotSeat {
 }
 
 impl Seat for BotSeat {
+    /// A copy sharing the decider, when the decider keeps no state of its own (`Decider::stateless`).
+    fn fork(&self) -> Option<Box<dyn Seat>> {
+        self.decider
+            .borrow()
+            .stateless()
+            .then(|| Box::new(self.clone()) as Box<dyn Seat>)
+    }
+
+    fn reseed(&mut self, seed: u32) {
+        self.mind.reseed(seed);
+    }
+
+    fn policy(&self) -> Option<&PolicyMind> {
+        Some(&self.mind)
+    }
+
     fn think(&mut self, state: &State, me: usize, dt: f64) -> Option<Choice> {
         if self.forfeit {
             return None;

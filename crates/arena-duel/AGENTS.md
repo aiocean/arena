@@ -49,6 +49,11 @@ Each tick the two fighters take their turns with who goes first alternating (`du
 45-55% in either seat and either look. Examples: `seats` (a mind's mirror by seat and by look: `--seeds --rounds
 --mind first|brain|aggressive|turtle`) and `speed`.
 
+A training env copies itself at a decision (`train::Env::fork`, `restore_from` into a spare; `Duel::fork`,
+`restore_with`; `Seat::fork`, `None` for a bot module that keeps state) and the copy fights the original's fight bit
+for bit until `Env::reseed(salt)` gives the rules and both seats new dice; `Env::rollout` and `lookahead` search from
+it (`tests/fork.rs`; `docs/plans/2026-11-20-smarter-ai.md`, G).
+
 ## Belongs here
 
 - How a skill travels in the real fight (its motion, its repeats, its units), bodies, guards, wards, barriers,
