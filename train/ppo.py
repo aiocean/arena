@@ -124,15 +124,17 @@ def search(env, policy, league, args, pay, update, dev, rng):
     # search cannot tell the acts apart it stays the policy, and only a real difference in value moves it. Turning
     # each decision's values into z-scores instead made noise as sharp as a signal (abi5-search, 2026-11-21).
     n_legal = legal.sum(-1, keepdim=True).clamp_min(1)
-    mean = (q.nan_to_num() * legal).sum(-1, keepdim=True) / n_legal
-    adv = torch.where(legal, q.nan_to_num() - mean, torch.zeros_like(q))
     prior = torch.where(legal, torch.log_softmax(logits.masked_fill(~legal, -1e9), -1), torch.full_like(q, -1e9))
+    # only the acts the policy plays are reweighed: the critic at the leaf of an act it almost never plays is off its
+    # data and flatters it, and raising such acts spread the policy thin and cost it strength (abi5-srch2, 2026-11-21)
+    played = legal & (prior.exp() > 0.01)
+    n_played = played.sum(-1, keepdim=True).clamp_min(1)
+    mean = (q.nan_to_num() * played).sum(-1, keepdim=True) / n_played
+    adv = torch.where(played, q.nan_to_num() - mean, torch.zeros_like(q))
     target = torch.softmax(prior + adv / args.search_temp, -1) * legal
     target = target / target.sum(-1, keepdim=True).clamp_min(1e-12)
-    # a decision weighs by how far the spread among the acts the policy plays (and the search's best) stands above the
+    # a decision weighs by how far the spread among the acts the policy plays stands above the
     # rollouts' own noise (the acts' mean standard error): an act it never plays scoring badly teaches it nothing
-    played = legal & (prior.exp() > 0.01)
-    played[torch.arange(len(q)), torch.where(legal, q, torch.full_like(q, -1e9)).argmax(-1)] = True
     hi = torch.where(played, q, torch.full_like(q, -1e9)).max(-1).values
     lo = torch.where(played, q, torch.full_like(q, 1e9)).min(-1).values
     s = per.shape[-1]
