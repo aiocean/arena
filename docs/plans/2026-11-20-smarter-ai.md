@@ -101,7 +101,7 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 |---|---|
 | A | done: `cycle.py` look gate (96 rounds, 10% slack) |
 | B | landed: `ppo.py --privileged` (the value head also reads the duel from the foe's side, undelayed; the bot unchanged) |
-| C | landed (RULES 27, ABI 5: 2055 inputs, 29 acts; the house AI widened, plays as before); retrain next |
+| C | done (RULES 27, ABI 5: 2055 inputs, 29 acts). House AI since ff3df96: abi5-mem u2000 (pool Elo 1387 vs r26-calm 1332, 58.6% head to head, exploitability -0.05 vs 0.0, aggressive 73.6% vs 71.3%, better looking on every count) |
 | D | – |
 | E | fixes 1 and 2 landed, bit for bit (decisions a second on one thread, median of 3 under load: first 6.2k to 9.8k, brain 3.9k to 7.1k, aggressive 3.8k to 6.9k, turtle 4.7k to 10.0k, ONNX 2.5k to 3.8k; `arena-bot` example `env_speed`); 3 and 4 next |
 | F | – |
