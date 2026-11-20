@@ -133,7 +133,13 @@ class Pool:
     def bot(self, name):
         """What `arena_duel.bout` takes for a member: a built-in's name or a model's bytes."""
         file = self.members[name]["file"]
-        return name if file is None else (self.root / "models" / file).read_bytes()
+        if file is None:
+            return name
+        # a model of an older ABI is carried over to today's (`widen.current`), once
+        cache = self.__dict__.setdefault("_bytes", {})
+        if name not in cache:
+            cache[name] = current((self.root / "models" / file).read_bytes())
+        return cache[name]
 
     def model_files(self):
         return [self.root / "models" / m["file"] for m in self.members.values() if m["file"]]
