@@ -123,9 +123,9 @@ After A to G the owner asked for three more steps toward more parameters, contex
 
 | step | state |
 |---|---|
-| 1 | landed with RULES 28; retrain through the cycle (it carries the pick over) |
-| 2 | next |
-| 3 | landed (c24a3d2); A/B queued behind abi5-big |
+| 1 | landed with RULES 28 (25b2c6c, deployed, smoke PASS); the cycle carries its pick over and trains on it from c34 (the pool pruned to the top 30 for the re-fight) |
+| 2 | landed (272688c): `ppo.py --recurrent`, the native seat and `bots/onnx` carry the state; A/B abi6-rec (`--recurrent 128` from c32/g011) against abi5-ctl4 (the same start, no state), queued behind abi5-big2 |
+| 3 | landed (c24a3d2); A/B abi5-att (distilled on ABI 6 from the house AI, then PPO) against abi5-ctl4 |
 
 ## What the study found (2026-11-20)
 
