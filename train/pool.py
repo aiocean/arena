@@ -30,7 +30,7 @@ import numpy as np
 import torch
 
 import arena_duel as pd
-from net import Policy, _initializers, from_onnx, to_onnx, without_priv
+from net import Policy, _initializers, from_onnx, size_of, to_onnx, without_priv
 from widen import current, widen
 
 HERE = pathlib.Path(__file__).parent
@@ -53,7 +53,7 @@ def load_policy(path):
         found = _initializers(data)
         p = from_onnx(data, found["inp.weight"].shape[1], found["pi.weight"].shape[0])
         model = {k: v for k, v in p.state_dict().items()}
-        size = dict(width=p.width, hidden=p.blocks[0].up.out_features, blocks=len(p.blocks))
+        size = size_of(p)
     old, acts = model["inp.weight"].shape[1], model["pi.weight"].shape[0]
     if (old, acts) != (pd.OBS, pd.ACTIONS):
         model = widen(model, old, pd.OBS, acts, pd.ACTIONS)

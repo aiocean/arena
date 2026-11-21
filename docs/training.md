@@ -222,11 +222,27 @@ Watch the per-seat and per-look win rates in the log.
 | A different style of play | the reward (`train.rs` today) |
 | Different sparring partners | `MIX` in `league.py`, or other ONNX models through `set_model` |
 | Another algorithm or model | anything that drives `VecEnv` and ends in an ONNX model (`net.py`'s `to_onnx`) |
-| A bigger network | `--width`, `--hidden`, `--blocks` |
+| A bigger network | `--width`, `--hidden`, `--blocks`, `--entities` |
 | A head start | `--init ../crates/arena-duel/weights/policy.onnx` |
 | More of one seat | `--seat0` |
 
 The inputs and acts are the arena's (`docs/bot.md`); the model is yours.
+
+### A bigger brain, distilled first
+
+`--entities N` gives the network a small encoder per kind of repeated thing in the observation (your slots with
+their builds and why each can or cannot be cast, threats, units, the foe's slots with their bands, what is in play,
+your last acts, the foe's last acts), shared over its copies and added to the plain reading of the whole
+(`net.py`'s `ENTITIES`). A new network that size starts by copying a trained one, then trains on:
+
+```
+uv run python distill.py --run big-init --width 128 --hidden 256 --blocks 3 --entities 32   # learns the house AI
+uv run python ppo.py --run big --init runs/big-init/last.pt ...
+```
+
+Mind the fuel: a decision gets 20 million (`docs/bot.md`). The house AI (128, 256, 2, no encoders) uses about 28%
+of it. Encoders 32 wide on 128, 256, 3 use about 57%; on 160, 320, 3 about 71%; on 192, 256, 3 about 78%.
+`cargo run --release -p arena-bot --features host --example check -- BOT.wasm` says how much yours uses.
 
 ## Export and check
 

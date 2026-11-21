@@ -47,7 +47,7 @@ from torch.distributions import Categorical
 
 import arena_duel as pd
 from league import League, parse_mix
-from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss, without_priv
+from net import BLOCKS, HIDDEN, WIDTH, Policy, from_onnx, hl_gauss, size_of, without_priv
 from widen import current, widen
 
 
@@ -215,6 +215,7 @@ def main():
     ap.add_argument("--width", type=int, default=WIDTH)
     ap.add_argument("--hidden", type=int, default=HIDDEN)
     ap.add_argument("--blocks", type=int, default=BLOCKS)
+    ap.add_argument("--entities", type=int, default=0, help="an encoder shared over each repeated thing, this wide (0: none; phase D)")
     args = ap.parse_args()
 
     out = pathlib.Path(__file__).parent / "runs" / args.run
@@ -224,14 +225,14 @@ def main():
     dev = torch.device(args.device)
     n, T = args.envs, args.steps
 
-    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks)
+    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities)
     if args.resume:
         size = torch.load(args.resume, map_location="cpu", weights_only=True).get("size", size)
     elif args.init and pathlib.Path(args.init).suffix == ".pt":
         size = torch.load(args.init, map_location="cpu", weights_only=True).get("size", size)
     elif args.init:
         init = from_onnx(current(pathlib.Path(args.init).read_bytes()), pd.OBS, pd.ACTIONS)
-        size = dict(width=init.width, hidden=init.blocks[0].up.out_features, blocks=len(init.blocks))
+        size = size_of(init)
     priv_n = pd.PRIVILEGED if args.privileged else 0
     policy = Policy(pd.OBS, pd.ACTIONS, **size, privileged=priv_n).to(dev)
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr, eps=1e-5)

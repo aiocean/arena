@@ -17,7 +17,7 @@ import pathlib
 import torch
 
 import arena_duel as pd
-from net import Policy, _initializers, from_onnx, to_onnx, without_priv
+from net import Policy, _initializers, from_onnx, size_of, to_onnx, without_priv
 
 # a new act's logit below the old ones' bias: e^-20 of the mass, so the widened policy plays as it did
 NEW_ACT = 20.0
@@ -66,7 +66,7 @@ def current(data):
     if (obs, actions) == (pd.OBS, pd.ACTIONS):
         return data
     p = from_onnx(data, obs, actions)
-    size = dict(width=p.width, hidden=p.blocks[0].up.out_features, blocks=len(p.blocks))
+    size = size_of(p)
     policy = Policy(pd.OBS, pd.ACTIONS, **size)
     policy.load_state_dict(widen(p.state_dict(), obs, pd.OBS, actions, pd.ACTIONS))
     return to_onnx(policy)
@@ -79,7 +79,7 @@ def source(path, old_obs, old_actions):
         ck = torch.load(path, map_location="cpu", weights_only=True)
         return without_priv(ck["model"]), ck.get("size", {})
     p = from_onnx(path.read_bytes(), old_obs, old_actions)
-    size = dict(width=p.width, hidden=p.blocks[0].up.out_features, blocks=len(p.blocks))
+    size = size_of(p)
     return p.state_dict(), size
 
 

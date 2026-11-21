@@ -36,6 +36,7 @@ import torch
 import arena_duel as pd
 import judge
 from export import load
+from net import size_of
 from pool import POOL, Pool, load_policy, print_table
 
 HERE = pathlib.Path(__file__).parent
@@ -47,7 +48,7 @@ def train(args, out, extra):
     init = out / "init.pt"
     if not init.exists():
         p = load_policy(args.source)
-        size = dict(width=p.width, hidden=p.blocks[0].up.out_features, blocks=len(p.blocks))
+        size = size_of(p)
         torch.save({"model": p.state_dict(), "size": size}, init)
     if args.pbt:
         cmd = [sys.executable, "pbt.py", "--run", args.run, "--init", str(init), "--threads", str(args.threads)]

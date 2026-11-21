@@ -13,6 +13,53 @@ from torch import nn
 
 WIDTH, HIDDEN, GROUP, BLOCKS = 128, 256, 8, 2
 
+# The observation's repeated things (`crates/arena-mind/src/policy/observe.rs`, ABI 5's 2055 inputs), each read by one
+# encoder shared over its copies (`Policy(entities=...)`): (name, copies, the ranges one copy reads as (start, length,
+# stride)). A slot of mine is its card, its build and why it can or cannot be cast; a slot of the foe's, its card and
+# its band.
+ENTITIES = [
+    ("slot", 6, [(102, 33, 33), (327, 148, 148), (1741, 9, 9)]),
+    ("threat", 4, [(54, 12, 12)]),
+    ("unit", 8, [(1441, 12, 12)]),
+    ("foe_slot", 6, [(1537, 34, 34), (1795, 4, 4)]),
+    ("in_play", 10, [(1839, 5, 5)]),
+    ("my_act", 3, [(1889, 30, 30)]),
+    ("foe_act", 4, [(1979, 19, 19)]),
+]
+ENTITY_OBS = 2055
+
+
+def entity_index(copies, ranges):
+    """The observation's indices each copy of an entity reads, [copies, its width]."""
+    return torch.tensor([[start + i * stride + j for start, n, stride in ranges for j in range(n)] for i in range(copies)])
+
+
+class Entities(nn.Module):
+    """One small MLP per kind of repeated thing, shared over its copies; the copies' codes kept in order (a slot's
+    place is the act that casts it, a threat's is how near it is) and projected to the trunk's width."""
+
+    def __init__(self, obs, width, dim):
+        super().__init__()
+        if obs != ENTITY_OBS:
+            raise ValueError(f"the entity encoders read ABI 5's {ENTITY_OBS} inputs, not {obs}")
+        self.names = [name for name, _, _ in ENTITIES]
+        for name, copies, ranges in ENTITIES:
+            idx = entity_index(copies, ranges)
+            self.register_buffer(f"idx_{name}", idx, persistent=False)
+            setattr(self, name, nn.Sequential(nn.Linear(idx.shape[1], dim), nn.ReLU(), nn.Linear(dim, dim), nn.ReLU()))
+        self.proj = nn.Linear(sum(c for _, c, _ in ENTITIES) * dim, width)
+
+    def forward(self, obs):
+        codes = []
+        for name in self.names:
+            idx = getattr(self, f"idx_{name}")
+            copies, one = idx.shape
+            # the copies flattened into the batch: a 2-D Linear exports as a Gemm whose weight keeps its name
+            # (`from_onnx` finds it), where a 3-D one becomes an anonymous MatMul
+            x = obs[:, idx].reshape(-1, one)
+            codes.append(getattr(self, name)(x).reshape(obs.shape[0], -1))
+        return self.proj(torch.cat(codes, -1))
+
 
 class Block(nn.Module):
     """x + down(relu(up(ln(x))))"""
@@ -31,8 +78,13 @@ class Policy(nn.Module):
     """relu(in), `blocks` residual blocks, a LayerNorm, a simplicial embedding (softmaxes of 8), the policy head; and
     the value head (bins over [-1.5, 1.5]) from the trunk's normalised output."""
 
-    def __init__(self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0):
+    def __init__(
+        self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0, entities=0
+    ):
         super().__init__()
+        # the bigger brain (phase D): with `entities` (an encoder's width), each repeated thing of the observation is
+        # also read by an encoder shared over its copies (`Entities`), added to `inp`'s reading of the whole
+        self.ent = Entities(obs, width, entities) if entities else None
         # the asymmetric critic (`ppo.py --privileged`): what only the critic sees (`VecEnv.privileged`), embedded and
         # added to the trunk's output before the value head; the policy head never reads it, so the bot is unchanged
         self.priv = (
@@ -53,7 +105,10 @@ class Policy(nn.Module):
 
     def trunk(self, obs):
         """The trunk's normalised output, which both heads read."""
-        h = torch.relu(self.inp(obs))
+        h = self.inp(obs)
+        if self.ent is not None:
+            h = h + self.ent(obs)
+        h = torch.relu(h)
         for b in self.blocks:
             h = b(h)
         return self.out_ln(h)
@@ -74,6 +129,14 @@ class Policy(nn.Module):
         """The critic's expected return."""
         centres = (self.support[:-1] + self.support[1:]) / 2
         return (value_logits.softmax(-1) * centres).sum(-1)
+
+
+def size_of(policy):
+    """A policy's size, as a checkpoint's "size" keeps it and `Policy(**size)` takes it."""
+    size = dict(width=policy.width, hidden=policy.blocks[0].up.out_features, blocks=len(policy.blocks))
+    if policy.ent is not None:
+        size["entities"] = policy.ent.proj.in_features // sum(c for _, c, _ in ENTITIES)
+    return size
 
 
 def without_priv(model):
@@ -144,7 +207,8 @@ def from_onnx(data, obs, actions):
     found = _initializers(data)
     width, hidden = found["blocks.0.up.weight"].shape[1], found["blocks.0.up.weight"].shape[0]
     blocks = len([k for k in found if k.startswith("blocks.") and k.endswith(".up.weight")])
-    policy = Policy(obs, actions, width=width, hidden=hidden, blocks=blocks)
+    entities = found["ent.slot.0.weight"].shape[0] if "ent.slot.0.weight" in found else 0
+    policy = Policy(obs, actions, width=width, hidden=hidden, blocks=blocks, entities=entities)
     load_onnx(policy, data)
     return policy
 

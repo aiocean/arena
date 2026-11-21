@@ -48,3 +48,44 @@ def test_the_house_ai_loads():
     q = from_onnx(pd.HOUSE, pd.OBS, pd.ACTIONS)
     logits, _ = q(torch.zeros(1, pd.OBS), torch.ones(1, pd.ACTIONS, dtype=torch.bool))
     assert np.isfinite(logits.detach().numpy()).all()
+
+
+# the observation's blocks and their lengths (`crates/arena-mind/src/policy/observe.rs`, `BLOCKS`, ABI 5)
+BLOCKS = [
+    ("Me", 17), ("Foe", 37), ("Threats", 48), ("Slots", 198), ("Tag", 5), ("My cast", 11), ("Foe's cast", 11),
+    ("Slot builds", 888), ("Effects", 226), ("Units", 96), ("Foe's slots", 204), ("Why", 54), ("Foe's bands", 24),
+    ("Buffs", 20), ("In play", 50), ("My acts", 90), ("Foe's acts", 76),
+]
+
+
+def test_each_entity_encoder_reads_whole_blocks_of_the_observation():
+    """Every range an entity reads is a block of `observe.rs`, tiled exactly by the entity's copies."""
+    import arena_duel as pd
+    from net import ENTITIES, ENTITY_OBS, entity_index
+
+    assert sum(n for _, n in BLOCKS) == ENTITY_OBS == pd.OBS
+    start, at = {}, 0
+    for name, n in BLOCKS:
+        start[at] = n
+        at += n
+    for name, copies, ranges in ENTITIES:
+        idx = entity_index(copies, ranges)
+        assert idx.shape == (copies, sum(n for _, n, _ in ranges))
+        for first, n, stride in ranges:
+            assert n == stride and start.get(first) == copies * n, (name, first)
+        assert len(set(idx.flatten().tolist())) == idx.numel()
+
+
+def test_a_policy_with_entity_encoders_round_trips_through_onnx():
+    """`Policy(entities=...)`: its ONNX export loads back at its size (`from_onnx`, `size_of`) with the same logits."""
+    import torch
+
+    import arena_duel as pd
+    from net import Policy, from_onnx, size_of, to_onnx
+
+    torch.manual_seed(0)
+    p = Policy(pd.OBS, pd.ACTIONS, width=64, hidden=96, blocks=3, entities=16)
+    q = from_onnx(to_onnx(p), pd.OBS, pd.ACTIONS)
+    assert size_of(q) == size_of(p) == {"width": 64, "hidden": 96, "blocks": 3, "entities": 16}
+    x, m = torch.randn(5, pd.OBS), torch.ones(5, pd.ACTIONS, dtype=torch.bool)
+    assert torch.allclose(p(x, m)[0], q(x, m)[0])
