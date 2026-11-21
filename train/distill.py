@@ -38,6 +38,7 @@ def main():
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--blocks", type=int, default=3)
     ap.add_argument("--entities", type=int, default=32)
+    ap.add_argument("--attention", type=int, default=0, help="heads of self-attention over the entity codes (0: none)")
     ap.add_argument("--updates", type=int, default=300)
     ap.add_argument("--envs", type=int, default=256)
     ap.add_argument("--steps", type=int, default=64)
@@ -58,7 +59,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     teacher_bytes = current(pathlib.Path(args.teacher).read_bytes())
     teacher = from_onnx(teacher_bytes, pd.OBS, pd.ACTIONS).eval()
-    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities)
+    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities, attention=args.attention)
     student = Policy(pd.OBS, pd.ACTIONS, **size)
     opt = torch.optim.Adam(student.parameters(), lr=args.lr, eps=1e-5)
 

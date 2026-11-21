@@ -89,3 +89,24 @@ def test_a_policy_with_entity_encoders_round_trips_through_onnx():
     assert size_of(q) == size_of(p) == {"width": 64, "hidden": 96, "blocks": 3, "entities": 16}
     x, m = torch.randn(5, pd.OBS), torch.ones(5, pd.ACTIONS, dtype=torch.bool)
     assert torch.allclose(p(x, m)[0], q(x, m)[0])
+
+
+def test_a_policy_with_attention_round_trips_through_onnx_and_tract():
+    """`Policy(attention=heads)`: the entity codes attend to one another; the ONNX export (heads in its metadata) loads
+    back at its size with the same logits, and the arena's own runner (tract, `VecEnv.set_model`) takes it."""
+    import torch
+
+    import arena_duel as pd
+    from net import Policy, from_onnx, size_of, to_onnx
+
+    torch.manual_seed(0)
+    p = Policy(pd.OBS, pd.ACTIONS, width=64, hidden=96, blocks=2, entities=16, attention=4)
+    with torch.no_grad():
+        p.ent.place.normal_()  # not the zeros it starts at, so the round trip is tested
+    data = to_onnx(p)
+    q = from_onnx(data, pd.OBS, pd.ACTIONS)
+    assert size_of(q) == size_of(p) == {"width": 64, "hidden": 96, "blocks": 2, "entities": 16, "attention": 4}
+    x, m = torch.randn(5, pd.OBS), torch.ones(5, pd.ACTIONS, dtype=torch.bool)
+    assert torch.allclose(p(x, m)[0], q(x, m)[0], atol=1e-5)
+    env = pd.VecEnv(2, 1)
+    env.set_model(9, data)  # tract refuses a graph it cannot run

@@ -216,6 +216,7 @@ def main():
     ap.add_argument("--hidden", type=int, default=HIDDEN)
     ap.add_argument("--blocks", type=int, default=BLOCKS)
     ap.add_argument("--entities", type=int, default=0, help="an encoder shared over each repeated thing, this wide (0: none; phase D)")
+    ap.add_argument("--attention", type=int, default=0, help="heads of self-attention over the entity codes (0: none; needs --entities)")
     args = ap.parse_args()
 
     out = pathlib.Path(__file__).parent / "runs" / args.run
@@ -225,7 +226,7 @@ def main():
     dev = torch.device(args.device)
     n, T = args.envs, args.steps
 
-    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities)
+    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities, attention=args.attention)
     if args.resume:
         size = torch.load(args.resume, map_location="cpu", weights_only=True).get("size", size)
     elif args.init and pathlib.Path(args.init).suffix == ".pt":

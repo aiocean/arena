@@ -38,7 +38,7 @@ class Entities(nn.Module):
     """One small MLP per kind of repeated thing, shared over its copies; the copies' codes kept in order (a slot's
     place is the act that casts it, a threat's is how near it is) and projected to the trunk's width."""
 
-    def __init__(self, obs, width, dim):
+    def __init__(self, obs, width, dim, heads=0):
         super().__init__()
         if obs != ENTITY_OBS:
             raise ValueError(f"the entity encoders read ABI 5's {ENTITY_OBS} inputs, not {obs}")
@@ -47,7 +47,29 @@ class Entities(nn.Module):
             idx = entity_index(copies, ranges)
             self.register_buffer(f"idx_{name}", idx, persistent=False)
             setattr(self, name, nn.Sequential(nn.Linear(idx.shape[1], dim), nn.ReLU(), nn.Linear(dim, dim), nn.ReLU()))
-        self.proj = nn.Linear(sum(c for _, c, _ in ENTITIES) * dim, width)
+        tokens = sum(c for _, c, _ in ENTITIES)
+        self.proj = nn.Linear(tokens * dim, width)
+        # with `heads`, one layer of self-attention over every copy of every kind (41 tokens), so a code also reads
+        # the others (which of my slots answers which threat); each token knows its kind and place by a learnt vector.
+        # The projections are 2-D Linears over the tokens flattened into the batch, so ONNX keeps their names
+        self.heads = heads
+        if heads:
+            if dim % heads:
+                raise ValueError(f"an entity width of {dim} does not split into {heads} heads")
+            self.place = nn.Parameter(torch.zeros(tokens, dim))
+            self.att_ln = nn.LayerNorm(dim, eps=1e-5)
+            self.att_qkv = nn.Linear(dim, 3 * dim)
+            self.att_out = nn.Linear(dim, dim)
+
+    def attend(self, x):
+        """x [batch, tokens, dim] -> x + attention(ln(x))"""
+        b, t, d = x.shape
+        h = self.heads
+        qkv = self.att_qkv(self.att_ln(x).reshape(-1, d)).reshape(b, t, 3, h, d // h).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        w = torch.softmax(q @ k.transpose(-1, -2) * (d // h) ** -0.5, -1)
+        y = (w @ v).transpose(1, 2).reshape(-1, d)
+        return x + self.att_out(y).reshape(b, t, d)
 
     def forward(self, obs):
         codes = []
@@ -57,8 +79,11 @@ class Entities(nn.Module):
             # the copies flattened into the batch: a 2-D Linear exports as a Gemm whose weight keeps its name
             # (`from_onnx` finds it), where a 3-D one becomes an anonymous MatMul
             x = obs[:, idx].reshape(-1, one)
-            codes.append(getattr(self, name)(x).reshape(obs.shape[0], -1))
-        return self.proj(torch.cat(codes, -1))
+            codes.append(getattr(self, name)(x).reshape(obs.shape[0], copies, -1))
+        x = torch.cat(codes, 1)
+        if self.heads:
+            x = self.attend(x + self.place)
+        return self.proj(x.reshape(obs.shape[0], -1))
 
 
 class Block(nn.Module):
@@ -79,12 +104,16 @@ class Policy(nn.Module):
     the value head (bins over [-1.5, 1.5]) from the trunk's normalised output."""
 
     def __init__(
-        self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0, entities=0
+        self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0, entities=0,
+        attention=0,
     ):
         super().__init__()
         # the bigger brain (phase D): with `entities` (an encoder's width), each repeated thing of the observation is
         # also read by an encoder shared over its copies (`Entities`), added to `inp`'s reading of the whole
-        self.ent = Entities(obs, width, entities) if entities else None
+        # with `attention` (heads), the encoders' codes also attend to one another (`Entities.attend`)
+        if attention and not entities:
+            raise ValueError("attention runs over the entity encoders' codes: it needs entities")
+        self.ent = Entities(obs, width, entities, attention) if entities else None
         # the asymmetric critic (`ppo.py --privileged`): what only the critic sees (`VecEnv.privileged`), embedded and
         # added to the trunk's output before the value head; the policy head never reads it, so the bot is unchanged
         self.priv = (
@@ -136,6 +165,8 @@ def size_of(policy):
     size = dict(width=policy.width, hidden=policy.blocks[0].up.out_features, blocks=len(policy.blocks))
     if policy.ent is not None:
         size["entities"] = policy.ent.proj.in_features // sum(c for _, c, _ in ENTITIES)
+        if policy.ent.heads:
+            size["attention"] = policy.ent.heads
     return size
 
 
@@ -185,7 +216,15 @@ def to_onnx(policy):
             output_names=["logits"],
         )
     policy.train(was)
-    return buf.getvalue()
+    data = buf.getvalue()
+    if policy.ent is not None and policy.ent.heads:
+        # what the weights' shapes cannot tell `from_onnx`: the attention's heads
+        import onnx
+
+        model = onnx.load_from_string(data)
+        onnx.helper.set_model_props(model, {"attention_heads": str(policy.ent.heads)})
+        data = model.SerializeToString()
+    return data
 
 
 def _initializers(data):
@@ -208,7 +247,13 @@ def from_onnx(data, obs, actions):
     width, hidden = found["blocks.0.up.weight"].shape[1], found["blocks.0.up.weight"].shape[0]
     blocks = len([k for k in found if k.startswith("blocks.") and k.endswith(".up.weight")])
     entities = found["ent.slot.0.weight"].shape[0] if "ent.slot.0.weight" in found else 0
-    policy = Policy(obs, actions, width=width, hidden=hidden, blocks=blocks, entities=entities)
+    attention = 0
+    if "ent.att_qkv.weight" in found:
+        import onnx
+
+        props = {p.key: p.value for p in onnx.load_from_string(data).metadata_props}
+        attention = int(props["attention_heads"])
+    policy = Policy(obs, actions, width=width, hidden=hidden, blocks=blocks, entities=entities, attention=attention)
     load_onnx(policy, data)
     return policy
 
