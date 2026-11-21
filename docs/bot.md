@@ -161,7 +161,10 @@ another: the arena measures decisions, not reflexes.
 One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
 of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
 `[1, 2299]`, output the 29 acts' logits, float32 `[1, 29]`. One command builds it into a module with the `bots/onnx`
-template ("Bring your own model" in `docs/training.md`):
+template ("Bring your own model" in `docs/training.md`): A recurrent model (`train/net.py`, `Policy(recurrent=...)`) also takes its state, float32 `[1, size]`, as a second input
+and gives the next as a second output, `h_out`: `bots/onnx` keeps the state from decision to decision and clears it at
+each fight and round, as the arena's native seat does. The memory inside a bot is the bot's own business; the ABI does
+not change.
 
 ```
 cargo run -p arena-bot --example onnx -- mine.onnx mine.wasm

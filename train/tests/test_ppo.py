@@ -59,3 +59,28 @@ def test_a_run_with_search_imitates_the_lookahead_and_logs_it():
     line = json.loads((out / "log.jsonl").read_text().splitlines()[-1])
     assert line["search_kl"] >= 0 and 0 <= line["search_agree"] <= 1
     shutil.rmtree(out)
+
+
+def test_a_recurrent_run_trains_and_its_snapshots_play_as_opponents():
+    """`--recurrent`: the rollout carries each env's state, the update unrolls it, its past selves are seated as
+    recurrent ONNX opponents, and the checkpoint exports as (obs, h) -> (logits, h_out)."""
+    import subprocess
+    import sys
+
+    import onnx
+    import torch
+
+    from export import load
+    from net import to_onnx
+
+    run = f"test-rec-{os.getpid()}"
+    out = pathlib.Path(__file__).parent.parent / "runs" / run
+    cmd = [sys.executable, "ppo.py", "--run", run, "--updates", "3", "--envs", "8", "--steps", "16", "--threads", "2"]
+    cmd += ["--recurrent", "16", "--snapshot-every", "1", "--mix", "latest=0.5", "brain=0.5"]
+    subprocess.run(cmd, cwd=pathlib.Path(__file__).parent.parent, check=True)
+    ck = torch.load(out / "last.pt", map_location="cpu", weights_only=True)
+    assert ck["size"]["recurrent"] == 16 and any(k.startswith("rec.") for k in ck["model"])
+    model = onnx.load_from_string(to_onnx(load(out / "last.pt")))
+    assert [i.name for i in model.graph.input] == ["obs", "h"]
+    assert [o.name for o in model.graph.output] == ["logits", "h_out"]
+    shutil.rmtree(out)

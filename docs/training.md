@@ -383,3 +383,13 @@ Drop your module into a corner on [arena.aiocean.io](https://arena.aiocean.io/#i
 bot or another module, and the seed box replays a fight. The same two modules and seed play the same fight anywhere.
 To make your model the bot the home page plays, export it over the house AI (`crates/arena-duel/weights/policy.onnx`)
 and build the site: `site/build.sh` builds the house module from it.
+
+## A policy with a memory of its own (`--recurrent`)
+
+`ppo.py --recurrent 128` gives the policy a GRU state of 128 that it carries from decision to decision and forgets
+at each round (`net.py`, `Recurrent`). What the state adds to the trunk starts at zero, so a run started from a plain
+model (`--init`) plays as it did and learns what to remember. The rollout carries each env's state and clears it where
+a round ends. A minibatch is a set of envs, each unrolled over its steps in order from the state its rollout began
+with. Its past selves are seated as recurrent ONNX opponents. The bot module and the native seat carry the state the
+same way (`docs/bot.md`). `--search` reads a rollout from a fresh state and is refused with it.
+

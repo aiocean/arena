@@ -111,3 +111,31 @@ def test_a_policy_with_attention_round_trips_through_onnx_and_tract():
     assert torch.allclose(p(x, m)[0], q(x, m)[0], atol=1e-5)
     env = pd.VecEnv(2, 1)
     env.set_model(9, data)  # tract refuses a graph it cannot run
+
+
+def test_a_recurrent_policy_starts_as_its_trunk_and_round_trips_through_onnx():
+    """`Policy(recurrent=size)`: what the state adds starts at zero (it plays as the policy it was started from), the
+    state changes with what it sees, and the ONNX export (obs, h) -> (logits, h_out) loads back with the same answers."""
+    import torch
+
+    import arena_duel as pd
+    from net import Policy, from_onnx, size_of, to_onnx
+
+    torch.manual_seed(0)
+    p = Policy(pd.OBS, pd.ACTIONS, width=64, hidden=96, blocks=2, recurrent=32)
+    x, m = torch.randn(5, pd.OBS), torch.ones(5, pd.ACTIONS, dtype=torch.bool)
+    plain = Policy(pd.OBS, pd.ACTIONS, width=64, hidden=96, blocks=2)
+    plain.load_state_dict({k: v for k, v in p.state_dict().items() if not k.startswith("rec.")})
+    a, _, h = p.step(x, m, p.fresh(5))
+    assert torch.allclose(a, plain(x, m)[0], atol=1e-6), "a fresh recurrent policy plays as its trunk"
+    assert h.abs().sum() > 0
+    with torch.no_grad():
+        p.rec.out.weight.normal_()  # so the state matters to the logits
+    q = from_onnx(to_onnx(p), pd.OBS, pd.ACTIONS)
+    assert size_of(q) == size_of(p) == {"width": 64, "hidden": 96, "blocks": 2, "recurrent": 32}
+    h = p.fresh(5)
+    for _ in range(3):
+        a, _, h1 = p.step(x, m, h)
+        b, _, h2 = q.step(x, m, h)
+        assert torch.allclose(a, b, atol=1e-5) and torch.allclose(h1, h2, atol=1e-5)
+        h = h1

@@ -4,6 +4,10 @@
 //! `[1, 29]` or `[29]`, as its first output. The bot picks the act as the shipped bot does: a softmax over the legal
 //! acts, read with the arena's draw `u` (`arena_mind::policy::sample`). Change `arena_decide` to pick otherwise.
 //!
+//! A recurrent model (`train/net.py`, `Policy(recurrent=...)`) also takes its state, float32 `[1, size]`, as a second
+//! input and gives the next state as a second output: the bot keeps it from decision to decision and clears it at each
+//! fight and round, as the arena's native seat does (`arena_bot::onnx::OnnxBot`).
+//!
 //! The model is read and optimised once, in the first `arena_start` of a match (it costs about a quarter of that
 //! call's fuel for a network of the shipped one's size).
 
@@ -22,14 +26,31 @@ type Plan = TypedRunnableModel<TypedModel>;
 
 thread_local! {
     static PLAN: RefCell<Option<Plan>> = const { RefCell::new(None) };
+    /// A recurrent model's state (empty for one that keeps none).
+    static STATE: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
 }
 
-fn plan() -> TractResult<Plan> {
-    tract_onnx::onnx()
-        .model_for_read(&mut &MODEL[..])?
-        .with_input_fact(0, f32::fact([1, OBS]).into())?
-        .into_optimized()?
-        .into_runnable()
+/// The optimised model and the size of its state (0: it keeps none).
+fn plan() -> TractResult<(Plan, usize)> {
+    let mut model = tract_onnx::onnx().model_for_read(&mut &MODEL[..])?;
+    let state = if model.inputs.len() == 2 {
+        let shape = model.input_fact(1)?.shape.as_concrete_finite()?;
+        match shape.as_deref() {
+            Some([1, n]) => *n,
+            _ => bail!("a recurrent model's state must be [1, size]"),
+        }
+    } else {
+        0
+    };
+    model = model.with_input_fact(0, f32::fact([1, OBS]).into())?;
+    if state > 0 {
+        model = model.with_input_fact(1, f32::fact([1, state]).into())?;
+    }
+    Ok((model.into_optimized()?.into_runnable()?, state))
+}
+
+fn forget() {
+    STATE.with(|s| s.borrow_mut().fill(0.0));
 }
 
 fn byte(i: usize) -> u8 {
@@ -37,10 +58,28 @@ fn byte(i: usize) -> u8 {
 }
 
 fn logits(obs: Vec<f32>) -> TractResult<[f32; ACTIONS]> {
-    let input = Tensor::from_shape(&[1, OBS], &obs)?;
+    let mut inputs = tvec!(Tensor::from_shape(&[1, OBS], &obs)?.into());
+    STATE.with(|s| -> TractResult<()> {
+        let s = s.borrow();
+        if !s.is_empty() {
+            inputs.push(Tensor::from_shape(&[1, s.len()], &s)?.into());
+        }
+        Ok(())
+    })?;
     let out = PLAN.with(|p| match p.borrow().as_ref() {
-        Some(plan) => plan.run(tvec!(input.into())),
+        Some(plan) => plan.run(inputs),
         None => bail!("arena_start was not called"),
+    })?;
+    STATE.with(|s| -> TractResult<()> {
+        let mut s = s.borrow_mut();
+        if !s.is_empty() {
+            let next = out.get(1).map(|t| t.as_slice::<f32>()).transpose()?;
+            match next {
+                Some(n) if n.len() == s.len() => s.copy_from_slice(n),
+                _ => bail!("a recurrent model gives its next state as its second output"),
+            }
+        }
+        Ok(())
     })?;
     let l = out[0].as_slice::<f32>()?;
     let mut logits = [0.0; ACTIONS];
@@ -66,16 +105,20 @@ pub extern "C" fn arena_start(_seed: i32) {
     PLAN.with(|p| {
         if p.borrow().is_none() {
             // a model that does not load traps here: the bot loses the round
-            let Ok(plan) = plan() else {
+            let Ok((plan, state)) = plan() else {
                 std::process::abort()
             };
             *p.borrow_mut() = Some(plan);
+            STATE.with(|s| *s.borrow_mut() = vec![0.0; state]);
         }
     });
+    forget();
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn arena_round() {}
+pub extern "C" fn arena_round() {
+    forget();
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn arena_decide(u: f32) -> i32 {

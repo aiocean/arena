@@ -159,9 +159,10 @@ def search(env, policy, league, args, pay, update, dev, rng):
 
 
 def load_init(policy, model):
-    """Start `policy` from `model`: an asymmetric critic's extra layers start fresh when the model has none."""
+    """Start `policy` from `model`: an asymmetric critic's extra layers, or a recurrent state's, start fresh when the
+    model has none (what the state adds starts at zero, so it plays as the model did)."""
     missing, unexpected = policy.load_state_dict(model if policy.priv is not None else without_priv(model), strict=False)
-    if unexpected or any(not k.startswith("priv.") for k in missing):
+    if unexpected or any(not k.startswith(("priv.", "rec.")) for k in missing):
         raise ValueError(f"the model does not fit: missing {missing}, unexpected {unexpected}")
 
 
@@ -217,6 +218,7 @@ def main():
     ap.add_argument("--blocks", type=int, default=BLOCKS)
     ap.add_argument("--entities", type=int, default=0, help="an encoder shared over each repeated thing, this wide (0: none; phase D)")
     ap.add_argument("--attention", type=int, default=0, help="heads of self-attention over the entity codes (0: none; needs --entities)")
+    ap.add_argument("--recurrent", type=int, default=0, help="a GRU state this size, carried from decision to decision (0: none)")
     args = ap.parse_args()
 
     out = pathlib.Path(__file__).parent / "runs" / args.run
@@ -226,7 +228,8 @@ def main():
     dev = torch.device(args.device)
     n, T = args.envs, args.steps
 
-    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities, attention=args.attention)
+    size = dict(width=args.width, hidden=args.hidden, blocks=args.blocks, entities=args.entities, attention=args.attention,
+                recurrent=args.recurrent)
     if args.resume:
         size = torch.load(args.resume, map_location="cpu", weights_only=True).get("size", size)
     elif args.init and pathlib.Path(args.init).suffix == ".pt":
@@ -275,6 +278,12 @@ def main():
     league.snapshot(policy.cpu())
     policy.to(dev)
     kinds = [league.reset(i) for i in range(n)]
+    rec = policy.rec is not None
+    if rec and args.search:
+        raise SystemExit("--search reads each act's rollout from a fresh state: not with --recurrent")
+    if rec and n % args.minibatches:
+        raise SystemExit(f"--recurrent splits the {n} envs into {args.minibatches} minibatches: make them divide")
+    h_state = policy.fresh(n) if rec else None
 
     obs_b = torch.zeros(T, n, pd.OBS)
     priv_b = torch.zeros(T, n, pd.PRIVILEGED) if args.privileged else None
@@ -304,6 +313,8 @@ def main():
         )
         searched = None
         search_at = int(rng.integers(T)) if args.search and update >= args.search_after else -1
+        if rec:
+            h0 = h_state.clone()  # where this rollout's states began: the update unrolls from here
         for t in range(T):
             if t == search_at:
                 searched = search(env, policy, league, args, pay, update, dev, rng)
@@ -311,7 +322,10 @@ def main():
             o, m = torch.from_numpy(obs), torch.from_numpy(mask)
             pv = torch.from_numpy(env.privileged()) if args.privileged else None
             with torch.no_grad():
-                logits, vlog = policy(o.to(dev), m.to(dev), None if pv is None else pv.to(dev))
+                if rec:
+                    logits, vlog, h_next = policy.step(o.to(dev), m.to(dev), h_state.to(dev), None if pv is None else pv.to(dev))
+                else:
+                    logits, vlog = policy(o.to(dev), m.to(dev), None if pv is None else pv.to(dev))
                 if pv is not None:
                     priv_b[t] = pv
                 dist = Categorical(logits=logits)
@@ -336,6 +350,8 @@ def main():
             r = r - np.float32(args.time_cost)
             np.add.at(acts, a.cpu().numpy(), 1)
             rew_b[t], done_b[t] = torch.from_numpy(r), torch.from_numpy(d.astype(np.float32))
+            if rec:  # a round that ended starts the next from a fresh state, as the bot's does
+                h_state = h_next.cpu() * (1.0 - done_b[t]).unsqueeze(-1)
             for i in np.nonzero(d)[0]:
                 kind, style, seat, key = kinds[i]
                 league.record(key, won[i] == 1)
@@ -349,7 +365,10 @@ def main():
         with torch.no_grad():
             obs, mask = env.observe()
             pv = torch.from_numpy(env.privileged()).to(dev) if args.privileged else None
-            _, vlog = policy(torch.from_numpy(obs).to(dev), torch.from_numpy(mask).to(dev), pv)
+            if rec:
+                _, vlog, _ = policy.step(torch.from_numpy(obs).to(dev), torch.from_numpy(mask).to(dev), h_state.to(dev), pv)
+            else:
+                _, vlog = policy(torch.from_numpy(obs).to(dev), torch.from_numpy(mask).to(dev), pv)
             nxt = policy.value_of(vlog).cpu()
         adv = torch.zeros(T, n)
         gae = torch.zeros(n)
@@ -371,11 +390,27 @@ def main():
             S_H = -(S_T * S_T.clamp_min(1e-12).log()).sum(-1)  # the target's entropy: the imitation logged as a KL
         mb = B // args.minibatches
         stats = defaultdict(float)
+        if rec:  # a recurrent policy's minibatch is a set of envs, each unrolled over its T steps in order
+            O_t, M_t = obs_b.to(dev), mask_b.to(dev)
+            PV_t = priv_b.to(dev) if priv_b is not None else None
+            D_t, H0 = done_b.to(dev), h0.to(dev)
+            per = n // args.minibatches
         for _ in range(args.epochs):
-            perm = torch.randperm(B, device=dev)
+            perm = torch.randperm(n if rec else B, device=dev)
             for k in range(args.minibatches):
-                idx = perm[k * mb : (k + 1) * mb]
-                logits, vlog = policy(O[idx], M[idx], None if PV is None else PV[idx])
+                if rec:
+                    envs = perm[k * per : (k + 1) * per]
+                    h, lg, vl = H0[envs], [], []
+                    for t in range(T):
+                        l_t, v_t, h = policy.step(O_t[t, envs], M_t[t, envs], h, None if PV_t is None else PV_t[t, envs])
+                        h = h * (1.0 - D_t[t, envs]).unsqueeze(-1)
+                        lg.append(l_t)
+                        vl.append(v_t)
+                    logits, vlog = torch.stack(lg).flatten(0, 1), torch.stack(vl).flatten(0, 1)
+                    idx = (torch.arange(T, device=dev).unsqueeze(1) * n + envs.unsqueeze(0)).flatten()
+                else:
+                    idx = perm[k * mb : (k + 1) * mb]
+                    logits, vlog = policy(O[idx], M[idx], None if PV is None else PV[idx])
                 dist = Categorical(logits=logits)
                 ratio = (dist.log_prob(A[idx]) - LP[idx]).exp()
                 a_n = (ADV[idx] - ADV[idx].mean()) / (ADV[idx].std() + 1e-8)

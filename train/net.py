@@ -100,6 +100,31 @@ class Entities(nn.Module):
         return self.proj(x.reshape(obs.shape[0], -1))
 
 
+class Recurrent(nn.Module):
+    """A GRU cell over the trunk's output, its state carried from decision to decision (cleared each round), and
+    what it adds back to the trunk's output. The add starts at zero, so a policy given one plays as it did; training
+    then learns what to remember. The gates are 2-D Linears, which ONNX keeps by name."""
+
+    def __init__(self, width, size):
+        super().__init__()
+        self.size = size
+        self.x = nn.Linear(width, 3 * size)
+        self.h = nn.Linear(size, 3 * size)
+        self.out = nn.Linear(size, width)
+        nn.init.zeros_(self.out.weight)
+        nn.init.zeros_(self.out.bias)
+
+    def forward(self, z, h):
+        """(what to add to z, the next state)"""
+        xr, xu, xn = self.x(z).chunk(3, -1)
+        hr, hu, hn = self.h(h).chunk(3, -1)
+        r = torch.sigmoid(xr + hr)
+        u = torch.sigmoid(xu + hu)
+        n = torch.tanh(xn + r * hn)
+        h = (1 - u) * n + u * h
+        return self.out(h), h
+
+
 class Block(nn.Module):
     """x + down(relu(up(ln(x))))"""
 
@@ -120,6 +145,7 @@ class Policy(nn.Module):
     def __init__(
         self, obs, actions, width=WIDTH, hidden=HIDDEN, blocks=BLOCKS, bins=101, vmax=1.5, privileged=0, entities=0,
         attention=0,
+        recurrent=0,
     ):
         super().__init__()
         # the bigger brain (phase D): with `entities` (an encoder's width), each repeated thing of the observation is
@@ -135,6 +161,9 @@ class Policy(nn.Module):
             if privileged
             else None
         )
+        # with `recurrent` (a state's size), a GRU carries what it saw from decision to decision (`Recurrent`): the
+        # bot keeps the state between calls and clears it each round, `ppo.py` trains it over each env's steps in order
+        self.rec = Recurrent(width, recurrent) if recurrent else None
         self.inp = nn.Linear(obs, width)
         self.blocks = nn.ModuleList([Block(width, hidden) for _ in range(blocks)])
         self.out_ln = nn.LayerNorm(width, eps=1e-5)
@@ -163,10 +192,25 @@ class Policy(nn.Module):
 
     def forward(self, obs, mask, priv=None):
         """Masked logits (an illegal act gets -1e8) and the value logits (with `priv`, the critic's extra inputs, when
-        the policy has an asymmetric critic)."""
+        the policy has an asymmetric critic). A recurrent policy is read from a fresh state (`step` carries one)."""
+        if self.rec is not None:
+            logits, value, _ = self.step(obs, mask, self.fresh(obs.shape[0], obs.device), priv)
+            return logits, value
         z = self.trunk(obs)
         v = z + self.priv(priv) if self.priv is not None and priv is not None else z
         return self.logits(z).masked_fill(~mask, -1e8), self.value(v)
+
+    def fresh(self, n, device=None):
+        """A recurrent policy's state at a round's start."""
+        return torch.zeros(n, self.rec.size, device=device)
+
+    def step(self, obs, mask, h, priv=None):
+        """A recurrent policy's decision: masked logits, the value logits and the next state."""
+        z = self.trunk(obs)
+        add, h = self.rec(z, h)
+        z = z + add
+        v = z + self.priv(priv) if self.priv is not None and priv is not None else z
+        return self.logits(z).masked_fill(~mask, -1e8), self.value(v), h
 
     def value_of(self, value_logits):
         """The critic's expected return."""
@@ -181,6 +225,8 @@ def size_of(policy):
         size["entities"] = policy.ent.proj.in_features // policy.ent.tokens
         if policy.ent.heads:
             size["attention"] = policy.ent.heads
+    if policy.rec is not None:
+        size["recurrent"] = policy.rec.size
     return size
 
 
@@ -207,6 +253,19 @@ class Logits(nn.Module):
         return self.policy.logits(self.policy.trunk(obs))
 
 
+class RecurrentLogits(nn.Module):
+    """A recurrent policy as a bot runs it: (obs [1, OBS], h [1, size]) to (logits [1, ACTIONS], the next h)."""
+
+    def __init__(self, policy):
+        super().__init__()
+        self.policy = policy
+
+    def forward(self, obs, h):
+        z = self.policy.trunk(obs)
+        add, h = self.policy.rec(z, h)
+        return self.policy.logits(z + add), h
+
+
 # torch's ONNX exporter keeps global state: one export at a time (the pool fights its games on threads, and each may
 # carry an older model over through an export)
 _EXPORT = threading.Lock()
@@ -219,15 +278,16 @@ def to_onnx(policy):
     policy.eval()
     buf = io.BytesIO()
     obs = policy.inp.in_features
+    rec = policy.rec is not None
     with _EXPORT, torch.no_grad():
         torch.onnx.export(
-            Logits(policy).cpu(),
-            (torch.zeros(1, obs),),
+            (RecurrentLogits if rec else Logits)(policy).cpu(),
+            (torch.zeros(1, obs), torch.zeros(1, policy.rec.size)) if rec else (torch.zeros(1, obs),),
             buf,
             opset_version=17,
             dynamo=False,
-            input_names=["obs"],
-            output_names=["logits"],
+            input_names=["obs", "h"] if rec else ["obs"],
+            output_names=["logits", "h_out"] if rec else ["logits"],
         )
     policy.train(was)
     data = buf.getvalue()
@@ -267,7 +327,10 @@ def from_onnx(data, obs, actions):
 
         props = {p.key: p.value for p in onnx.load_from_string(data).metadata_props}
         attention = int(props["attention_heads"])
-    policy = Policy(obs, actions, width=width, hidden=hidden, blocks=blocks, entities=entities, attention=attention)
+    recurrent = found["rec.h.weight"].shape[1] if "rec.h.weight" in found else 0
+    policy = Policy(
+        obs, actions, width=width, hidden=hidden, blocks=blocks, entities=entities, attention=attention, recurrent=recurrent
+    )
     load_onnx(policy, data)
     return policy
 
