@@ -19,9 +19,11 @@ one another round, each by 55% or more.
 """
 
 import argparse
+import fcntl
 import hashlib
 import itertools
 import json
+import os
 import pathlib
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -89,15 +91,35 @@ class Pool:
         self.members = self._read("members.json", {})
         self.state = self._read("games.json", {"fingerprint": None, "seeds": list(SEEDS), "games": {}})
         self.lock = threading.Lock()
+        self._removed = set()
 
     def _read(self, name, default):
         f = self.root / name
         return json.loads(f.read_text()) if f.exists() else default
 
     def save(self):
+        """Write the pool, merged with what other processes wrote since it was read (the cycle and a standing
+        exploiter share one pool): under a file lock, the members and games on disk are joined with these (these win
+        a clash; a name removed here stays removed), and each file is replaced whole, never half written. Games on
+        other rules or seeds are not joined: the newer state wins."""
         self.root.mkdir(parents=True, exist_ok=True)
-        (self.root / "members.json").write_text(json.dumps(self.members, indent=1, sort_keys=True))
-        (self.root / "games.json").write_text(json.dumps(self.state, indent=1, sort_keys=True))
+        with open(self.root / ".lock", "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            members = {**self._read("members.json", {}), **self.members}
+            disk = self._read("games.json", None)
+            games = dict(self.state["games"])
+            same = disk and (disk["fingerprint"], disk["seeds"]) == (self.state["fingerprint"], self.state["seeds"])
+            if same:
+                games = {**disk["games"], **games}
+            for name in self._removed:
+                members.pop(name, None)
+                games = {k: v for k, v in games.items() if name not in k.split("\t")}
+            self.members = members
+            self.state = {**self.state, "games": games}
+            for name, data in (("members.json", self.members), ("games.json", self.state)):
+                tmp = self.root / f".{name}.{os.getpid()}"
+                tmp.write_text(json.dumps(data, indent=1, sort_keys=True))
+                os.replace(tmp, self.root / name)
 
     @property
     def seeds(self):
@@ -126,7 +148,8 @@ class Pool:
         return self.add_bytes(name or name_of(path), onnx_of(path), path)
 
     def remove(self, name):
-        self.members.pop(name)
+        self.members.pop(name, None)
+        self._removed.add(name)
         self.state["games"] = {k: v for k, v in self.state["games"].items() if name not in k.split("\t")}
         self.save()
 

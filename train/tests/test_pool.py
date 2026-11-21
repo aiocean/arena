@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pool import bradley_terry, cycles, nash, payoff
+from pool import Pool, bradley_terry, cycles, nash, payoff
 
 
 def games(strengths, n=4000, seed=0):
@@ -52,3 +52,33 @@ def test_a_transitive_pool_has_no_cycle_and_its_nash_is_the_strongest():
     mix = nash(a)
     assert mix[2] > 0.99
     assert np.all(a @ mix <= 1e-9)
+
+
+def test_two_pools_writing_at_once_keep_each_others_games_and_members(tmp_path):
+    """The cycle and a standing exploiter share a pool: each one's save joins what the other wrote."""
+    a, b = Pool(tmp_path), Pool(tmp_path)
+    for p in (a, b):
+        p.state["fingerprint"] = "fp"
+    a.members["x"] = {"file": None, "source": "test"}
+    a.state["games"]["brain\tx"] = [1, 2, 0]
+    a.save()
+    b.members["y"] = {"file": None, "source": "test"}
+    b.state["games"]["brain\ty"] = [3, 4, 0]
+    b.save()
+    c = Pool(tmp_path)
+    assert {"x", "y"} <= set(c.members)
+    assert c.state["games"] == {"brain\tx": [1, 2, 0], "brain\ty": [3, 4, 0]}
+    a.remove("y")  # a removal is kept through the join
+    c = Pool(tmp_path)
+    assert "y" not in c.members and "brain\ty" not in c.state["games"]
+    assert "x" in c.members
+
+
+def test_a_pool_on_new_rules_does_not_take_the_old_games(tmp_path):
+    a, b = Pool(tmp_path), Pool(tmp_path)
+    a.state["fingerprint"] = "old"
+    a.state["games"]["brain\tx"] = [1, 2, 0]
+    a.save()
+    b.state = {"fingerprint": "new", "seeds": b.state["seeds"], "games": {}}
+    b.save()
+    assert Pool(tmp_path).state["games"] == {}
