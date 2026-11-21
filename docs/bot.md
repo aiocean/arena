@@ -4,9 +4,9 @@ What a bot sees, what it can do, when it decides, and the file a player submits.
 `crates/arena-mind/src/policy/` (`observe.rs`, `action.rs`, `mind.rs`), `crates/arena-duel/src/seat.rs` and
 `crates/arena-bot`.
 
-## What it sees: 2055 numbers
+## What it sees: 2299 numbers
 
-Each decision the bot gets `OBS` = 2055 floats, in a frame where the foe is always ahead (positive x), so the same bot
+Each decision the bot gets `OBS` = 2299 floats, in a frame where the foe is always ahead (positive x), so the same bot
 plays from either corner. Every value is clamped to [-4, 4], anything not finite reads 0, and times are in seconds
 unless a scale is given. Lengths are in the world's pixels (the page's), `UNIT` (4) of the rules' each (`docs/rules.md`): a bot
 sees the same numbers whatever the arena's pixel size, and the pixels below are the world's too.
@@ -24,6 +24,11 @@ bolt can read the pattern. The memory is the arena's, the same for every bot, an
 added two acts after the casts (27 and 28: a duck and a guard held 1 s), so a bot can commit to a long duck in one
 decision instead of three short ones. A model of ABI 4 carries over with its first layer widened, zeros on the new
 inputs, and two new logits that start far below the rest (`train/widen.py`): it then plays as it did.
+
+**ABI 6 (RULES 28) appended 244 numbers to ABI 5's 2055, which keep their indices and meaning:** it remembers further
+back, its acts 4 to 8 (2055..2205) and the foe's starts 5 to 8 (2205..2281), and for each kind of skill when it last
+saw the foe start one this round (2281..2299), so a bot can tell what the foe has just spent and what it has not used
+for a while. A model of ABI 5 carries over the same way (`train/widen.py`).
 
 **ABI 4 (RULES 25) appended 148 numbers to ABI 3's 1741: 0..1741 keep their indices and meaning**, except that a
 slot's *ready* (and the foe's slots' *ready*, and the foe's share of its skills ready) now also says the foe stands
@@ -54,6 +59,9 @@ are now what the skill builds to with its supports and keystones.
 | 1839..1889 | 10 x 5 | **In play**: the domains (2: mine first), the fields (4: the vortices standing, nearest first) and the auras (4: mine first), zero when absent. Each: present, mine, time left / 10 (4, forty seconds, for an aura: it lasts while its holder keeps it), seconds until it works (an aura's wind-up; 0 for the others), where it stands ahead of me / 100 (0 for an aura, which is on its holder). |
 | 1889..1979 | 3 x 30 | **My acts**, the last 3 I chose, newest first, zero when none (ABI 5): the act one-hot over the 29 acts (the table below), seconds since I chose it / 2. |
 | 1979..2055 | 4 x 19 | **Foe's acts**, the last 4 things I saw the foe start, newest first, zero when none (ABI 5): idle, moving toward me, moving away, guarding, meditating, flying (6), the kind of skill it uses, one-hot over 12 as in the foe's block (only for a skill), seconds since / 2. A start is a change in what it is seen doing, through the same reaction delay as the foe's block. |
+| 2055..2205 | 5 x 30 | **My older acts**, my acts 4 to 8, as in "My acts" (ABI 6). |
+| 2205..2281 | 4 x 19 | **Foe's older acts**, the foe's starts 5 to 8, as in "Foe's acts" (ABI 6). |
+| 2281..2299 | 9 x 2 | **Foe's kinds**, for each kind of skill (blast, bolt, seeker, area, field, heal, ward, barrier, blink): I have seen the foe start one this round, seconds since the last / 10, at most 1 (0 when never) (ABI 6). What the foe has just spent shows here. |
 
 The 12 skill kinds, in order: three reserved, then blast, bolt, seeker, area, field, heal, ward, barrier, blink. The
 three reserved slots held melee, dive and dash until the arena went spells only (RULES 19): no skill is one of them
@@ -80,7 +88,7 @@ it is.
   rate are the burn (fire); the chill slots are soak (water) and the slow is bind (wood); the shock slots are jolt
   (thunder).
 - There is no ultimate and no rage (`docs/rules.md`, "Loadouts"). ABI 2 dropped their places: the old rage, the
-  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741, ABI 4 1741..1889, ABI 5 1889..2055. A bot
+  ultimate flags, rage stolen and the ultimate's slot. ABI 3 appended 305..1741, ABI 4 1741..1889, ABI 5 1889..2055, ABI 6 2055..2299. A bot
   of another ABI (1: 354 inputs, 2: 305, 3: 1741, 4: 1889) is refused.
 
 A skill is known by its kind and its numbers, never its name, so a bot reads a skill the bar has just drawn the same
@@ -152,7 +160,7 @@ another: the arena measures decisions, not reflexes.
 
 One **bot module** (`.wasm`): any model of any size within the budgets below, memory across a match, and its own way
 of picking an act. Most bots start as an ONNX model, the policy exported from PyTorch (or any library): input float32
-`[1, 2055]`, output the 29 acts' logits, float32 `[1, 29]`. One command builds it into a module with the `bots/onnx`
+`[1, 2299]`, output the 29 acts' logits, float32 `[1, 29]`. One command builds it into a module with the `bots/onnx`
 template ("Bring your own model" in `docs/training.md`):
 
 ```
@@ -165,14 +173,14 @@ seat's draw `u`. A bot that wants to always play its best act trains its logits 
 
 ## The bot module
 
-A WebAssembly module of the ABI `arena-bot-5` (`crates/arena-bot`; the design and its reasons:
+A WebAssembly module of the ABI `arena-bot-6` (`crates/arena-bot`; the design and its reasons:
 `docs/specs/2026-11-16-arena-wasm-bots-design.md`). It **imports nothing** and exports:
 
 | Export | Signature | What |
 |---|---|---|
 | `memory` | memory | its linear memory |
-| `arena_abi` | `() -> i32` | returns `5`; a module that returns anything else is refused (an ABI 4 module too: rebuild it on ABI 5, its model widened) |
-| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 2055 inputs as `f32` LE, then the 29 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
+| `arena_abi` | `() -> i32` | returns `6`; a module that returns anything else is refused (an ABI 5 module too: rebuild it on ABI 6, its model widened) |
+| `arena_input` | `() -> i32` | the address of a buffer the arena writes before each decision: the 2299 inputs as `f32` LE, then the 29 acts' legal mask as bytes (0 or 1). Read once, when the instance is made |
 | `arena_start` | `(seed: i32)` | a new fight of the match; `seed` is the bot's own dice for it |
 | `arena_round` | `()` | a new round, the first included |
 | `arena_decide` | `(u: f32) -> i32` | the act, 0..30, for the decision the buffer holds; `u` is the seat's draw in [0, 1) |

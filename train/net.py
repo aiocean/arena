@@ -27,6 +27,20 @@ ENTITIES = [
     ("foe_act", 4, [(1979, 19, 19)]),
 ]
 ENTITY_OBS = 2055
+# ABI 6 appends my older acts, the foe's older ones and, for each kind of skill, when the foe last started one
+ENTITIES_ABI6 = ENTITIES + [
+    ("my_old_act", 5, [(2055, 30, 30)]),
+    ("foe_old_act", 4, [(2205, 19, 19)]),
+    ("foe_kind", 9, [(2281, 2, 2)]),
+]
+ENTITY_KINDS = {2055: ENTITIES, 2299: ENTITIES_ABI6}
+
+
+def entities_of(obs):
+    """The repeated things of an observation of `obs` inputs (ABI 5's or ABI 6's)."""
+    if obs not in ENTITY_KINDS:
+        raise ValueError(f"the entity encoders read ABI 5's or 6's inputs ({sorted(ENTITY_KINDS)}), not {obs}")
+    return ENTITY_KINDS[obs]
 
 
 def entity_index(copies, ranges):
@@ -40,14 +54,14 @@ class Entities(nn.Module):
 
     def __init__(self, obs, width, dim, heads=0):
         super().__init__()
-        if obs != ENTITY_OBS:
-            raise ValueError(f"the entity encoders read ABI 5's {ENTITY_OBS} inputs, not {obs}")
-        self.names = [name for name, _, _ in ENTITIES]
-        for name, copies, ranges in ENTITIES:
+        kinds = entities_of(obs)
+        self.names = [name for name, _, _ in kinds]
+        for name, copies, ranges in kinds:
             idx = entity_index(copies, ranges)
             self.register_buffer(f"idx_{name}", idx, persistent=False)
             setattr(self, name, nn.Sequential(nn.Linear(idx.shape[1], dim), nn.ReLU(), nn.Linear(dim, dim), nn.ReLU()))
-        tokens = sum(c for _, c, _ in ENTITIES)
+        tokens = sum(c for _, c, _ in kinds)
+        self.tokens = tokens
         self.proj = nn.Linear(tokens * dim, width)
         # with `heads`, one layer of self-attention over every copy of every kind (41 tokens), so a code also reads
         # the others (which of my slots answers which threat); each token knows its kind and place by a learnt vector.
@@ -164,7 +178,7 @@ def size_of(policy):
     """A policy's size, as a checkpoint's "size" keeps it and `Policy(**size)` takes it."""
     size = dict(width=policy.width, hidden=policy.blocks[0].up.out_features, blocks=len(policy.blocks))
     if policy.ent is not None:
-        size["entities"] = policy.ent.proj.in_features // sum(c for _, c, _ in ENTITIES)
+        size["entities"] = policy.ent.proj.in_features // policy.ent.tokens
         if policy.ent.heads:
             size["attention"] = policy.ent.heads
     return size

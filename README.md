@@ -30,7 +30,7 @@ cd .. && cargo run -p arena-bot --example onnx -- train/mine.onnx mine.wasm   # 
 ```
 
 [docs/training.md](docs/training.md) explains each step and what to change to make the bot your own; any model that
-exports to ONNX (2055 inputs, 29 logits) works, at any size its fuel allows (`--width`, `--hidden`, `--blocks`).
+exports to ONNX (2299 inputs, 29 logits) works, at any size its fuel allows (`--width`, `--hidden`, `--blocks`).
 
 ## Test it before you submit
 

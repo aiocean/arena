@@ -8,7 +8,7 @@ fn bot(extra: &str) -> Vec<u8> {
     wat(&format!(
         r#"(module
   (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 1024)
   (func (export "arena_start") (param i32))
   (func (export "arena_round"))
@@ -72,7 +72,7 @@ fn memory_is_capped_and_a_larger_start_is_refused() {
     assert_eq!(max, Some(MAX_PAGES));
     let big = wat(&format!(
         r#"(module (memory (export "memory") {})
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 0)
   (func (export "arena_start") (param i32)) (func (export "arena_round"))
   (func (export "arena_decide") (param f32) (result i32) i32.const 0))"#,
@@ -84,7 +84,7 @@ fn memory_is_capped_and_a_larger_start_is_refused() {
 #[test]
 fn imports_are_refused() {
     let text = r#"(module (import "env" "now" (func)) (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 0)
   (func (export "arena_start") (param i32)) (func (export "arena_round"))
   (func (export "arena_decide") (param f32) (result i32) i32.const 0))"#;
@@ -94,12 +94,12 @@ fn imports_are_refused() {
 #[test]
 fn a_missing_or_mistyped_export_is_named() {
     let missing = wat(r#"(module (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 0)
   (func (export "arena_start") (param i32)) (func (export "arena_round")))"#);
     assert_eq!(admit(&missing), Err(Refusal::MissingExport("arena_decide")));
     let mistyped = wat(r#"(module (memory (export "memory") 1)
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 0)
   (func (export "arena_start") (param i32)) (func (export "arena_round"))
   (func (export "arena_decide") (param f64) (result i32) i32.const 0))"#);
@@ -125,7 +125,7 @@ fn refused_features_are_refused() {
     );
     assert!(matches!(admit(&relaxed), Err(Refusal::Invalid(_))));
     let shared = wat(r#"(module (memory (export "memory") 1 1 shared)
-  (func (export "arena_abi") (result i32) i32.const 5)
+  (func (export "arena_abi") (result i32) i32.const 6)
   (func (export "arena_input") (result i32) i32.const 0)
   (func (export "arena_start") (param i32)) (func (export "arena_round"))
   (func (export "arena_decide") (param f32) (result i32) i32.const 0))"#);

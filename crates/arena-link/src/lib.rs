@@ -48,12 +48,14 @@ use serde::{Deserialize, Serialize};
 /// meditation a skill in phases; 24: qi regen 8/s, a jump or a take-off 8 qi, flight 8/s; 25: range bands, a skill thrown at the foe begun only from its reach's distance, and bot ABI
 /// 4, 1889 inputs: each slot's band and why it cannot be cast, how long buffs, domains, fields and auras last; 27:
 /// bot ABI 5, 2055 inputs and 29 acts: its last 3 acts and the foe's last 4 starts, each with its age, and a long duck
-/// and a long guard). A
+/// and a long guard; 28:
+/// bot ABI 6, 2299 inputs: its last 8 acts and the foe's last 8 starts, and when it last saw the foe start each kind of
+/// skill). A
 /// page whose rules differ steps a different fight from
 /// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 27;
+pub const RULES_VERSION: u32 = 28;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

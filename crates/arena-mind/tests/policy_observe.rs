@@ -223,6 +223,9 @@ fn obs_is_the_documented_sum() {
             + 10 * IN_PLAY
             + MY_ACTS_LEN
             + FOE_ACTS_LEN
+            + 5 * 30
+            + 4 * 19
+            + 9 * 2
     );
     assert_eq!(WHY_AT, 1741, "ABI 3's inputs keep their places");
     assert_eq!(
@@ -231,7 +234,13 @@ fn obs_is_the_documented_sum() {
         "ABI 4's inputs keep their places"
     );
     // ABI 5 appends what it remembers: 3 of its own acts (29 acts + age), 4 of the foe's (19 each)
-    assert_eq!(OBS, 1889 + 3 * 30 + 4 * 19);
+    assert_eq!(
+        1889 + 3 * 30 + 4 * 19,
+        2055,
+        "ABI 5's inputs keep their places"
+    );
+    // ABI 6 appends 5 older acts of its own, 4 older starts of the foe's, and the foe's 9 kinds (seen, age)
+    assert_eq!(OBS, 2055 + 5 * 30 + 4 * 19 + 9 * 2);
     let starts: Vec<usize> = BLOCKS
         .iter()
         .scan(0, |at, b| {
@@ -259,7 +268,10 @@ fn obs_is_the_documented_sum() {
             BUFFS_AT,
             IN_PLAY_AT,
             1889,
-            1889 + MY_ACTS_LEN
+            1889 + MY_ACTS_LEN,
+            2055,
+            2205,
+            2281
         ]
     );
     assert_eq!(BLOCKS.iter().map(|b| b.1).sum::<usize>(), OBS);
@@ -670,5 +682,55 @@ fn it_remembers_its_last_acts_and_the_foes_newest_first_with_their_age() {
         "idle began 2 s ago"
     );
     assert!(o[theirs + 2 * entry..].iter().all(|&x| x == 0.0));
-    assert_eq!(theirs + 4 * entry, OBS);
+    assert_eq!(theirs + 4 * entry, 2055);
+}
+
+#[test]
+fn it_remembers_further_back_and_when_the_foe_last_used_each_kind() {
+    use arena_mind::SkillKind;
+    use arena_mind::policy::{ACTIONS, Act, FoeAct, Memory, observe_with};
+    let s = sense(8.5, me(40.0), foe(150.0));
+    let mut m = Memory::default();
+    // nine acts: the newest three are ABI 5's block, the next five ABI 6's, the oldest forgotten
+    for k in 0..9 {
+        m.chose(Act::Toward.index(), f64::from(k));
+    }
+    m.saw(FoeAct::Skill(SkillKind::Bolt), 4.0);
+    m.saw(FoeAct::Idle, 5.0);
+    m.saw(FoeAct::Skill(SkillKind::Blast), 6.0);
+    m.saw(FoeAct::Idle, 7.0);
+    m.saw(FoeAct::Skill(SkillKind::Bolt), 8.0);
+    let o = observe_with(&s, &foe(150.0), &[], &kit(), &[0.0; TAG], &m);
+    let entry = ACTIONS + 1;
+    let older = block_at("My older acts");
+    // my fourth newest, chosen at 5 s: 3.5 s ago / 2
+    assert_eq!(o[older + Act::Toward.index()], 1.0);
+    assert!((o[older + ACTIONS] - 1.75).abs() < 1e-6);
+    // the fifth older one is the eighth newest, at 1 s; the ninth (at 0 s) is gone
+    assert!((o[older + 4 * entry + ACTIONS] - 3.75).abs() < 1e-6);
+    // five starts: the newest four in ABI 5's block, the first bolt (4.5 s ago) the newest of the older ones
+    let foe_older = block_at("Foe's older acts");
+    let foe_entry = 6 + 12 + 1;
+    assert_eq!(
+        o[foe_older + 6 + 3 + 1],
+        1.0,
+        "a bolt: the second kind, after 6 doings and 3 reserved"
+    );
+    assert!((o[foe_older + foe_entry - 1] - 2.25).abs() < 1e-6);
+    assert!(
+        o[foe_older + foe_entry..block_at("Foe's kinds")]
+            .iter()
+            .all(|&x| x == 0.0)
+    );
+    let kinds = block_at("Foe's kinds");
+    // Blast is the first kind, Bolt the second: the blast 2.5 s ago, the last bolt 0.5 s ago (each / 10)
+    assert_eq!(o[kinds], 1.0);
+    assert!((o[kinds + 1] - 0.25).abs() < 1e-6);
+    assert_eq!(o[kinds + 2], 1.0);
+    assert!((o[kinds + 3] - 0.05).abs() < 1e-6);
+    assert!(
+        o[kinds + 4..].iter().all(|&x| x == 0.0),
+        "kinds it never saw"
+    );
+    assert_eq!(kinds + 18, OBS);
 }

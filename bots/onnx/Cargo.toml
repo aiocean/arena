@@ -1,6 +1,6 @@
 [package]
 name = "onnx-bot"
-description = "A bot module (arena-bot-5) that runs an ONNX policy with tract: build it with ARENA_ONNX set to the model"
+description = "A bot module (arena-bot-6) that runs an ONNX policy with tract: build it with ARENA_ONNX set to the model"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"

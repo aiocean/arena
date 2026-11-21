@@ -67,8 +67,14 @@
 //! - the foe's acts (`FOE_ACTS` x `FOE_ACT` = 4 x 19, 1979..2055), the last things I saw it start, newest first,
 //!   zero when none: idle, moving toward me, moving away, guarding, meditating, flying, the kind of skill it uses
 //!   (12), seconds since / 2.
+//!
+//! ABI 6 appends to ABI 5's 2055, which keep their indices and meaning:
+//! - my older acts (`MY_ACTS - 3` x `MY_ACT` = 5 x 30, 2055..2205): my acts 4 to 8, as "My acts";
+//! - the foe's older acts (`FOE_ACTS - 4` x `FOE_ACT` = 4 x 19, 2205..2281): its starts 5 to 8, as "Foe's acts";
+//! - the foe's kinds (`KINDS` x 2 = 9 x 2, 2281..2299): for each kind of skill, I have seen the foe start one this
+//!   round, seconds since the last / 10 (at most 1; 0 when never), so what it has just spent shows.
 
-use super::memory::{FOE_ACTS, FoeAct, MY_ACTS, Memory};
+use super::memory::{FOE_ACTS, FOE_ACTS_ABI5, FoeAct, MY_ACTS, MY_ACTS_ABI5, Memory};
 use super::{ACTIONS, SLOTS, ahead};
 use crate::sense::{
     AILMENTS, AURAS, ActFrames, ActPhase, Band, BuffKind, CURSES, Doing, Effects, Foe, InPlay,
@@ -117,7 +123,7 @@ const MY_ACT: usize = ACTIONS + 1;
 const FOE_ACT: usize = 6 + RESERVED_KINDS + KINDS.len() + 1;
 
 /// Every block in order, as `docs/bot.md` names it, with its length.
-pub const BLOCKS: [(&str, usize); 17] = [
+pub const BLOCKS: [(&str, usize); 20] = [
     ("Me", ME),
     ("Foe", FOE),
     ("Threats", THREATS * THREAT),
@@ -133,8 +139,11 @@ pub const BLOCKS: [(&str, usize); 17] = [
     ("Foe's bands", SLOTS * FOE_BAND),
     ("Buffs", BUFFS * BUFF),
     ("In play", (DOMAINS + FIELDS + AURAS_IN_PLAY) * IN_PLAY),
-    ("My acts", MY_ACTS * MY_ACT),
-    ("Foe's acts", FOE_ACTS * FOE_ACT),
+    ("My acts", MY_ACTS_ABI5 * MY_ACT),
+    ("Foe's acts", FOE_ACTS_ABI5 * FOE_ACT),
+    ("My older acts", (MY_ACTS - MY_ACTS_ABI5) * MY_ACT),
+    ("Foe's older acts", (FOE_ACTS - FOE_ACTS_ABI5) * FOE_ACT),
+    ("Foe's kinds", KINDS.len() * 2),
 ];
 
 pub const OBS: usize = total(&BLOCKS);
@@ -152,7 +161,7 @@ const fn total(blocks: &[(&str, usize)]) -> usize {
 /// The slots a skill's kind takes, one-hot: three reserved (where the blade, the dive and the dash were before the arena
 /// went spells only; never set, so a bot's inputs keep their shape), then [`KINDS`].
 const RESERVED_KINDS: usize = 3;
-const KINDS: [SkillKind; 9] = [
+pub(super) const KINDS: [SkillKind; 9] = [
     SkillKind::Blast,
     SkillKind::Bolt,
     SkillKind::Seeker,
@@ -532,7 +541,23 @@ pub fn observe_with(
     }
 
     let now = sense.time;
-    for m in &memory.mine {
+    // ABI 5's newest acts first, where they always were; ABI 6's older ones after
+    let (mine, older_mine) = memory.mine.split_at(MY_ACTS_ABI5);
+    let (foe, older_foe) = memory.foe.split_at(FOE_ACTS_ABI5);
+    my_acts(&mut o, mine, now);
+    foe_acts(&mut o, foe, now);
+    my_acts(&mut o, older_mine, now);
+    foe_acts(&mut o, older_foe, now);
+    for t in memory.foe_kinds {
+        o.flag(t.is_some());
+        o.put(t.map_or(0.0, |t| ((now - t).max(0.0) / 10.0).min(1.0)));
+    }
+    debug_assert_eq!(o.at, OBS);
+    o.v
+}
+
+fn my_acts(o: &mut Out, acts: &[Option<(usize, f64)>], now: f64) {
+    for m in acts {
         let Some((act, t)) = *m else {
             o.skip(MY_ACT);
             continue;
@@ -542,7 +567,10 @@ pub fn observe_with(
         }
         o.put((now - t).max(0.0) / 2.0);
     }
-    for m in &memory.foe {
+}
+
+fn foe_acts(o: &mut Out, acts: &[Option<(FoeAct, f64)>], now: f64) {
+    for m in acts {
         let Some((what, t)) = *m else {
             o.skip(FOE_ACT);
             continue;
@@ -563,8 +591,6 @@ pub fn observe_with(
         });
         o.put((now - t).max(0.0) / 2.0);
     }
-    debug_assert_eq!(o.at, OBS);
-    o.v
 }
 
 /// The seconds a unit that never falls apart reads as.

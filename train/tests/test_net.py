@@ -55,20 +55,21 @@ BLOCKS = [
     ("Me", 17), ("Foe", 37), ("Threats", 48), ("Slots", 198), ("Tag", 5), ("My cast", 11), ("Foe's cast", 11),
     ("Slot builds", 888), ("Effects", 226), ("Units", 96), ("Foe's slots", 204), ("Why", 54), ("Foe's bands", 24),
     ("Buffs", 20), ("In play", 50), ("My acts", 90), ("Foe's acts", 76),
+    ("My older acts", 150), ("Foe's older acts", 76), ("Foe's kinds", 18),
 ]
 
 
 def test_each_entity_encoder_reads_whole_blocks_of_the_observation():
     """Every range an entity reads is a block of `observe.rs`, tiled exactly by the entity's copies."""
     import arena_duel as pd
-    from net import ENTITIES, ENTITY_OBS, entity_index
+    from net import entities_of, entity_index
 
-    assert sum(n for _, n in BLOCKS) == ENTITY_OBS == pd.OBS
+    assert sum(n for _, n in BLOCKS) == pd.OBS
     start, at = {}, 0
     for name, n in BLOCKS:
         start[at] = n
         at += n
-    for name, copies, ranges in ENTITIES:
+    for name, copies, ranges in entities_of(pd.OBS):
         idx = entity_index(copies, ranges)
         assert idx.shape == (copies, sum(n for _, n, _ in ranges))
         for first, n, stride in ranges:

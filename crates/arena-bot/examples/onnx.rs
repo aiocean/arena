@@ -2,7 +2,7 @@
 //!
 //! `cargo run -p arena-bot --example onnx -- MODEL.onnx BOT.wasm`
 //!
-//! The model takes the observation, float32 `[1, 2055]`, and gives the 29 acts' logits (`docs/bot.md`). Building
+//! The model takes the observation, float32 `[1, 2299]`, and gives the 29 acts' logits (`docs/bot.md`). Building
 //! needs the repo's toolchain, which has the `wasm32-unknown-unknown` target.
 //!
 //! The same model gives the same bytes from any clone at any path (the house module is pinned by its sha256,

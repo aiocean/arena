@@ -1,4 +1,4 @@
-//! A bot as a WebAssembly module, the `arena-bot-5` ABI (`docs/bot.md`, "The bot module";
+//! A bot as a WebAssembly module, the `arena-bot-6` ABI (`docs/bot.md`, "The bot module";
 //! `docs/specs/2026-11-16-arena-wasm-bots-design.md`). `admit` takes a player's module and returns the one the arena
 //! runs from then on: validated against the season's features and budgets, its memory capped, and metered by a fuel
 //! counter written into its own code, so the same decision runs out of fuel in wasmtime and in a browser. Its hash is
@@ -23,7 +23,7 @@ pub mod meter;
 pub mod onnx;
 
 /// The ABI version `arena_abi` returns.
-pub const ABI: i32 = 5;
+pub const ABI: i32 = 6;
 /// The largest module a player may submit.
 pub const MAX_BYTES: usize = 32 << 20;
 /// The most linear memory a bot may grow to, in 64 KiB pages (256 MiB).
@@ -35,7 +35,7 @@ pub const SETUP_FUEL: i64 = 200_000_000;
 /// The global the arena adds and exports: what is left of the current call's fuel.
 pub const FUEL_EXPORT: &str = "arena_fuel";
 /// The observation's length (`arena_mind::policy::OBS`) and the number of acts (`ACTIONS`).
-pub const OBS: usize = 2055;
+pub const OBS: usize = 2299;
 pub const ACTIONS: usize = 29;
 
 /// The features a bot may use: the ones that give the same bits on wasmtime and in Chrome, Firefox and Safari

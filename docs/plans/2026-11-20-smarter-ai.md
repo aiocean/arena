@@ -108,6 +108,25 @@ tuned. Once it agrees with the owner, it joins the pick's look gate.
 | G | parked (2026-11-21). The Rust side works (`Env::fork`, `VecEnv.lookahead_many`, 17-28 ms a root). `ppo.py --search` hurt every time, from abi5-mem against a control 600 updates long: z-scored targets (abi5-search) fell to 25-33% against the brain; pi * exp(A / temp) (srch2) 83% to 62%; reweighing only the acts it plays (srch3) 70% at 530, the control 80%; entropy rose each time. An 8-decision rollout with a leaf critic does not see further than PPO's critic already does. Worth trying again only with deeper rollouts to the round's end, or a critic trained on the search's own leaves |
 | H | – |
 
+## The second round (owner, 2026-11-21: "làm hết các bước 1, 2, 3")
+
+After A to G the owner asked for three more steps toward more parameters, context and memory:
+
+1. **ABI 6 (RULES 28): a longer memory.** 2299 inputs, appended to ABI 5's 2055: my acts 4 to 8, the foe's starts
+   5 to 8, and for each of the 9 kinds of skill when the foe last started one (its tempo, what it has just spent).
+   The house AI is carried over widened and plays as before (`house_fight.json` unchanged).
+2. **A recurrent state kept in the bot.** A GRU whose state the bot module carries from decision to decision (the
+   model inside a bot is free, so no ABI change): `ppo.py` trains it on sequences, the ONNX seat and `bots/onnx`
+   carry the state.
+3. **Attention over the entities.** One layer of self-attention over every entity code (`Policy(attention=heads)`,
+   c24a3d2); A/B abi5-att (distilled from the house AI, then PPO) against abi5-ctl4 (PPO from c32/g011).
+
+| step | state |
+|---|---|
+| 1 | landed with RULES 28; retrain through the cycle (it carries the pick over) |
+| 2 | next |
+| 3 | landed (c24a3d2); A/B queued behind abi5-big |
+
 ## What the study found (2026-11-20)
 
 Measured while four trainers ran, so absolute speeds are pessimistic.

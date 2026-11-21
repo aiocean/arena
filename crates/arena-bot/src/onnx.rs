@@ -23,7 +23,7 @@ pub const HOUSE: &[u8] = include_bytes!("../../arena-duel/weights/policy.onnx");
 /// 2026-11-19). A new house AI moves the old `policy.onnx` here.
 pub const PREVIOUS: &[u8] = include_bytes!("../../arena-duel/weights/policy-prev.onnx");
 
-/// A loaded, optimised ONNX policy: the observation, float32 `[1, 2055]`, to the acts' logits, `[1, 29]` or `[29]`.
+/// A loaded, optimised ONNX policy: the observation, float32 `[1, 2299]`, to the acts' logits, `[1, 29]` or `[29]`.
 /// Cheap to clone; many seats share one.
 #[derive(Clone)]
 pub struct Onnx {
