@@ -125,7 +125,7 @@ After A to G the owner asked for three more steps toward more parameters, contex
 |---|---|
 | 1 | landed with RULES 28 (25b2c6c, deployed, smoke PASS); the cycle carries its pick over and trains on it from c34 (the pool pruned to the top 30 for the re-fight) |
 | 2 | landed (272688c): `ppo.py --recurrent`, the native seat and `bots/onnx` carry the state. A/B after 1500 updates from c32/g011 (seeds 600000-600199, both ways): abi6-rec (`--recurrent 128`) against abi5-ctl4 (no state) 567-591 (49.0%), against the house AI 48.3%; the control against the house 51.7%. No gain at this length: a state the policy learns to use from scratch may need far longer, or a teacher |
-| 3 | landed (c24a3d2); A/B abi5-att (distilled on ABI 6 from the house AI, then PPO) against abi5-ctl4 |
+| 3 | landed (c24a3d2). A/B after 1500 updates (seeds 600000-600199, both ways): abi5-att (entities 32, 4 heads, 128/256, 2 blocks; distilled on ABI 6 from the house AI, then PPO) against abi5-ctl4 1219-1087 (52.9%, about 2.8 standard errors), against c32/g011 53.2%, against c35/g008 53.5%; the control against c35/g008 50.1%. The first of the three that pays, but its module needs 22.1M fuel a decision, over the 20M a decision may use: a smaller attention net (entities 16, 4 heads: 16.0M fuel, 80%) is distilled from it to fit (att16, then 1500 updates of PPO) |
 
 ## What the study found (2026-11-20)
 
