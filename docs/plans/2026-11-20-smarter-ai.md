@@ -124,7 +124,7 @@ After A to G the owner asked for three more steps toward more parameters, contex
 | step | state |
 |---|---|
 | 1 | landed with RULES 28 (25b2c6c, deployed, smoke PASS); the cycle carries its pick over and trains on it from c34 (the pool pruned to the top 30 for the re-fight) |
-| 2 | landed (272688c): `ppo.py --recurrent`, the native seat and `bots/onnx` carry the state; A/B abi6-rec (`--recurrent 128` from c32/g011) against abi5-ctl4 (the same start, no state), queued behind abi5-big2 |
+| 2 | landed (272688c): `ppo.py --recurrent`, the native seat and `bots/onnx` carry the state. A/B after 1500 updates from c32/g011 (seeds 600000-600199, both ways): abi6-rec (`--recurrent 128`) against abi5-ctl4 (no state) 567-591 (49.0%), against the house AI 48.3%; the control against the house 51.7%. No gain at this length: a state the policy learns to use from scratch may need far longer, or a teacher |
 | 3 | landed (c24a3d2); A/B abi5-att (distilled on ABI 6 from the house AI, then PPO) against abi5-ctl4 |
 
 ## What the study found (2026-11-20)
