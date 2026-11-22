@@ -97,12 +97,16 @@ class League:
         """Read the pool's folders and the target again: a new or changed file is seated under a fresh id."""
         for d in self.pools:
             for f in sorted(d.glob("*.onnx")) if d.exists() else []:
-                mtime = f.stat().st_mtime
-                if self.seen.get(f, (None,))[0] == mtime:
-                    continue
+                try:
+                    mtime = f.stat().st_mtime
+                    if self.seen.get(f, (None,))[0] == mtime:
+                        continue
+                    data = f.read_bytes()
+                except FileNotFoundError:
+                    continue  # removed from the pool while the folder was read (the exploiter loop prunes it)
                 wid = POOL_IDS + len(self.seen)
                 try:
-                    self.env.set_model(wid, current(f.read_bytes()))
+                    self.env.set_model(wid, current(data))
                 except ValueError:
                     continue  # a model of another observation: not this run's opponent
                 old = self.seen.get(f)
