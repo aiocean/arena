@@ -559,19 +559,21 @@ fn minions_take_their_life_and_damage_from_minion_life_and_minion_damage() {
     let s = spawn(&b).unwrap_or_else(|| unreachable!());
     assert_eq!(s.kind, Kind::Minion);
     close(s.life, dv::MINION_LIFE * (1.0 + sp::MINION_LIFE));
-    close(s.damage, 1.0 + sp::MINION_DAMAGE);
-    assert_eq!(s.lifetime, None);
+    close(s.damage, dv::MINION_SHARE * (1.0 + sp::MINION_DAMAGE));
+    assert_eq!(s.lifetime, Some(dv::MINION_LIFETIME));
     assert_eq!(s.cap, dv::MINION_CAP as u32);
     let plain = spawn(&cast("ghostsummon", &[], &EMPTY)).unwrap_or_else(|| unreachable!());
     close(plain.life, dv::MINION_LIFE);
-    close(plain.damage, 1.0);
-    // minions stay; a third past the cap of two removes the first
+    close(plain.damage, dv::MINION_SHARE);
+    // a third past the cap of two removes the first; the two left fall apart at their lifetime
     let mut p = Placed::new(s);
     for _ in 0..3 {
         p.place(Point::new(1.0, 0.0));
     }
-    assert!(p.tick(100.0).expired.is_empty());
     assert_eq!(p.standing.iter().map(|d| d.id).collect::<Vec<_>>(), [1, 2]);
+    assert!(p.tick(dv::MINION_LIFETIME - 0.5).expired.is_empty());
+    assert_eq!(p.tick(1.0).expired, [1, 2]);
+    assert!(p.standing.is_empty());
     // a skill that makes nothing
     assert_eq!(spawn(&cast("fireball", &[], &EMPTY)), None);
 }

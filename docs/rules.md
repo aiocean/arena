@@ -253,7 +253,10 @@ measured from the sprite sheets, so a redrawn clip changes the rules.
 - Knockback, run speed and blink reach come from `arena_calc::motion` (bind slows).
 - **Traps, mines, totems and minions** are bodies on the field the foe can strike and destroy (design 17.8): a trap
   springs on the foe that steps on it, a mine goes off when the foe stands in its blast (its owner sets it off: a
-  seat has no act for it yet), a totem casts its skill on its cadence, a minion walks at the foe and strikes it.
+  seat has no act for it yet), a totem casts its skill on its cadence, a minion walks at the foe and strikes it every 1.6 s (the qi burst's
+  cooldown, `unit::MINION_EVERY`), each blow 75% of the summoning skill's (`device::MINION_SHARE`, before Minion
+  Damage), and falls apart after 8 s as a totem does (`device::MINION_LIFETIME`; a minion that falls apart has not died,
+  so it gives no soul).
 - **Lôi Bạo Trễ** (`delayedthunder`, "Lôi, bạo!"): a bolt or orb of a skill under it that a guard, a ward, a barrier
   or one of the foe's units stops (the shot spent there) stays where it stopped as its caster's mine
   (`arena_calc::device::STOPPED_MINE`). Its blow is the stopped one at 80% (`STOPPED_SHARE`), so a guard's 20% chip

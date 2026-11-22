@@ -107,6 +107,36 @@ fn a_minion_is_an_entity_that_walks_strikes_and_dies_for_a_soul() {
 }
 
 #[test]
+fn a_minion_expires_without_giving_souls() {
+    let skill = "ghostsummon";
+    let mut d = duel_of(
+        7,
+        [common::caster(skill), idle()],
+        [loadout(&[skill]), loadout(&[])],
+    );
+    let s = d.state_mut();
+    s.fighters[0].bar[0] = common::common(skill);
+    s.fighters[1].body.x = s.fighters[0].body.x + 100.0;
+
+    run(&mut d, 1.0);
+    assert_eq!(d.state().units.len(), 1);
+    let id = d.state().units[0].id;
+    let souls = d.state().fighters.each_ref().map(|f| f.c.souls);
+    assert!(
+        run(&mut d, 7.0)
+            .iter()
+            .all(|o| !matches!(o, Out::UnitDie { id: gone, .. } if *gone == id))
+    );
+    assert!(
+        run(&mut d, 1.0)
+            .iter()
+            .any(|o| matches!(o, Out::UnitDie { id: gone, .. } if *gone == id))
+    );
+    assert!(d.state().units.is_empty());
+    assert_eq!(d.state().fighters.each_ref().map(|f| f.c.souls), souls);
+}
+
+#[test]
 fn a_totem_casts_again_and_again_on_its_cadence() {
     let mut d = caster(loadout(&["arsenal"]), "arsenal", 400.0);
     let out = run(&mut d, 8.0);

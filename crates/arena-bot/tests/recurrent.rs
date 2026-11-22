@@ -36,7 +36,7 @@ fn its_seat_clears_the_state_each_round() -> Result<(), String> {
     let legal = [true; ACTIONS];
     let mut bot = OnnxBot::new(onnx);
     assert!(!bot.stateless(), "a recurrent seat is never shared");
-    let mut play = |bot: &mut OnnxBot| -> Result<Vec<i32>, String> {
+    let play = |bot: &mut OnnxBot| -> Result<Vec<i32>, String> {
         (0..12)
             .map(|k| {
                 bot.decide(&obs(k), &legal, (k * 37 % 100) as f32 / 100.0)

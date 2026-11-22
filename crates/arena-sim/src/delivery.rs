@@ -31,10 +31,10 @@ pub const BLINK_LENGTH: f64 = 3.5;
 /// A mine's blast radius, and a trap's when its skill is not an area, before `Area` (T).
 pub const DEVICE_RADIUS: f64 = 1.0;
 /// A minion: its run speed (T a second), its reach, and seconds between its blows. Each blow is the summoning
-/// skill's built blow times `device::Spawn::damage` (`MinionDamage`); a minion lives until it dies or the round ends.
+/// skill's built blow times `device::Spawn::damage`. A minion expires after `device::MINION_LIFETIME`.
 pub const MINION_SPEED: f64 = 3.0;
 pub const MINION_REACH: f64 = 1.0;
-pub const MINION_EVERY: f64 = 1.0;
+pub const MINION_EVERY: f64 = 1.6;
 /// Bodies as circles (`play::Target`): a fighter's centre height and radius, a minion's and a totem's, and a trap's
 /// or a mine's (on the floor, under a flying shot).
 pub const FIGHTER_Y: f64 = 0.5;

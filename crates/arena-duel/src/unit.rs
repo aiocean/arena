@@ -17,9 +17,9 @@
 //! - **Totem**: stands in front of its owner and casts the skill on the totem's cadence (`Spawn::first_cast`,
 //!   `cast_interval`), each cast one blow from where it stands, moving as the skill's motion does.
 //! - **Minion**: walks at the foe at a fighter's walking speed until its burst (`MINION_BLOW`) reaches it, and
-//!   strikes the nearest enemy body in front within that reach every `MINION_EVERY` seconds; each blow the summoning skill's built blow times
-//!   `Spawn::damage`. It dies when its life runs out: its owner's `MinionDied` goes into the event queue, and each
-//!   fighter within `RES.souls_reach` gains a soul.
+//!   strikes the nearest enemy body in front within that reach every `MINION_EVERY` seconds. Each blow scales the
+//!   summoning skill's built blow by `Spawn::damage`. It expires after `device::MINION_LIFETIME`. If killed, it queues
+//!   `MinionDied` for its owner and each fighter within `RES.souls_reach` gains a soul.
 //!
 //! A unit's blow is the built blow of the cast that made it, one blow each; its owner gets no gains from it. The
 //! rules emit `Out::Spawn`, `Out::UnitAct`, `Out::UnitHurt` and `Out::UnitDie` for the game to draw.
@@ -49,8 +49,9 @@ pub const FLOOR_Y: f64 = 0.1;
 pub const FLOOR_RADIUS: f64 = 0.2;
 /// A mine's blast, and a trap's when its skill is not an area, in T.
 pub const DEVICE_RADIUS: f64 = 1.0;
-/// The seconds between a minion's blows. It strikes as the close burst (`qiburst`'s motion) does, at its reach.
-pub const MINION_EVERY: f64 = 1.0;
+/// The seconds between a minion's blows. It strikes as the close burst (`qiburst`'s motion) does, at its reach, and
+/// no faster than a fighter may cast that burst (its cooldown, 1.6 s; owner, 2026-11-22: minions struck too often).
+pub const MINION_EVERY: f64 = 1.6;
 /// The motion a minion's blows move as: the basic burst of qi (no blade: the arena is spells only).
 pub const MINION_BLOW: &str = "qiburst";
 /// The effects a unit appears and goes in, by kind, when the registry has them.

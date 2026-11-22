@@ -50,12 +50,13 @@ use serde::{Deserialize, Serialize};
 /// bot ABI 5, 2055 inputs and 29 acts: its last 3 acts and the foe's last 4 starts, each with its age, and a long duck
 /// and a long guard; 28:
 /// bot ABI 6, 2299 inputs: its last 8 acts and the foe's last 8 starts, and when it last saw the foe start each kind of
-/// skill). A
+/// skill); 29: a minion strikes every 1.6 s (was 1 s), each blow 75% of its skill's (was all of it), and falls
+/// apart after 8 s (it lasted until it died). A
 /// page whose rules differ steps a different fight from
 /// the same decisions, so it says so and stops (`Applied::OtherRules`).
 /// Bump this with any change to the rules or to a bot's inputs or acts, in the same change (`docs/rules.md`,
 /// `docs/bot.md`), as the goldens are re-pinned.
-pub const RULES_VERSION: u32 = 28;
+pub const RULES_VERSION: u32 = 29;
 
 /// A decision a corner made at a fighting tick. `tick` counts fighting ticks from the match's first (each seat decides
 /// once per fighting tick), so the page, stepping the same deterministic rules, lines its replay up with it.

@@ -18,7 +18,7 @@
 //!
 //! A device's blow is the built hit itself: the support's less (Bẫy Trận, Địa Lôi Trận 10%, Pháp Đàn 30%) is in it
 //! already, so its [`Spawn::damage`] is 1. A minion's blows are the fight's to build; they carry
-//! [`Spawn::damage`], `MinionDamage`'s factor.
+//! [`Spawn::damage`]: [`MINION_SHARE`] times `MinionDamage`'s factor.
 
 use crate::build::Built;
 use crate::collide::Shape;
@@ -32,10 +32,12 @@ pub const DEVICE_LIFE: f64 = 200.0;
 pub const TOTEM_LIFE: f64 = 600.0;
 /// A minion's life before [`Stat::MinionLife`].
 pub const MINION_LIFE: f64 = 500.0;
-/// Seconds a trap, a mine, a totem stands before it falls apart (a minion stays until it dies).
+/// Seconds a trap stands before it expires.
 pub const TRAP_LIFETIME: f64 = 8.0;
 pub const MINE_LIFETIME: f64 = 12.0;
 pub const TOTEM_LIFETIME: f64 = 8.0;
+/// Seconds a minion stands before it expires. Only killing one awards souls.
+pub const MINION_LIFETIME: f64 = 8.0;
 /// Seconds after it lands before a trap can spring, a mine go off.
 pub const TRAP_ARM: f64 = 0.5;
 pub const MINE_ARM: f64 = 0.3;
@@ -43,6 +45,8 @@ pub const MINE_ARM: f64 = 0.3;
 pub const TRAP_RADIUS: f64 = 1.0;
 /// Seconds between two mines going off on one command.
 pub const MINE_STAGGER: f64 = 0.1;
+/// The share of the summoning skill's blow each of a minion's blows carries, before [`Stat::MinionDamage`].
+pub const MINION_SHARE: f64 = 0.75;
 /// Minions standing at once before [`Stat::MinionCount`] (a device's cap is its count stat alone: the support gives
 /// it, `support::DEVICES`).
 pub const MINION_CAP: f64 = 2.0;
@@ -172,8 +176,8 @@ pub fn spawn(b: &Built) -> Option<Spawn> {
             kind: Kind::Minion,
             count: 1,
             life: t.get(Stat::MinionLife, MINION_LIFE).max(0.0),
-            damage: t.acc(Stat::MinionDamage).factor().max(0.0),
-            lifetime: None,
+            damage: (MINION_SHARE * t.acc(Stat::MinionDamage).factor()).max(0.0),
+            lifetime: Some(MINION_LIFETIME),
             cap: whole(t.get(Stat::MinionCount, MINION_CAP), 1),
             arm: 0.0,
             trigger_radius: 0.0,
